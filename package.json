@@ -1,0 +1,65 @@
+{
+  "name": "@nanoforge/editor",
+  "version": "1.0.0",
+  "description": "NanoForge Editor",
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "license": "UNLICENSED",
+  "contributors": [
+    "Bill",
+    "Exelo",
+    "Fexkoser",
+    "Tchips"
+  ],
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig tsconfig.app.json && tsc -p tsconfig.node.json",
+    "fix": "eslint . --fix && prettier --write .",
+    "lint": "eslint . && prettier --check .",
+    "prepare": "husky",
+    "taze": "taze major -w",
+    "lint-staged": "lint-staged"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@eslint/js": "^9.23.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@tsconfig/svelte": "^5.0.4",
+    "@unocss/preset-web-fonts": "66.1.0-beta.6",
+    "@unocss/svelte-scoped": "66.1.0-beta.6",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-format": "^1.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-svelte": "^3.3.3",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.5.3",
+    "prettier-plugin-svelte": "^3.3.3",
+    "svelte": "^5.20.2",
+    "svelte-check": "^4.1.4",
+    "svelte-routing": "^2.13.0",
+    "taze": "^19.0.2",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.27.0",
+    "unocss": "66.1.0-beta.6",
+    "vite": "^6.2.0"
+  },
+  "packageManager": "pnpm@10.6.2",
+  "lint-staged": {
+    "**/*.{js,ts}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
