@@ -6,21 +6,21 @@ export class FileSystemHandler {
     this.rootPath = root;
   }
 
-  async getDirectory(path?: string): Promise<FileSystemDirectoryHandle> {
+  async getDirectory(path?: string, create?: boolean): Promise<FileSystemDirectoryHandle> {
     await this._checkRootHandle();
     if (!path) return this.fs;
-    return this._getSubDirFromRawPath(this.fs, path);
+    return this._getSubDirFromRawPath(this.fs, path, create);
   }
 
-  async getFile(path: string): Promise<FileSystemFileHandle> {
+  async getFile(path: string, create = true): Promise<FileSystemFileHandle> {
     await this._checkRootHandle();
     const paths = this._parsePath(path);
     const fileName = paths.pop();
     if (!fileName) {
       throw new Error();
     }
-    const handle = await this._getSubDirFromPath(this.fs, paths);
-    return handle.getFileHandle(fileName, { create: true });
+    const handle = await this._getSubDirFromPath(this.fs, paths, create);
+    return handle.getFileHandle(fileName, { create });
   }
 
   private async _checkRootHandle(): Promise<void> {
@@ -35,17 +35,19 @@ export class FileSystemHandler {
   private async _getSubDirFromRawPath(
     handle: FileSystemDirectoryHandle,
     rawPath: string,
+    create?: boolean,
   ): Promise<FileSystemDirectoryHandle> {
     const path = this._parsePath(rawPath);
-    return this._getSubDirFromPath(handle, path);
+    return this._getSubDirFromPath(handle, path, create);
   }
 
   private async _getSubDirFromPath(
     handle: FileSystemDirectoryHandle,
     path: string[],
+    create?: boolean,
   ): Promise<FileSystemDirectoryHandle> {
     for (const dir of path) {
-      handle = await this._getSubDir(handle, dir);
+      handle = await this._getSubDir(handle, dir, create);
     }
     return handle;
   }
