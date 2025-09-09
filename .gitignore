@@ -230,3 +230,4 @@ dist
 .svelte-kit/
 package
 
+public/

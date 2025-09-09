@@ -38,5 +38,10 @@ export default defineConfig({
     }),
   ],
   transformers: [transformerDirectives(), transformerVariantGroup()],
-  safelist: 'prose prose-sm m-auto text-left'.split(' '),
+  safelist: [
+    'i-material-icon-theme-huff',
+    'i-material-icon-theme-typescript',
+    'i-material-icon-theme-3d',
+    'i-material-icon-theme-lyric',
+  ],
 });
