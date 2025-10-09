@@ -22,7 +22,7 @@
   bind:isOpen
   simple
   placement="bottom-start"
-  class=" bg-neutral-800 text-white rounded-tl-none"
+  class=" bg-neutral-800 text-white rounded-tl-none shadow-xl"
   transitionParams={{ duration: 0 }}
   offset={0}
 >

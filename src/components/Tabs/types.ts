@@ -3,7 +3,7 @@ export interface TabType {
   icon: string;
 }
 
-export interface Tab {
+export interface Types {
   type: TabType;
   title: string;
 }
