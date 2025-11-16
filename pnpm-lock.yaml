@@ -71,6 +71,9 @@ importers:
       svelte-routing:
         specifier: ^2.13.0
         version: 2.13.0
+      svelte-sonner:
+        specifier: ^1.0.5
+        version: 1.0.5(svelte@5.25.2)
       taze:
         specifier: ^19.0.2
         version: 19.0.2
@@ -1742,6 +1745,11 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
+  runed@0.28.0:
+    resolution: {integrity: sha512-k2xx7RuO9hWcdd9f+8JoBeqWtYrm5CALfgpkg2YDB80ds/QE4w0qqu34A7fqiAwiBBSBQOid7TLxwxVC27ymWQ==}
+    peerDependencies:
+      svelte: ^5.7.0
+
   sade@1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
     engines: {node: '>=6'}
@@ -1834,6 +1842,11 @@ packages:
 
   svelte-routing@2.13.0:
     resolution: {integrity: sha512-/NTxqTwLc7Dq306hARJrH2HLXOBtKd7hu8nxgoFDlK0AC4SOKnzisiX/9m8Uksei1QAWtlAEdF91YphNM8iDMg==}
+
+  svelte-sonner@1.0.5:
+    resolution: {integrity: sha512-9dpGPFqKb/QWudYqGnEz93vuY+NgCEvyNvxoCLMVGw6sDN/3oVeKV1xiEirW2E1N3vJEyj5imSBNOGltQHA7mg==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   svelte@5.25.2:
     resolution: {integrity: sha512-IxmBz4x15+bNbowhygUlwoVgqMLfEIDtyjUFDfOwb1f+7Fe5qeLfwGJHMql7QUSJBqNtXcOCPsZDDmuieZcpfA==}
@@ -3718,6 +3731,11 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
+  runed@0.28.0(svelte@5.25.2):
+    dependencies:
+      esm-env: 1.2.2
+      svelte: 5.25.2
+
   sade@1.8.1:
     dependencies:
       mri: 1.2.0
@@ -3806,6 +3824,11 @@ snapshots:
       svelte: 5.25.2
 
   svelte-routing@2.13.0: {}
+
+  svelte-sonner@1.0.5(svelte@5.25.2):
+    dependencies:
+      runed: 0.28.0(svelte@5.25.2)
+      svelte: 5.25.2
 
   svelte@5.25.2:
     dependencies:
