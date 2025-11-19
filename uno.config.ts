@@ -43,5 +43,6 @@ export default defineConfig({
     'i-material-icon-theme-typescript',
     'i-material-icon-theme-3d',
     'i-material-icon-theme-lyric',
+    'i-material-icon-theme-folder-interceptor',
   ],
 });

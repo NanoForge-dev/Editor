@@ -22,7 +22,7 @@
               { type: 'widget', size: 60, id: 'Widget B' },
             ],
           },
-          { type: 'widget', size: 30, id: 'Widget C' },
+          { type: 'widget', size: 30, id: 'content-browser' },
         ],
       },
       { type: 'widget', size: 40, id: 'Widget D' },

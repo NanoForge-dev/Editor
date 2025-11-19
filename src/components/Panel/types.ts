@@ -1,5 +1,3 @@
-export type RecursiveList<T> = T | RecursiveList<T>[];
-
 export type WidgetConfig = {
   type: 'widget';
   size?: number;
