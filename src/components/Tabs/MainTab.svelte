@@ -11,21 +11,21 @@
       {
         type: 'panel',
         direction: 'col',
-        size: 60,
+        size: 70,
         children: [
           {
             type: 'panel',
             direction: 'row',
             size: 70,
             children: [
-              { type: 'widget', size: 40, id: 'Widget A' },
-              { type: 'widget', size: 60, id: 'Widget B' },
+              { type: 'widget', size: 30, id: 'entities-tree' },
+              { type: 'widget', size: 70, id: 'screen-view' },
             ],
           },
           { type: 'widget', size: 30, id: 'content-browser' },
         ],
       },
-      { type: 'widget', size: 40, id: 'Widget D' },
+      { type: 'widget', size: 30, id: 'entity-details' },
     ],
   });
 

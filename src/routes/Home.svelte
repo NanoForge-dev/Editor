@@ -2,6 +2,7 @@
   import MenuBar from '../components/Menu/MenuBar.svelte';
   import Logo from '../assets/logo.png';
   import TabBar from '../components/Tabs/TabBar.svelte';
+  import MainTab from '../components/Tabs/MainTab.svelte';
 </script>
 
 <div class="flex flex-col gap-1 h-screen">
@@ -30,5 +31,7 @@
       ></button>
     </div>
   </header>
-  <main class="flex-1 bg-neutral-700"></main>
+  <main class="flex-1 bg-neutral-900 w-full h-full p-2">
+    <MainTab />
+  </main>
 </div>

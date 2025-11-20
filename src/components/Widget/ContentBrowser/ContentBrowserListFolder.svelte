@@ -29,7 +29,7 @@
 
 {#if item.type === 'folder'}
   <button
-    class="hover:bg-neutral-800 cursor-pointer flex items-center h-5 text-xs text-neutral-200"
+    class="hover:bg-neutral-800 cursor-pointer flex items-center h-5 text-sm text-neutral-200 gap-1"
     style={`padding-left: ${deepness * 8}px`}
     onclick={() => select([item.id])}
   >
@@ -42,9 +42,9 @@
           : 'i-solar-alt-arrow-right-bold'} w-4 text-center select-none text-neutral-400 hover:text-neutral-200"
       ></span>
     {:else}
-      <span class="w-4"></span>
+      <span class="w-2"></span>
     {/if}
-
+    <span class="i-ic-baseline-folder"></span>
     <span>{item.name}</span>
   </button>
 
