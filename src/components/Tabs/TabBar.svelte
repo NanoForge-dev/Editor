@@ -1,8 +1,8 @@
 <script lang="ts">
   import TabComponent from './Tab.svelte';
-  import { type Tab, tabTypes } from './Tab';
+  import { type Types, tabTypes } from './types';
 
-  let tabs: Tab[] = $state([
+  let tabs: Types[] = $state([
     { type: tabTypes[0], title: 'Game' },
     { type: tabTypes[2], title: 'Player.obj' },
     { type: tabTypes[1], title: 'main.ts' },
@@ -11,7 +11,7 @@
   let selected = $state(0);
 </script>
 
-<div class="flex gap-1 h-8 w-full">
+<div class="flex gap-1 w-full">
   {#each tabs as tab, index (tab)}
     <TabComponent
       {tab}

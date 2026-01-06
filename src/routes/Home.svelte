@@ -2,7 +2,7 @@
   import MenuBar from '../components/Menu/MenuBar.svelte';
   import Logo from '../assets/logo.png';
   import TabBar from '../components/Tabs/TabBar.svelte';
-  import MainTab from '../components/Tabs/MainTab.svelte';
+  import MainTab from '../components/Tabs/MainTab/MainTab.svelte';
 </script>
 
 <div class="flex flex-col gap-1 h-screen">
