@@ -1,5 +1,6 @@
 import type { Component } from 'svelte';
 
+import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
 import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspectorWidget.svelte';
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
 import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
@@ -26,5 +27,9 @@ export const widgetsTypes: WidgetType[] = [
   {
     id: 'components-inspector',
     component: ComponentsInspectorWidget,
+  },
+  {
+    id: 'code-editor',
+    component: MonacoEditor,
   },
 ];

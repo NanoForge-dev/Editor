@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import * as monaco from 'monaco-editor';
+  import { codeExample } from '../../demo/code-example';
 
-  export let value: string = 'const x: number = 42;';
-  export let readonly = false;
+  let value = codeExample;
 
   let container: HTMLDivElement;
   let editor: monaco.editor.IStandaloneCodeEditor;
@@ -13,9 +13,9 @@
       value,
       language: 'typescript',
       theme: 'vs-dark',
-      readOnly: readonly,
+      readOnly: false,
       minimap: { enabled: false },
-      lineNumbers: 'off',
+      lineNumbers: 'on',
       glyphMargin: false,
       folding: false,
       overviewRulerLanes: 0,
@@ -24,7 +24,7 @@
         horizontal: 'hidden',
       },
       renderLineHighlight: 'none',
-      contextmenu: false,
+      contextmenu: true,
       automaticLayout: true,
       tabSize: 2,
       fontSize: 14,

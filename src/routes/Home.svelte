@@ -2,7 +2,15 @@
   import MenuBar from '../components/Menu/MenuBar.svelte';
   import Logo from '../assets/logo.png';
   import TabBar from '../components/Tabs/TabBar.svelte';
-  import MainTab from '../components/Tabs/MainTab/MainTab.svelte';
+  import { type Tab, tabTypes } from '../components/Tabs/types';
+
+  let tabs: Tab[] = $state([
+    { type: tabTypes[0], title: 'Game' },
+    { type: tabTypes[1], title: 'main.ts' },
+  ]);
+  let selected = $state(0);
+
+  const Component = $derived(tabs[selected].type.component);
 </script>
 
 <div class="flex flex-col gap-1 h-screen">
@@ -13,7 +21,7 @@
       >
       <div class="flex flex-col justify-between h-full w-full">
         <MenuBar />
-        <TabBar />
+        <TabBar bind:tabs bind:selected />
       </div>
     </div>
     <div class="flex items-center h-full py-2">
@@ -32,6 +40,6 @@
     </div>
   </header>
   <main class="flex-1 bg-neutral-900 w-full h-full min-h-0 p-2">
-    <MainTab />
+    <Component />
   </main>
 </div>

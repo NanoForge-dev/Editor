@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Toolbar from '../../Toolbar/Toolbar.svelte';
   import type { LayoutItem } from '../../Panel/types';
   import Layout from '../../Panel/Layout.svelte';
   import { cloneLayout } from '../../Panel/utils';
@@ -34,7 +33,6 @@
   }
 </script>
 
-<Toolbar></Toolbar>
 <div class="h-full w-full" data-layout-container>
   <Layout {layout} onLayoutChange={handleLayoutChange} />
 </div>

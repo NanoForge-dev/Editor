@@ -1,14 +1,12 @@
 <script lang="ts">
   import TabComponent from './Tab.svelte';
-  import { type Types, tabTypes } from './types';
+  import { type Tab } from './types';
 
-  let tabs: Types[] = $state([
-    { type: tabTypes[0], title: 'Game' },
-    { type: tabTypes[2], title: 'Player.obj' },
-    { type: tabTypes[1], title: 'main.ts' },
-    { type: tabTypes[3], title: 'original-sound-track.wav' },
-  ]);
-  let selected = $state(0);
+  interface Props {
+    tabs: Tab[];
+    selected: number;
+  }
+  let { tabs = $bindable(), selected = $bindable(0) }: Props = $props();
 </script>
 
 <div class="flex gap-1 w-full">
