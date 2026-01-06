@@ -2,12 +2,10 @@
   import MenuBar from '../components/Menu/MenuBar.svelte';
   import Logo from '../assets/logo.png';
   import TabBar from '../components/Tabs/TabBar.svelte';
-  import { type Tab, tabTypes } from '../components/Tabs/types';
+  import { type Tab } from '../components/Tabs/types';
+  import { tabsExample } from '../components/demo/tabs';
 
-  let tabs: Tab[] = $state([
-    { type: tabTypes[0], title: 'Game' },
-    { type: tabTypes[1], title: 'main.ts' },
-  ]);
+  let tabs: Tab[] = $state(tabsExample);
   let selected = $state(0);
 
   const Component = $derived(tabs[selected].type.component);
