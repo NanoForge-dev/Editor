@@ -25,7 +25,7 @@
           { type: 'widget', size: 30, id: 'content-browser' },
         ],
       },
-      { type: 'widget', size: 30, id: 'entity-details' },
+      { type: 'widget', size: 30, id: 'components-inspector' },
     ],
   });
 

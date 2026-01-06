@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Entity } from './types';
+  import type { Entity } from '../../Entity/types';
   import Self from './EntityItem.svelte';
 
   interface Props {

@@ -1,8 +1,8 @@
 import type { Component } from 'svelte';
 
+import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspectorWidget.svelte';
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
 import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
-import EntityDetailsWidget from './EntityDetails/EntityDetailsWidget.svelte';
 import ScreenView from './ScreenView/ScreenViewWidget.svelte';
 
 export interface WidgetType {
@@ -24,7 +24,7 @@ export const widgetsTypes: WidgetType[] = [
     component: EntitiesTreeWidget,
   },
   {
-    id: 'entity-details',
-    component: EntityDetailsWidget,
+    id: 'components-inspector',
+    component: ComponentsInspectorWidget,
   },
 ];

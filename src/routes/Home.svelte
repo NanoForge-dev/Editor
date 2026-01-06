@@ -31,7 +31,7 @@
       ></button>
     </div>
   </header>
-  <main class="flex-1 bg-neutral-900 w-full h-full p-2">
+  <main class="flex-1 bg-neutral-900 w-full h-full min-h-0 p-2">
     <MainTab />
   </main>
 </div>
