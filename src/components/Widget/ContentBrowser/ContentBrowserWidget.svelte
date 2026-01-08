@@ -60,7 +60,7 @@
 </script>
 
 <div class="flex gap-1 w-full h-full bg-neutral-800 p-1">
-  <div class="flex flex-col w-1/5 bg-neutral-900 rounded-l-md rounded-r-sm">
+  <div class="flex flex-col w-1/5 bg-neutral-900 rounded-l-md rounded-r-sm p-1">
     {#each items as item (item)}
       <ContentBrowserListFolder {item} select={(ids) => (selected = ids)} bind:selected />
     {/each}

@@ -44,5 +44,7 @@ export default defineConfig({
     'i-material-icon-theme-3d',
     'i-material-icon-theme-lyric',
     'i-material-icon-theme-folder-interceptor',
+    'i-ic-baseline-add',
+    'i-ic-baseline-folder',
   ],
 });
