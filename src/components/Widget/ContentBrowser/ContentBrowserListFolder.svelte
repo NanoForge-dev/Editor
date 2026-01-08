@@ -7,8 +7,9 @@
     deepness?: number;
     select: (ids: string[]) => void;
     selected: string[];
+    onlyFolder?: boolean;
   }
-  let { item, deepness = 0, select, selected = $bindable() }: Props = $props();
+  let { item, deepness = 0, select, selected = $bindable(), onlyFolder = true }: Props = $props();
 
   let open: boolean = $derived(!!selected.find((s) => s === item.id));
 
@@ -27,7 +28,7 @@
   }
 </script>
 
-{#if item.type === 'folder'}
+{#if item.type === 'folder' || !onlyFolder}
   <button
     class="hover:bg-neutral-800 cursor-pointer flex items-center h-5 text-sm text-neutral-200 gap-1"
     style={`padding-left: ${deepness * 8}px`}
@@ -58,6 +59,7 @@
           return select(ids);
         }}
         bind:selected
+        onlyFolder
       />
     {/each}
   {/if}

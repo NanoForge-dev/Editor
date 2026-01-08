@@ -2,47 +2,9 @@
   import type { ContentBrowserItem } from './types';
   import ContentBrowserListFolder from './ContentBrowserListFolder.svelte';
   import ContentBrowserItemCard from './ContentBrowserItemCard.svelte';
+  import { entities } from '../../demo/entities';
 
-  let items: ContentBrowserItem[] = [
-    {
-      id: 'id1',
-      name: 'Content',
-      type: 'folder',
-      children: [
-        {
-          id: 'id2',
-          name: 'JumpOut',
-          type: 'folder',
-          children: [
-            {
-              id: 'id3',
-              name: 'Player',
-              type: 'folder',
-              children: [
-                {
-                  id: 'id4',
-                  name: 'Meshes',
-                  type: 'folder',
-                  children: [
-                    {
-                      id: 'id5',
-                      name: 'Character.fbx',
-                      type: 'fbx',
-                    },
-                  ],
-                },
-                {
-                  id: 'id6',
-                  name: 'Player.ts',
-                  type: 'ts',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  let items = entities;
   let selected: string[] = $state(['id1']);
 
   function findRecursive(items: ContentBrowserItem[], id: string): ContentBrowserItem | undefined {

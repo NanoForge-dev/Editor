@@ -32,7 +32,7 @@
             <input class="bg-neutral-800 rounded-sm px-2 py-0.5 input" type="text" {value} />
           {:else if typeof value === 'number'}
             <input
-              class="bg-neutral-800 rounded-sm px-2 py-0.5 input w-32"
+              class="bg-neutral-800 rounded-sm px-2 py-0.5 input w-28"
               type="number"
               step="0.01"
               {value}

@@ -1,8 +1,7 @@
 <script lang="ts">
-  import Toolbar from '../Toolbar/Toolbar.svelte';
-  import type { LayoutItem } from '../Panel/types';
-  import Layout from '../Panel/Layout.svelte';
-  import { cloneLayout } from '../Panel/utils';
+  import type { LayoutItem } from '../../Panel/types';
+  import Layout from '../../Panel/Layout.svelte';
+  import { cloneLayout } from '../../Panel/utils';
 
   let layout: LayoutItem = $state({
     type: 'panel',
@@ -34,7 +33,6 @@
   }
 </script>
 
-<Toolbar></Toolbar>
 <div class="h-full w-full" data-layout-container>
   <Layout {layout} onLayoutChange={handleLayoutChange} />
 </div>
