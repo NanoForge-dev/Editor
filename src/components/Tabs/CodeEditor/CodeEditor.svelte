@@ -9,7 +9,7 @@
     size: 70,
     children: [
       { type: 'widget', size: 70, id: 'code-editor' },
-      { type: 'widget', size: 30, id: 'content-browser' },
+      { type: 'widget', size: 30, id: 'output-log' },
     ],
   });
 
