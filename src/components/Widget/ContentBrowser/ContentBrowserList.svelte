@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ContentBrowserItem } from './types';
-  import Self from './ContentBrowserListFolder.svelte';
+  import Self from './ContentBrowserList.svelte';
 
   interface Props {
     item: ContentBrowserItem;

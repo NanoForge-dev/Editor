@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ContentBrowserItem } from './types';
-  import ContentBrowserListFolder from './ContentBrowserListFolder.svelte';
+  import ContentBrowserList from './ContentBrowserList.svelte';
   import ContentBrowserItemCard from './ContentBrowserItemCard.svelte';
   import { entities } from '../../demo/entities';
 
@@ -24,7 +24,12 @@
 <div class="flex gap-1 w-full h-full bg-neutral-800 p-1">
   <div class="flex flex-col w-1/5 bg-neutral-900 rounded-l-md rounded-r-sm p-1">
     {#each items as item (item)}
-      <ContentBrowserListFolder {item} select={(ids) => (selected = ids)} bind:selected />
+      <ContentBrowserList
+        {item}
+        select={(ids) => (selected = ids)}
+        bind:selected
+        onlyFolder={true}
+      />
     {/each}
   </div>
   <div class="flex flex-col h-full w-full">

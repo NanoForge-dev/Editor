@@ -8,7 +8,15 @@
     direction: 'col',
     size: 70,
     children: [
-      { type: 'widget', size: 70, id: 'code-editor' },
+      {
+        type: 'panel',
+        direction: 'row',
+        size: 70,
+        children: [
+          { type: 'widget', size: 15, id: 'content-browser-lite' },
+          { type: 'widget', size: 85, id: 'code-editor' },
+        ],
+      },
       { type: 'widget', size: 30, id: 'output-log' },
     ],
   });

@@ -2,6 +2,7 @@ import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
 import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspectorWidget.svelte';
+import ContentBrowserLiteWidget from './ContentBrowser/ContentBrowserLiteWidget.svelte';
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
 import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
@@ -16,6 +17,10 @@ export const widgetsTypes: WidgetType[] = [
   {
     id: 'content-browser',
     component: ContentBrowserWidget,
+  },
+  {
+    id: 'content-browser-lite',
+    component: ContentBrowserLiteWidget,
   },
   {
     id: 'screen-view',
