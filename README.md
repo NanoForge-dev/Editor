@@ -1,17 +1,17 @@
 <div align="center">
-	<br />
-	<p>
-		<a href="https://github.com/NanoForge-dev"><img src="https://github.com/NanoForge-dev/Editor/blob/main/.github/logo.png" width="546" alt="NanoForge" /></a>
-	</p>
-	<br />
-	<p>
+    <br />
+    <p>
+        <a href="https://github.com/NanoForge-dev"><img src="https://github.com/NanoForge-dev/Editor/blob/main/.github/logo.png" width="546" alt="NanoForge" /></a>
+    </p>
+    <br />
+    <p>
         <a href="https://www.npmjs.com/package/@nanoforge-dev/editor"><img src="https://img.shields.io/npm/v/@nanoforge-dev/editor.svg?maxAge=3600" alt="npm version" /></a>
-		<a href="https://www.npmjs.com/package/@nanoforge-dev/editor"><img src="https://img.shields.io/npm/dt/@nanoforge-dev/editor.svg?maxAge=3600" alt="npm downloads" /></a>
-		<a href="https://github.com/NanoForge-dev/Editor/actions/workflows/tests.yml"><img src="https://github.com/NanoForge-dev/Editor/actions/workflows/tests.yml/badge.svg" alt="Tests status" /></a>
+        <a href="https://www.npmjs.com/package/@nanoforge-dev/editor"><img src="https://img.shields.io/npm/dt/@nanoforge-dev/editor.svg?maxAge=3600" alt="npm downloads" /></a>
+        <a href="https://github.com/NanoForge-dev/Editor/actions/workflows/tests.yml"><img src="https://github.com/NanoForge-dev/Editor/actions/workflows/tests.yml/badge.svg" alt="Tests status" /></a>
         <a href="https://github.com/NanoForge-dev/Editor/actions/workflows/push-docs.yml"><img src="https://github.com/NanoForge-dev/Editor/actions/workflows/push-docs.yml/badge.svg" alt="Documentation status" /></a>
         <a href="https://github.com/NanoForge-dev/Editor/commits/main/apps/client"><img src="https://img.shields.io/github/last-commit/NanoForge-dev/Editor.svg?logo=github&logoColor=ffffff&path=apps%2Fclient" alt="Last commit" /></a>
-    	<a href="https://github.com/NanoForge-dev/Editor/graphs/contributors"><img src="https://img.shields.io/github/contributors/NanoForge-dev/Editor.svg?maxAge=3600&logo=github&logoColor=fff&color=00c7be" alt="Contributors" /></a>
-	</p>
+        <a href="https://github.com/NanoForge-dev/Editor/graphs/contributors"><img src="https://img.shields.io/github/contributors/NanoForge-dev/Editor.svg?maxAge=3600&logo=github&logoColor=fff&color=00c7be" alt="Contributors" /></a>
+    </p>
 </div>
 
 ## About
