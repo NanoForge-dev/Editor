@@ -1,3 +1,2 @@
-pnpm lint-staged
-pnpm fix
-pnpm lint
+pnpm --no-install lint-staged
+pnpm format

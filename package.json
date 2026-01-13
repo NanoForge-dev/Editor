@@ -1,39 +1,62 @@
 {
-  "name": "@nanoforge/editor",
-  "version": "1.0.0",
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor",
+  "version": "0.0.0",
   "description": "NanoForge Editor",
-  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
-  "license": "UNLICENSED",
-  "contributors": [
-    "Bill",
-    "Exelo",
-    "Fexkoser",
-    "Tchips"
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor"
   ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Bill <timothe.jacquot@epitech.eu>",
+    "Exelo <exelo.corp@gmail.com>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Tchips <leo.outmizguine@epitech.eu>"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.html",
+  "module": "./dist/index.html",
+  "exports": {
+    "./package.json": "./package.json"
+  },
   "type": "module",
+  "directories": {
+    "lib": "src"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NanoForge-dev/Editor.git"
   },
-  "private": true,
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig tsconfig.app.json && tsc -p tsconfig.node.json",
-    "fix": "eslint . --fix && prettier --write .",
-    "lint": "eslint . && prettier --check .",
-    "prepare": "husky",
-    "taze": "taze major -w",
-    "lint-staged": "lint-staged"
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src",
+    "changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r . --include-path '.'",
+    "release": "cliff-jumper",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "monaco-editor": "0.55.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@eslint/js": "^9.23.0",
+    "@favware/cliff-jumper": "^6.0.0",
     "@iconify-json/ic": "^1.2.4",
     "@iconify-json/material-icon-theme": "^1.2.27",
     "@iconify-json/solar": "^1.2.4",
+    "@nanoforge-dev/actions": "^1.0.2",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@tsconfig/svelte": "^5.0.4",
@@ -43,6 +66,7 @@
     "@unocss/svelte-scoped": "66.1.0-beta.6",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
+    "eslint-formatter-pretty": "^7.0.0",
     "eslint-plugin-format": "^1.0.1",
     "eslint-plugin-prettier": "^5.2.3",
     "eslint-plugin-svelte": "^3.3.3",
@@ -57,20 +81,24 @@
     "svelte-check": "^4.1.4",
     "svelte-routing": "^2.13.0",
     "svelte-sonner": "^1.0.5",
-    "taze": "^19.0.2",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.27.0",
     "unocss": "66.1.0-beta.6",
     "vite": "6.3.4"
   },
   "packageManager": "pnpm@10.6.2",
-  "lint-staged": {
-    "**/*.{js,ts}": [
-      "eslint --fix",
-      "prettier --write"
-    ]
+  "engines": {
+    "node": "23.6.0"
   },
-  "dependencies": {
-    "monaco-editor": "0.55.1"
+  "publishConfig": {
+    "access": "public"
+  },
+  "lint-staged": {
+    "**/*.ts": [
+      "prettier --write"
+    ],
+    "src/**/*.ts": [
+      "eslint --fix"
+    ]
   }
 }
