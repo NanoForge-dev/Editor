@@ -9,13 +9,13 @@ import svelteConfig from './svelte.config.js';
 export default [
   { files: ['src/**/*.{ts}'] },
   { languageOptions: { globals: globals.browser } },
-  { ignores: ['commitlint.config.cjs'] },
 
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.strict,
   eslintConfigPrettier,
   ...svelte.configs.recommended,
+  ...svelte.configs.prettier,
 
   {
     files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

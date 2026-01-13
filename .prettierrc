@@ -4,7 +4,7 @@
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
   "importOrderParserPlugins": ["typescript", "decorators-legacy"],
-  "importOrder": ["^~/(.*)$", "^[./]"],
+  "importOrder": ["^$app/(.*)$", "^lib/(.*)$", "^~/(.*)$", "^[./]"],
   "useTabs": false,
   "singleQuote": true,
   "trailingComma": "all",

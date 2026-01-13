@@ -228,6 +228,7 @@ dist
 # website: https://kit.svelte.dev/
 
 .svelte-kit/
+test-results/
 package
 
 public/
