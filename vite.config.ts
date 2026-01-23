@@ -40,5 +40,12 @@ export default defineConfig({
         },
       },
     ],
+    coverage: {
+      enabled: true,
+      reporter: ['text', 'lcov', 'cobertura'],
+      provider: 'v8',
+      include: ['src/**/*.{ts,svelte}'],
+      exclude: ['**/*.{interface,type,d}.ts', '**/{interfaces,types}/*.ts', '**/index.{js,ts}'],
+    },
   },
 });

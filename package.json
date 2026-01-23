@@ -72,6 +72,7 @@
     "@unocss/preset-web-fonts": "catalog:css",
     "@unocss/preset-wind4": "catalog:css",
     "@vitest/browser-playwright": "catalog:test",
+    "@vitest/coverage-v8": "catalog:test",
     "eslint": "catalog:lint",
     "eslint-plugin-svelte": "catalog:lint",
     "flowbite": "catalog:components",
