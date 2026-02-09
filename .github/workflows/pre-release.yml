@@ -1,8 +1,12 @@
-name: Release
+name: Pre-Release
 
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'New version of the package (leave empty for auto generated version)'
+        type: string
+        required: false
       dry_run:
         description: Perform a dry run?
         type: boolean
@@ -10,24 +14,28 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  npm-publish:
-    name: npm publish
+  create-release-pr:
+    name: Create release pr
     runs-on: ubuntu-latest
     if: github.repository_owner == 'NanoForge-dev'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Prepare
         uses: ./.github/actions/prepare
 
       - name: Release packages
-        uses: ./node_modules/@nanoforge-dev/actions/dist/release-packages
+        uses: ./node_modules/@nanoforge-dev/actions/dist/create-release-pr
         with:
           package: '@nanoforge-dev/editor'
+          version: ${{ inputs.version }}
           dry: ${{ inputs.dry_run }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
