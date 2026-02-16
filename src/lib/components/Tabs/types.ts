@@ -12,6 +12,7 @@ export interface TabType {
 export interface Tab {
   type: TabType;
   title: string;
+  filePath?: string;
 }
 
 export const tabTypes: TabType[] = [

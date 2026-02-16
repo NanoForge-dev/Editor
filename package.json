@@ -67,6 +67,7 @@
     "@sveltejs/vite-plugin-svelte": "catalog:core",
     "@trivago/prettier-plugin-sort-imports": "catalog:lint",
     "@tsconfig/svelte": "catalog:build",
+    "@types/file-saver": "^2.0.7",
     "@unocss/extractor-svelte": "catalog:css",
     "@unocss/preset-icons": "catalog:css",
     "@unocss/preset-web-fonts": "catalog:css",
@@ -110,6 +111,9 @@
     ]
   },
   "dependencies": {
-    "svelte-kit-sessions": "catalog:core"
+    "svelte-kit-sessions": "catalog:core",
+    "file-saver": "^2.0.5",
+    "idb": "^8.0.3",
+    "jszip": "^3.10.1"
   }
 }

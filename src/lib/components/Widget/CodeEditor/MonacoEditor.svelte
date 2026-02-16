@@ -1,14 +1,21 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { initDB, loadFile, saveFile } from '../../Utils/fileSystem';
 
-  import { codeExample } from '../../demo/code-example';
+  interface Props {
+    filename: string;
+  }
+  let { filename = 'systems.ts' }: Props = $props();
 
-  let value = codeExample;
+  let value = '';
 
   let container: HTMLDivElement;
   let editor: any;
 
   onMount(async () => {
+    await initDB();
+    value = await loadFile(filename);
+
     const monaco = await import('monaco-editor');
 
     editor = monaco.editor.create(container, {
@@ -30,6 +37,10 @@
       automaticLayout: true,
       tabSize: 2,
       fontSize: 14,
+    });
+
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      saveFile(filename, value);
     });
 
     editor.onDidChangeModelContent(() => {
