@@ -1,12 +1,13 @@
 <script>
   import MenuButton from './MenuButton.svelte';
   import MenuItem from './MenuItem.svelte';
+  import { exportToZip } from '$lib/components/Utils/fileSystem.js';
 </script>
 
 <div class="w-full flex">
   <MenuButton title="File">
     <MenuItem icon="i-solar-cloud-download-bold-duotone">Save</MenuItem>
-    <MenuItem icon="i-solar-file-send-bold-duotone">Export</MenuItem>
+    <MenuItem icon="i-solar-file-send-bold-duotone" onClick={() => exportToZip()}>Export</MenuItem>
     <MenuItem icon="i-solar-exit-bold-duotone">Exit</MenuItem>
   </MenuButton>
   <MenuButton title="Edit">

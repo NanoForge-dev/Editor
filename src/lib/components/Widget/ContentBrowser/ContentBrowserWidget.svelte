@@ -3,8 +3,13 @@
   import ContentBrowserListFolder from './ContentBrowserListFolder.svelte';
   import ContentBrowserItemCard from './ContentBrowserItemCard.svelte';
   import { entities } from '../../demo/entities';
+  import { onMount } from 'svelte';
+  import { listFolderContents } from '$lib/components/Utils/fileSystem';
 
   let items = entities;
+  let contents:
+    | Array<{ name: string; type: 'file' | 'folder'; lastModified?: number }>
+    | undefined = $state();
   let selected: string[] = $state(['id1']);
 
   function findRecursive(items: ContentBrowserItem[], id: string): ContentBrowserItem | undefined {
@@ -18,7 +23,9 @@
     }
   }
 
-  let selectedContent = $derived(findRecursive(items, selected.at(-1) || ''));
+  onMount(async () => {
+    contents = await listFolderContents('/');
+  });
 </script>
 
 <div class="h-full w-full flex gap-1 bg-neutral-800 p-1">
@@ -41,12 +48,9 @@
       {/each}
     </div>
     <div class="h-full w-full flex gap-2 rounded-l-sm rounded-r-md bg-neutral-900 p-2">
-      {#if selectedContent && selectedContent.children}
-        {#each selectedContent.children as item (item)}
-          <ContentBrowserItemCard
-            {item}
-            select={item.type === 'folder' ? () => selected.push(item.id) : () => {}}
-          />
+      {#if contents}
+        {#each contents as content (content)}
+          <ContentBrowserItemCard item={content.name} />
         {/each}
       {/if}
     </div>

@@ -3,13 +3,10 @@
   import MenuBar from '$lib/components/Menu/MenuBar.svelte';
   import Logo from '$lib/assets/logo.png';
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
-  import { type Tab } from '$lib/components/Tabs/types';
-  import { tabsExample } from '$lib/components/demo/tabs';
+  import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
 
-  let tabs: Tab[] = $state(tabsExample);
-  let selected = $state(0);
-
-  const Component = $derived(tabs[selected].type.component);
+  const Component = $derived($tabsStore[$tabSelectedStore].type.component);
+  const filePath = $derived($tabsStore[$tabSelectedStore].filePath);
 </script>
 
 <div class="h-screen flex flex-col gap-1">
@@ -20,7 +17,7 @@
       </a>
       <div class="h-full w-full flex flex-col justify-between">
         <MenuBar />
-        <TabBar bind:tabs bind:selected />
+        <TabBar />
       </div>
     </div>
     <div class="h-full flex items-center py-2">
@@ -39,6 +36,6 @@
     </div>
   </header>
   <main class="h-full min-h-0 w-full flex-1 bg-neutral-900 p-2">
-    <Component />
+    <Component file={filePath} />
   </main>
 </div>
