@@ -1,6 +1,6 @@
 catalogs:
   build:
-    '@tsconfig/svelte': ^5.0.6
+    '@tsconfig/svelte': ^5.0.8
     typescript: ^5.9.3
   ci:
     '@commitlint/cli': ^20.3.1
