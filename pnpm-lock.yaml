@@ -101,8 +101,8 @@ catalogs:
       specifier: ^1.0.1
       version: 1.0.1
     '@nanoforge-dev/utils-prettier-config':
-      specifier: ^1.0.1
-      version: 1.0.1
+      specifier: ^1.0.2
+      version: 1.0.2
     '@trivago/prettier-plugin-sort-imports':
       specifier: ^6.0.2
       version: 6.0.2
@@ -180,7 +180,7 @@ importers:
         version: 1.0.1(@types/eslint@9.6.1)(eslint@9.39.2(jiti@2.6.1))(prettier@3.8.1)(typescript@5.9.3)
       '@nanoforge-dev/utils-prettier-config':
         specifier: catalog:lint
-        version: 1.0.1
+        version: 1.0.2
       '@playwright/test':
         specifier: catalog:test
         version: 1.57.0
@@ -734,9 +734,9 @@ packages:
     resolution: {integrity: sha512-fPRArAYlBQ/nm5mBatUKNeAjNkVwhL5njUKErJJHff52KCW7RIUDh8lJLM2oNVciY+fF9iWShW5tsqyYDRoUOg==}
     engines: {node: 24.11.0}
 
-  '@nanoforge-dev/utils-prettier-config@1.0.1':
-    resolution: {integrity: sha512-2OedhN7Tf0xiTVK8Izr4Ifxco8Et/w/2enFcd5Ac+ZQlI6Vxm7UGpLuaT54kn+FZpBsUkNJkQjJQLq94r+3pGQ==}
-    engines: {node: 24.11.0}
+  '@nanoforge-dev/utils-prettier-config@1.0.2':
+    resolution: {integrity: sha512-dTa2ixPJmWVD+L13Iuxx51JIm3gaX+gnRCe8jA0PFw0xjMjLYv+0ZgbWSSVlNmowp6fqpOzfPdWADkkPNQs8LQ==}
+    engines: {node: '25'}
 
   '@octokit/auth-token@4.0.0':
     resolution: {integrity: sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA==}
@@ -3660,7 +3660,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@nanoforge-dev/utils-prettier-config@1.0.1': {}
+  '@nanoforge-dev/utils-prettier-config@1.0.2': {}
 
   '@octokit/auth-token@4.0.0': {}
 
