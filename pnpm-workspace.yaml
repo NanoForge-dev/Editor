@@ -36,7 +36,7 @@ catalogs:
     '@iconify-json/solar': ^1.2.5
   lint:
     '@nanoforge-dev/utils-eslint-config': ^1.0.1
-    '@nanoforge-dev/utils-prettier-config': ^1.0.1
+    '@nanoforge-dev/utils-prettier-config': ^1.0.2
     '@trivago/prettier-plugin-sort-imports': ^6.0.2
     eslint: ^9.39.2
     eslint-plugin-svelte: ^3.15.0
