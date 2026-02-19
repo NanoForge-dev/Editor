@@ -3,7 +3,7 @@ catalogs:
     '@tsconfig/svelte': ^5.0.6
     typescript: ^5.9.3
   ci:
-    '@commitlint/cli': ^20.3.1
+    '@commitlint/cli': ^20.4.1
     '@commitlint/config-conventional': ^20.3.1
     '@favware/cliff-jumper': ^6.0.0
     '@nanoforge-dev/actions': ^1.1.0
