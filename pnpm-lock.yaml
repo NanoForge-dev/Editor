@@ -7,8 +7,8 @@ settings:
 catalogs:
   build:
     '@tsconfig/svelte':
-      specifier: ^5.0.6
-      version: 5.0.6
+      specifier: ^5.0.8
+      version: 5.0.8
     typescript:
       specifier: ^5.9.3
       version: 5.9.3
@@ -198,7 +198,7 @@ importers:
         version: 6.0.2(prettier-plugin-svelte@3.4.1(prettier@3.8.1)(svelte@5.48.0))(prettier@3.8.1)(svelte@5.48.0)
       '@tsconfig/svelte':
         specifier: catalog:build
-        version: 5.0.6
+        version: 5.0.8
       '@unocss/extractor-svelte':
         specifier: catalog:css
         version: 66.6.0
@@ -1191,8 +1191,8 @@ packages:
       svelte:
         optional: true
 
-  '@tsconfig/svelte@5.0.6':
-    resolution: {integrity: sha512-yGxYL0I9eETH1/DR9qVJey4DAsCdeau4a9wYPKuXfEhm8lFO8wg+LLYJjIpAm6Fw7HSlhepPhYPDop75485yWQ==}
+  '@tsconfig/svelte@5.0.8':
+    resolution: {integrity: sha512-UkNnw1/oFEfecR8ypyHIQuWYdkPvHiwcQ78sh+ymIiYoF+uc5H1UBetbjyqT+vgGJ3qQN6nhucJviX6HesWtKQ==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -3994,7 +3994,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@tsconfig/svelte@5.0.6': {}
+  '@tsconfig/svelte@5.0.8': {}
 
   '@types/chai@5.2.3':
     dependencies:
