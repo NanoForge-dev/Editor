@@ -10,5 +10,6 @@ export default {
   },
   kit: {
     adapter: adapter(),
+    alias: { '@utils/*': './src/utils/*' },
   },
 };

@@ -1,4 +1,4 @@
-import { type HttpClient, type RequestOptions } from '../../../../utils/http-client';
+import { type HttpClient, type RequestOptions } from '@utils/http';
 
 export class BaseRepository {
   private readonly _client: HttpClient;

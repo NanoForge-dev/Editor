@@ -1,4 +1,5 @@
-import { type FileSystemFile } from '../../../utils/file-system';
+import { type FileSystemFile } from '@utils/file-system';
+
 import type { ISave } from './save.type';
 
 export class SaveHandler {
@@ -21,7 +22,7 @@ export class SaveHandler {
 
   enableAutoSave(): void {
     if (this._autoSaveStatus !== null) return;
-    this._autoSaveStatus = setInterval(async () => {
+    this._autoSaveStatus = window.setInterval(async () => {
       await this.save();
     }, this._autoSaveInterval);
   }

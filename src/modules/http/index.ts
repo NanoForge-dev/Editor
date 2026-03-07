@@ -1,2 +1,2 @@
-export { type RequestOptions } from '../../utils/http-client';
+export { type RequestOptions } from '@utils/http';
 export * from './api';

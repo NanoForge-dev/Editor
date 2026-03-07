@@ -1,6 +1,5 @@
+import type { MiddlewareNext, MiddlewareParams } from '@utils/http';
 import { toast } from 'svelte-sonner';
-
-import type { MiddlewareNext, MiddlewareParams } from '../../../utils/http-client';
 
 export const LoggerMiddleware = async (params: MiddlewareParams, next: MiddlewareNext) => {
   const res = await next(params);

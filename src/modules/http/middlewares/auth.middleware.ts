@@ -1,5 +1,6 @@
+import type { MiddlewareNext, MiddlewareParams } from '@utils/http';
+
 import { authStore } from '../../../stores/auth.store';
-import type { MiddlewareNext, MiddlewareParams } from '../../../utils/http-client';
 
 let accessToken: string | null = null;
 

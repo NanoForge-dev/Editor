@@ -23,7 +23,6 @@ export default [
   },
   {
     rules: {
-      'no-console': 'error',
       'svelte/no-unused-svelte-ignore': 'off',
     },
   },

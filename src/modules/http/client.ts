@@ -1,4 +1,5 @@
-import { HttpClient } from '../../utils/http-client';
+import { HttpClient } from '@utils/http';
+
 import { AuthMiddleware } from './middlewares/auth.middleware';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 
