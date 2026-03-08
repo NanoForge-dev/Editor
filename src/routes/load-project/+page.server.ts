@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { redirect } from '@sveltejs/kit';
-import { authGuard } from '@utils/server-api';
+import { authGuard } from '@utils-server/server-api';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -19,14 +19,9 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     if (!env.API_URL) {
       throw new Error('Missing API_URL');
     }
-    const accessToken = cookies.get('accessToken');
-
-    if (accessToken === undefined || accessToken.length === 0) {
-      return { success: false, errorMsg: 'Unauthorized access' };
-    }
 
     const serverProjectPath = await authGuard(async (httpClient) => {
-      return await httpClient.post(`/editor/projects/${projectId}`);
+      return await httpClient.post(`${env.API_URL}/editor/projects/${projectId}`);
     }, cookies);
     if (serverProjectPath.status !== 200) {
       return { success: false, errorMsg: 'Cannot retrieve project from API' };

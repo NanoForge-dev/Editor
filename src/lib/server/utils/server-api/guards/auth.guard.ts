@@ -1,7 +1,7 @@
 import { type Cookies, json } from '@sveltejs/kit';
-import type { Repository } from '@utils/server-api';
 
 import { serverApi, withAuth } from '../clients';
+import type { Repository } from '../index';
 import type { RefreshTokenInput, Token } from '../types';
 import { setTokensInCookies } from '../utils';
 import { errorGuard } from './error.guard';

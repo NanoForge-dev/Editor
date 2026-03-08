@@ -3,4 +3,4 @@ export {
   type MiddlewareNext,
   type MiddlewareParams,
   type RequestOptions,
-} from './client';
+} from '../../server/client';

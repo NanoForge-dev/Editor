@@ -10,6 +10,10 @@ export default {
   },
   kit: {
     adapter: adapter(),
-    alias: { '@utils/*': './src/utils/*' },
+    alias: {
+      '@utils/*': './src/lib/utils/*',
+      '@utils-client/*': './src/lib/utils-client/*',
+      '@utils-server/*': './src/lib/server/utils/*',
+    },
   },
 };

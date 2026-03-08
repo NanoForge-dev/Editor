@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { load } from './routes/loadProject/+page.server';
+import { load } from './+page.server';
 
 describe('load', () => {
   it('local project load and session cookie set', async () => {
