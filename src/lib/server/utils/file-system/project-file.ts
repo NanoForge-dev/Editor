@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { FileSystemError } from '@utils-server/file-system/file-system-error';
-=======
-import { FileSystemError } from '@utils-server/file-system/fileSystemError';
->>>>>>> 3ed1389 (fix(back): fs naming convention)
 import fs from 'node:fs';
 import path from 'node:path';
 
