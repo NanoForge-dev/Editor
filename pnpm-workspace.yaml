@@ -21,6 +21,7 @@ catalogs:
     svelte: ^5.48.0
     svelte-check: ^4.3.5
     vite: ^7.3.1
+    svelte-kit-sessions: "^0.4.0"
   css:
     '@alexanderniebuhr/prettier-plugin-unocss': ^0.0.4
     '@unocss/extractor-svelte': ^66.6.3

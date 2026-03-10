@@ -1,5 +1,25 @@
+import { env } from '$env/dynamic/private';
 import { paraglideMiddleware } from '$lib/paraglide/server';
-import type { Handle } from '@sveltejs/kit';
+import { type Handle, redirect } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
+import * as crypto from 'node:crypto';
+import { sveltekitSessionHandle } from 'svelte-kit-sessions';
+
+if (!env.SESSION_SECRET) {
+  env.SESSION_SECRET = crypto.randomBytes(20).toString('hex');
+  console.log(`SESSION_SECRET not found, generating a temporary one: ${env.SESSION_SECRET}`);
+}
+
+const sessionHandle = sveltekitSessionHandle({
+  secret: env.SESSION_SECRET,
+});
+
+const checkAuthorizationHandle: Handle = async ({ event, resolve }) => {
+  if (!event.locals.session.data.path && event.url.pathname !== '/load-project') {
+    throw redirect(302, '/load-project');
+  }
+  return resolve(event);
+};
 
 const handleParaglide: Handle = ({ event, resolve }) =>
   paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -10,4 +30,4 @@ const handleParaglide: Handle = ({ event, resolve }) =>
     });
   });
 
-export const handle: Handle = handleParaglide;
+export const handle: Handle = sequence(sessionHandle, handleParaglide, checkAuthorizationHandle);

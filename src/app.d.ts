@@ -10,4 +10,10 @@ declare global {
   }
 }
 
+declare module 'svelte-kit-sessions' {
+  interface SessionData {
+    path: string;
+  }
+}
+
 export {};
