@@ -27,7 +27,7 @@ catalogs:
     '@unocss/extractor-svelte': ^66.6.3
     '@unocss/preset-icons': ^66.6.0
     '@unocss/preset-web-fonts': ^66.6.0
-    '@unocss/preset-wind4': ^66.6.0
+    '@unocss/preset-wind4': ^66.6.6
     unocss: ^66.6.0
   i18n:
     '@inlang/paraglide-js': ^2.9.1
