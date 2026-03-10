@@ -13,7 +13,7 @@ catalogs:
     flowbite: ^4.0.1
     flowbite-svelte: ^1.31.0
     monaco-editor: ^0.55.1
-    svelte-sonner: ^1.0.7
+    svelte-sonner: ^1.1.0
   core:
     '@sveltejs/adapter-auto': ^7.0.1
     '@sveltejs/kit': ^2.53.4
