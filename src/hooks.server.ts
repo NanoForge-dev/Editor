@@ -15,7 +15,11 @@ const sessionHandle = sveltekitSessionHandle({
 });
 
 const checkAuthorizationHandle: Handle = async ({ event, resolve }) => {
-  if (!event.locals.session.data.path && event.url.pathname !== '/load-project') {
+  if (
+    !event.locals.session.data.path &&
+    event.url.pathname !== '/load-project' &&
+    event.url.pathname + event.url.search !== '/cli?/createProject'
+  ) {
     throw redirect(302, '/load-project');
   }
   return resolve(event);
