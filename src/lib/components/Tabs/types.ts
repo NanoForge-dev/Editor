@@ -6,13 +6,14 @@ import MainTab from './MainTab/MainTab.svelte';
 export interface TabType {
   name: string;
   icon: string;
-  component: Component;
+  component: Component<{ tab: Tab }>;
 }
 
 export interface Tab {
   type: TabType;
   title: string;
   filePath?: string;
+  content?: string;
 }
 
 export const tabTypes: TabType[] = [

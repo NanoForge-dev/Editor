@@ -1,12 +1,38 @@
-<script>
+<script lang="ts">
   import MenuButton from './MenuButton.svelte';
   import MenuItem from './MenuItem.svelte';
-  import { exportToZip } from '$lib/components/Utils/fileSystem.js';
+  import { exportToZip, importFromZip } from '$lib/components/Utils/zip';
+
+  let fileInput: HTMLInputElement;
+
+  async function handleImportClick() {
+    fileInput.click();
+  }
+
+  async function handleFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith('.zip')) return;
+
+    await importFromZip(file);
+    input.value = '';
+  }
 </script>
 
 <div class="w-full flex">
   <MenuButton title="File">
     <MenuItem icon="i-solar-cloud-download-bold-duotone">Save</MenuItem>
+    <MenuItem onClick={handleImportClick}>
+      Import
+      <input
+        type="file"
+        accept=".zip"
+        bind:this={fileInput}
+        class="hidden"
+        on:change={handleFileChange}
+      />
+    </MenuItem>
     <MenuItem icon="i-solar-file-send-bold-duotone" onClick={() => exportToZip()}>Export</MenuItem>
     <MenuItem icon="i-solar-exit-bold-duotone">Exit</MenuItem>
   </MenuButton>

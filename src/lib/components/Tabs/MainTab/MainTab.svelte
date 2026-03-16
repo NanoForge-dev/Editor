@@ -2,6 +2,12 @@
   import type { LayoutItem } from '../../Panel/types';
   import Layout from '../../Panel/Layout.svelte';
   import { cloneLayout } from '../../Panel/utils';
+  import type { Tab } from '$lib/components/Tabs/types';
+
+  interface Props {
+    tab: Tab;
+  }
+  let { tab = $bindable() }: Props = $props();
 
   let layout: LayoutItem = $state({
     type: 'panel',
