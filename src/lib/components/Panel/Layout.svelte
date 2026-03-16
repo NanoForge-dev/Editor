@@ -5,14 +5,16 @@
   import type { LayoutItem } from './types';
   import { isWidget, isPanel } from './utils';
   import Self from './Layout.svelte';
+  import type { Tab } from '$lib/components/Tabs/types';
 
   interface Props {
     layout: LayoutItem;
     onLayoutChange?: (newLayout: LayoutItem) => void;
     path?: number[];
+    tab: Tab;
   }
 
-  let { layout, onLayoutChange, path = [] }: Props = $props();
+  let { layout, onLayoutChange, path = [], tab = $bindable() }: Props = $props();
 
   let dragStartSizes = $state(new Map<string, number>());
 
@@ -94,7 +96,7 @@
 </script>
 
 {#if isWidget(layout)}
-  <Widget size={layout.size} id={layout.id} />
+  <Widget size={layout.size} id={layout.id} bind:tab />
 {:else if isPanel(layout)}
   <Panel direction={layout.direction} size={layout.size}>
     {#each layout.children as child, index (index)}
@@ -102,6 +104,7 @@
         layout={child}
         onLayoutChange={handleChildLayoutChange(index)}
         path={[...path, index]}
+        bind:tab
       />
 
       {#if index < layout.children.length - 1}

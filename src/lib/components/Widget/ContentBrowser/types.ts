@@ -1,5 +1,7 @@
 import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
+import { workingFileStore } from '$lib/components/Stores/workingFile';
 import { tabTypes } from '$lib/components/Tabs/types';
+import { get } from 'svelte/store';
 
 export interface ContentBrowserItem {
   id: string;
@@ -22,13 +24,16 @@ export const contentBrowserItemType: ContentBrowserItemType[] = [
     suffix: '.ts',
     icon: 'i-material-icon-theme-typescript',
     onClickEvent: (filePath: string) => {
+      workingFileStore.set(filePath);
       tabsStore.update((tabs) => [
         ...tabs,
         { type: tabTypes[1], title: filePath.split('/').pop() || filePath, filePath },
       ]);
-      tabSelectedStore.update((tabSelected) => tabSelected + 1);
+      tabSelectedStore.set(get(tabsStore).length - 1);
     },
   },
   { type: 'fbx', suffix: '.fbx', icon: 'i-material-icon-theme-3d' },
   { type: 'song', suffix: '.mp3', icon: 'i-material-icon-theme-lyric' },
+  { type: 'json', suffix: '.json', icon: 'i-material-icon-theme-json' },
+  { type: 'git', suffix: '.gitignore', icon: 'i-material-icon-theme-git' },
 ];

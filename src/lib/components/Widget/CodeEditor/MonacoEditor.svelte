@@ -1,25 +1,21 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { initDB, loadFile, saveFile } from '../../Utils/fileSystem';
+  import { saveFile } from '../../Storage/fileSystem';
+  import type { Tab } from '$lib/components/Tabs/types';
 
   interface Props {
-    filename: string;
+    tab: Tab;
   }
-  let { filename = 'systems.ts' }: Props = $props();
-
-  let value = '';
+  let { tab = $bindable() }: Props = $props();
 
   let container: HTMLDivElement;
   let editor: any;
 
   onMount(async () => {
-    await initDB();
-    value = await loadFile(filename);
-
     const monaco = await import('monaco-editor');
 
     editor = monaco.editor.create(container, {
-      value,
+      value: tab.content,
       language: 'typescript',
       theme: 'vs-dark',
       readOnly: false,
@@ -40,11 +36,14 @@
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      saveFile(filename, value);
+      if (tab.filePath && tab.content) saveFile(tab.filePath, tab.content);
     });
 
     editor.onDidChangeModelContent(() => {
-      value = editor.getValue();
+      const newValue = editor.getValue();
+      if (newValue !== tab.content) {
+        tab.content = newValue;
+      }
     });
   });
 
