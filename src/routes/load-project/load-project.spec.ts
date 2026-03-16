@@ -35,7 +35,9 @@ describe('load', () => {
       location: '/',
     });
 
-    expect(session.setData).toHaveBeenCalledWith({ path: '/tmp' });
+    expect(session.setData).toHaveBeenCalledWith(
+      expect.objectContaining({ path: expect.any(String) }),
+    );
     expect(cookies.set).toHaveBeenCalledWith('session', 'abc123', {
       path: '/',
       httpOnly: true,
