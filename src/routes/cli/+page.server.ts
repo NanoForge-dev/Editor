@@ -45,11 +45,58 @@ export const actions = {
     }
   },
 
-  startProject: async ({ locals }) => {
+  startDevProject: async ({ locals }) => {
     try {
-      new CliInterface(locals.session.data.path).startProject();
+      const childProcess = new CliInterface(locals.session.data.path).startDevProject(
+        locals.session?.data?.projectPid || -1,
+      );
+      const session = locals.session;
+
+      session.data.projectPid = childProcess;
+      await session.save();
+
       return {
         success: true,
+      };
+    } catch (e: unknown) {
+      if (e instanceof CliError) {
+        return fail(403, { success: false, errorMsg: e.message });
+      }
+      throw e;
+    }
+  },
+
+  stopProject: async ({ locals }) => {
+    try {
+      if (!locals.session.data.projectPid) {
+        throw new CliError('Project not running');
+      }
+      new CliInterface(locals.session.data.path).stopProject(locals.session.data.projectPid);
+      locals.session.data.projectPid = -1;
+      return {
+        success: true,
+      };
+    } catch (e: unknown) {
+      if (e instanceof CliError) {
+        return fail(403, { success: false, errorMsg: e.message });
+      }
+      throw e;
+    }
+  },
+
+  isProjectRunning: async ({ locals }) => {
+    try {
+      if (!locals.session.data.projectPid) {
+        return {
+          success: true,
+          projectRunning: false,
+        };
+      }
+      return {
+        success: true,
+        projectRunning: new CliInterface(locals.session.data.path).isProjectRunning(
+          locals.session.data.projectPid,
+        ),
       };
     } catch (e: unknown) {
       if (e instanceof CliError) {
