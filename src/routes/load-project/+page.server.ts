@@ -28,7 +28,15 @@ export const load: PageServerLoad = async ({ url, cookies, locals }) => {
     }
     absoluteProjectPath = (await serverProjectPath.json())['projectPath'];
   } else {
-    return { success: false, errorMsg: 'No project provided' };
+    return {
+      success: false,
+      creationPanel: env.API_URL ? 'api' : 'local',
+      errorMsg: `No project provided: ${
+        env.API_URL
+          ? 'Go back to the NanoForge project manager to access a project'
+          : 'Select or create a local project'
+      }`,
+    };
   }
 
   try {
