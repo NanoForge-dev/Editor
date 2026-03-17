@@ -1,4 +1,4 @@
-import { getDB } from '$lib/components/Storage/db';
+import { getDB } from '$lib/components/Utils/Storage/db';
 
 export interface File {
   id: string;
