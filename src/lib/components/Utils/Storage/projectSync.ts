@@ -1,7 +1,22 @@
-import { clearDB } from '$lib/components/Utils/Storage/db';
-import { listFiles, loadFile, saveFile } from '$lib/components/Utils/Storage/fileSystem';
+import { listFiles, loadFile } from '$lib/components/Utils/Storage/fileSystem';
 
-export async function loadRemoteProject() {
+export async function createProject(formData: FormData) {
+  await fetch('/cli?/createProject', {
+    method: 'POST',
+    body: JSON.stringify({
+      projectPath: formData.get('projectPath'),
+      projectName: formData.get('projectName'),
+      packageManager: formData.get('packageManager'),
+      language: formData.get('language'),
+      strictTypeChecking: formData.get('strictTypeChecking') ?? false,
+      multiplayerServer: formData.get('multiplayerServer') ?? false,
+      skipDependencyInstallation: formData.get('skipDependencyInstallation') ?? false,
+      dockerContainerization: formData.get('dockerContainerization') ?? false,
+    }),
+  });
+}
+
+/*export async function loadRemoteProject() {
   const response = await fetch('/fs?/=readDirRec', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -28,11 +43,9 @@ export async function loadRemoteProject() {
       }
     }
   }
-}
+}*/
 
 export async function pushLocalProject() {
-  console.log('🔄 Push projet vers serveur distant...');
-
   const localFiles = await listFiles();
 
   const pushPromises = localFiles.map(async (file) => {

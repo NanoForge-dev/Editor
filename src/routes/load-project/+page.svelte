@@ -3,14 +3,6 @@
   import Logo from '$lib/assets/logo.png';
   import { clearDB } from '$lib/components/Utils/Storage/db';
 
-  async function createProject() {
-    await clearDB();
-    if (projectName.trim()) {
-      window.location.href = `/load-project?projectPath=${encodeURIComponent(projectName)}`;
-      showPopup = false;
-    }
-  }
-
   export function importProject() {
     clearDB();
   }
@@ -29,7 +21,7 @@
   }
 
   let showPopup: boolean = $state(false);
-  let projectName: string = $state('');
+  let showAdvancedSettings: boolean = $state(false);
 </script>
 
 <div class="min-h-screen w-full flex flex-col gap-1">
@@ -41,8 +33,10 @@
     </div>
   </header>
   <main class="flex-1 flex items-center justify-center px-4">
-    <div class="w-full max-w-sm md:max-w-md lg:max-w-lg bg-black p-8 rounded-xl shadow flex">
-      <div class="flex flex-col gap-4 items-center justify-center">
+    <div
+      class="w-full max-w-sm md:max-w-md lg:max-w-lg bg-black outline outline-neutral-800 p-8 rounded-xl shadow flex"
+    >
+      <div class="flex flex-col gap-4 items-center justify-center px-6">
         <button
           onclick={() => (showPopup = !showPopup)}
           onkeydown={handlePopupToggle}
@@ -55,8 +49,8 @@
         >
       </div>
       <div class="w-2px rounded-xl bg-neutral-900 mx-4 hidden md:block"></div>
-      <div class="h-98 flex w-full flex-col">
-        <div class="h-full w-full flex items-center justify-center text-neutral-300 text-sm">
+      <div class="h-98 flex w-1/2 mx-6 flex-col items-center">
+        <div class="h-full w-fit flex items-center justify-center text-neutral-300 text-sm">
           <span>No project created</span>
         </div>
       </div>
@@ -64,46 +58,143 @@
   </main>
 </div>
 
-<button
+<div
+  aria-hidden="true"
   class={showPopup
     ? 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
     : 'hidden'}
-  type="button"
   onclick={(e) => e.target === e.currentTarget && (showPopup = false)}
   onkeydown={handleClose}
 >
-  <span
-    class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl"
-    role="dialog"
-    aria-modal="true"
+  <form
+    class="bg-black outline outline-neutral-900 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col"
     aria-labelledby="project-title"
+    onsubmit={(e) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      fetch('/cli?/createProject', {
+        method: 'POST',
+        body: JSON.stringify({
+          projectPath: formData.get('projectPath'),
+          projectName: formData.get('projectName'),
+          packageManager: formData.get('packageManager'),
+          language: formData.get('language'),
+          strictTypeChecking: formData.get('strictTypeChecking') ?? false,
+          multiplayerServer: formData.get('multiplayerServer') ?? false,
+          skipDependencyInstallation: formData.get('skipDependencyInstallation') ?? false,
+          dockerContainerization: formData.get('dockerContainerization') ?? false,
+        }),
+      });
+    }}
   >
-    <span id="project-title" class="text-xl font-bold mb-4">Nouveau projet</span>
-
-    <!-- Input -->
-    <span class="mb-4">
-      <span class="block text-sm font-medium mb-2">Nom du projet</span>
+    <span id="project-title" class="text-2xl font-bold mb-8 text-center">New project</span>
+    <span class="mb-4 flex gap-4 items-end">
+      <span class="block text-sm mb-1 text-neutral-300 w-1/2">Project Name</span>
       <input
-        bind:value={projectName}
-        class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="Mon super projet"
+        name="projectName"
+        class="w-1/2 rounded-lg px-3 py-2 outline outline-neutral-800 text-sm"
+        placeholder="Project name"
       />
     </span>
-
-    <!-- Boutons avec type="button" -->
-    <span class="flex gap-3 justify-end">
-      <span
-        onclick={() => (showPopup = false)}
-        class="px-4 py-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+    <span class="mb-4 flex gap-4 items-end">
+      <span class="block text-sm mb-1 text-neutral-300 w-1/2">Project local path</span>
+      <input
+        name="projectPath"
+        class="w-1/2 rounded-lg px-3 py-2 outline outline-neutral-800 text-sm"
+        placeholder="Project path"
+      />
+    </span>
+    <div class="flex w-full justify-center my-4">
+      <button
+        class="text-sm w-fit font-semibold mb-4 cursor-pointer hover:text-neutral-300"
+        onclick={() => (showAdvancedSettings = !showAdvancedSettings)}
       >
-        Annuler
+        <span>Advanced settings</span>
+        <span
+          class={showAdvancedSettings
+            ? 'i-ic-baseline-arrow-drop-up'
+            : 'i-ic-baseline-arrow-drop-down'}
+        ></span>
+      </button>
+    </div>
+    {#if showAdvancedSettings}
+      <span class="mb-4 flex gap-4 items-end">
+        <label for="packageManagerId" class="block text-sm mb-1 text-neutral-300 w-1/2"
+          >Package manager</label
+        >
+        <select
+          name="packageManager"
+          id="packageManagerId"
+          class="bg-neutral-900 px-3 py-2 rounded-md cursor-pointer w-1/2"
+        >
+          <option value="npm">npm</option>
+          <option value="yarn">yarn</option>
+          <option value="pnpm">pnpm</option>
+          <option value="bun">bun</option>
+        </select>
       </span>
-      <span
-        onclick={createProject}
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+      <span class="mb-4 flex gap-4 items-end">
+        <label for="languageId" class="block text-sm mb-1 text-neutral-300 w-1/2"
+          >Package manager</label
+        >
+        <select
+          name="language"
+          id="languageId"
+          class="bg-neutral-900 px-3 py-2 rounded-md cursor-pointer w-1/2"
+        >
+          <option value="js">JS</option>
+          <option value="ts">TS</option>
+        </select>
+      </span>
+      <span class="mb-4 flex gap-4 items-end h-fit">
+        <label for="strictTypeCheckingId" class="block text-sm text-neutral-300 w-1/2"
+          >Strict Type Checking</label
+        >
+        <input type="checkbox" name="strictTypeChecking" value="true" id="strictTypeCheckingId" />
+      </span>
+      <span class="mb-4 flex gap-4 items-end h-fit">
+        <label for="multiplayerServerId" class="block text-sm text-neutral-300 w-1/2"
+          >Strict Multiplayer Server</label
+        >
+        <input type="checkbox" name="multiplayerServer" value="true" id="multiplayerServerId" />
+      </span>
+      <span class="mb-4 flex gap-4 items-end h-fit">
+        <label for="skipDependencyInstallationId" class="block text-sm text-neutral-300 w-1/2"
+          >Skip Dependency Installation</label
+        >
+        <input
+          type="checkbox"
+          name="skipDependencyInstallation"
+          value="true"
+          id="skipDependencyInstallationId"
+        />
+      </span>
+      <span class="mb-4 flex gap-4 items-end h-fit">
+        <label for="dockerContainerizationId" class="block text-sm text-neutral-300 w-1/2"
+          >Docker containerization</label
+        >
+        <input
+          type="checkbox"
+          name="dockerContainerization"
+          value="true"
+          id="dockerContainerizationId"
+        />
+      </span>
+    {/if}
+
+    <div class="flex gap-3 justify-end mt-4">
+      <button
+        onclick={() => (showPopup = false)}
+        class="px-4 py-2 text-neutral-200 hover:text-neutral-400 focus:outline-none focus:ring-2 cursor-pointer"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="bg-purple-800 text-white px-4 py-2 rounded-lg hover:bg-purple-900 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         Créer
-      </span>
-    </span>
-  </span>
-</button>
+      </button>
+    </div>
+  </form>
+</div>
