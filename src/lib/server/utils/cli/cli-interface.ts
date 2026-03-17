@@ -1,7 +1,6 @@
 import { env } from '$env/dynamic/private';
 import { CliError } from '@utils-server/cli/cli-error';
 import child_process from 'node:child_process';
-import treeKill from 'tree-kill';
 
 export class CliInterface {
   private readonly projectPath: string;
@@ -48,7 +47,7 @@ export class CliInterface {
     if (!this.isProjectRunning(pid)) {
       throw new CliError('Project not running');
     }
-    treeKill(pid, 'SIGTERM');
+    process.kill(pid, 'SIGTERM');
   }
 
   isProjectRunning(pid: number): boolean {
@@ -62,12 +61,12 @@ export class CliInterface {
 
   private runCliSync(params: string[]) {
     const res = child_process.spawnSync(env.NF_CLI_PATH, params);
-    console.log(res.stdout.toString());
-    console.error(res.stderr.toString());
     if (res.status === null) {
       throw new CliError(`Executable ${env.NF_CLI_PATH} cannot be found or executed`);
     }
     if (res.status !== 0) {
+      console.log(res.stdout.toString());
+      console.error(res.stderr.toString());
       throw new CliError(res.stderr.toString());
     }
   }
@@ -87,9 +86,9 @@ export class CliInterface {
       throw new CliError(res.stderr.toString());
     });
     res.on('exit', (code) => {
-      console.log(res.stdout.read()?.toString());
-      console.log(res.stderr.read()?.toString());
       if (code !== 0 && code !== null) {
+        console.log(res.stdout.read()?.toString());
+        console.log(res.stderr.read()?.toString());
         throw new CliError(`Process exited with code ${code}`);
       }
     });

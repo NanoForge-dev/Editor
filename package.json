@@ -110,7 +110,6 @@
     ]
   },
   "dependencies": {
-    "svelte-kit-sessions": "catalog:core",
-    "tree-kill": "catalog:core"
+    "svelte-kit-sessions": "catalog:core"
   }
 }
