@@ -1,5 +1,5 @@
-import { getDB } from '$lib/components/Storage/db';
-import { saveFile } from '$lib/components/Storage/fileSystem';
+import { clearDB, getDB } from '$lib/components/Utils/Storage/db';
+import { saveFile } from '$lib/components/Utils/Storage/fileSystem';
 import fileSaver from 'file-saver';
 import JSZip from 'jszip';
 
@@ -41,6 +41,8 @@ export async function importFromZip(zipFile: File): Promise<void> {
 
   await zip.loadAsync(zipFile);
   const zipFiles = Object.values(zip.files);
+
+  await clearDB();
 
   for (const zipFile of zipFiles) {
     if (!zipFile.dir) {

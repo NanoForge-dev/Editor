@@ -25,16 +25,17 @@ export class ProjectFile {
   }
 
   write(text: string): void {
+    const folderPath = path.dirname(this.path);
     this._checkPathIsInsideProject();
     try {
       this._checkPathExists();
-    } catch {
       this._checkPathIsFile();
       this._checkPathIsWritable();
+    } catch {
+      fs.mkdirSync(folderPath, { recursive: true });
       fs.writeFileSync(this.path, text, { flush: true });
       return;
     }
-    const folderPath = path.dirname(this.path);
     this._checkPathExists(folderPath);
     this._checkPathIsDir(folderPath);
     this._checkPathIsWritable(folderPath);

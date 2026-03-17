@@ -1,102 +1,109 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import Logo from '$lib/assets/logo.png';
-  import type { ActionData, PageData } from './$types';
-  import { goto } from '$app/navigation';
+  import { clearDB } from '$lib/components/Utils/Storage/db';
 
-  let { data, form }: { data: PageData; form: ActionData } = $props();
+  async function createProject() {
+    await clearDB();
+    if (projectName.trim()) {
+      window.location.href = `/load-project?projectPath=${encodeURIComponent(projectName)}`;
+      showPopup = false;
+    }
+  }
+
+  export function importProject() {
+    clearDB();
+  }
+
+  function handlePopupToggle(event: KeyboardEvent) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      showPopup = !showPopup;
+    }
+  }
+
+  function handleClose(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      showPopup = false;
+    }
+  }
+
+  let showPopup: boolean = $state(false);
+  let projectName: string = $state('');
 </script>
 
-<div class="h-screen flex flex-col gap-1">
+<div class="min-h-screen w-full flex flex-col gap-1">
   <header class="h-16 flex bg-neutral-900">
     <div class="h-full w-full flex">
       <a href={resolve('/')} class="h-full px-3 pb-1 pt-2">
         <img src={Logo} alt="Logo" class="h-full rounded-full" />
       </a>
-      <div class="h-full w-full flex flex-col justify-between">
-        {#if !data.success}
-          <div style="white-space:pre; color:red">
-            {'Error: ' + data.errorMsg}
-          </div>
-        {/if}
-        {#if form?.errorMsg}
-          <div style="white-space:pre; color:red">
-            {'Error: ' + form?.errorMsg}
-          </div>
-        {/if}
-        {#if data.creationPanel === 'local'}
-          <form
-            onsubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              // eslint-disable-next-line svelte/no-navigation-without-resolve
-              goto(`/load-project?projectPath=${formData.get('projectPath')}`);
-            }}
-          >
-            <input name="projectPath" placeholder="Project path" />
-            <input type="submit" value="Go to project" />
-          </form>
-          <form
-            onsubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              fetch('/cli?/createProject', {
-                method: 'POST',
-                body: JSON.stringify({
-                  projectPath: formData.get('projectPath'),
-                  projectName: formData.get('projectName'),
-                  packageManager: formData.get('packageManager'),
-                  language: formData.get('language'),
-                  strictTypeChecking: formData.get('strictTypeChecking') ?? false,
-                  multiplayerServer: formData.get('multiplayerServer') ?? false,
-                  skipDependencyInstallation: formData.get('skipDependencyInstallation') ?? false,
-                  dockerContainerization: formData.get('dockerContainerization') ?? false,
-                }),
-              });
-            }}
-          >
-            <input name="projectPath" placeholder="Project local path" />
-            <input name="projectName" placeholder="Project Name" />
-            <label for="packageManagerId">Package manager :</label>
-            <select name="packageManager" id="packageManagerId">
-              <option value="npm">npm</option>
-              <option value="yarn">yarn</option>
-              <option value="pnpm">pnpm</option>
-              <option value="bun">bun</option>
-            </select>
-            <label for="languageId">Project language :</label>
-            <select name="language" id="languageId">
-              <option value="js">js</option>
-              <option value="ts">ts</option>
-            </select>
-
-            <label for="strictTypeCheckingId">Strict Type Checking :</label>
-            <input
-              type="checkbox"
-              name="strictTypeChecking"
-              value="true"
-              id="strictTypeCheckingId"
-            />
-            <label for="multiplayerServerId">Multiplayer Server :</label>
-            <input type="checkbox" name="multiplayerServer" value="true" id="multiplayerServerId" />
-            <label for="skipDependencyInstallationId">Skip Dependency Installation :</label>
-            <input
-              type="checkbox"
-              name="skipDependencyInstallation"
-              value="true"
-              id="skipDependencyInstallationId"
-            />
-            <label for="dockerContainerizationId">Docker containerization :</label>
-            <input
-              type="checkbox"
-              name="dockerContainerization"
-              value="true"
-              id="dockerContainerizationId"
-            />
-            <button type="submit" value="Create Local Project">Create Local Project</button>
-          </form>
-        {/if}
-      </div>
     </div>
   </header>
+  <main class="flex-1 flex items-center justify-center px-4">
+    <div class="w-full max-w-sm md:max-w-md lg:max-w-lg bg-black p-8 rounded-xl shadow flex">
+      <div class="flex flex-col gap-4 items-center justify-center">
+        <button
+          onclick={() => (showPopup = !showPopup)}
+          onkeydown={handlePopupToggle}
+          class="cursor-pointer bg-neutral-900 w-48 h-8 rounded-md outline-2 outline-neutral-800 text-neutral-300"
+          >Create new project</button
+        >
+        <button
+          class="cursor-pointer bg-neutral-900 w-48 h-8 rounded-md outline-2 outline-neutral-800 text-neutral-300"
+          >Import project</button
+        >
+      </div>
+      <div class="w-2px rounded-xl bg-neutral-900 mx-4 hidden md:block"></div>
+      <div class="h-98 flex w-full flex-col">
+        <div class="h-full w-full flex items-center justify-center text-neutral-300 text-sm">
+          <span>No project created</span>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
+
+<button
+  class={showPopup
+    ? 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+    : 'hidden'}
+  type="button"
+  onclick={(e) => e.target === e.currentTarget && (showPopup = false)}
+  onkeydown={handleClose}
+>
+  <span
+    class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="project-title"
+  >
+    <span id="project-title" class="text-xl font-bold mb-4">Nouveau projet</span>
+
+    <!-- Input -->
+    <span class="mb-4">
+      <span class="block text-sm font-medium mb-2">Nom du projet</span>
+      <input
+        bind:value={projectName}
+        class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        placeholder="Mon super projet"
+      />
+    </span>
+
+    <!-- Boutons avec type="button" -->
+    <span class="flex gap-3 justify-end">
+      <span
+        onclick={() => (showPopup = false)}
+        class="px-4 py-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+      >
+        Annuler
+      </span>
+      <span
+        onclick={createProject}
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        Créer
+      </span>
+    </span>
+  </span>
+</button>
