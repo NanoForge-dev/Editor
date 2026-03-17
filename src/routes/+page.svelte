@@ -5,7 +5,7 @@
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
   import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
   import { onMount } from 'svelte';
-  import { loadFile } from '$lib/components/Storage/fileSystem';
+  import { loadFile } from '$lib/components/Utils/Storage/fileSystem';
 
   const Component = $derived($tabsStore[$tabSelectedStore].type.component);
   let tab = $derived($tabsStore[$tabSelectedStore]);
@@ -35,7 +35,13 @@
         <TabBar />
       </div>
     </div>
-    <div class="h-full flex items-center py-2">
+    <div class="h-full flex items-center py-2 gap-2">
+      <button
+        aria-label="push"
+        class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-1 font-medium text-sm bg-none outline-none hover:font-semibold"
+      >
+        <span class="i-ic-baseline-file-upload"></span>
+      </button>
       <button
         class="w-42 flex cursor-pointer items-center justify-between gap-2 rounded-md px-4 py-2 font-medium text-sm outline-2 outline-neutral-700 outline-solid hover:outline-3 hover:font-semibold"
       >

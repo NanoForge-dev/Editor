@@ -19,3 +19,13 @@ export async function getDB() {
 export async function initDB() {
   await getDB();
 }
+
+export async function clearDB() {
+  const db = await getDB();
+  const tx = db.transaction('files', 'readwrite');
+  const store = tx.objectStore('files');
+
+  await store.clear();
+
+  await tx.done;
+}

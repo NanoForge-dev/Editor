@@ -1,7 +1,7 @@
 <script lang="ts">
   import ContentBrowserItemCard from './ContentBrowserItemCard.svelte';
   import { onMount } from 'svelte';
-  import { type FolderContent, listFolderContents } from '$lib/components/Storage/fileSystem';
+  import { type FolderContent, listFolderContents } from '$lib/components/Utils/Storage/fileSystem';
   import {
     type ContentBrowserItemType,
     contentBrowserItemType,
