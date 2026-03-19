@@ -47,5 +47,6 @@ export default defineConfig({
     'i-ic-baseline-add',
     'i-ic-baseline-folder',
     'i-material-icon-theme-json',
+    'i-ic-baseline-upload',
   ],
 });

@@ -5,7 +5,7 @@
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
   import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
   import { onMount } from 'svelte';
-  import { loadFile } from '$lib/components/Utils/Storage/fileSystem';
+  import { loadFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 
   const Component = $derived($tabsStore[$tabSelectedStore].type.component);
   let tab = $derived($tabsStore[$tabSelectedStore]);

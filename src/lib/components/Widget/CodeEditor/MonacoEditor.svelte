@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { saveFile } from '$lib/components/Utils/Storage/fileSystem';
+  import { saveFile } from '$lib/components/Utils/IndexedDB/fileSystem';
   import type { Tab } from '$lib/components/Tabs/types';
 
   interface Props {

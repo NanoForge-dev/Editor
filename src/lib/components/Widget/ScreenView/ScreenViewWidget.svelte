@@ -5,10 +5,11 @@
 <div class="h-full w-full bg-neutral-800 flex flex-col">
   <div class="py-2 px-2">
     <button
+      aria-label="uploadFiles"
       onclick={() => api.uploadFiles()}
-      class="bg-green-900 w-24 py-1 rounded-md text-sm text-green-200"
+      class="py-1 w-full h-full rounded-md text-sm hover:bg-neutral-900 cursor-pointer"
     >
-      Update
+      <span class="i-ic-baseline-upload w-full h-full"></span>
     </button>
   </div>
   <div class="h-full w-full bg-black mb-8"></div>

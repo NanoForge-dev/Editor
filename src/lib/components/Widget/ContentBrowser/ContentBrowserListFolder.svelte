@@ -1,6 +1,9 @@
 <script lang="ts">
   import Self from './ContentBrowserListFolder.svelte';
-  import { type FolderContent, listFolderContents } from '$lib/components/Utils/Storage/fileSystem';
+  import {
+    type FolderContent,
+    listFolderContents,
+  } from '$lib/components/Utils/IndexedDB/fileSystem';
   import { ContentBrowserPath } from '$lib/components/Widget/ContentBrowser/store';
   import { onMount } from 'svelte';
 

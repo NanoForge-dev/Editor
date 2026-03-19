@@ -1,5 +1,5 @@
-import { clearDB, getDB } from '$lib/components/Utils/Storage/db';
-import { saveFile } from '$lib/components/Utils/Storage/fileSystem';
+import { clearDB, getDB } from '$lib/components/Utils/IndexedDB/db';
+import { saveFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 import fileSaver from 'file-saver';
 import JSZip from 'jszip';
 

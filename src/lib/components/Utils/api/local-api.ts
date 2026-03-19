@@ -1,6 +1,6 @@
 import { deserialize } from '$app/forms';
-import { clearDB } from '$lib/components/Utils/Storage/db';
-import { listFiles, loadFile, saveFile } from '$lib/components/Utils/Storage/fileSystem';
+import { clearDB } from '$lib/components/Utils/IndexedDB/db';
+import { listFiles, loadFile, saveFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 import { type DirectoryRec, ProjectApi } from '$lib/components/Utils/api/project-api';
 
 export class LocalAPI extends ProjectApi {

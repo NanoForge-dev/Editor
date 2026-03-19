@@ -2,6 +2,8 @@
   import MenuButton from './MenuButton.svelte';
   import MenuItem from './MenuItem.svelte';
   import { exportToZip, importFromZip } from '$lib/components/Utils/zip';
+  import { resolve } from '$app/paths';
+  import { goto } from '$app/navigation';
 
   let fileInput: HTMLInputElement;
 
@@ -34,7 +36,9 @@
       />
     </MenuItem>
     <MenuItem icon="i-solar-file-send-bold-duotone" onClick={() => exportToZip()}>Export</MenuItem>
-    <MenuItem icon="i-solar-exit-bold-duotone">Exit</MenuItem>
+    <MenuItem icon="i-solar-exit-bold-duotone" onClick={() => goto(resolve('/load-project'))}
+      >Exit</MenuItem
+    >
   </MenuButton>
   <MenuButton title="Edit">
     <MenuItem icon="i-solar-arrow-left-bold-duotone">Undo</MenuItem>
