@@ -2,9 +2,36 @@
   import { resolve } from '$app/paths';
   import Logo from '$lib/assets/logo.png';
   import { clearDB } from '$lib/components/Utils/Storage/db';
+  import { goto } from '$app/navigation';
+  import api from '$lib/components/Utils/api/api';
+
+  let showPopup: boolean = $state(false);
+  let showAdvancedSettings: boolean = $state(false);
+
+  let error: string = $state('');
 
   export function importProject() {
     clearDB();
+  }
+
+  export async function newProject(formData: FormData) {
+    try {
+      await api.createProject(formData);
+
+      const projectPath = formData.get('projectPath');
+      const projectName = formData.get('projectName');
+
+      if (projectPath && projectName) {
+        const loadFormData = new FormData();
+        loadFormData.append('projectPath', projectPath.toString() + '/' + projectName.toString());
+
+        await api.loadProject(loadFormData);
+        await api.downloadFiles();
+        await goto(resolve('/'));
+      }
+    } catch (err: any) {
+      error = err;
+    }
   }
 
   function handlePopupToggle(event: KeyboardEvent) {
@@ -19,9 +46,6 @@
       showPopup = false;
     }
   }
-
-  let showPopup: boolean = $state(false);
-  let showAdvancedSettings: boolean = $state(false);
 </script>
 
 <div class="min-h-screen w-full flex flex-col gap-1">
@@ -72,19 +96,7 @@
     onsubmit={(e) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
-      fetch('/cli?/createProject', {
-        method: 'POST',
-        body: JSON.stringify({
-          projectPath: formData.get('projectPath'),
-          projectName: formData.get('projectName'),
-          packageManager: formData.get('packageManager'),
-          language: formData.get('language'),
-          strictTypeChecking: formData.get('strictTypeChecking') ?? false,
-          multiplayerServer: formData.get('multiplayerServer') ?? false,
-          skipDependencyInstallation: formData.get('skipDependencyInstallation') ?? false,
-          dockerContainerization: formData.get('dockerContainerization') ?? false,
-        }),
-      });
+      newProject(formData);
     }}
   >
     <span id="project-title" class="text-2xl font-bold mb-8 text-center">New project</span>
@@ -106,6 +118,7 @@
     </span>
     <div class="flex w-full justify-center my-4">
       <button
+        type="button"
         class="text-sm w-fit font-semibold mb-4 cursor-pointer hover:text-neutral-300"
         onclick={() => (showAdvancedSettings = !showAdvancedSettings)}
       >
@@ -117,7 +130,7 @@
         ></span>
       </button>
     </div>
-    {#if showAdvancedSettings}
+    <div class="flex flex-col gap-4 {showAdvancedSettings ? '' : 'hidden'}">
       <span class="mb-4 flex gap-4 items-end">
         <label for="packageManagerId" class="block text-sm mb-1 text-neutral-300 w-1/2"
           >Package manager</label
@@ -180,7 +193,9 @@
           id="dockerContainerizationId"
         />
       </span>
-    {/if}
+    </div>
+
+    <span class="w-full text-center text-red-400 text-sm">{error}</span>
 
     <div class="flex gap-3 justify-end mt-4">
       <button
