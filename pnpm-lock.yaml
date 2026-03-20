@@ -32,12 +32,24 @@ catalogs:
       specifier: ^16.2.7
       version: 16.2.7
   components:
+    '@types/file-saver':
+      specifier: ^2.0.7
+      version: 2.0.7
+    file-saver:
+      specifier: ^2.0.5
+      version: 2.0.5
     flowbite:
       specifier: ^4.0.1
       version: 4.0.1
     flowbite-svelte:
       specifier: ^1.31.0
       version: 1.31.0
+    idb:
+      specifier: ^8.0.3
+      version: 8.0.3
+    jszip:
+      specifier: ^3.10.1
+      version: 3.10.1
     monaco-editor:
       specifier: ^0.55.1
       version: 0.55.1
@@ -152,13 +164,13 @@ importers:
   .:
     dependencies:
       file-saver:
-        specifier: ^2.0.5
+        specifier: catalog:components
         version: 2.0.5
       idb:
-        specifier: ^8.0.3
+        specifier: catalog:components
         version: 8.0.3
       jszip:
-        specifier: ^3.10.1
+        specifier: catalog:components
         version: 3.10.1
       svelte-kit-sessions:
         specifier: catalog:core
@@ -216,7 +228,7 @@ importers:
         specifier: catalog:build
         version: 5.0.8
       '@types/file-saver':
-        specifier: ^2.0.7
+        specifier: catalog:components
         version: 2.0.7
       '@unocss/extractor-svelte':
         specifier: catalog:css
