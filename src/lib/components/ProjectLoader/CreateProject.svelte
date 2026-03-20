@@ -112,9 +112,7 @@
         </select>
       </span>
       <span class="mb-4 flex gap-4 items-end">
-        <label for="languageId" class="block text-sm mb-1 text-neutral-300 w-1/2"
-          >Package manager</label
-        >
+        <label for="languageId" class="block text-sm mb-1 text-neutral-300 w-1/2">Language</label>
         <select
           name="language"
           id="languageId"
@@ -132,7 +130,7 @@
       </span>
       <span class="mb-4 flex gap-4 items-end h-fit">
         <label for="multiplayerServerId" class="block text-sm text-neutral-300 w-1/2"
-          >Strict Multiplayer Server</label
+          >Multiplayer Server</label
         >
         <input type="checkbox" name="multiplayerServer" value="true" id="multiplayerServerId" />
       </span>
@@ -164,8 +162,9 @@
 
     <div class="flex gap-3 justify-end mt-4">
       <button
+        type="button"
         onclick={() => (show = false)}
-        class="px-4 py-2 text-neutral-200 hover:text-neutral-400 focus:outline-none focus:ring-2 cursor-pointer"
+        class="px-4 py-2 text-neutral-200 hover:text-neutral-400 cursor-pointer"
       >
         Cancel
       </button>

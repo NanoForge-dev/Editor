@@ -47,8 +47,24 @@
     }
   }
 
-  onMount(() => {
+  onMount(async () => {
     projectListCache = ProjectCache.getProjects();
+
+    const params = new URLSearchParams(window.location.search);
+
+    const projectPath = params.get('projectPath');
+    const projectId = params.get('projectId');
+
+    if (!projectPath && !projectId) return;
+
+    const formData = new FormData();
+
+    if (projectPath) formData.append('projectPath', projectPath);
+    if (projectId) formData.append('projectId', projectId);
+
+    await api.loadProject(formData);
+    await api.downloadFiles();
+    await goto(resolve('/'));
   });
 </script>
 
@@ -116,5 +132,5 @@
     </div>
   </main>
 </div>
-<CreateProject show={showCreateProject} />
-<LoadProject show={showLoadProject} />
+<CreateProject bind:show={showCreateProject} />
+<LoadProject bind:show={showLoadProject} />
