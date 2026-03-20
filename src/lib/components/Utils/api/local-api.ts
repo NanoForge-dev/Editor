@@ -82,7 +82,7 @@ export class LocalAPI extends ProjectApi {
     });
   }
 
-  async downloadFiles(): Promise<void> {
+  async downloadFiles(): Promise<Promise<void>[]> {
     const readDirResp = await fetch('/fs?/readDirRec', {
       method: 'POST',
       body: JSON.stringify({ dirPath: '/' }),
@@ -97,25 +97,41 @@ export class LocalAPI extends ProjectApi {
     }
 
     await clearDB();
-    await this._downloadDirectoryRec(readDirResult.data.dirContent as DirectoryRec);
+    return this._downloadDirectoryRec(readDirResult.data.dirContent as DirectoryRec);
   }
 
-  private async _downloadDirectoryRec(dir: DirectoryRec, currentPath: string = ''): Promise<void> {
+  private async _downloadDirectoryRec(
+    dir: DirectoryRec,
+    currentPath: string = '',
+  ): Promise<Promise<void>[]> {
+    const promises: Promise<void>[] = [];
+
     for (const file of dir.files) {
-      const fileRes = await fetch('/fs?/readFile', {
+      const filePromise = fetch('/fs?/readFile', {
         method: 'POST',
         body: JSON.stringify({ filePath: '/' + currentPath + file }),
+      }).then(async (fileRes) => {
+        const fileResult = deserialize(await fileRes.text());
+        if (fileResult.type === 'success' && fileResult.data) {
+          await saveFile(currentPath + file, fileResult.data.fileContent as string);
+        }
       });
-      const fileResult = deserialize(await fileRes.text());
-
-      if (fileResult.type === 'success' && fileResult.data) {
-        await saveFile(currentPath + file, fileResult.data.fileContent as string);
-      }
+      promises.push(filePromise);
     }
+
     for (const [dirName, children] of Object.entries(dir.directories)) {
       if (dirName !== 'node_modules') {
-        await this._downloadDirectoryRec(children, currentPath + dirName + '/');
+        const dirPromise: Promise<void> = this._downloadDirectoryRec(
+          children,
+          currentPath + dirName + '/',
+        ).then((subDirPromises) => {
+          promises.push(...subDirPromises);
+          return;
+        });
+
+        promises.push(dirPromise);
       }
     }
+    return promises;
   }
 }

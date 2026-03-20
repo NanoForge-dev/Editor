@@ -11,5 +11,5 @@ export abstract class ProjectApi {
   abstract stopProject(): Promise<void>;
 
   abstract uploadFiles(): Promise<void>;
-  abstract downloadFiles(): Promise<void>;
+  abstract downloadFiles(): Promise<Promise<void>[]>;
 }

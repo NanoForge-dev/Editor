@@ -1,12 +1,9 @@
 <script lang="ts">
-  import api from '$lib/components/Utils/api/api';
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
-
   interface Props {
     show: boolean;
+    callback?: (projectPath: string) => void;
   }
-  let { show = $bindable() }: Props = $props();
+  let { show = $bindable(), callback }: Props = $props();
 
   let error: string = $state('');
 
@@ -21,12 +18,7 @@
       const projectPath = formData.get('projectPath');
 
       if (projectPath) {
-        const loadFormData = new FormData();
-        loadFormData.append('projectPath', projectPath.toString());
-
-        await api.loadProject(loadFormData);
-        await api.downloadFiles();
-        await goto(resolve('/'));
+        callback?.(projectPath.toString());
       }
     } catch (err: any) {
       error = err;
