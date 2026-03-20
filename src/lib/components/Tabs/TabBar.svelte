@@ -1,8 +1,8 @@
 <script lang="ts">
   import TabComponent from './Tab.svelte';
-  import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
+  import { tabSelectedStore, tabsStore } from '../../../stores/tabs';
   import type { Tab } from '$lib/components/Tabs/types';
-  import { workingFileStore } from '$lib/components/Stores/workingFile';
+  import { workingFileStore } from '../../../stores/workingFile';
 
   let tabs: Tab[] = $derived($tabsStore);
 </script>

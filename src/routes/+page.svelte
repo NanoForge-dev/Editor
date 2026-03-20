@@ -3,7 +3,7 @@
   import MenuBar from '$lib/components/Menu/MenuBar.svelte';
   import Logo from '$lib/assets/logo.png';
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
-  import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
+  import { tabSelectedStore, tabsStore } from '../stores/tabs';
   import { onMount } from 'svelte';
   import { loadFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 

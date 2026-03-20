@@ -1,7 +1,8 @@
-import { tabSelectedStore, tabsStore } from '$lib/components/Stores/tabs';
-import { workingFileStore } from '$lib/components/Stores/workingFile';
 import { tabTypes } from '$lib/components/Tabs/types';
 import { get } from 'svelte/store';
+
+import { tabSelectedStore, tabsStore } from '../../../../stores/tabs';
+import { workingFileStore } from '../../../../stores/workingFile';
 
 export interface ContentBrowserItem {
   id: string;

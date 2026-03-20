@@ -135,17 +135,6 @@
         <input type="checkbox" name="multiplayerServer" value="true" id="multiplayerServerId" />
       </span>
       <span class="mb-4 flex gap-4 items-end h-fit">
-        <label for="skipDependencyInstallationId" class="block text-sm text-neutral-300 w-1/2"
-          >Skip Dependency Installation</label
-        >
-        <input
-          type="checkbox"
-          name="skipDependencyInstallation"
-          value="true"
-          id="skipDependencyInstallationId"
-        />
-      </span>
-      <span class="mb-4 flex gap-4 items-end h-fit">
         <label for="dockerContainerizationId" class="block text-sm text-neutral-300 w-1/2"
           >Docker containerization</label
         >
