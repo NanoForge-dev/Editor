@@ -38,6 +38,30 @@ export class LocalAPI extends ProjectApi {
     }
   }
 
+  async playProject(): Promise<void> {
+    const resp = await fetch('/cli?/startDevProject', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    const result = deserialize(await resp.text());
+    if (result.type !== 'success') {
+      if (result.type === 'failure' && result.data) throw new Error(result.data.errorMsg as string);
+      throw new Error('Failed to start project');
+    }
+  }
+
+  async stopProject(): Promise<void> {
+    const resp = await fetch('/cli?/stopProject', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    const result = deserialize(await resp.text());
+    if (result.type !== 'success') {
+      if (result.type === 'failure' && result.data) throw new Error(result.data.errorMsg as string);
+      throw new Error('Failed to stop project');
+    }
+  }
+
   async uploadFiles(): Promise<void> {
     const localFiles = await listFiles();
 
