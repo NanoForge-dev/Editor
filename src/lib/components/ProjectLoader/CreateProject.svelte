@@ -1,12 +1,17 @@
 <script lang="ts">
   import api from '$lib/components/Utils/api/api';
   import ProjectCache from '$lib/components/Utils/LocalStorage/ProjectCache';
+  import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
 
   interface Props {
     show: boolean;
     callback?: (projectPath: string) => void;
   }
   let { show = $bindable(), callback }: Props = $props();
+
+  let projectLoading: Promise<void> | null = $state(null);
+
+  let formElem: HTMLFormElement | undefined = $state();
 
   let showAdvancedSettings: boolean = $state(false);
   let error: string = $state('');
@@ -17,12 +22,12 @@
     }
   }
 
-  export async function newProject(formData: FormData) {
+  export async function newProject() {
+    if (!formElem) return;
     try {
-      await api.createProject(formData);
-
-      const projectPath = formData.get('projectPath');
-      const projectName = formData.get('projectName');
+      const projectFormData = new FormData(formElem);
+      const projectPath = projectFormData.get('projectPath');
+      const projectName = projectFormData.get('projectName');
 
       if (projectPath && projectName) {
         const newProjectPath = projectPath.toString() + '/' + projectName.toString();
@@ -50,12 +55,13 @@
   onkeydown={handleClose}
 >
   <form
+    bind:this={formElem}
     class="bg-black outline outline-neutral-900 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col"
     aria-labelledby="project-title"
     onsubmit={(e) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
-      newProject(formData);
+      projectLoading = api.createProject(formData);
     }}
   >
     <span id="project-title" class="text-2xl font-bold mb-8 text-center">New project</span>
@@ -160,3 +166,11 @@
     </div>
   </form>
 </div>
+{#if projectLoading !== null}
+  <ProgressBar
+    title="Creating project"
+    promises={[projectLoading]}
+    show={true}
+    callback={() => newProject()}
+  />
+{/if}

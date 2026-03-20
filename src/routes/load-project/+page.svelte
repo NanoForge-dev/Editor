@@ -138,6 +138,7 @@
 <CreateProject bind:show={showCreateProject} callback={loadProject} />
 <LoadProject bind:show={showLoadProject} callback={loadProject} />
 <ProgressBar
+  title="Downloading project"
   promises={promisesFiles}
   bind:show={showLoadingProject}
   callback={() => goto(resolve('/'))}

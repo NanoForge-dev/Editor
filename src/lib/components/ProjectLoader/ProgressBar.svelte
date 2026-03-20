@@ -1,13 +1,13 @@
 <script lang="ts">
   import { Progressbar } from 'flowbite-svelte';
-  import { onMount } from 'svelte';
 
   interface Props {
+    title: string;
     promises: Promise<void>[];
     show: boolean;
     callback?: () => void;
   }
-  let { promises, show = $bindable(), callback }: Props = $props();
+  let { title, promises, show = $bindable(), callback }: Props = $props();
 
   let total: number = $state(0);
   let completed: number = $state(0);
@@ -18,12 +18,11 @@
     }
   }
 
-  onMount(() => {
+  $effect(() => {
     total = promises.length;
     promises.forEach((promise) => {
       promise.then(() => {
         completed += 1;
-        console.log(`${completed}/${total}`);
         if (completed === total && total > 0) {
           callback?.();
         }
@@ -43,7 +42,7 @@
   <div
     class="bg-black outline outline-neutral-900 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col"
   >
-    <span id="project-title" class="text-2xl font-bold mb-8 text-center">Load project</span>
+    <span id="project-title" class="text-2xl font-bold mb-8 text-center">{title}</span>
     <Progressbar progress={(completed / total) * 100} />
   </div>
 </div>

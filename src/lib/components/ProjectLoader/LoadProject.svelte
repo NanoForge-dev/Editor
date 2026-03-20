@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ProjectCache from '$lib/components/Utils/LocalStorage/ProjectCache';
+
   interface Props {
     show: boolean;
     callback?: (projectPath: string) => void;
@@ -18,6 +20,12 @@
       const projectPath = formData.get('projectPath');
 
       if (projectPath) {
+        const projectName = projectPath.toString().split('/').pop();
+        ProjectCache.addProject({
+          name: projectName ? projectName : 'untitled',
+          path: projectPath.toString(),
+          imageUrl: '',
+        });
         callback?.(projectPath.toString());
       }
     } catch (err: any) {
