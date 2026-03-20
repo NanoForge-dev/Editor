@@ -1,22 +1,23 @@
 <script lang="ts">
   import TabComponent from './Tab.svelte';
-  import { type Tab } from './types';
+  import { tabSelectedStore, tabsStore } from '../../../stores/tabs';
+  import type { Tab } from '$lib/components/Tabs/types';
+  import { workingFileStore } from '../../../stores/workingFile';
 
-  interface Props {
-    tabs: Tab[];
-    selected: number;
-  }
-  let { tabs = $bindable(), selected = $bindable(0) }: Props = $props();
+  let tabs: Tab[] = $derived($tabsStore);
 </script>
 
 <div class="w-full flex gap-1">
   {#each tabs as tab, index (tab)}
     <TabComponent
       {tab}
-      selected={selected === index}
+      selected={$tabSelectedStore === index}
       closable={tab.type.name !== 'main'}
-      onSelect={() => (selected = index)}
-      onClose={() => tabs.splice(index, 1)}
+      onSelect={() => {
+        tabSelectedStore.set(index);
+        workingFileStore.set(tabs[index].filePath || '');
+      }}
+      onClose={() => tabsStore.update((tabs) => tabs.splice(index, 1))}
     />
   {/each}
 </div>

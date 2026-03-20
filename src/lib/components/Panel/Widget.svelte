@@ -1,12 +1,14 @@
 <script lang="ts">
   import { widgetsTypes } from '../Widget/widgets';
+  import type { Tab } from '$lib/components/Tabs/types';
 
   interface Props {
     size?: number;
     id?: string;
+    tab: Tab;
   }
 
-  let { size, id }: Props = $props();
+  let { size, id, tab = $bindable() }: Props = $props();
 
   const widgetsMap = Object.fromEntries(widgetsTypes.map((w) => [w.id, w.component]));
 
@@ -19,7 +21,7 @@
   data-widget-id={id}
 >
   {#if WidgetComponent}
-    <WidgetComponent />
+    <WidgetComponent {tab} />
   {:else}
     <span class="text-sm">{id || 'Widget'}</span>
   {/if}

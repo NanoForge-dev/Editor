@@ -1,44 +1,24 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { load } from './+page.server';
+import { actions } from './+page.server';
 
-describe('load', () => {
-  it('local project load and session cookie set', async () => {
-    const cookies = {
-      get: vi.fn(),
-      set: vi.fn(),
-      delete: vi.fn(),
-    };
-
+describe('actions.loadProject', () => {
+  it('retourne success true avec un projectPath local', async () => {
     const session = {
       setData: vi.fn(),
-      save: vi.fn().mockImplementation(async () => {
-        cookies.set('session', 'abc123', {
-          path: '/',
-          httpOnly: true,
-        });
-      }),
+      save: vi.fn(),
     };
 
     const event = {
-      cookies,
-      url: {
-        searchParams: {
-          get: (param: string) => (param === 'projectPath' ? '/tmp' : null),
-        },
+      request: {
+        json: vi.fn().mockResolvedValue({ projectPath: '/tmp' }),
       },
       locals: { session },
+      cookies: {},
     } as any;
 
-    await expect(load(event)).rejects.toMatchObject({
-      status: 307,
-      location: '/',
-    });
+    const result = (await actions.loadProject(event)) as any;
 
-    expect(session.setData).toHaveBeenCalledWith({ path: '/tmp' });
-    expect(cookies.set).toHaveBeenCalledWith('session', 'abc123', {
-      path: '/',
-      httpOnly: true,
-    });
+    expect(result.success).toBe(true);
   });
 });

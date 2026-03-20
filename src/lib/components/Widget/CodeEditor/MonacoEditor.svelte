@@ -1,9 +1,12 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { saveFile } from '$lib/components/Utils/IndexedDB/fileSystem';
+  import type { Tab } from '$lib/components/Tabs/types';
 
-  import { codeExample } from '../../demo/code-example';
-
-  let value = codeExample;
+  interface Props {
+    tab: Tab;
+  }
+  let { tab = $bindable() }: Props = $props();
 
   let container: HTMLDivElement;
   let editor: any;
@@ -12,7 +15,7 @@
     const monaco = await import('monaco-editor');
 
     editor = monaco.editor.create(container, {
-      value,
+      value: tab.content,
       language: 'typescript',
       theme: 'vs-dark',
       readOnly: false,
@@ -32,8 +35,15 @@
       fontSize: 14,
     });
 
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      if (tab.filePath && tab.content) saveFile(tab.filePath, tab.content);
+    });
+
     editor.onDidChangeModelContent(() => {
-      value = editor.getValue();
+      const newValue = editor.getValue();
+      if (newValue !== tab.content) {
+        tab.content = newValue;
+      }
     });
   });
 

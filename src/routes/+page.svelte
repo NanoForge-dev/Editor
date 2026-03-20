@@ -3,13 +3,25 @@
   import MenuBar from '$lib/components/Menu/MenuBar.svelte';
   import Logo from '$lib/assets/logo.png';
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
-  import { type Tab } from '$lib/components/Tabs/types';
-  import { tabsExample } from '$lib/components/demo/tabs';
+  import { tabSelectedStore, tabsStore } from '../stores/tabs';
+  import { onMount } from 'svelte';
+  import { loadFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 
-  let tabs: Tab[] = $state(tabsExample);
-  let selected = $state(0);
+  const Component = $derived($tabsStore[$tabSelectedStore].type.component);
+  let tab = $derived($tabsStore[$tabSelectedStore]);
 
-  const Component = $derived(tabs[selected].type.component);
+  let contentLoader: Promise<string>;
+
+  onMount(() => {
+    $effect(() => {
+      if (tab.filePath) {
+        contentLoader = loadFile(tab.filePath);
+        contentLoader.then((c) => {
+          tab.content = c;
+        });
+      }
+    });
+  });
 </script>
 
 <div class="h-screen flex flex-col gap-1">
@@ -20,10 +32,16 @@
       </a>
       <div class="h-full w-full flex flex-col justify-between">
         <MenuBar />
-        <TabBar bind:tabs bind:selected />
+        <TabBar />
       </div>
     </div>
-    <div class="h-full flex items-center py-2">
+    <div class="h-full flex items-center py-2 gap-2">
+      <button
+        aria-label="push"
+        class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-1 font-medium text-sm bg-none outline-none hover:font-semibold"
+      >
+        <span class="i-ic-baseline-file-upload"></span>
+      </button>
       <button
         class="w-42 flex cursor-pointer items-center justify-between gap-2 rounded-md px-4 py-2 font-medium text-sm outline-2 outline-neutral-700 outline-solid hover:outline-3 hover:font-semibold"
       >
@@ -39,6 +57,6 @@
     </div>
   </header>
   <main class="h-full min-h-0 w-full flex-1 bg-neutral-900 p-2">
-    <Component />
+    <Component bind:tab />
   </main>
 </div>
