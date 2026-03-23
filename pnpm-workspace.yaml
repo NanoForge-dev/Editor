@@ -37,7 +37,7 @@ catalogs:
     '@inlang/paraglide-js': ^2.9.1
   icons:
     '@iconify-json/ic': ^1.2.4
-    '@iconify-json/material-icon-theme': ^1.2.51
+    '@iconify-json/material-icon-theme': ^1.2.56
     '@iconify-json/solar': ^1.2.5
   lint:
     '@nanoforge-dev/utils-eslint-config': ^1.0.1
