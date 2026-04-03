@@ -1,0 +1,69 @@
+name: docker-push
+description: Push Docker image on registry
+inputs:
+  registry:
+    description: Docker registry
+    required: true
+  image:
+    description: Name of the image
+    required: true
+  token:
+    description: Token able to pull nanoforge-dev/cloud-iac
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Determine latest tag
+      id: tag
+      shell: bash
+      run: echo "tag=$(git describe --tags --abbrev=0 HEAD~0 || true)" >> $GITHUB_OUTPUT
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v4
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      with:
+        images: ${{ inputs.registry }}/${{ inputs.image }}
+        tags: |
+          type=semver,pattern={{version}},value=${{ steps.tag.outputs.tag }}
+
+    - name: Build and push Docker image
+      id: push
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: checkout cloud for tags update
+      uses: actions/checkout@v6
+      with:
+        path: cloud-iac
+        repository: nanoforge-dev/cloud-iac
+        token: ${{ inputs.token }}
+
+    - name: Install yq and config git
+      shell: sh
+      run: |
+        pip install yq
+
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "username@users.noreply.github.com"
+
+    - name: Update image tag in config file
+      shell: sh
+      run: |
+        cd cloud-iac
+        python -m yq -Y --indentless --in-place '.image.tag = "${{ steps.tag.outputs.tag }}"' kubernetes/nanoforge/editor-override.yaml
+
+        git add kubernetes/nanoforge/editor-override.yaml || echo "No changes to add"
+        git commit -m "chore(editor): release docker nanoforge-dev/editor@${{ steps.tag.outputs.tag }}" || echo "No changes to commit"
+        git push || echo "No changes to push"

@@ -1,5 +1,6 @@
 catalogs:
   build:
+    'svelte-adapter-bun': ^1.0.1
     '@tsconfig/svelte': ^5.0.8
     typescript: ^5.9.3
   ci:

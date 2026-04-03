@@ -20,8 +20,8 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/index.html",
-  "module": "./dist/index.html",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "exports": {
     "./package.json": "./package.json"
   },
@@ -42,11 +42,14 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "prettier --check . && eslint --format=pretty src",
     "format": "prettier --write . && eslint --fix --format=pretty src",
-    "test": "pnpm run test:unit --run",
-    "test:unit": "vitest",
-    "test:e2e": "playwright test",
     "changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r . --include-path '.'",
     "release": "cliff-jumper",
+    "test": "pnpm run test:unit && pnpm run test:e2e",
+    "test:unit": "vitest run -c vite.config.ts",
+    "test:unit:watch": "vitest -c vite.config.ts",
+    "test:e2e": "vitest run -c vite.config.e2e.ts",
+    "test:e2e:watch": "vitest -c vite.config.e2e.ts",
+    "test:coverage": "pnpm run test:unit --coverage && pnpm run test:e2e --coverage",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -62,11 +65,11 @@
     "@nanoforge-dev/utils-eslint-config": "catalog:lint",
     "@nanoforge-dev/utils-prettier-config": "catalog:lint",
     "@playwright/test": "catalog:test",
-    "@sveltejs/adapter-auto": "catalog:core",
     "@sveltejs/kit": "catalog:core",
     "@sveltejs/vite-plugin-svelte": "catalog:core",
     "@trivago/prettier-plugin-sort-imports": "catalog:lint",
     "@tsconfig/svelte": "catalog:build",
+    "@types/bun": "^1.3.11",
     "@types/file-saver": "catalog:components",
     "@unocss/extractor-svelte": "catalog:css",
     "@unocss/preset-icons": "catalog:css",
@@ -76,17 +79,22 @@
     "@vitest/coverage-v8": "catalog:test",
     "eslint": "catalog:lint",
     "eslint-plugin-svelte": "catalog:lint",
+    "file-saver": "catalog:components",
     "flowbite": "catalog:components",
     "flowbite-svelte": "catalog:components",
     "globals": "catalog:lint",
     "husky": "catalog:ci",
+    "idb": "catalog:components",
+    "jszip": "catalog:components",
     "lint-staged": "catalog:ci",
     "monaco-editor": "catalog:components",
     "playwright": "catalog:test",
     "prettier": "catalog:lint",
     "prettier-plugin-svelte": "catalog:lint",
     "svelte": "catalog:core",
+    "svelte-adapter-bun": "catalog:build",
     "svelte-check": "catalog:core",
+    "svelte-kit-sessions": "catalog:core",
     "svelte-sonner": "catalog:components",
     "typescript": "catalog:build",
     "typescript-eslint": "catalog:lint",
@@ -95,7 +103,7 @@
     "vitest": "catalog:test",
     "vitest-browser-svelte": "catalog:test"
   },
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": "25"
   },
@@ -109,11 +117,5 @@
     "src/**/*.{ts,svelte}": [
       "eslint --fix"
     ]
-  },
-  "dependencies": {
-    "svelte-kit-sessions": "catalog:core",
-    "file-saver": "catalog:components",
-    "idb": "catalog:components",
-    "jszip": "catalog:components"
   }
 }

@@ -27,5 +27,6 @@ jobs:
         with:
           commit: ${{ github.sha }}
           branch: ${{ github.head_ref }}
+          format: '{version}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
