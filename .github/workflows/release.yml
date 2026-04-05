@@ -51,3 +51,4 @@ jobs:
           registry: ${{ env.REGISTRY }}
           image: ${{ env.ORG_NAME }}/${{ env.IMAGE_NAME }}
           token: ${{ secrets.TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

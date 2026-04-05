@@ -10,6 +10,9 @@ inputs:
   token:
     description: Token able to pull nanoforge-dev/cloud-iac
     required: true
+  github-token:
+    description: Github token
+    required: true
 runs:
   using: composite
   steps:
@@ -23,7 +26,7 @@ runs:
       with:
         registry: ${{ inputs.registry }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.github-token }}
 
     - name: Extract metadata (tags, labels) for Docker
       id: meta
