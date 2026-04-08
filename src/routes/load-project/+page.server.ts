@@ -74,7 +74,6 @@ export const actions = {
 
     return {
       success: true,
-      path: absoluteProjectPath,
     };
   },
 };
