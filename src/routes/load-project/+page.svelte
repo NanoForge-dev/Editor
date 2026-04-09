@@ -1,7 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import Logo from '$lib/assets/logo.png';
-  import { clearDB } from '$lib/components/Utils/IndexedDB/db';
   import CreateProject from '$lib/components/ProjectLoader/CreateProject.svelte';
   import LoadProject from '$lib/components/ProjectLoader/LoadProject.svelte';
   import { onMount } from 'svelte';
@@ -11,15 +10,15 @@
   import DefaultProjectCover from '$lib/assets/defaultProjectCover.png';
   import api from '$lib/components/Utils/api/api';
   import { goto } from '$app/navigation';
+  import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
 
   let showCreateProject: boolean = $state(false);
   let showLoadProject: boolean = $state(false);
+  let showLoadingProject: boolean = $state(false);
+
+  let promisesFiles: Promise<void>[] = $state([]);
 
   let projectListCache: Array<ProjectDataCache> = $state([]);
-
-  export function importProject() {
-    clearDB();
-  }
 
   function handleCreateProjectPopup(event: KeyboardEvent) {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -34,14 +33,18 @@
     }
   }
 
-  export async function loadCacheProject(project: ProjectDataCache) {
-    try {
-      const loadFormData = new FormData();
-      loadFormData.append('projectPath', project.path);
+  async function loadProject(projectPath: string) {
+    const loadFormData = new FormData();
+    loadFormData.append('projectPath', projectPath);
 
-      await api.loadProject(loadFormData);
-      await api.downloadFiles();
-      await goto(resolve('/'));
+    await api.loadProject(loadFormData);
+    promisesFiles = await api.downloadFiles();
+    showLoadingProject = true;
+  }
+
+  async function loadCacheProject(project: ProjectDataCache) {
+    try {
+      await loadProject(project.path);
     } catch {
       ProjectCache.removeProject(project.name);
     }
@@ -132,5 +135,11 @@
     </div>
   </main>
 </div>
-<CreateProject bind:show={showCreateProject} />
-<LoadProject bind:show={showLoadProject} />
+<CreateProject bind:show={showCreateProject} callback={loadProject} />
+<LoadProject bind:show={showLoadProject} callback={loadProject} />
+<ProgressBar
+  title="Downloading project"
+  promises={promisesFiles}
+  bind:show={showLoadingProject}
+  callback={() => goto(resolve('/'))}
+/>

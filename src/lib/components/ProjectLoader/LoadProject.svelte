@@ -1,12 +1,11 @@
 <script lang="ts">
-  import api from '$lib/components/Utils/api/api';
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
+  import ProjectCache from '$lib/components/Utils/LocalStorage/ProjectCache';
 
   interface Props {
     show: boolean;
+    callback?: (projectPath: string) => void;
   }
-  let { show = $bindable() }: Props = $props();
+  let { show = $bindable(), callback }: Props = $props();
 
   let error: string = $state('');
 
@@ -21,12 +20,13 @@
       const projectPath = formData.get('projectPath');
 
       if (projectPath) {
-        const loadFormData = new FormData();
-        loadFormData.append('projectPath', projectPath.toString());
-
-        await api.loadProject(loadFormData);
-        await api.downloadFiles();
-        await goto(resolve('/'));
+        const projectName = projectPath.toString().split('/').pop();
+        ProjectCache.addProject({
+          name: projectName ? projectName : 'untitled',
+          path: projectPath.toString(),
+          imageUrl: '',
+        });
+        callback?.(projectPath.toString());
       }
     } catch (err: any) {
       error = err;
