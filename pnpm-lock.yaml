@@ -86,8 +86,8 @@ catalogs:
       specifier: ^66.6.3
       version: 66.6.7
     '@unocss/preset-icons':
-      specifier: ^66.6.0
-      version: 66.6.7
+      specifier: ^66.6.8
+      version: 66.6.8
     '@unocss/preset-web-fonts':
       specifier: ^66.6.0
       version: 66.6.7
@@ -222,7 +222,7 @@ importers:
         version: 66.6.7
       '@unocss/preset-icons':
         specifier: catalog:css
-        version: 66.6.7
+        version: 66.6.8
       '@unocss/preset-web-fonts':
         specifier: catalog:css
         version: 66.6.7
@@ -1702,6 +1702,9 @@ packages:
   '@unocss/core@66.6.7':
     resolution: {integrity: sha512-Q8456iWFtdwrUNYKVOQY8ygRggjZOVtLc6Jc8KIkxig7OiNlUWOgXJTfCh4I8g6jBYzC5eHaHFDLgJOmOrxBsg==}
 
+  '@unocss/core@66.6.8':
+    resolution: {integrity: sha512-P9IlQfgms+8/nka7fBhiiWU4SPwrTNKbTdK0z1SLnttXMHHjsB2zpG+Vi1JQDpICfY9Y1/2pWtguPE+zeOVu9Q==}
+
   '@unocss/extractor-arbitrary-variants@66.6.7':
     resolution: {integrity: sha512-PQiBHK0yUJ0BR+3GYnTPU6va6HVSRPV+O+s1zZmt23TWbyIeucoKCNR47TDtv+Z1xuksY8krIjtDYtufdrVWKw==}
 
@@ -1716,6 +1719,9 @@ packages:
 
   '@unocss/preset-icons@66.6.7':
     resolution: {integrity: sha512-mGAOyI/qz1pZUV1BcOtWAMm5czdFCjhFCYcDk0KY+Jw37pKRVSQRFeh4gpHuYKmehGv36caLyVrWXpTAwRBdFQ==}
+
+  '@unocss/preset-icons@66.6.8':
+    resolution: {integrity: sha512-+zD5TNGZIXvVOMcvDIYaTXinffpDMERGj6Ch8WTtJluA6qHHBvRuFexoU2bY8nF1r0HZkYzNT9C+RujFSP+6TA==}
 
   '@unocss/preset-mini@0.25.1':
     resolution: {integrity: sha512-NBfa2/t0TIAT//L8OVskDDQJ3OREjLwDzWMBNO86rvM0VPCIBvCmkKuFR3zxQcWK+aegISeScJA9Zcdk3qJjHA==}
@@ -4771,6 +4777,8 @@ snapshots:
 
   '@unocss/core@66.6.7': {}
 
+  '@unocss/core@66.6.8': {}
+
   '@unocss/extractor-arbitrary-variants@66.6.7':
     dependencies:
       '@unocss/core': 66.6.7
@@ -4793,6 +4801,12 @@ snapshots:
     dependencies:
       '@iconify/utils': 3.1.0
       '@unocss/core': 66.6.7
+      ofetch: 1.5.1
+
+  '@unocss/preset-icons@66.6.8':
+    dependencies:
+      '@iconify/utils': 3.1.0
+      '@unocss/core': 66.6.8
       ofetch: 1.5.1
 
   '@unocss/preset-mini@0.25.1':
