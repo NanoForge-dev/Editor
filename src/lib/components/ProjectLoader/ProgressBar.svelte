@@ -3,9 +3,9 @@
 
   interface Props {
     title: string;
-    promises: Promise<void>[];
+    promises: Promise<unknown>[];
     show: boolean;
-    callback?: () => void;
+    callback?: () => unknown;
   }
   let { title, promises, show = $bindable(), callback }: Props = $props();
 
@@ -19,9 +19,10 @@
   }
 
   $effect(() => {
+    completed = 0;
     total = promises.length;
     promises.forEach((promise) => {
-      promise.then(() => {
+      promise.finally(() => {
         completed += 1;
         if (completed === total && total > 0) {
           callback?.();

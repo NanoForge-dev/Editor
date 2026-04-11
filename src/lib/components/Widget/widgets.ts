@@ -1,3 +1,4 @@
+import EditorGame from '$lib/components/Widget/EditorGame/EditorGame.svelte';
 import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
@@ -36,5 +37,9 @@ export const widgetsTypes: WidgetType[] = [
   {
     id: 'output-log',
     component: OutputLogWidget,
+  },
+  {
+    id: 'editor-game',
+    component: EditorGame,
   },
 ];
