@@ -8,17 +8,29 @@ on:
         type: boolean
         default: false
 
+env:
+  REGISTRY: ghcr.io
+  ORG_NAME: ${{ github.repository_owner }}
+  IMAGE_NAME: ${{ github.event.repository.name }}
+  CONFIG_FILE: kubernetes/nanoforge/editor-override.yaml
+
 permissions:
   contents: write
+  packages: write
+  attestations: write
+  id-token: write
 
 jobs:
-  npm-publish:
-    name: npm publish
+  create-release:
+    name: Create release
     runs-on: ubuntu-latest
     if: github.repository_owner == 'NanoForge-dev'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Prepare
         uses: ./.github/actions/prepare
@@ -28,6 +40,15 @@ jobs:
         with:
           package: '@nanoforge-dev/editor'
           dry: ${{ inputs.dry_run }}
+          format: '{version}'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        uses: ./.github/actions/docker-push
+        with:
+          registry: ${{ env.REGISTRY }}
+          image: ${{ env.ORG_NAME }}/${{ env.IMAGE_NAME }}
+          token: ${{ secrets.TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

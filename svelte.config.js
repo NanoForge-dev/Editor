@@ -1,5 +1,5 @@
-import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import adapter from 'svelte-adapter-bun';
 
 /** @type {import('@sveltejs/kit').Config} */
 export default {
@@ -9,7 +9,9 @@ export default {
     handler(warning);
   },
   kit: {
-    adapter: adapter(),
+    adapter: adapter({
+      out: 'dist',
+    }),
     alias: {
       '@utils/*': './src/lib/utils/*',
       '@utils-client/*': './src/lib/utils-client/*',
