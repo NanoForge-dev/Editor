@@ -1,62 +1,63 @@
 catalogs:
   build:
-    'svelte-adapter-bun': ^1.0.1
     '@tsconfig/svelte': ^5.0.8
-    typescript: ^5.9.3
+    'svelte-adapter-bun': ^1.0.1
+    typescript: ^6.0.2
   ci:
-    '@commitlint/cli': ^20.4.2
-    '@commitlint/config-conventional': ^20.4.2
-    '@favware/cliff-jumper': ^6.0.0
-    '@nanoforge-dev/actions': ^1.1.0
+    '@commitlint/cli': ^20.5.0
+    '@commitlint/config-conventional': ^20.5.0
+    '@favware/cliff-jumper': ^6.1.0
+    '@nanoforge-dev/actions': ^1.2.3
     husky: ^9.1.7
-    lint-staged: ^16.2.7
+    lint-staged: ^16.4.0
   components:
-    flowbite: ^4.0.1
-    flowbite-svelte: ^1.31.0
-    monaco-editor: ^0.55.1
-    svelte-sonner: ^1.0.7
+    "@types/file-saver": ^2.0.7
     file-saver: ^2.0.5
+    flowbite: ^4.0.1
+    flowbite-svelte: ^1.33.1
     idb: ^8.0.3
     jszip: ^3.10.1
-    "@types/file-saver": ^2.0.7
+    monaco-editor: ^0.55.1
+    svelte-sonner: ^1.1.0
   core:
     '@sveltejs/adapter-auto': ^7.0.1
-    '@sveltejs/kit': ^2.53.4
-    '@sveltejs/vite-plugin-svelte': ^6.2.4
-    svelte: ^5.48.0
-    svelte-check: ^4.3.5
-    vite: ^7.3.1
+    '@sveltejs/kit': ^2.57.1
+    '@sveltejs/vite-plugin-svelte': ^7.0.0
+    '@types/bun': ^1.3.12
+    svelte: ^5.55.3
+    svelte-check: ^4.4.6
     svelte-kit-sessions: "^0.4.0"
+    vite: ^8.0.8
   css:
     '@alexanderniebuhr/prettier-plugin-unocss': ^0.0.4
-    '@unocss/extractor-svelte': ^66.6.3
-    '@unocss/preset-icons': ^66.6.0
-    '@unocss/preset-web-fonts': ^66.6.0
-    '@unocss/preset-wind4': ^66.6.0
-    unocss: ^66.6.0
+    '@unocss/extractor-svelte': ^66.6.8
+    '@unocss/preset-icons': ^66.6.8
+    '@unocss/preset-web-fonts': ^66.6.8
+    '@unocss/preset-wind4': ^66.6.8
+    unocss: ^66.6.8
   i18n:
-    '@inlang/paraglide-js': ^2.9.1
+    '@inlang/paraglide-js': ^2.15.3
   icons:
     '@iconify-json/ic': ^1.2.4
-    '@iconify-json/material-icon-theme': ^1.2.51
+    '@iconify-json/material-icon-theme': ^1.2.58
     '@iconify-json/solar': ^1.2.5
   lint:
-    '@nanoforge-dev/utils-eslint-config': ^1.0.1
+    '@nanoforge-dev/utils-eslint-config': ^1.0.2
     '@nanoforge-dev/utils-prettier-config': ^1.0.2
     '@trivago/prettier-plugin-sort-imports': ^6.0.2
-    eslint: ^9.39.2
-    eslint-plugin-svelte: ^3.15.0
-    globals: ^17.4.0
-    prettier: ^3.8.1
-    prettier-plugin-svelte: ^3.5.0
-    typescript-eslint: ^8.53.1
+    eslint: ^10.2.0
+    eslint-plugin-svelte: ^3.17.0
+    globals: ^17.5.0
+    prettier: ^3.8.2
+    prettier-plugin-svelte: ^3.5.1
+    typescript-eslint: ^8.58.2
   test:
-    '@playwright/test': ^1.58.2
-    '@vitest/browser-playwright': ^4.0.18
-    '@vitest/coverage-v8': ^4.0.18
-    playwright: ^1.58.2
-    vitest: ^4.0.18
-    vitest-browser-svelte: ^2.0.2
+    '@playwright/test': ^1.59.1
+    '@vitest/browser-playwright': ^4.1.4
+    '@vitest/coverage-v8': ^4.1.4
+    playwright: ^1.59.1
+    vitest: ^4.1.4
+    vitest-browser-svelte: ^2.1.1
 
 onlyBuiltDependencies:
   - esbuild

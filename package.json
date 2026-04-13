@@ -69,7 +69,7 @@
     "@sveltejs/vite-plugin-svelte": "catalog:core",
     "@trivago/prettier-plugin-sort-imports": "catalog:lint",
     "@tsconfig/svelte": "catalog:build",
-    "@types/bun": "^1.3.11",
+    "@types/bun": "catalog:core",
     "@types/file-saver": "catalog:components",
     "@unocss/extractor-svelte": "catalog:css",
     "@unocss/preset-icons": "catalog:css",
