@@ -1,7 +1,6 @@
 <script lang="ts">
   import MenuButton from './MenuButton.svelte';
   import MenuItem from './MenuItem.svelte';
-  import { exportToZip, importFromZip } from '$lib/components/Utils/zip';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
@@ -17,7 +16,7 @@
     if (!file) return;
     if (!file.name.endsWith('.zip')) return;
 
-    await importFromZip(file);
+    //await importFromZip(file);
     input.value = '';
   }
 </script>
@@ -35,7 +34,7 @@
         on:change={handleFileChange}
       />
     </MenuItem>
-    <MenuItem icon="i-solar-file-send-bold-duotone" onClick={() => exportToZip()}>Export</MenuItem>
+    <MenuItem icon="i-solar-file-send-bold-duotone">Export</MenuItem>
     <MenuItem icon="i-solar-exit-bold-duotone" onClick={() => goto(resolve('/load-project'))}
       >Exit</MenuItem
     >

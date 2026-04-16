@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { saveFile } from '$lib/components/Utils/IndexedDB/fileSystem';
   import type { Tab } from '$lib/components/Tabs/types';
 
   interface Props {
@@ -36,7 +35,7 @@
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      if (tab.filePath && tab.content) saveFile(tab.filePath, tab.content);
+      //if (tab.filePath && tab.content) saveFile(tab.filePath, tab.content);
     });
 
     editor.onDidChangeModelContent(() => {

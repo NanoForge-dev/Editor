@@ -22,3 +22,22 @@
 
   @apply color-neutral-200 bg-neutral-900;
 }
+
+html {
+  scrollbar-color: #52525b #18181b;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #18181b;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: #52525b;
+  border-radius: 9999px;
+}

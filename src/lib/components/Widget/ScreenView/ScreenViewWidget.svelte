@@ -9,7 +9,7 @@
   let iframeGame: HTMLIFrameElement;
 
   async function LoadIframeGame() {
-    iframeGame.src = 'http://localhost:3000/';
+    iframeGame.src = 'http://localhost:3000';
   }
 
   async function uploadFiles() {
@@ -20,7 +20,9 @@
   async function playGame() {
     await uploadFiles();
     await api.playProject();
-    await LoadIframeGame();
+    setTimeout(() => {
+      LoadIframeGame();
+    }, 1000);
     isPlaying = true;
   }
 
