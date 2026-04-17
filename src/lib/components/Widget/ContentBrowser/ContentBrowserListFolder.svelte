@@ -4,9 +4,10 @@
   import { onMount } from 'svelte';
   import { FileSystemDirectory } from '@utils-client/file-system';
   import type {
-    FileSystemChild,
-    FileSystemDirectoryChild,
-  } from '@utils-client/file-system/file-system-directory.js';
+    FileSystemMapDirectoryChildren,
+    FileSystemMapEntry,
+    FileSystemMapEntryDirectory,
+  } from '@utils-client/file-system/file-system-directory';
 
   interface Props {
     name: string;
@@ -19,14 +20,14 @@
   let open: boolean = $state(false);
   let deepness: number = $state(0);
 
-  let childFolders: FileSystemDirectoryChild[] = $derived([]);
+  let childFolders: FileSystemMapDirectoryChildren = $state(new Map());
 
-  function isDirectory(entry: FileSystemChild): entry is FileSystemDirectoryChild {
+  function isDirectory(entry: FileSystemMapEntry): entry is FileSystemMapEntryDirectory {
     return entry[1] instanceof FileSystemDirectory;
   }
 
   onMount(async () => {
-    childFolders = (await directory.getChildren()).filter((c) => isDirectory(c));
+    childFolders = new Map((await directory.getChildren()).entries().filter(isDirectory));
     deepness = (await directory.getParents(root))?.length || 0;
   });
 
@@ -57,7 +58,7 @@
   style={`padding-left: ${deepness * 8}px`}
   onclick={() => ($CurrentDirectory = directory)}
 >
-  {#if childFolders.length > 0}
+  {#if childFolders.size > 0}
     <span
       onclick={(e) => {
         e.stopPropagation();
@@ -75,7 +76,7 @@
   <span class="text-sm text-neutral-200">{name}</span>
 </button>
 
-{#if open && childFolders.length > 0}
+{#if open && childFolders.size > 0}
   {#each childFolders as [childName, handle] (childName)}
     <Self name={childName} directory={handle} {root} />
   {/each}

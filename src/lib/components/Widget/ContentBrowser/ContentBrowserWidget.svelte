@@ -3,21 +3,22 @@
   import { onMount } from 'svelte';
   import { CurrentDirectory } from '$lib/components/Widget/ContentBrowser/store';
   import ContentBrowserListFolder from '$lib/components/Widget/ContentBrowser/ContentBrowserListFolder.svelte';
-  import { FileSystemDirectory } from '@utils-client/file-system';
   import { projectFileSystem } from '@utils-client/local-file-system/project-file-system';
-  import type {
-    FileSystemChild,
-    FileSystemDirectoryChild,
+  import {
+    type FileSystemMapChildren,
+    type FileSystemMapEntry,
+    type FileSystemMapEntryDirectory,
+    FileSystemDirectory,
   } from '@utils-client/file-system/file-system-directory';
 
-  let contents: FileSystemChild[] = $state([]);
+  let contents: FileSystemMapChildren = $state(new Map());
   let foldersParent: FileSystemDirectory[] = $state([]);
   let loadId = 0;
 
-  let rootDirectoryHandle: FileSystemDirectory | undefined;
-  let rootDirectoryChildren: FileSystemChild[] = $state([]);
+  let rootDirectoryHandle: FileSystemDirectory | undefined = $state();
+  let rootDirectoryChildren: FileSystemMapChildren = $state(new Map());
 
-  function isDirectory(entry: FileSystemChild): entry is FileSystemDirectoryChild {
+  function isDirectory(entry: FileSystemMapEntry): entry is FileSystemMapEntryDirectory {
     return entry[1] instanceof FileSystemDirectory;
   }
 
@@ -33,7 +34,7 @@
     const id = ++loadId;
 
     if (!dir) {
-      contents = [];
+      contents.clear();
       foldersParent = [];
       return;
     }
@@ -54,7 +55,7 @@
 <div class="h-full w-full flex gap-1 bg-neutral-800 p-1">
   <div class="w-1/5 flex flex-col rounded-l-md rounded-r-sm bg-neutral-900 p-1">
     {#if contents && rootDirectoryHandle}
-      {#each rootDirectoryChildren.filter(isDirectory) as [name, handle] (name)}
+      {#each rootDirectoryChildren.entries().filter(isDirectory) as [name, handle] (name)}
         <ContentBrowserListFolder {name} directory={handle} root={rootDirectoryHandle} />
       {/each}
     {/if}

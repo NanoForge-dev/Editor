@@ -1,8 +1,10 @@
 import { FileSystemFile } from './file-system-file';
 
-export type FileSystemChild = [string, FileSystemDirectory | FileSystemFile];
-export type FileSystemDirectoryChild = [string, FileSystemDirectory];
-export type FileSystemFileChild = [string, FileSystemFile];
+export type FileSystemMapChildren = Map<string, FileSystemDirectory | FileSystemFile>;
+export type FileSystemMapDirectoryChildren = Map<string, FileSystemDirectory>;
+
+export type FileSystemMapEntry = [string, FileSystemDirectory | FileSystemFile];
+export type FileSystemMapEntryDirectory = [string, FileSystemDirectory];
 
 export class FileSystemDirectory {
   readonly handle: FileSystemDirectoryHandle;
@@ -23,16 +25,17 @@ export class FileSystemDirectory {
     return new FileSystemDirectory(await this.handle.getDirectoryHandle(name, { create }));
   }
 
-  async getChildren(): Promise<FileSystemChild[]> {
-    const result: FileSystemChild[] = [];
+  async getChildren(): Promise<FileSystemMapChildren> {
+    const result: FileSystemMapChildren = new Map();
     const entries = this.handle.entries();
 
     for await (const [name, handle] of entries) {
-      const newHandle =
+      result.set(
+        name,
         handle instanceof FileSystemDirectoryHandle
           ? new FileSystemDirectory(handle)
-          : new FileSystemFile(handle);
-      result.push([name, newHandle]);
+          : new FileSystemFile(handle),
+      );
     }
     return result;
   }
