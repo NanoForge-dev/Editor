@@ -4,24 +4,9 @@
   import Logo from '$lib/assets/logo.png';
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
   import { tabSelectedStore, tabsStore } from '../stores/tabs';
-  import { onMount } from 'svelte';
-  import { loadFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 
   const Component = $derived($tabsStore[$tabSelectedStore].type.component);
   let tab = $derived($tabsStore[$tabSelectedStore]);
-
-  let contentLoader: Promise<string>;
-
-  onMount(() => {
-    $effect(() => {
-      if (tab.filePath) {
-        contentLoader = loadFile(tab.filePath);
-        contentLoader.then((c) => {
-          tab.content = c;
-        });
-      }
-    });
-  });
 </script>
 
 <div class="h-screen flex flex-col gap-1">

@@ -22,9 +22,10 @@ export class FileSystemFile {
   async write(text: string): Promise<void> {
     const writable = await this.handle.createWritable();
     await writable.write(text);
+    await writable.close();
   }
 
-  writeJson(content: any): Promise<void> {
+  async writeJson(content: any): Promise<void> {
     const raw = JSON.stringify(content);
     return this.write(raw);
   }

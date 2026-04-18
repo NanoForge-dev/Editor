@@ -34,4 +34,14 @@ export class FileSystemManager {
       return false;
     }
   }
+
+  async clear(): Promise<boolean> {
+    try {
+      const dir = await this.getDirectory('/');
+      await dir.clear();
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

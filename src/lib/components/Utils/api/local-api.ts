@@ -1,7 +1,7 @@
 import { deserialize } from '$app/forms';
-import { clearDB } from '$lib/components/Utils/IndexedDB/db';
-import { listFiles, loadFile, saveFile } from '$lib/components/Utils/IndexedDB/fileSystem';
 import { type DirectoryRec, ProjectApi } from '$lib/components/Utils/api/project-api';
+import { FileSystemDirectory } from '@utils-client/file-system';
+import { projectFileSystem } from '@utils-client/local-file-system/project-file-system';
 
 export class LocalAPI extends ProjectApi {
   async createProject(formData: FormData): Promise<void> {
@@ -63,23 +63,7 @@ export class LocalAPI extends ProjectApi {
   }
 
   async uploadFiles(): Promise<void> {
-    const localFiles = await listFiles();
-
-    localFiles.map(async (file) => {
-      const content = await loadFile(file.id);
-
-      const formData = new FormData();
-      formData.append('filePath', file.id);
-      formData.append('fileContent', content);
-
-      await fetch('/fs?/writeFile', {
-        method: 'POST',
-        body: JSON.stringify({
-          filePath: formData.get('filePath'),
-          fileContent: formData.get('fileContent'),
-        }),
-      });
-    });
+    await this._uploadDirectoryRec(await projectFileSystem.getDirectory('/'), []);
   }
 
   async downloadFiles(): Promise<Promise<void>[]> {
@@ -96,8 +80,34 @@ export class LocalAPI extends ProjectApi {
       throw new Error('Failed to read remote directory');
     }
 
-    await clearDB();
+    await projectFileSystem.clear();
     return this._downloadDirectoryRec(readDirResult.data.dirContent as DirectoryRec);
+  }
+
+  private async _uploadDirectoryRec(directory: FileSystemDirectory, path: string[]): Promise<void> {
+    const children = await directory.getChildren();
+
+    for (const [name, handle] of children) {
+      const childPath = [...path, name];
+
+      if (handle instanceof FileSystemDirectory) {
+        await this._uploadDirectoryRec(handle, childPath);
+      } else {
+        const content = await handle.read();
+
+        const formData = new FormData();
+        formData.append('filePath', childPath.join('/'));
+        formData.append('fileContent', content);
+
+        await fetch('/fs?/writeFile', {
+          method: 'POST',
+          body: JSON.stringify({
+            filePath: formData.get('filePath'),
+            fileContent: formData.get('fileContent'),
+          }),
+        });
+      }
+    }
   }
 
   private async _downloadDirectoryRec(
@@ -107,19 +117,22 @@ export class LocalAPI extends ProjectApi {
     const promises: Promise<void>[] = [];
 
     for (const file of dir.files) {
+      const filePath = '/' + currentPath + file;
       const filePromise = fetch('/fs?/readFile', {
         method: 'POST',
-        body: JSON.stringify({ filePath: '/' + currentPath + file }),
+        body: JSON.stringify({ filePath: filePath }),
       }).then(async (fileRes) => {
         const fileResult = deserialize(await fileRes.text());
         if (fileResult.type === 'success' && fileResult.data) {
-          await saveFile(currentPath + file, fileResult.data.fileContent as string);
+          const file = await projectFileSystem.getFile(filePath, true);
+          await file.write(fileResult.data.fileContent as string);
         }
       });
       promises.push(filePromise);
     }
 
     for (const [dirName, children] of Object.entries(dir.directories)) {
+      await projectFileSystem.getDirectory(currentPath + dirName, true);
       if (dirName !== 'node_modules') {
         const dirPromise: Promise<void> = this._downloadDirectoryRec(
           children,
