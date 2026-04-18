@@ -21,14 +21,16 @@
   async function runGameFromServer() {
     gameState = GameStateEnum.RELOAD_FROM_SERVER;
     loadingPromises = await fetchGameProps();
-    gameState = GameStateEnum.PLAY;
+    await Promise.all(loadingPromises);
     loadingPromises = [];
+    gameState = GameStateEnum.PLAY;
     runGame(canvas);
   }
 
   async function runGameFromSave() {
     gameState = GameStateEnum.RELOAD_FROM_SAVE;
     loadingPromises = [];
+    await Promise.all(loadingPromises);
     gameState = GameStateEnum.PLAY;
     runGame(canvas);
   }
@@ -80,19 +82,6 @@
           />
         </button>
       </div>
-      <!--<button
-      aria-label="uploadFiles"
-      onclick={uploadFiles}
-      class="h-full flex justify-center items-center rounded-md text-sm p-1 hover:bg-neutral-900 text-neutral-300 cursor-pointer"
-    >
-      {#if isUploading}
-        <Spinner class="h-fit" />
-      {:else}
-        <span
-          class={$projectIsUpdatedStore ? 'i-ic-baseline-file-upload' : 'i-ic-baseline-file-upload'}
-        ></span>
-      {/if}
-    </button>-->
     </div>
     <div class="h-full w-full bg-black mb-8">
       <canvas class="editor-game-canvas" bind:this={canvas}> </canvas>

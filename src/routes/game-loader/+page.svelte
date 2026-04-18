@@ -4,6 +4,7 @@
   import { deserialize } from '$app/forms';
 
   let manifest = $state([]);
+  let file = $state(undefined);
   let save = $state(undefined);
   let env = $state(undefined);
 </script>
@@ -36,6 +37,32 @@
           {#if manifest.length > 0}
             <div style="white-space: pre;">
               {manifest.join('\n')}
+            </div>
+          {/if}
+          <form
+            onsubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const response = await fetch('/game-loader?/getBuildFile', {
+                method: 'POST',
+                body: JSON.stringify({
+                  side: formData.get('side'),
+                  filePath: formData.get('filePath'),
+                }),
+              });
+              const result = deserialize(await response.text());
+              if (result.type === 'success' && result.data) {
+                file = result.data.fileContent;
+              }
+            }}
+          >
+            <input name="side" placeholder="server or client" />
+            <input name="filePath" placeholder="Manifest file path" />
+            <input type="submit" value="getManifest" />
+          </form>
+          {#if file}
+            <div style="white-space: pre;">
+              {file}
             </div>
           {/if}
           <form

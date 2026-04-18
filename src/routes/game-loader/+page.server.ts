@@ -82,7 +82,7 @@ export const actions = {
         fileContent: new ProjectFile(
           `/.nanoforge/${data.side}/${data.filePath}`,
           locals.session.data.path,
-        ).read(),
+        ).read(data.encoding),
       };
     } catch (e: unknown) {
       if (e instanceof FileSystemError) {
@@ -92,16 +92,9 @@ export const actions = {
     }
   },
   getEnv: async () => {
-    try {
-      return {
-        success: true,
-        env: getGameEnv(),
-      };
-    } catch (e: unknown) {
-      if (e instanceof FileSystemError) {
-        return fail(403, { success: false, errorMsg: e.message });
-      }
-      throw e;
-    }
+    return {
+      success: true,
+      env: getGameEnv(),
+    };
   },
 } satisfies Actions;

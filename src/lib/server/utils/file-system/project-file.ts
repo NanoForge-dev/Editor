@@ -11,12 +11,12 @@ export class ProjectFile {
     this.projectPath = projectPath;
   }
 
-  read(): string {
+  read(encoding?: BufferEncoding): string {
     this._checkPathIsInsideProject();
     this._checkPathExists();
     this._checkPathIsFile();
     this._checkPathIsReadable();
-    return fs.readFileSync(this.path).toString();
+    return fs.readFileSync(this.path).toString(encoding);
   }
 
   readJson<T = any>(): T {

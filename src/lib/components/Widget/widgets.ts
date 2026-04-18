@@ -6,7 +6,6 @@ import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspector
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
 import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
-import ScreenView from './ScreenView/ScreenViewWidget.svelte';
 
 export interface WidgetType {
   id: string;
@@ -17,10 +16,6 @@ export const widgetsTypes: WidgetType[] = [
   {
     id: 'content-browser',
     component: ContentBrowserWidget,
-  },
-  {
-    id: 'screen-view',
-    component: ScreenView,
   },
   {
     id: 'entities-tree',

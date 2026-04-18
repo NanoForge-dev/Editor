@@ -1,7 +1,8 @@
 import { deserialize } from '$app/forms';
+import { gameProps } from '$lib/loader/client/game';
 import type { Save } from '$lib/loader/client/types/save.type';
 
-export async function fetchSave(): Promise<Save> {
+export async function fetchSave(): Promise<void> {
   const res = await fetch(`/game-loader?/getSave`, {
     method: 'POST',
     body: JSON.stringify({ side: 'client' }),
@@ -13,5 +14,5 @@ export async function fetchSave(): Promise<Save> {
       throw new Error(saveResult.data.errorMsg as string);
     throw new Error('Failed to read remote directory');
   }
-  return saveResult.data.save as Save;
+  gameProps.save = saveResult.data.save as Save;
 }

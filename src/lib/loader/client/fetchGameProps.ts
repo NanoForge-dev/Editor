@@ -10,5 +10,5 @@ export async function fetchGameProps(): Promise<Promise<unknown>[]> {
   const save = fetchSave();
   const env = fetchEnv();
   const loadFiles = loadGameFiles(files);
-  return [manifest, ...files, env, save, loadFiles];
+  return [manifest, ...files, env, save, ...loadFiles];
 }
