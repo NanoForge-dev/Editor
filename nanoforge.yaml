@@ -1,0 +1,16 @@
+replicaCount: 1
+name: editor
+image:
+  repository: ghcr.io/nanoforge-dev/editor
+  tag: latest
+imagePullSecret: 'nanoforge-docker-token'
+routes:
+  - port: 4173
+    host: 'Host(`editor.nanoforge.eu`)'
+config:
+  - name: api_url
+    value: 'https://api.nanoforge.eu'
+  - name: node_env
+    value: 'production'
+  - name: nf_cli_path
+    value: 'nf'
