@@ -69,7 +69,6 @@ export const actions = {
     }
     absoluteProjectPath = path.resolve(absoluteProjectPath);
 
-    console.log(locals.session.data.path);
     const session = locals.session;
 
     await session.setData({ path: absoluteProjectPath });
