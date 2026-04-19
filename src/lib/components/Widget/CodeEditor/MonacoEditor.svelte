@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import type { Tab } from '$lib/components/Tabs/types';
+  import type { TabInstance } from '$lib/components/Tabs/types';
 
   interface Props {
-    tab: Tab;
+    tab: TabInstance;
   }
   let { tab = $bindable() }: Props = $props();
 
@@ -14,7 +14,7 @@
     const monaco = await import('monaco-editor');
 
     editor = monaco.editor.create(container, {
-      value: tab.content,
+      value: (await tab.file?.read()) || '',
       language: 'typescript',
       theme: 'vs-dark',
       readOnly: false,
@@ -35,13 +35,8 @@
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      //if (tab.filePath && tab.content) saveFile(tab.filePath, tab.content);
-    });
-
-    editor.onDidChangeModelContent(() => {
-      const newValue = editor.getValue();
-      if (newValue !== tab.content) {
-        tab.content = newValue;
+      if (tab.file) {
+        tab.file.write(editor.getValue());
       }
     });
   });
