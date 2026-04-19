@@ -26,7 +26,9 @@
     if (!formElem) return;
     try {
       const projectFormData = new FormData(formElem);
-      const projectPath = projectFormData.get('projectPath');
+      // Remove until we fixed https://github.com/NanoForge-dev/CLI/issues/126
+      // const projectPath = projectFormData.get('projectPath');
+      const projectPath = '.';
       const projectName = projectFormData.get('projectName');
 
       if (projectPath && projectName) {

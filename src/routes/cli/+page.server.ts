@@ -30,10 +30,7 @@ export const actions = {
         data.projectName,
         data.packageManager,
         data.language,
-        data.strictTypeChecking,
         data.multiplayerServer,
-        data.skipDependencyInstallation,
-        data.dockerContainerization,
       );
       return {
         success: true,

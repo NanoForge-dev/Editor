@@ -15,25 +15,28 @@ export class CliInterface {
     projectName: string,
     packageManager: 'npm' | 'yarn' | 'pnpm' | 'bun',
     language: 'js' | 'ts',
-    strictTypeChecking: boolean,
     multiplayerServer: boolean,
-    skipDependencyInstallation: boolean,
-    dockerContainerization: boolean,
   ) {
     this.runCliSync([
       `new`,
-      `-d`,
-      this.projectPath,
+      // Not working (https://github.com/NanoForge-dev/CLI/issues/126)
+      // `-d`,
+      // this.projectPath,
       `--name`,
       projectName,
       `--package-manager`,
       packageManager,
       `--language`,
       language,
-      strictTypeChecking ? '--strict' : '--no-strict',
+      '--no-strict',
       multiplayerServer ? '--server' : '--no-server',
-      skipDependencyInstallation ? '--skip-install' : '--no-skip-install',
-      dockerContainerization ? '--docker' : '--no-docker',
+      '--init-functions',
+      '--no-skip-install',
+      '--no-docker',
+      '--no-lint',
+      // Unable to setup a git repository (https://github.com/NanoForge-dev/CLI/issues/125)
+      '--no-git',
+      '--editor',
     ]);
   }
 

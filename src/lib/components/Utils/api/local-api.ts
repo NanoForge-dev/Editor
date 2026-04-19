@@ -10,7 +10,9 @@ export class LocalAPI extends ProjectApi {
     const resp = await fetch('/cli?/createProject', {
       method: 'POST',
       body: JSON.stringify({
-        projectPath: formData.get('projectPath'),
+        projectPath: '.',
+        // Remove until we fixed https://github.com/NanoForge-dev/CLI/issues/126
+        // projectPath: formData.get('projectPath'),
         projectName: formData.get('projectName'),
         packageManager: formData.get('packageManager'),
         language: formData.get('language'),
