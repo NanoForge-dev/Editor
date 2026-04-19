@@ -2,6 +2,26 @@ import { FileSystemError } from '@utils-server/file-system/file-system-error';
 import fs from 'node:fs';
 import path from 'node:path';
 
+export type DirectoryContent = {
+  files: string[];
+  directories: { [key: string]: DirectoryContent };
+};
+
+export function directoryContentToFileEntries(
+  directoryContent: DirectoryContent,
+  basePath: string = '',
+) {
+  const entries: string[] = [];
+
+  directoryContent.files.forEach((file) => {
+    entries.push(basePath + '/' + file);
+  });
+  Object.entries(directoryContent.directories).forEach(([path, dirContent]) => {
+    entries.push(...directoryContentToFileEntries(dirContent, basePath + '/' + path));
+  });
+  return entries;
+}
+
 export class ProjectDirectory {
   private path: string;
   private readonly projectPath: string;
@@ -11,7 +31,7 @@ export class ProjectDirectory {
     this.projectPath = projectPath;
   }
 
-  read(recursive: boolean = false): { files: string[]; directories: {} } {
+  read(recursive: boolean = false): DirectoryContent {
     this._checkPathIsInsideProject();
     this._checkPathExists();
     this._checkPathIsDir();
@@ -103,10 +123,7 @@ export class ProjectDirectory {
     }
   }
 
-  private _readDirContent(
-    path: string = this.path,
-    recursive: boolean = false,
-  ): { files: string[]; directories: {} } {
+  private _readDirContent(path: string = this.path, recursive: boolean = false): DirectoryContent {
     const dirContent: { files: string[]; directories: { [key: string]: any } } = {
       files: [],
       directories: {},

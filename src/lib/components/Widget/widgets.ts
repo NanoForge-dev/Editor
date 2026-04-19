@@ -1,3 +1,4 @@
+import EditorGame from '$lib/components/Widget/EditorGame/EditorGame.svelte';
 import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
@@ -5,7 +6,6 @@ import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspector
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
 import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
-import ScreenView from './ScreenView/ScreenViewWidget.svelte';
 
 export interface WidgetType {
   id: string;
@@ -16,10 +16,6 @@ export const widgetsTypes: WidgetType[] = [
   {
     id: 'content-browser',
     component: ContentBrowserWidget,
-  },
-  {
-    id: 'screen-view',
-    component: ScreenView,
   },
   {
     id: 'entities-tree',
@@ -36,5 +32,9 @@ export const widgetsTypes: WidgetType[] = [
   {
     id: 'output-log',
     component: OutputLogWidget,
+  },
+  {
+    id: 'editor-game',
+    component: EditorGame,
   },
 ];

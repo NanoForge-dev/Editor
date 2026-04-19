@@ -66,7 +66,8 @@
     if (projectId) formData.append('projectId', projectId);
 
     await api.loadProject(formData);
-    await api.downloadFiles();
+    promisesFiles = await api.downloadFiles();
+    showLoadingProject = true;
     await goto(resolve('/'));
   });
 </script>

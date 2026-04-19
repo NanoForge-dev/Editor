@@ -21,7 +21,7 @@
       log.source?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const levelStyles: Record<LogLevel, string> = {
+  const levelStyles = {
     info: 'text-neutral-200',
     warning: 'text-yellow-400',
     error: 'text-red-400',

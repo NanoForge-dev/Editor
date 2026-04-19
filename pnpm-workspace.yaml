@@ -11,12 +11,8 @@ catalogs:
     husky: ^9.1.7
     lint-staged: ^16.4.0
   components:
-    "@types/file-saver": ^2.0.7
-    file-saver: ^2.0.5
     flowbite: ^4.0.1
     flowbite-svelte: ^1.33.1
-    idb: ^8.0.3
-    jszip: ^3.10.1
     monaco-editor: ^0.55.1
     svelte-sonner: ^1.1.0
   core:
