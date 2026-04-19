@@ -1,6 +1,5 @@
 import { deserialize } from '$app/forms';
-
-import { gameProps } from '$lib/loader/client/game';
+import { gameProps } from '$lib/loader/client/game.svelte';
 import type { Save } from '$lib/loader/client/types/save.type';
 
 export async function fetchSave(): Promise<void> {

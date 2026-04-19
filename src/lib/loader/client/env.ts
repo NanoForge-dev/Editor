@@ -1,6 +1,5 @@
 import { deserialize } from '$app/forms';
-
-import { gameProps } from '$lib/loader/client/game';
+import { gameProps } from '$lib/loader/client/game.svelte';
 
 export async function fetchEnv(): Promise<void> {
   const res = await fetch(`/game-loader?/getEnv`, { method: 'POST', body: new FormData() });

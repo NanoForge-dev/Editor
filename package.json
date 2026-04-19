@@ -62,6 +62,7 @@
     "@iconify-json/solar": "catalog:icons",
     "@inlang/paraglide-js": "catalog:i18n",
     "@nanoforge-dev/actions": "catalog:ci",
+    "@nanoforge-dev/ecs-lib": "catalog:core",
     "@nanoforge-dev/utils-eslint-config": "catalog:lint",
     "@nanoforge-dev/utils-prettier-config": "catalog:lint",
     "@playwright/test": "catalog:test",

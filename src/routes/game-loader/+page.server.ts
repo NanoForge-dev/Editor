@@ -65,6 +65,36 @@ export const actions = {
       throw e;
     }
   },
+  getComponentManifest: async ({ request, locals }) => {
+    const data = await request.json();
+
+    if (!data.side) {
+      return fail(403, { success: false, errorMsg: "Missing arg: 'side'" });
+    }
+    if (data.side !== 'server' && data.side !== 'client') {
+      return fail(403, { success: false, errorMsg: "Arg 'side' can only be 'server' or 'client'" });
+    }
+    if (!data.componentPath) {
+      return fail(403, { success: false, errorMsg: "Missing arg: 'componentPath'" });
+    }
+    try {
+      const projectComponentFile = new ProjectFile(
+        `/${data.side}/${data.componentPath}`,
+        locals.session.data.path,
+      );
+      projectComponentFile.isReadable();
+      const componentModule = await import(/* @vite-ignore */ projectComponentFile.path);
+      return {
+        success: true,
+        manifest: componentModule['EDITOR_COMPONENT_MANIFEST'],
+      };
+    } catch (e: unknown) {
+      if (e instanceof FileSystemError) {
+        return fail(403, { success: false, errorMsg: e.message });
+      }
+      throw e;
+    }
+  },
   getBuildFile: async ({ request, locals }) => {
     const data = await request.json();
 

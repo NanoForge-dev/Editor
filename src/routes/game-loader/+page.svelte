@@ -4,7 +4,8 @@
   import { deserialize } from '$app/forms';
 
   let manifest = $state([]);
-  let file = $state(undefined);
+  let buildFile = $state(undefined);
+  let componentManifest = $state(undefined);
   let save = $state(undefined);
   let env = $state(undefined);
 </script>
@@ -52,7 +53,7 @@
               });
               const result = deserialize(await response.text());
               if (result.type === 'success' && result.data) {
-                file = result.data.fileContent;
+                buildFile = result.data.fileContent;
               }
             }}
           >
@@ -60,9 +61,35 @@
             <input name="filePath" placeholder="Manifest file path" />
             <input type="submit" value="getManifest" />
           </form>
-          {#if file}
+          {#if buildFile}
             <div style="white-space: pre;">
-              {file}
+              {buildFile}
+            </div>
+          {/if}
+          <form
+            onsubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const response = await fetch('/game-loader?/getComponentManifest', {
+                method: 'POST',
+                body: JSON.stringify({
+                  side: formData.get('side'),
+                  componentPath: formData.get('componentPath'),
+                }),
+              });
+              const result = deserialize(await response.text());
+              if (result.type === 'success' && result.data) {
+                componentManifest = result.data.manifest;
+              }
+            }}
+          >
+            <input name="side" placeholder="server or client" />
+            <input name="componentPath" placeholder="Component file path" />
+            <input type="submit" value="getManifest" />
+          </form>
+          {#if componentManifest}
+            <div style="white-space: pre;">
+              {JSON.stringify(componentManifest)}
             </div>
           {/if}
           <form
