@@ -1,23 +1,20 @@
 <script lang="ts">
-  import TabComponent from './Tab.svelte';
-  import { tabSelectedStore, tabsStore } from '../../../stores/tabs';
-  import type { Tab } from '$lib/components/Tabs/types';
-  import { workingFileStore } from '../../../stores/workingFile';
+  import Tab from './Tab.svelte';
+  import { tabsStore } from './store';
+  import { tabRegistry } from './registry';
 
-  let tabs: Tab[] = $derived($tabsStore);
+  let state = $derived($tabsStore);
 </script>
 
-<div class="w-full flex gap-1">
-  {#each tabs as tab, index (tab)}
-    <TabComponent
+<div class="flex w-full gap-1 overflow-x-auto">
+  {#each state.tabs as tab (tab.id)}
+    <Tab
       {tab}
-      selected={$tabSelectedStore === index}
-      closable={tab.type.name !== 'main'}
-      onSelect={() => {
-        tabSelectedStore.set(index);
-        workingFileStore.set(tabs[index].filePath || '');
-      }}
-      onClose={() => tabsStore.update((tabs) => tabs.splice(index, 1))}
+      meta={tabRegistry[tab.type]}
+      selected={state.selectedTabId === tab.id}
+      closable={tab.type !== 'main'}
+      onSelect={() => tabsStore.selectTab(tab.id)}
+      onClose={() => tabsStore.closeTab(tab.id)}
     />
   {/each}
 </div>

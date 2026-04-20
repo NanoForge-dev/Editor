@@ -1,8 +1,9 @@
 <script lang="ts">
-  import type { Tab } from './types';
+  import type { Tab, TabInstance } from './types';
 
   interface Props {
-    tab: Tab;
+    tab: TabInstance;
+    meta?: Tab;
     selected?: boolean;
     closable?: boolean;
     onSelect?: () => void;
@@ -10,7 +11,8 @@
   }
   let {
     tab,
-    selected = $bindable(false),
+    meta,
+    selected = false,
     closable = true,
     onSelect = () => {},
     onClose = () => {},
@@ -28,7 +30,7 @@
       ? 'font-bold'
       : ''} truncate"
   >
-    <span class="{tab.type.icon} flex-shrink-0"></span>
+    <span class="{meta?.icon || ''} flex-shrink-0"></span>
     <span
       class="flex-1 text-start text-sm {selected ? 'font-bold' : ''} truncate relative"
       style="mask-image: linear-gradient(to left, transparent, black 10%); -webkit-mask-image: linear-gradient(to left, transparent, black 10%);"
@@ -41,7 +43,10 @@
     <span
       role="button"
       tabindex="0"
-      onclick={onClose}
+      onclick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
       onkeydown={(e) => e.key === 'Enter' && onClose()}
       class="i-solar:close-circle-line-duotone"
       aria-label="Close tab"

@@ -5,8 +5,16 @@ export class FileSystemFile {
     this.handle = handle;
   }
 
+  getName(): string {
+    return this.handle.name;
+  }
+
   getFile(): Promise<File> {
     return this.handle.getFile();
+  }
+
+  async isSameFile(file: FileSystemFile): Promise<boolean> {
+    return await this.handle.isSameEntry(file.handle);
   }
 
   async read(): Promise<string> {

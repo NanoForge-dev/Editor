@@ -3,10 +3,11 @@
   import MenuBar from '$lib/components/Menu/MenuBar.svelte';
   import Logo from '$lib/assets/logo.png';
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
-  import { tabSelectedStore, tabsStore } from '../stores/tabs';
+  import { tabRegistry } from '$lib/components/Tabs/registry';
+  import { tabsStore } from '$lib/components/Tabs/store';
 
-  const Component = $derived($tabsStore[$tabSelectedStore].type.component);
-  let tab = $derived($tabsStore[$tabSelectedStore]);
+  let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
+  let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
 </script>
 
 <div class="h-screen flex flex-col gap-1">
@@ -42,6 +43,10 @@
     </div>
   </header>
   <main class="h-full min-h-0 w-full flex-1 bg-neutral-900 p-2">
-    <Component bind:tab />
+    {#key $tabsStore.selectedTabId}
+      {#if Component && tab}
+        <Component bind:tab />
+      {/if}
+    {/key}
   </main>
 </div>
