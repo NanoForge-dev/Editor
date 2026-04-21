@@ -6,7 +6,7 @@
   import Stop from '$lib/assets/stop.png';
   import Reload from '$lib/assets/reload.png';
   import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
-  import { localApi } from '$lib/components/Utils/api/api.ts';
+  import { localApi } from '$lib/components/Utils/api/api';
 
   let canvas: HTMLCanvasElement;
 
