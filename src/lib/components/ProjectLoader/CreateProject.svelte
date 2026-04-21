@@ -1,5 +1,5 @@
 <script lang="ts">
-  import api from '$lib/components/Utils/api/api';
+  import { localApi } from '$lib/components/Utils/api/api';
   import ProjectCache from '$lib/components/Utils/LocalStorage/ProjectCache';
   import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
 
@@ -10,8 +10,8 @@
   let { show = $bindable(), callback }: Props = $props();
 
   let projectLoading: Promise<void> | null = $state(null);
-
   let formElem: HTMLFormElement | undefined = $state();
+  let createGitRepository: boolean = $state(false);
 
   let showAdvancedSettings: boolean = $state(false);
   let error: string = $state('');
@@ -22,13 +22,11 @@
     }
   }
 
-  export async function newProject() {
+  async function newProject() {
     if (!formElem) return;
     try {
       const projectFormData = new FormData(formElem);
-      // Remove until we fixed https://github.com/NanoForge-dev/CLI/issues/126
-      // const projectPath = projectFormData.get('projectPath');
-      const projectPath = '.';
+      const projectPath = projectFormData.get('projectPath');
       const projectName = projectFormData.get('projectName');
 
       if (projectPath && projectName) {
@@ -63,7 +61,7 @@
     onsubmit={(e) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
-      projectLoading = api.createProject(formData);
+      projectLoading = localApi.createProject(formData);
     }}
   >
     <span id="project-title" class="text-2xl font-bold mb-8 text-center">New project</span>
@@ -120,15 +118,9 @@
           id="languageId"
           class="bg-neutral-900 px-3 py-2 rounded-md cursor-pointer w-1/2"
         >
-          <option value="js">JS</option>
           <option value="ts">TS</option>
+          <option value="js">JS</option>
         </select>
-      </span>
-      <span class="mb-4 flex gap-4 items-end h-fit">
-        <label for="strictTypeCheckingId" class="block text-sm text-neutral-300 w-1/2"
-          >Strict Type Checking</label
-        >
-        <input type="checkbox" name="strictTypeChecking" value="true" id="strictTypeCheckingId" />
       </span>
       <span class="mb-4 flex gap-4 items-end h-fit">
         <label for="multiplayerServerId" class="block text-sm text-neutral-300 w-1/2"
@@ -147,6 +139,27 @@
           id="dockerContainerizationId"
         />
       </span>
+      <span class="mb-4 flex gap-4 items-end h-fit">
+        <label for="createGitRepositoryId" class="block text-sm text-neutral-300 w-1/2"
+          >Create Git Repository</label
+        >
+        <input
+          type="checkbox"
+          name="createGitRepository"
+          bind:checked={createGitRepository}
+          id="createGitRepositoryId"
+        />
+      </span>
+      {#if createGitRepository}
+        <span class="mb-4 flex gap-4 items-end">
+          <span class="block text-sm mb-1 text-neutral-300 w-1/2">Git Remote</span>
+          <input
+            name="gitRemote"
+            class="w-1/2 rounded-lg px-3 py-2 outline outline-neutral-800 text-sm"
+            placeholder="Git Remote"
+          />
+        </span>
+      {/if}
     </div>
 
     <span class="w-full text-center text-red-400 text-sm">{error}</span>

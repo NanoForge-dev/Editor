@@ -1,31 +1,40 @@
 <script lang="ts">
   import ComponentValueEditor from './ComponentValueEditor.svelte';
-  import { componentsManifests, gameProps } from '$lib/loader/client/game.svelte';
-  import { onMount } from 'svelte';
-  import { fetchComponentManifest } from '$lib/loader/client/componentManifest';
-  import { fetchSave } from '$lib/loader/client/save';
+  import { componentsManifests, save } from '$lib/components/Widget/EditorGame/game.svelte';
+  import { localApi } from '$lib/components/Utils/api/api';
 
-  onMount(async () => {
-    await fetchSave();
-    componentsManifests.length = 0;
-    componentsManifests.push(
-      ...(await Promise.all(
-        gameProps.save.components.map((component) => {
-          return fetchComponentManifest(component.path);
-        }),
-      )),
-    );
+  let loaded = false;
+  let loading = $state(true);
+
+  $effect(() => {
+    if ($save?.components?.length && !loaded) {
+      loaded = true;
+      loadManifests();
+    }
   });
+  async function loadManifests() {
+    $componentsManifests = [];
+
+    $componentsManifests = await Promise.all(
+      $save.components.map((component) => {
+        return localApi.getComponentManifest(component.path, 'client');
+      }),
+    );
+
+    loading = false;
+  }
 </script>
 
 <div class="h-full w-full overflow-y-scroll bg-neutral-900 py-1 text-md">
-  {#each gameProps.save.entities as entity (entity.id)}
-    <ComponentValueEditor {entity} />
-  {/each}
+  {#if !loading}
+    {#each $save.entities as entity (entity.id)}
+      <ComponentValueEditor {entity} />
+    {/each}
+  {/if}
   <div class="mx-4 my-4 flex justify-center">
     <button
       class="h-10 w-full cursor-pointer rounded-md bg-neutral-800 font-semibold hover:bg-neutral-700"
-      on:click={() => {}}
+      onclick={() => {}}
     >
       Add component
     </button>

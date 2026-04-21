@@ -11,61 +11,58 @@ export class CliInterface {
     this.projectPath = projectPath;
   }
 
-  createProject(
+  new(
     projectName: string,
     packageManager: 'npm' | 'yarn' | 'pnpm' | 'bun',
     language: 'js' | 'ts',
-    multiplayerServer: boolean,
+    strictTypeChecking?: boolean,
+    multiplayerServer?: boolean,
+    dockerContainerization?: boolean,
+    generateLintFiles?: boolean,
+    editor?: boolean,
+    createGitRepository?: boolean,
+    gitRemote?: string,
   ) {
-    this.runCliSync([
+    this._runCliSync([
       `new`,
-      // Not working (https://github.com/NanoForge-dev/CLI/issues/126)
-      // `-d`,
-      // this.projectPath,
+      `-d`,
+      this.projectPath,
       `--name`,
       projectName,
       `--package-manager`,
       packageManager,
       `--language`,
       language,
-      '--no-strict',
+      strictTypeChecking ? '--strict' : '--no-strict',
       multiplayerServer ? '--server' : '--no-server',
       '--init-functions',
       '--no-skip-install',
-      '--no-docker',
-      '--no-lint',
-      // Unable to setup a git repository (https://github.com/NanoForge-dev/CLI/issues/125)
-      '--no-git',
-      '--editor',
+      dockerContainerization ? '--docker' : '--no-docker',
+      generateLintFiles ? undefined : '--no-lint',
+      editor ? '--editor' : undefined,
+      createGitRepository ? '--git' : '--no-git',
+      gitRemote ? '--git-remote' : '--no-git-remote',
+      gitRemote,
     ]);
   }
 
-  startDevProject(pid: number): number {
-    if (this.isProjectRunning(pid) && pid != -1) {
-      throw new CliError('Project already running');
-    }
-    this.runCliSync([`build`, `-d`, this.projectPath]);
-    return this.runCliAsync([`dev`, `-d`, this.projectPath]);
+  build(editor?: boolean) {
+    this._runCliSync(['build', `-d`, this.projectPath, editor ? '--editor' : undefined]);
   }
 
-  stopProject(pid: number) {
-    if (!this.isProjectRunning(pid)) {
-      throw new CliError('Project not running');
-    }
-    process.kill(pid, 'SIGTERM');
+  generate(editor?: boolean) {
+    this._runCliSync(['generate', `-d`, this.projectPath, editor ? '--editor' : undefined]);
   }
 
-  isProjectRunning(pid: number): boolean {
-    try {
-      process.kill(pid, 0);
-      return true;
-    } catch {
-      return false;
-    }
+  addComponent(componentName: string) {
+    this._runCliSync(['add', `-d`, this.projectPath, componentName]);
   }
 
-  private runCliSync(params: string[]) {
-    const res = child_process.spawnSync(env.NF_CLI_PATH, params);
+  private _runCliSync(params: (string | undefined)[]) {
+    const res = child_process.spawnSync(
+      env.NF_CLI_PATH,
+      params.filter((e) => e !== undefined),
+    );
     if (res.status === null) {
       throw new CliError(`Executable ${env.NF_CLI_PATH} cannot be found or executed`);
     }
@@ -76,7 +73,7 @@ export class CliInterface {
     }
   }
 
-  private runCliAsync(params: string[]): number {
+  private _runCliAsync(params: string[]): number {
     const res = child_process.spawn(env.NF_CLI_PATH, params);
 
     const startTime = Date.now();

@@ -4,6 +4,8 @@
   import { coreEvents, runGame } from '$lib/loader/client/game';
   import Play from '$lib/assets/play.png';
   import Stop from '$lib/assets/stop.png';
+  import Reload from '$lib/assets/reload.png';
+  import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
 
   let canvas: HTMLCanvasElement;
 
@@ -20,6 +22,7 @@
 
   async function runGameFromServer() {
     gameState = GameStateEnum.RELOAD_FROM_SERVER;
+    // await localApi.buildProject();
     loadingPromises = await fetchGameProps();
     await Promise.all(loadingPromises);
     loadingPromises = [];
@@ -29,10 +32,12 @@
 
   async function runGameFromSave() {
     gameState = GameStateEnum.RELOAD_FROM_SAVE;
-    loadingPromises = [];
-    await Promise.all(loadingPromises);
     gameState = GameStateEnum.PLAY;
     runGame(canvas);
+  }
+
+  async function sendEvent(event: string) {
+    coreEvents.emitEvent(event);
   }
 
   async function stopGame() {
@@ -51,6 +56,21 @@
   <div class="h-full w-full bg-neutral-800 flex flex-col">
     <div class="py-2 px-2 h-16 flex justify-center">
       <div class="bg-neutral-600 rounded-md p-1">
+        <button
+          aria-label="Hot Reload"
+          class="h-fit {gameState === GameStateEnum.PLAY
+            ? 'cursor-pointer hover:bg-neutral-700'
+            : ''} rounded-md p-2"
+          onclick={() => sendEvent(EventTypeEnum.HOT_RELOAD)}
+        >
+          <img
+            src={Stop}
+            class="h-fit w-5 {gameState !== GameStateEnum.PLAY
+              ? 'filter grayscale brightness-300'
+              : ''}"
+            alt="Hot Reload"
+          />
+        </button>
         <button
           aria-label="Play"
           class="h-fit {gameState !== GameStateEnum.PLAY
@@ -79,6 +99,22 @@
               ? 'filter grayscale brightness-300'
               : ''}"
             alt="Stop"
+          />
+        </button>
+
+        <button
+          aria-label="Reload from server"
+          class="h-fit {gameState !== GameStateEnum.RELOAD_FROM_SERVER
+            ? 'cursor-pointer hover:bg-neutral-700'
+            : ''} rounded-md p-2"
+          onclick={runGameFromServer}
+        >
+          <img
+            src={Reload}
+            class="h-fit w-5 {gameState === GameStateEnum.RELOAD_FROM_SERVER
+              ? 'filter grayscale brightness-300'
+              : ''}"
+            alt="Reload from server"
           />
         </button>
       </div>
