@@ -6,6 +6,7 @@
   import Stop from '$lib/assets/stop.png';
   import Reload from '$lib/assets/reload.png';
   import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
+  import { localApi } from '$lib/components/Utils/api/api.ts';
 
   let canvas: HTMLCanvasElement;
 
@@ -22,7 +23,7 @@
 
   async function runGameFromServer() {
     gameState = GameStateEnum.RELOAD_FROM_SERVER;
-    // await localApi.buildProject();
+    await localApi.buildProject();
     loadingPromises = await fetchGameProps();
     await Promise.all(loadingPromises);
     loadingPromises = [];
