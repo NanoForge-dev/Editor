@@ -1,9 +1,11 @@
-import { env } from '$env/dynamic/private';
-import { paraglideMiddleware } from '$lib/paraglide/server';
 import { type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import * as crypto from 'node:crypto';
 import { sveltekitSessionHandle } from 'svelte-kit-sessions';
+
+import { env } from '$env/dynamic/private';
+
+import { paraglideMiddleware } from '$lib/paraglide/server';
 
 if (!env.SESSION_SECRET) {
   env.SESSION_SECRET = crypto.randomBytes(20).toString('hex');

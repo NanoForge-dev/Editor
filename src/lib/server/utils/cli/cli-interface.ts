@@ -1,6 +1,8 @@
-import { env } from '$env/dynamic/private';
-import { CliError } from '@utils-server/cli/cli-error';
 import child_process from 'node:child_process';
+
+import { env } from '$env/dynamic/private';
+
+import { CliError } from '@utils-server/cli/cli-error';
 
 export class CliInterface {
   private readonly projectPath: string;
