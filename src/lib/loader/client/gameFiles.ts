@@ -1,8 +1,10 @@
 import { deserialize } from '$app/forms';
+
 import { gameProps } from '$lib/loader/client/game';
+
 import { projectFileSystem } from '@utils-client/local-file-system/project-file-system';
 
-import { type IExtendedManifestFile, type IManifest } from './types/manifest.type.ts';
+import { type IExtendedManifestFile, type IManifest } from './types/manifest.type';
 
 export function loadGameFiles(filesProm: Promise<IExtendedManifestFile>[]): Promise<void>[] {
   gameProps.files = new Map<string, string>();

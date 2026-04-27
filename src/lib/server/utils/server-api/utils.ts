@@ -1,5 +1,6 @@
-import { env } from '$env/dynamic/private';
 import type { Cookies, RequestEvent } from '@sveltejs/kit';
+
+import { env } from '$env/dynamic/private';
 
 import type { Token } from './types';
 

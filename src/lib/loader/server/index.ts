@@ -1,1 +1,1 @@
-export { getGameEnv } from './env.ts';
+export { getGameEnv } from './env';

@@ -1,9 +1,9 @@
-import EditorGame from '$lib/components/Widget/EditorGame/EditorGame.svelte';
 import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
 import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspectorWidget.svelte';
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
+import EditorGame from './EditorGame/EditorGame.svelte';
 import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
 

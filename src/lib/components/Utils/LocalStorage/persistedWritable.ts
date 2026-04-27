@@ -1,5 +1,6 @@
-import { browser } from '$app/environment';
 import { type Writable, writable } from 'svelte/store';
+
+import { browser } from '$app/environment';
 
 export function persistedWritable<T>(key: string, initialValue: T): Writable<T> {
   const store = writable(initialValue);

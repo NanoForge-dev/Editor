@@ -1,4 +1,5 @@
 import { deserialize } from '$app/forms';
+
 import { gameProps } from '$lib/loader/client/game';
 
 export async function fetchEnv(): Promise<void> {

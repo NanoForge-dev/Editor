@@ -1,6 +1,7 @@
-import { FileSystemError } from '@utils-server/file-system/file-system-error';
 import fs from 'node:fs';
 import path from 'node:path';
+
+import { FileSystemError } from './file-system-error';
 
 export type DirectoryContent = {
   files: string[];

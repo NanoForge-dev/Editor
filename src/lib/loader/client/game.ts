@@ -1,5 +1,6 @@
 import type { IGameOptions } from '$lib/loader/client/types/game.type';
 import type { Save } from '$lib/loader/client/types/save.type';
+
 import { EventEmitter } from '@utils-client/event-emitter';
 
 export const coreEvents = new EventEmitter();
