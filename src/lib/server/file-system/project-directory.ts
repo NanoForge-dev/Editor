@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import path from 'node:path';
+import { dirname, resolve } from 'path';
 
 import { FileSystemError } from './file-system-error';
 
@@ -29,7 +29,7 @@ export class ProjectDirectory {
   private readonly projectPath: string;
 
   constructor(dirPath: string, projectPath: string) {
-    this.path = path.resolve(projectPath, './' + dirPath);
+    this.path = resolve(projectPath, './' + dirPath);
     this.projectPath = projectPath;
 
     this._checkPathIsInsideProject();
@@ -58,12 +58,12 @@ export class ProjectDirectory {
   }
 
   rename(newPath: string): void {
-    const absoluteNewDirPath = path.resolve(this.projectPath, './' + newPath);
+    const absoluteNewDirPath = resolve(this.projectPath, './' + newPath);
     this._checkPathIsInsideProject(absoluteNewDirPath);
     this._checkPathExists();
     this._checkPathIsDir();
     this._checkPathIsWritable();
-    const newFolderPath = path.dirname(absoluteNewDirPath);
+    const newFolderPath = dirname(absoluteNewDirPath);
     this._checkPathExists(newFolderPath);
     this._checkPathIsWritable(newFolderPath);
     this._checkPathNotExists(absoluteNewDirPath);

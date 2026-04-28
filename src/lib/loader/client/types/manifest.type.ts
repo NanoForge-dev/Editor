@@ -1,6 +1,6 @@
 export interface IManifest {
   version: string;
-  files: string[];
+  files: { path: string }[];
 }
 
 export interface IExtendedManifestFile {

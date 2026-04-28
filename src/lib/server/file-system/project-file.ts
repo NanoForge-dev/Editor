@@ -24,6 +24,11 @@ export class ProjectFile {
     return fs.readFileSync(this._path).toString(encoding);
   }
 
+  readStream(): fs.ReadStream {
+    this.isReadable();
+    return fs.createReadStream(this._path);
+  }
+
   readJson<T = any>(): T {
     const raw = this.read();
     return JSON.parse(raw) as T;

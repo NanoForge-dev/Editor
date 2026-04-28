@@ -1,6 +1,8 @@
 import { config } from 'dotenv';
 import { join } from 'path';
 
+import type { Part } from './types';
+
 const PREFIX_CLIENT = 'NANOFORGE_CLIENT_';
 const PREFIX_SERVER = 'NANOFORGE_SERVER_';
 const PREFIX = 'NANOFORGE_';
@@ -11,10 +13,7 @@ const loadEnv = (path: string): Record<string, string> => {
   return env;
 };
 
-const parseEnv = (
-  part: 'client' | 'server',
-  env: Record<string, string>,
-): Record<string, string> => {
+const parseEnv = (part: Part, env: Record<string, string>): Record<string, string> => {
   return Object.fromEntries(
     Object.entries(env)
       .filter(
@@ -30,6 +29,6 @@ const parseEnv = (
   );
 };
 
-export const resolveEnv = (part: 'client' | 'server', projectPath: string) => {
+export const resolveEnv = (part: Part, projectPath: string) => {
   return parseEnv(part, loadEnv(join(projectPath, '.env')));
 };

@@ -27,7 +27,7 @@ const loadScript = async (file: IExtendedManifestFile): Promise<any | undefined>
 };
 
 export function fetchGameFiles(manifest: IManifest): Promise<IExtendedManifestFile>[] {
-  return manifest.files.map(async (filePath: string): Promise<IExtendedManifestFile> => {
+  return manifest.files.map(async ({ path: filePath }): Promise<IExtendedManifestFile> => {
     const fileIsWasm = filePath.endsWith('.wasm');
     const fileContent = await localApi.getGameBuildFile(
       filePath,

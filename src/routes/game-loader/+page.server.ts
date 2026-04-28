@@ -28,7 +28,7 @@ export const actions = {
         manifest: {
           files: directoryContentToFileEntries(
             new ProjectDirectory(`/.nanoforge/${data.side}/`, locals.session.data.path).read(true),
-          ),
+          ).map((path) => ({ path })),
           version: '0.0.0',
         },
       };
