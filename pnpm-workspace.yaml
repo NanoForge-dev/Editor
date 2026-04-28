@@ -1,4 +1,6 @@
 catalogs:
+  back-libs:
+    dotenv: ^17.4.2
   build:
     '@tsconfig/svelte': ^5.0.8
     'svelte-adapter-bun': ^1.0.1

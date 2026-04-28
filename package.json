@@ -78,6 +78,7 @@
     "@vitest/browser-playwright": "catalog:test",
     "@vitest/coverage-v8": "catalog:test",
     "bun": "catalog:core",
+    "dotenv": "catalog:back-libs",
     "eslint": "catalog:lint",
     "eslint-plugin-svelte": "catalog:lint",
     "flowbite": "catalog:components",

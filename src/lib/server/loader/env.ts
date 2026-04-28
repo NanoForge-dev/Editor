@@ -1,0 +1,35 @@
+import { config } from 'dotenv';
+import { join } from 'path';
+
+const PREFIX_CLIENT = 'NANOFORGE_CLIENT_';
+const PREFIX_SERVER = 'NANOFORGE_SERVER_';
+const PREFIX = 'NANOFORGE_';
+
+const loadEnv = (path: string): Record<string, string> => {
+  const env = {};
+  config({ path, processEnv: env });
+  return env;
+};
+
+const parseEnv = (
+  part: 'client' | 'server',
+  env: Record<string, string>,
+): Record<string, string> => {
+  return Object.fromEntries(
+    Object.entries(env)
+      .filter(
+        ([key]) =>
+          key.startsWith(PREFIX) ||
+          (part === 'client' && key.startsWith(PREFIX_CLIENT)) ||
+          (part === 'server' && key.startsWith(PREFIX_SERVER)),
+      )
+      .map(([key, value]) => [
+        key.replace(part === 'client' ? PREFIX_CLIENT : PREFIX_SERVER, '').replace(PREFIX, ''),
+        value,
+      ]),
+  );
+};
+
+export const resolveEnv = (part: 'client' | 'server', projectPath: string) => {
+  return parseEnv(part, loadEnv(join(projectPath, '.env')));
+};
