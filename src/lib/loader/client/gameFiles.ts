@@ -1,7 +1,9 @@
+import { get } from 'svelte/store';
+
 import { localApi } from '$lib/components/Utils/api/api';
 import { files, mainModule } from '$lib/components/Widget/EditorGame/game.svelte';
+
 import { projectFileSystem } from '@utils-client/local-file-system/project-file-system';
-import { get } from 'svelte/store';
 
 import { type IExtendedManifestFile, type IManifest } from './types/manifest.type';
 

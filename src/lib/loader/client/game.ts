@@ -1,8 +1,9 @@
+import { get } from 'svelte/store';
+
 import { env, files, mainModule, save } from '$lib/components/Widget/EditorGame/game.svelte';
 import type { IGameOptions } from '$lib/loader/client/types/game.type';
 
 import { EventEmitter } from '@utils-client/event-emitter';
-import { get } from 'svelte/store';
 
 export const coreEvents = new EventEmitter();
 export const editorEvents = new EventEmitter();

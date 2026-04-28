@@ -26,7 +26,7 @@
 
   async function removeComponent(componentName: string) {
     if (!selectedEntity) return;
-    // eslint-disable-next-line
+    // eslint-disable-next-line  @typescript-eslint/no-dynamic-delete
     delete selectedEntity.components[componentName];
   }
 </script>
