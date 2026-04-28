@@ -1,10 +1,10 @@
 import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
-import ComponentsInspectorWidget from './ComponentsInspector/ComponentsInspectorWidget.svelte';
 import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
+import ECSTreeWidget from './ECSTree/ECSTree.svelte';
 import EditorGame from './EditorGame/EditorGame.svelte';
-import EntitiesTreeWidget from './EntitiesTree/EntitiesTreeWidget.svelte';
+import EntityInspectorWidget from './EntityInspector/EntityInspectorWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
 
 export interface WidgetType {
@@ -18,12 +18,12 @@ export const widgetsTypes: WidgetType[] = [
     component: ContentBrowserWidget,
   },
   {
-    id: 'entities-tree',
-    component: EntitiesTreeWidget,
+    id: 'ecs-tree',
+    component: ECSTreeWidget,
   },
   {
-    id: 'components-inspector',
-    component: ComponentsInspectorWidget,
+    id: 'entity-inspector',
+    component: EntityInspectorWidget,
   },
   {
     id: 'code-editor',

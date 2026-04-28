@@ -12,12 +12,6 @@
   let total: number = $state(0);
   let completed: number = $state(0);
 
-  function handleClose(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      show = false;
-    }
-  }
-
   $effect(() => {
     completed = 0;
     total = promises.length;
@@ -37,8 +31,6 @@
   class={show
     ? 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
     : 'hidden'}
-  onclick={(e) => e.target === e.currentTarget && (show = false)}
-  onkeydown={handleClose}
 >
   <div
     class="bg-black outline outline-neutral-900 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col"

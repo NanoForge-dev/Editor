@@ -2,48 +2,45 @@
   import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
   import { fetchGameProps } from '$lib/loader/client/fetchGameProps';
   import { coreEvents, runGame } from '$lib/loader/client/game';
-  import Play from '$lib/assets/play.png';
-  import Stop from '$lib/assets/stop.png';
-  import Reload from '$lib/assets/reload.png';
   import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
   import { localApi } from '$lib/components/Utils/api/api';
+  import { GameState } from '$lib/components/Widget/EditorGame/game.svelte';
 
   let canvas: HTMLCanvasElement;
 
-  const GameStateEnum = {
-    INIT_STATE: 0,
-    RELOAD_FROM_SERVER: 1,
-    RELOAD_FROM_SAVE: 2,
-    PLAY: 3,
-    PAUSE: 4,
-  };
-  let gameState = $state(GameStateEnum.INIT_STATE);
+  let gameState = $state(GameState.INIT_STATE);
 
   let loadingPromises: Promise<unknown>[] = $state([]);
 
-  async function runGameFromServer() {
-    gameState = GameStateEnum.RELOAD_FROM_SERVER;
+  async function playGameFromServer() {
+    gameState = GameState.RELOAD_FROM_SERVER;
     await localApi.buildProject();
     loadingPromises = await fetchGameProps();
     await Promise.all(loadingPromises);
     loadingPromises = [];
-    gameState = GameStateEnum.PLAY;
+    gameState = GameState.PLAY;
     runGame(canvas);
   }
 
-  async function runGameFromSave() {
-    gameState = GameStateEnum.RELOAD_FROM_SAVE;
-    gameState = GameStateEnum.PLAY;
+  async function playGameFromSave() {
+    gameState = GameState.RELOAD_FROM_SAVE;
+    gameState = GameState.PLAY;
     runGame(canvas);
   }
 
-  async function sendEvent(event: string) {
-    coreEvents.emitEvent(event);
+  async function unpauseGame() {
+    gameState = GameState.PLAY;
+    coreEvents.emitEvent(EventTypeEnum.UNPAUSE_GAME);
+  }
+
+  async function pauseGame() {
+    gameState = GameState.PAUSE;
+    coreEvents.emitEvent(EventTypeEnum.PAUSE_GAME);
   }
 
   async function stopGame() {
-    gameState = GameStateEnum.PAUSE;
-    coreEvents.emitEvent('pause-game');
+    gameState = GameState.STOP;
+    coreEvents.emitEvent(EventTypeEnum.STOP_GAME);
   }
 </script>
 
@@ -51,72 +48,58 @@
   <ProgressBar
     title="Loading game"
     promises={loadingPromises}
-    show={gameState === GameStateEnum.RELOAD_FROM_SERVER ||
-      gameState === GameStateEnum.RELOAD_FROM_SAVE}
+    show={gameState === GameState.RELOAD_FROM_SERVER || gameState === GameState.RELOAD_FROM_SAVE}
   />
   <div class="h-full w-full bg-neutral-800 flex flex-col">
-    <div class="py-2 px-2 h-16 flex justify-center">
-      <div class="bg-neutral-600 rounded-md p-1">
-        <button
-          aria-label="Hot Reload"
-          class="h-fit {gameState === GameStateEnum.PLAY
-            ? 'cursor-pointer hover:bg-neutral-700'
-            : ''} rounded-md p-2"
-          onclick={() => sendEvent(EventTypeEnum.HOT_RELOAD)}
-        >
-          <img
-            src={Stop}
-            class="h-fit w-5 {gameState !== GameStateEnum.PLAY
-              ? 'filter grayscale brightness-300'
-              : ''}"
-            alt="Hot Reload"
-          />
-        </button>
-        <button
-          aria-label="Play"
-          class="h-fit {gameState !== GameStateEnum.PLAY
-            ? 'cursor-pointer hover:bg-neutral-700'
-            : ''}  rounded-md p-2"
-          onclick={gameState === GameStateEnum.INIT_STATE ? runGameFromServer : runGameFromSave}
-        >
-          <img
-            src={Play}
-            class="h-fit w-5 {gameState === GameStateEnum.PLAY
-              ? 'filter grayscale brightness-300'
-              : ''}"
-            alt="Play Game"
-          />
-        </button>
+    <div class="p-2 items-center flex justify-center">
+      <div class="h-9 bg-neutral-600 rounded-md p-1">
+        {#if gameState === GameState.PAUSE || gameState === GameState.INIT_STATE || gameState === GameState.STOP}
+          <button
+            aria-label="Play"
+            class="h-fit cursor-pointer hover:bg-neutral-700 rounded-md"
+            onclick={gameState === GameState.INIT_STATE
+              ? playGameFromServer
+              : gameState === GameState.STOP
+                ? playGameFromSave
+                : unpauseGame}
+          >
+            <span class="block h-7 w-7 i-ic-round-play-arrow text-green"></span>
+          </button>
+        {:else}
+          <button
+            aria-label="Pause"
+            class="h-fit cursor-pointer hover:bg-neutral-700 rounded-md"
+            onclick={pauseGame}
+          >
+            <span class="block h-7 w-7 i-ic-round-pause text-yellow"></span>
+          </button>
+        {/if}
         <button
           aria-label="Stop"
-          class="h-fit {gameState === GameStateEnum.PLAY
+          class="h-fit {gameState === GameState.PLAY
             ? 'cursor-pointer hover:bg-neutral-700'
-            : ''} rounded-md p-2"
+            : ''} rounded-md"
           onclick={stopGame}
         >
-          <img
-            src={Stop}
-            class="h-fit w-5 {gameState !== GameStateEnum.PLAY
-              ? 'filter grayscale brightness-300'
-              : ''}"
-            alt="Stop"
-          />
+          <span
+            class="block h-7 w-7 i-ic-round-stop {gameState === GameState.PLAY
+              ? 'text-red-600'
+              : 'text-red-950'}"
+          ></span>
         </button>
 
         <button
           aria-label="Reload from server"
-          class="h-fit {gameState !== GameStateEnum.RELOAD_FROM_SERVER
+          class="h-fit {gameState !== GameState.RELOAD_FROM_SERVER
             ? 'cursor-pointer hover:bg-neutral-700'
-            : ''} rounded-md p-2"
-          onclick={runGameFromServer}
+            : ''} rounded-md"
+          onclick={playGameFromServer}
         >
-          <img
-            src={Reload}
-            class="h-fit w-5 {gameState === GameStateEnum.RELOAD_FROM_SERVER
-              ? 'filter grayscale brightness-300'
-              : ''}"
-            alt="Reload from server"
-          />
+          <span
+            class="block h-7 w-7 i-ic-round-autorenew {gameState !== GameState.RELOAD_FROM_SERVER
+              ? 'text-blue-500'
+              : 'text-blue-950'}"
+          ></span>
         </button>
       </div>
     </div>

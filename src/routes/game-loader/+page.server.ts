@@ -65,6 +65,33 @@ export const actions = {
       throw e;
     }
   },
+  updateSave: async ({ request, locals }) => {
+    const data = await request.json();
+
+    if (!data.side) {
+      return fail(403, { success: false, errorMsg: "Missing arg: 'side'" });
+    }
+    if (data.side !== 'server' && data.side !== 'client') {
+      return fail(403, { success: false, errorMsg: "Arg 'side' can only be 'server' or 'client'" });
+    }
+    if (!data.save) {
+      return fail(403, { success: false, errorMsg: "Missing arg: 'save'" });
+    }
+
+    try {
+      new ProjectFile(`/.nanoforge/${data.side}.save.json`, locals.session.data.path).writeJson(
+        data.save,
+      );
+      return {
+        success: true,
+      };
+    } catch (e: unknown) {
+      if (e instanceof FileSystemError) {
+        return fail(403, { success: false, errorMsg: e.message });
+      }
+      throw e;
+    }
+  },
   getComponentManifest: async ({ request, locals }) => {
     const data = await request.json();
 
@@ -123,10 +150,18 @@ export const actions = {
       throw e;
     }
   },
-  getEnv: async () => {
+  getEnv: async ({ request }) => {
+    const data = await request.json();
+
+    if (!data.side) {
+      return fail(403, { success: false, errorMsg: "Missing arg: 'side'" });
+    }
+    if (data.side !== 'server' && data.side !== 'client') {
+      return fail(403, { success: false, errorMsg: "Arg 'side' can only be 'server' or 'client'" });
+    }
     return {
       success: true,
-      env: getGameEnv(),
+      env: getGameEnv(data.side),
     };
   },
 } satisfies Actions;

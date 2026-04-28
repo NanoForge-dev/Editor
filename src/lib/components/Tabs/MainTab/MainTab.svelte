@@ -23,14 +23,14 @@
             direction: 'row',
             size: 70,
             children: [
-              { type: 'widget', size: 30, id: 'entities-tree' },
+              { type: 'widget', size: 30, id: 'ecs-tree' },
               { type: 'widget', size: 70, id: 'editor-game' },
             ],
           },
           { type: 'widget', size: 30, id: 'content-browser' },
         ],
       },
-      { type: 'widget', size: 30, id: 'components-inspector' },
+      { type: 'widget', size: 30, id: 'entity-inspector' },
     ],
   });
 

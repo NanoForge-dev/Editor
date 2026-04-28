@@ -1,10 +1,12 @@
+import type { EditorComponentManifest } from '@nanoforge-dev/ecs-lib';
+
 import { deserialize } from '$app/forms';
 
 import { type DirectoryRec, ProjectApi } from '$lib/components/Utils/api/project-api';
 import { env, save } from '$lib/components/Widget/EditorGame/game.svelte';
 import type { IManifest } from '$lib/loader/client/types/manifest.type';
 import type { Save } from '$lib/loader/client/types/save.type';
-import type { EditorComponentManifest } from '@nanoforge-dev/ecs-lib';
+
 import { FileSystemDirectory } from '@utils-client/file-system';
 import { projectFileSystem } from '@utils-client/local-file-system/project-file-system';
 
@@ -73,6 +75,20 @@ export class LocalAPI extends ProjectApi {
       throw new Error('Failed to read remote directory');
     }
     save.set(saveResult.data.save as Save);
+  }
+
+  async updateSave(save: Save, side: 'client' | 'server'): Promise<void> {
+    const res = await fetch(`/game-loader?/updateSave`, {
+      method: 'POST',
+      body: JSON.stringify({ save, side }),
+    });
+
+    const saveResult = deserialize(await res.text());
+    if (saveResult.type !== 'success' || !saveResult.data) {
+      if (saveResult.type === 'failure' && saveResult.data)
+        throw new Error(saveResult.data.errorMsg as string);
+      throw new Error('Failed to update save');
+    }
   }
 
   async fetchEnv(side: 'client' | 'server'): Promise<void> {
