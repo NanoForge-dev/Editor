@@ -11,7 +11,11 @@ export class EventEmitter implements IEventEmitter {
   public runEvents = () => {
     this.eventQueue.forEach(({ event, args }) => {
       this.listeners[event]?.forEach((listener) => {
-        listener(...args);
+        try {
+          listener(...args);
+        } catch (error) {
+          console.error(`Error handling event [${event}] : ${error}`);
+        }
       });
     });
     this.eventQueue = [];

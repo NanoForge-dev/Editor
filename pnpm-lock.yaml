@@ -48,6 +48,9 @@ catalogs:
       specifier: ^1.1.0
       version: 1.1.0
   core:
+    '@nanoforge-dev/ecs-lib':
+      specifier: ^1.1.2
+      version: 1.1.2
     '@sveltejs/kit':
       specifier: ^2.57.1
       version: 2.57.1
@@ -181,6 +184,9 @@ importers:
       '@nanoforge-dev/actions':
         specifier: catalog:ci
         version: 1.2.3
+      '@nanoforge-dev/ecs-lib':
+        specifier: catalog:core
+        version: 1.1.2
       '@nanoforge-dev/utils-eslint-config':
         specifier: catalog:lint
         version: 1.0.2(@types/eslint@9.6.1)(eslint@10.2.1(jiti@2.6.1))(prettier@3.8.3)(typescript@6.0.3)
@@ -590,6 +596,14 @@ packages:
 
   '@nanoforge-dev/actions@1.2.3':
     resolution: {integrity: sha512-YVQ1e3H5MVHGBku2bA+lMLb+mkDXvJvYN228V6L0R+HXxo82X3Y1oVDKzlsnz+GRvYejJXEsY6jzPrV3pzbGwA==}
+    engines: {node: '25'}
+
+  '@nanoforge-dev/common@1.1.0':
+    resolution: {integrity: sha512-quxZz4mZZqzp6XMGTzp5JbQH63c5Xt8tscArwz83gw6zqoPzfB0TQH5zFS+9SQF8JVOdmkroA8rNwzlyuZj2Pg==}
+    engines: {node: '25'}
+
+  '@nanoforge-dev/ecs-lib@1.1.2':
+    resolution: {integrity: sha512-3WD75i0rtyedV8IDbJ0v/HwAqpWt9VjIb5H36YEFTblVRsV/FArH5ZmlSTWRFnKL+Ap4Tr3dQ8Bi5bMDfznMMw==}
     engines: {node: '25'}
 
   '@nanoforge-dev/utils-eslint-config@1.0.2':
@@ -3628,6 +3642,12 @@ snapshots:
       '@actions/core': 3.0.0
       '@actions/github': 9.1.0
       commander: 14.0.3
+
+  '@nanoforge-dev/common@1.1.0': {}
+
+  '@nanoforge-dev/ecs-lib@1.1.2':
+    dependencies:
+      '@nanoforge-dev/common': 1.1.0
 
   '@nanoforge-dev/utils-eslint-config@1.0.2(@types/eslint@9.6.1)(eslint@10.2.1(jiti@2.6.1))(prettier@3.8.3)(typescript@6.0.3)':
     dependencies:

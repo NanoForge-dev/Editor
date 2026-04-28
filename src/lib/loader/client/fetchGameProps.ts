@@ -1,14 +1,10 @@
+import { localApi } from '$lib/components/Utils/api/api';
 import { fetchGameFiles, loadGameFiles } from '$lib/loader/client/gameFiles';
-import { fetchSave } from '$lib/loader/client/save';
-
-import { fetchEnv } from './env';
-import { fetchManifest } from './manifest';
 
 export async function fetchGameProps(): Promise<Promise<unknown>[]> {
-  const manifest = fetchManifest();
+  const manifest = localApi.getGameLoadManifest('client');
   const files = fetchGameFiles(await manifest);
-  const save = fetchSave();
-  const env = fetchEnv();
+  const env = localApi.fetchEnv('client');
   const loadFiles = loadGameFiles(files);
-  return [manifest, ...files, env, save, ...loadFiles];
+  return [manifest, ...files, env, ...loadFiles];
 }

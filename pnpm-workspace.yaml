@@ -16,6 +16,7 @@ catalogs:
     monaco-editor: ^0.55.1
     svelte-sonner: ^1.1.0
   core:
+    '@nanoforge-dev/ecs-lib': ^1.1.2
     '@sveltejs/adapter-auto': ^7.0.1
     '@sveltejs/kit': ^2.57.1
     '@sveltejs/vite-plugin-svelte': ^7.0.0

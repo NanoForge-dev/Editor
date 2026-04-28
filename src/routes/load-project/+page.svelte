@@ -8,7 +8,7 @@
     type ProjectDataCache,
   } from '$lib/components/Utils/LocalStorage/ProjectCache';
   import DefaultProjectCover from '$lib/assets/defaultProjectCover.png';
-  import api from '$lib/components/Utils/api/api';
+  import { localApi } from '$lib/components/Utils/api/api';
   import { goto } from '$app/navigation';
   import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
 
@@ -37,8 +37,8 @@
     const loadFormData = new FormData();
     loadFormData.append('projectPath', projectPath);
 
-    await api.loadProject(loadFormData);
-    promisesFiles = await api.downloadFiles();
+    await localApi.loadProject(loadFormData);
+    promisesFiles = await localApi.downloadFiles();
     showLoadingProject = true;
   }
 
@@ -65,8 +65,8 @@
     if (projectPath) formData.append('projectPath', projectPath);
     if (projectId) formData.append('projectId', projectId);
 
-    await api.loadProject(formData);
-    promisesFiles = await api.downloadFiles();
+    await localApi.loadProject(formData);
+    promisesFiles = await localApi.downloadFiles();
     showLoadingProject = true;
     await goto(resolve('/'));
   });

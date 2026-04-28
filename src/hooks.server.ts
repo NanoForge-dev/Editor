@@ -20,7 +20,7 @@ const checkAuthorizationHandle: Handle = async ({ event, resolve }) => {
   if (
     !event.locals.session.data.path &&
     event.url.pathname !== '/load-project' &&
-    event.url.pathname + event.url.search !== '/cli?/createProject'
+    event.url.pathname + event.url.search !== '/cli?/new'
   ) {
     throw redirect(302, '/load-project');
   }

@@ -5,9 +5,15 @@
   import TabBar from '$lib/components/Tabs/TabBar.svelte';
   import { tabRegistry } from '$lib/components/Tabs/registry';
   import { tabsStore } from '$lib/components/Tabs/store';
+  import { onMount } from 'svelte';
+  import { localApi } from '$lib/components/Utils/api/api';
 
   let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
   let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
+
+  onMount(async () => {
+    await localApi.fetchSave('client');
+  });
 </script>
 
 <div class="h-screen flex flex-col gap-1">

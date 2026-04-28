@@ -1,6 +1,7 @@
-export interface Entity {
-  id: string;
+export interface RegistryComponentManifest {
   name: string;
-  type: 'entity' | 'folder';
-  children?: Entity[];
+  type: 'component' | 'system';
+  description: string;
+  tags: string[];
+  _file: string;
 }

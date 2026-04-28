@@ -23,4 +23,6 @@ FROM oven/bun:1.3 AS final
 WORKDIR /app
 COPY --from=prod /app/dist /app/dist
 
+RUN bun install -g @nanoforge-dev/cli
+
 CMD [ "bun", "run", "./dist/index.js" ]

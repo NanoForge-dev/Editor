@@ -6,10 +6,7 @@ import { CliInterface } from '@utils-server/cli/cli-interface';
 import type { Actions } from './$types';
 
 export const actions = {
-  // Create project
-  // Run project
-  // Export project
-  createProject: async ({ request }) => {
+  new: async ({ request }) => {
     const data = await request.json();
 
     if (!data.projectPath) {
@@ -26,14 +23,17 @@ export const actions = {
     }
 
     try {
-      new CliInterface(data.projectPath).createProject(
+      new CliInterface(data.projectPath).new(
         data.projectName,
         data.packageManager,
         data.language,
-        data.strictTypeChecking,
+        false,
         data.multiplayerServer,
-        data.skipDependencyInstallation,
         data.dockerContainerization,
+        false,
+        true,
+        data.createGitRepository,
+        data.gitRemote,
       );
       return {
         success: true,
@@ -45,17 +45,9 @@ export const actions = {
       throw e;
     }
   },
-
-  startDevProject: async ({ locals }) => {
+  generate: async ({ locals }) => {
     try {
-      const childProcess = new CliInterface(locals.session.data.path).startDevProject(
-        locals.session?.data?.projectPid || -1,
-      );
-      const session = locals.session;
-
-      session.data.projectPid = childProcess;
-      await session.save();
-
+      new CliInterface(locals.session.data.path).generate(true);
       return {
         success: true,
       };
@@ -66,14 +58,9 @@ export const actions = {
       throw e;
     }
   },
-
-  stopProject: async ({ locals }) => {
+  build: async ({ locals }) => {
     try {
-      if (!locals.session.data.projectPid) {
-        throw new CliError('Project not running');
-      }
-      new CliInterface(locals.session.data.path).stopProject(locals.session.data.projectPid);
-      locals.session.data.projectPid = -1;
+      new CliInterface(locals.session.data.path).build(true);
       return {
         success: true,
       };
@@ -84,20 +71,17 @@ export const actions = {
       throw e;
     }
   },
+  addComponent: async ({ request, locals }) => {
+    const data = await request.json();
 
-  isProjectRunning: async ({ locals }) => {
+    if (!data.componentName) {
+      return fail(403, { success: false, errorMsg: "Missing arg: 'componentName'" });
+    }
+
     try {
-      if (!locals.session.data.projectPid) {
-        return {
-          success: true,
-          projectRunning: false,
-        };
-      }
+      new CliInterface(locals.session.data.path).addComponent(data.componentName);
       return {
         success: true,
-        projectRunning: new CliInterface(locals.session.data.path).isProjectRunning(
-          locals.session.data.projectPid,
-        ),
       };
     } catch (e: unknown) {
       if (e instanceof CliError) {
