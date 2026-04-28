@@ -10,10 +10,11 @@ export class ProjectFile {
   constructor(filePath: string, projectPath: string) {
     this._path = path.resolve(projectPath, './' + filePath);
     this.projectPath = projectPath;
+
+    this._checkPathIsInsideProject();
   }
 
   get path(): string {
-    this._checkPathIsInsideProject();
     this._checkPathExists();
     return this._path;
   }
@@ -30,7 +31,6 @@ export class ProjectFile {
 
   write(text: string): void {
     const folderPath = path.dirname(this._path);
-    this._checkPathIsInsideProject();
     try {
       this._checkPathExists();
       this._checkPathIsFile();
@@ -52,7 +52,6 @@ export class ProjectFile {
   }
 
   delete(): void {
-    this._checkPathIsInsideProject();
     this._checkPathExists();
     this._checkPathIsFile();
     this._checkPathIsWritable();
@@ -74,7 +73,6 @@ export class ProjectFile {
   }
 
   isReadable(): void {
-    this._checkPathIsInsideProject();
     this._checkPathExists();
     this._checkPathIsFile();
     this._checkPathIsReadable();

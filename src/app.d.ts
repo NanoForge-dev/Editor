@@ -14,6 +14,7 @@ declare global {
 
 declare module 'svelte-kit-sessions' {
   interface SessionData {
+    id: string;
     path: string;
     projectPid?: number;
   }

@@ -1,8 +1,8 @@
 import { fail } from '@sveltejs/kit';
 
-import { FileSystemError } from '@utils-server/file-system/file-system-error';
-import { ProjectDirectory } from '@utils-server/file-system/project-directory';
-import { ProjectFile } from '@utils-server/file-system/project-file';
+import { FileSystemError } from '$lib/server/file-system/file-system-error';
+import { ProjectDirectory } from '$lib/server/file-system/project-directory';
+import { ProjectFile } from '$lib/server/file-system/project-file';
 
 import type { Actions } from './$types';
 

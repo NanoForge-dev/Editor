@@ -2,13 +2,12 @@ import { fail } from '@sveltejs/kit';
 
 import type { Save } from '$lib/loader/client/types/save.type';
 import { getGameEnv } from '$lib/loader/server/env';
-
-import { FileSystemError } from '@utils-server/file-system/file-system-error';
+import { FileSystemError } from '$lib/server/file-system/file-system-error';
 import {
   ProjectDirectory,
   directoryContentToFileEntries,
-} from '@utils-server/file-system/project-directory';
-import { ProjectFile } from '@utils-server/file-system/project-file';
+} from '$lib/server/file-system/project-directory';
+import { ProjectFile } from '$lib/server/file-system/project-file';
 
 import type { Actions } from './$types';
 

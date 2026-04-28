@@ -5,7 +5,7 @@ import { FileSystemError } from './file-system-error';
 
 export type DirectoryContent = {
   files: string[];
-  directories: { [key: string]: DirectoryContent };
+  directories: Record<string, DirectoryContent | null>;
 };
 
 export function directoryContentToFileEntries(
@@ -18,6 +18,7 @@ export function directoryContentToFileEntries(
     entries.push(basePath + '/' + file);
   });
   Object.entries(directoryContent.directories).forEach(([path, dirContent]) => {
+    if (!dirContent) return;
     entries.push(...directoryContentToFileEntries(dirContent, basePath + '/' + path));
   });
   return entries;
@@ -30,10 +31,11 @@ export class ProjectDirectory {
   constructor(dirPath: string, projectPath: string) {
     this.path = path.resolve(projectPath, './' + dirPath);
     this.projectPath = projectPath;
+
+    this._checkPathIsInsideProject();
   }
 
   read(recursive: boolean = false): DirectoryContent {
-    this._checkPathIsInsideProject();
     this._checkPathExists();
     this._checkPathIsDir();
     this._checkPathIsReadable();
@@ -41,14 +43,12 @@ export class ProjectDirectory {
   }
 
   create(): void {
-    this._checkPathIsInsideProject();
     this._checkPathNotExists();
 
     fs.mkdirSync(this.path, { recursive: true });
   }
 
   delete(recursive: boolean = false): void {
-    this._checkPathIsInsideProject();
     this._checkPathExists();
     this._checkPathIsDir();
     if (!recursive) {
@@ -59,7 +59,6 @@ export class ProjectDirectory {
 
   rename(newPath: string): void {
     const absoluteNewDirPath = path.resolve(this.projectPath, './' + newPath);
-    this._checkPathIsInsideProject();
     this._checkPathIsInsideProject(absoluteNewDirPath);
     this._checkPathExists();
     this._checkPathIsDir();
@@ -125,7 +124,7 @@ export class ProjectDirectory {
   }
 
   private _readDirContent(path: string = this.path, recursive: boolean = false): DirectoryContent {
-    const dirContent: { files: string[]; directories: { [key: string]: any } } = {
+    const dirContent: DirectoryContent = {
       files: [],
       directories: {},
     };
@@ -135,7 +134,7 @@ export class ProjectDirectory {
       } else if (item.isDirectory()) {
         dirContent.directories[item.name] = recursive
           ? this._readDirContent(path + '/' + item.name, recursive)
-          : {};
+          : null;
       }
     });
     return dirContent;
