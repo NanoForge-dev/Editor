@@ -5,18 +5,12 @@ import { SESSION_PROJECT_HEADER } from './project.const';
 import { projectStore } from './project.store';
 import type { SessionProject } from './project.type';
 
-export const isProjectExist = (id: string | null | undefined) => {
-  if (!id) return false;
-  if (!projectStore.has(id)) return false;
-
-  return true;
+export const projectExists = (id: string | null | undefined) => {
+  return !!id && projectStore.has(id);
 };
 
 export const hasRightToAccessProject = (id: string | null | undefined, session: Session) => {
-  if (!isProjectExist(id)) return false;
-  if (!session.projects.includes(id as string)) return false;
-
-  return true;
+  return projectExists(id) && session.projects.includes(id as string);
 };
 
 export const resolveProject = (headers: Headers, session: Session) => {

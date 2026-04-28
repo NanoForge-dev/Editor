@@ -1,7 +1,9 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
 import { type Api, getApi } from '$lib/server/api';
+import { Cli } from '$lib/server/cli';
 import { FileSystem } from '$lib/server/file-system';
+import { Git } from '$lib/server/git';
 
 import type { Context } from '@utils-server/request-handler/context';
 
@@ -11,10 +13,10 @@ export class Handler<Body = any> {
   private readonly _body: Body;
 
   private _apiCache: Api | undefined;
-  private _cliCache: any | undefined;
+  private _cliCache: Cli | undefined;
   private _fsCache: FileSystem | undefined;
   private _loaderCache: any | undefined;
-  private _gitCache: any | undefined;
+  private _gitCache: Git | undefined;
 
   constructor(context: Context, event: RequestEvent, body: Body) {
     this._context = context;
@@ -50,7 +52,7 @@ export class Handler<Body = any> {
   }
 
   get cli(): any {
-    if (!this._cliCache) this._cliCache = {};
+    if (!this._cliCache) this._cliCache = new Cli(this._context);
     return this._cliCache;
   }
 
@@ -64,8 +66,8 @@ export class Handler<Body = any> {
     return this._loaderCache;
   }
 
-  get git(): any {
-    if (!this._gitCache) this._gitCache = {};
+  get git(): Git {
+    if (!this._gitCache) this._gitCache = new Git();
     return this._gitCache;
   }
 }

@@ -7,10 +7,7 @@ import { sessionStore } from './session.store';
 import type { Session } from './session.type';
 
 export const isPublicPath = (url: URL) => {
-  if (PUBLIC_PATHS.includes(url.pathname)) return true;
-  if (url.pathname.startsWith('/api')) return true;
-
-  return false;
+  return PUBLIC_PATHS.includes(url.pathname) || url.pathname.startsWith('/actions');
 };
 
 export const resolveSession = async (sessionHandler: SvelteSession): Promise<Session | null> => {
