@@ -8,6 +8,7 @@ import {
   directoryContentToFileEntries,
 } from '$lib/server/file-system/project-directory';
 import { ProjectFile } from '$lib/server/file-system/project-file';
+import { resolveManifest } from '$lib/server/project/package/manifest-resolver';
 
 import type { Actions } from './$types';
 
@@ -109,10 +110,10 @@ export const actions = {
         locals.session.data.path,
       );
       projectComponentFile.isReadable();
-      const componentModule = await import(/* @vite-ignore */ projectComponentFile.path);
+      const manifest = resolveManifest('component', projectComponentFile.read('utf-8'));
       return {
         success: true,
-        manifest: componentModule['EDITOR_COMPONENT_MANIFEST'],
+        manifest,
       };
     } catch (e: unknown) {
       if (e instanceof FileSystemError) {
