@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { join } from 'path';
+import { resolve } from 'path';
 
 import type { Part } from '@utils/types';
 
@@ -30,5 +30,5 @@ const parseEnv = (part: Part, env: Record<string, string>): Record<string, strin
 };
 
 export const resolveEnv = (part: Part, projectPath: string) => {
-  return parseEnv(part, loadEnv(join(projectPath, '.env')));
+  return parseEnv(part, loadEnv(resolve(projectPath, '.env')));
 };

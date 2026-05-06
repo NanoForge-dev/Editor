@@ -20,10 +20,9 @@ const resolveSessionFromGatewayId = async (
     throw new Exception('Bad Request', 'Cannot load project from gatewayId while offline', 400);
 
   const project = await api.projects.getProject(gatewayId);
-  const basePath = await git.clone(
-    project.gatewayProjectRegistryUrl,
-    project.gatewayProjectRegistryMetadata.sshKey,
-  );
+  const basePath = await git.clone(project.gatewayProjectRegistryUrl, {
+    sshKey: project.gatewayProjectRegistryMetadata.sshKey,
+  });
   return {
     path: join(basePath, project.gatewayProjectRegistryMetadata.dir ?? ''),
     gateway: { id: gatewayId, sshKey: project.gatewayProjectRegistryMetadata.sshKey },

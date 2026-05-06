@@ -1,5 +1,7 @@
 import { type Session as SvelteSession } from 'svelte-kit-sessions';
 
+import { generateKey } from '@utils/string';
+
 import { Exception } from '@utils-server/exception';
 
 import { PUBLIC_PATHS } from './session.const';
@@ -35,4 +37,15 @@ export const addProjectToSession = (session: Session, projectId: string): void =
     ...session,
     projects: [...session.projects, projectId],
   });
+};
+
+export const getOrCreateSession = async (sessionHandler: SvelteSession): Promise<Session> => {
+  const session = await resolveSession(sessionHandler);
+  if (session) return session;
+
+  const id = generateKey(10);
+  sessionStore.set(id, { id, projects: [] });
+  await sessionHandler.setData({ id, path: '' });
+  await sessionHandler.save();
+  return sessionStore.get(id) as Session;
 };

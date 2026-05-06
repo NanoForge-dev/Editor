@@ -1,5 +1,5 @@
 import { $ } from 'bun';
-import { join } from 'path';
+import { resolve } from 'path';
 
 import { env } from '$env/dynamic/private';
 
@@ -9,7 +9,7 @@ export class Git {
   private readonly _rootPath: string;
 
   constructor() {
-    this._rootPath = join(process.cwd(), env.GIT_ROOT ?? '');
+    this._rootPath = resolve(env.GIT_ROOT ?? '');
   }
 
   async clone(url: string, options?: { sshKey?: string }): Promise<string> {
@@ -28,7 +28,7 @@ export class Git {
       sshPath = await this.createSshKeyFile(options.sshKey);
     }
     const sshConfig = sshPath ? `-c core.sshCommand="ssh -i ${sshPath}" ` : '';
-    const cwd = join(this._rootPath, options?.path ?? '');
+    const cwd = resolve(this._rootPath, options?.path ?? '');
 
     await $`git ${command} ${sshConfig}${params}`.cwd(cwd);
     if (sshPath) await this.deleteSshKeyFile(sshPath);
@@ -48,10 +48,10 @@ export class Git {
     const basePath = url.split('/').pop()?.replace('.git', '');
     if (!basePath) throw new Error('Invalid URL');
 
-    const fullBasePath = join(this._rootPath, basePath);
+    const fullBasePath = resolve(this._rootPath, basePath);
     let path = fullBasePath;
 
-    while (await Bun.file(path).exists()) path = join(fullBasePath, generateKey(5));
+    while (await Bun.file(path).exists()) path = resolve(fullBasePath, generateKey(5));
     return path;
   }
 }

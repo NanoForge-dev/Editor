@@ -1,6 +1,6 @@
 import { Exception } from '../exception';
 import type { Context } from './context';
-import type { RequestHandlerOptions } from './request-handler';
+import type { RequestHandlerOptions } from './types';
 
 const DEFAULT_OPTIONS: RequestHandlerOptions = {
   onlineOnly: false,
@@ -9,7 +9,7 @@ const DEFAULT_OPTIONS: RequestHandlerOptions = {
 };
 
 const assertProject = (context: Context, options: RequestHandlerOptions): void | never => {
-  if (!options.projectOptional) return;
+  if (options.projectOptional) return;
 
   if (!context.session) throw new Exception('Bad Request', 'No session', 400);
   if (!context.project) throw new Exception('Bad Request', 'Request required a project', 400);

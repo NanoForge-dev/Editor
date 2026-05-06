@@ -71,7 +71,7 @@ export const actions = {
 
     const session = locals.session;
 
-    await session.setData({ path: absoluteProjectPath });
+    await session.setData({ path: absoluteProjectPath, id: '' });
     await session.save();
 
     return {

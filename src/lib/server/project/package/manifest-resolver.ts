@@ -1,5 +1,12 @@
 import ts, { type Expression, type ObjectLiteralElementLike } from 'typescript';
 
+import { PackageTypeEnum } from './package.type';
+
+export const MANIFEST_TITLES = {
+  [PackageTypeEnum.COMPONENT]: 'EDITOR_COMPONENT_MANIFEST',
+  [PackageTypeEnum.SYSTEM]: 'EDITOR_SYSTEM_MANIFEST',
+} as const;
+
 const findManifestNode = (title: string, source: ts.SourceFile): ts.VariableDeclaration | null => {
   let res = null;
   source.forEachChild((node) => {
@@ -54,10 +61,7 @@ const parseManifest = (title: string, source: ts.SourceFile): any | null => {
   return getManifestFromNode(findManifestNode(title, source));
 };
 
-export const resolveManifest = (type: 'component' | 'system', content: string): any | null => {
+export const resolveManifest = (type: PackageTypeEnum, content: string): any | null => {
   const source = ts.createSourceFile('tmp.ts', content, ts.ScriptTarget.ESNext, true);
-  return parseManifest(
-    type === 'component' ? 'EDITOR_COMPONENT_MANIFEST' : 'EDITOR_SYSTEM_MANIFEST',
-    source,
-  );
+  return parseManifest(MANIFEST_TITLES[type], source);
 };
