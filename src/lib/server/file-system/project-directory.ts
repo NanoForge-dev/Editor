@@ -71,6 +71,12 @@ export class ProjectDirectory {
     this.path = absoluteNewDirPath;
   }
 
+  assertExists() {
+    this._checkPathExists();
+    this._checkPathIsDir();
+    this._checkPathIsReadable();
+  }
+
   private _checkPathIsInsideProject(path: string = this.path) {
     if (!path.startsWith(this.projectPath)) {
       throw new FileSystemError(`Path ${path} is outside of the project directory`);

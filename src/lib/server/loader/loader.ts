@@ -4,11 +4,13 @@ import { join } from 'path';
 import { FileSystem } from '$lib/server/file-system';
 import { directoryContentToFileEntries } from '$lib/server/file-system/project-directory';
 
+import type { Part } from '@utils/types';
+
 import { Exception } from '@utils-server/exception';
 import type { Context } from '@utils-server/request-handler';
 
 import { resolveEnv } from './env';
-import type { Manifest, Part } from './types';
+import type { Manifest } from './types';
 
 export class Loader {
   private readonly _projectPath: string;

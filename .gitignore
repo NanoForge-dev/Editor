@@ -229,6 +229,5 @@ dist
 
 .svelte-kit/
 test-results/
-package
 
 public/

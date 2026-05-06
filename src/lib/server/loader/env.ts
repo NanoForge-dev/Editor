@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 import { join } from 'path';
 
-import type { Part } from './types';
+import type { Part } from '@utils/types';
 
 const PREFIX_CLIENT = 'NANOFORGE_CLIENT_';
 const PREFIX_SERVER = 'NANOFORGE_SERVER_';

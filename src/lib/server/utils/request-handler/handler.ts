@@ -5,6 +5,7 @@ import { Cli } from '$lib/server/cli';
 import { FileSystem } from '$lib/server/file-system';
 import { Git } from '$lib/server/git';
 import { Loader } from '$lib/server/loader';
+import { ProjectManager } from '$lib/server/project';
 
 import type { Context } from '@utils-server/request-handler/context';
 
@@ -18,6 +19,7 @@ export class Handler<Body = any> {
   private _fsCache: FileSystem | undefined;
   private _loaderCache: Loader | undefined;
   private _gitCache: Git | undefined;
+  private _projectCache: ProjectManager | undefined;
 
   constructor(context: Context, event: RequestEvent, body: Body) {
     this._context = context;
@@ -70,5 +72,10 @@ export class Handler<Body = any> {
   get git(): Git {
     if (!this._gitCache) this._gitCache = new Git();
     return this._gitCache;
+  }
+
+  get project(): ProjectManager {
+    if (!this._projectCache) this._projectCache = new ProjectManager(this._context);
+    return this._projectCache;
   }
 }

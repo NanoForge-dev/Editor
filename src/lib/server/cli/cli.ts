@@ -1,3 +1,5 @@
+import { env } from '$env/dynamic/private';
+
 import { camelToKebab } from '@utils/string';
 
 import type { Context } from '@utils-server/request-handler';
@@ -69,7 +71,7 @@ export class Cli {
     opts: Record<string, string | boolean | undefined>,
     { async = false }: CliRunOptions = {},
   ): void {
-    const fullCommand = ['nf', command, ...params, ...this.resolveParams(opts)];
+    const fullCommand = [env.NF_CLI_PATH ?? 'nf', command, ...params, ...this.resolveParams(opts)];
 
     if (async) {
       const res = Bun.spawn(fullCommand, { stdout: 'pipe', stderr: 'pipe' });
