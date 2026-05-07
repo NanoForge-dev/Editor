@@ -35,25 +35,18 @@ export class ProjectFile {
   }
 
   write(text: string): void {
-    const folderPath = path.dirname(this._path);
-    try {
-      this._checkPathExists();
-      this._checkPathIsFile();
-      this._checkPathIsWritable();
-    } catch {
-      fs.mkdirSync(folderPath, { recursive: true });
-      fs.writeFileSync(this._path, text, { flush: true });
-      return;
-    }
-    this._checkPathExists(folderPath);
-    this._checkPathIsDir(folderPath);
-    this._checkPathIsWritable(folderPath);
+    this._checkWritableAndCreateFolder();
     fs.writeFileSync(this._path, text, { flush: true });
   }
 
   writeJson(content: any): void {
     const raw = JSON.stringify(content);
     this.write(raw);
+  }
+
+  getWriteStream(): fs.WriteStream {
+    this._checkWritableAndCreateFolder();
+    return fs.createWriteStream(this._path);
   }
 
   delete(): void {
@@ -81,6 +74,23 @@ export class ProjectFile {
     this._checkPathExists();
     this._checkPathIsFile();
     this._checkPathIsReadable();
+  }
+
+  private _checkWritableAndCreateFolder(): void {
+    const folderPath = path.dirname(this._path);
+    try {
+      this._checkPathExists(folderPath);
+    } catch {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+    if (fs.existsSync(this._path)) {
+      this._checkPathIsFile();
+      this._checkPathIsWritable();
+    } else {
+      this._checkPathExists(folderPath);
+      this._checkPathIsDir(folderPath);
+      this._checkPathIsWritable(folderPath);
+    }
   }
 
   private _checkPathIsInsideProject(path: string = this._path) {

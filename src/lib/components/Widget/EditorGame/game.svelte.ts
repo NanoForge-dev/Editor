@@ -3,7 +3,8 @@ import { SvelteMap } from 'svelte/reactivity';
 import { type Writable, get, writable } from 'svelte/store';
 
 import { localApi } from '$lib/components/Utils/api/api';
-import type { Save } from '$lib/loader/client/types/save.type';
+
+import type { Save } from '@utils/types';
 
 export const mainModule: Writable<any> = writable(undefined);
 export const env: Writable<Record<string, string>> = writable({});

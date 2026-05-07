@@ -3,7 +3,8 @@ import { get } from 'svelte/store';
 
 import { localApi } from '$lib/components/Utils/api/api';
 import { save } from '$lib/components/Widget/EditorGame/game.svelte';
-import type { SaveComponent } from '$lib/loader/client/types/save.type';
+
+import type { SaveComponent } from '@utils/types';
 
 export async function createDefaultComponent(
   componentName: string,

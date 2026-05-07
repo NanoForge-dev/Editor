@@ -1,5 +1,6 @@
+import type { Save } from '@utils/types';
+
 import type { IEventEmitter } from './event-emitter.type';
-import type { Save } from './save.type';
 
 export interface IGameOptions {
   canvas: HTMLCanvasElement;

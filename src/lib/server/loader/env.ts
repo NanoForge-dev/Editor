@@ -14,18 +14,16 @@ const loadEnv = (path: string): Record<string, string> => {
 };
 
 const parseEnv = (part: Part, env: Record<string, string>): Record<string, string> => {
+  const partPrefix = part === 'client' ? PREFIX_CLIENT : PREFIX_SERVER;
   return Object.fromEntries(
     Object.entries(env)
       .filter(
         ([key]) =>
-          key.startsWith(PREFIX) ||
-          (part === 'client' && key.startsWith(PREFIX_CLIENT)) ||
-          (part === 'server' && key.startsWith(PREFIX_SERVER)),
+          key.startsWith(PREFIX) &&
+          ((part === 'client' && !key.startsWith(PREFIX_SERVER)) ||
+            (part === 'server' && !key.startsWith(PREFIX_CLIENT))),
       )
-      .map(([key, value]) => [
-        key.replace(part === 'client' ? PREFIX_CLIENT : PREFIX_SERVER, '').replace(PREFIX, ''),
-        value,
-      ]),
+      .map(([key, value]) => [key.replace(new RegExp(`^${partPrefix}|${PREFIX}`), ''), value]),
   );
 };
 

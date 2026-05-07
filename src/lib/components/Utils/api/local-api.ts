@@ -5,7 +5,8 @@ import { deserialize } from '$app/forms';
 import { type DirectoryRec, ProjectApi } from '$lib/components/Utils/api/project-api';
 import { env, save } from '$lib/components/Widget/EditorGame/game.svelte';
 import type { IManifest } from '$lib/loader/client/types/manifest.type';
-import type { Save } from '$lib/loader/client/types/save.type';
+
+import type { Save } from '@utils/types';
 
 import { FileSystemDirectory } from '@utils-client/file-system';
 import { projectFileSystem } from '@utils-client/local-file-system/project-file-system';

@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
 
-import { camelToKebab } from '@utils/string';
+import { camelToKebab } from '@utils/format';
 
 import type { Context } from '@utils-server/request-handler';
 

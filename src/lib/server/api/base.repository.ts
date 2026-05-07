@@ -44,7 +44,7 @@ export class BaseRepository {
     path: string,
     options?: RequestOptions,
   ): Promise<R> {
-    return (await this._client[request](`/api${path}`, options)).content as R;
+    return (await this._client[request](path, options)).content as R;
   }
 
   private async runRequestBody<R, I>(
@@ -55,7 +55,7 @@ export class BaseRepository {
   ): Promise<R> {
     return (
       await this._client[request](
-        `/api${path}`,
+        path,
         body === undefined ? undefined : JSON.stringify(body),
         options,
       )
