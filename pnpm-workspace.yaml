@@ -9,7 +9,7 @@ catalogs:
     '@favware/cliff-jumper': ^6.1.0
     '@nanoforge-dev/actions': ^1.2.3
     husky: ^9.1.7
-    lint-staged: ^16.4.0
+    lint-staged: ^17.0.4
   components:
     flowbite: ^4.0.1
     flowbite-svelte: ^1.33.1
