@@ -4,7 +4,7 @@ catalogs:
     'svelte-adapter-bun': ^1.0.1
     typescript: ^6.0.2
   ci:
-    '@commitlint/cli': ^20.5.0
+    '@commitlint/cli': ^21.0.0
     '@commitlint/config-conventional': ^20.5.0
     '@favware/cliff-jumper': ^6.1.0
     '@nanoforge-dev/actions': ^1.2.3
