@@ -53,6 +53,7 @@ export class Cli {
   }
 
   generate(opts: CliPartial<CliGenerateOptions>, runOpts?: CliRunOptions): void {
+    this.assertProject();
     return this.runCommand('generate', [], { ...opts, directory: this._projectPath }, runOpts);
   }
 

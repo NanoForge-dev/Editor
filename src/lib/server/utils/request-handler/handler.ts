@@ -4,7 +4,6 @@ import { type Api, getApi } from '$lib/server/api';
 import { Cli } from '$lib/server/cli';
 import { FileSystem } from '$lib/server/file-system';
 import { Git } from '$lib/server/git';
-import { Loader } from '$lib/server/loader';
 import { ProjectManager } from '$lib/server/project';
 
 import type { Context } from '@utils-server/request-handler/context';
@@ -17,7 +16,6 @@ export class Handler<Body = any> {
   private _apiCache: Api | undefined;
   private _cliCache: Cli | undefined;
   private _fsCache: FileSystem | undefined;
-  private _loaderCache: Loader | undefined;
   private _gitCache: Git | undefined;
   private _projectCache: ProjectManager | undefined;
 
@@ -37,7 +35,6 @@ export class Handler<Body = any> {
     this._apiCache = undefined;
     this._cliCache = undefined;
     this._fsCache = undefined;
-    this._loaderCache = undefined;
     this._gitCache = undefined;
   }
 
@@ -62,11 +59,6 @@ export class Handler<Body = any> {
   get fs(): FileSystem {
     if (!this._fsCache) this._fsCache = new FileSystem(this._context);
     return this._fsCache;
-  }
-
-  get loader(): any {
-    if (!this._loaderCache) this._loaderCache = new Loader(this._context);
-    return this._loaderCache;
   }
 
   get git(): Git {
