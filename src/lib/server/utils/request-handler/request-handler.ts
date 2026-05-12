@@ -22,7 +22,7 @@ export const useRequestHandler = <Body = any>(
     try {
       const context = await getContext(event);
 
-      const body = parseBody<Body>(await event.request.json(), options?.body);
+      const body = parseBody<Body>(await event.request.formData(), options?.body);
 
       assertRequest(context, options);
 

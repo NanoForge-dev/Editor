@@ -6,16 +6,14 @@ export interface MiddlewareParams {
   options: RequestOptions;
 }
 
-export type FullResponse = Response & { content: any };
-
-export type MiddlewareNext = (params?: MiddlewareParams) => Promise<FullResponse>;
+export type MiddlewareNext = (params?: MiddlewareParams) => Promise<Response>;
 
 export type Middleware = (
   params: MiddlewareParams,
   next: MiddlewareNext,
-) => Promise<FullResponse | undefined> | undefined;
+) => Promise<Response | undefined> | undefined;
 
-type BaseRequest = (path: string, options: RequestOptions) => Promise<FullResponse>;
+type BaseRequest = (path: string, options: RequestOptions) => Promise<Response>;
 
 export class HttpClient {
   private readonly _baseUrl: string;
@@ -32,7 +30,7 @@ export class HttpClient {
     this._middlewares = [];
   }
 
-  get(path: string, options?: RequestOptions): Promise<FullResponse> {
+  get(path: string, options?: RequestOptions): Promise<Response> {
     return this._applyMiddlewares(path, options, (newPath, newOptions) => {
       return this._request(newPath, {
         ...newOptions,
@@ -41,7 +39,7 @@ export class HttpClient {
     });
   }
 
-  post(path: string, body?: string, options?: RequestOptions): Promise<FullResponse> {
+  post(path: string, body?: string, options?: RequestOptions): Promise<Response> {
     return this._applyMiddlewares(path, options, (newPath, newOptions) => {
       return this._request(newPath, {
         ...newOptions,
@@ -51,7 +49,17 @@ export class HttpClient {
     });
   }
 
-  put(path: string, body?: string, options?: RequestOptions): Promise<FullResponse> {
+  postFormData(path: string, body?: FormData, options?: RequestOptions): Promise<Response> {
+    return this._applyMiddlewares(path, options, (newPath, newOptions) => {
+      return this._request(newPath, {
+        ...newOptions,
+        method: 'POST',
+        body: body,
+      });
+    });
+  }
+
+  put(path: string, body?: string, options?: RequestOptions): Promise<Response> {
     return this._applyMiddlewares(path, options, (newPath, newOptions) => {
       return this._request(newPath, {
         ...newOptions,
@@ -61,7 +69,7 @@ export class HttpClient {
     });
   }
 
-  patch(path: string, body?: string, options?: RequestOptions): Promise<FullResponse> {
+  patch(path: string, body?: string, options?: RequestOptions): Promise<Response> {
     return this._applyMiddlewares(path, options, async (newPath, newOptions) => {
       return this._request(newPath, {
         ...newOptions,
@@ -71,12 +79,12 @@ export class HttpClient {
     });
   }
 
-  delete(path: string, options?: RequestOptions): Promise<FullResponse> {
+  delete(path: string, options?: RequestOptions): Promise<Response> {
     return this._applyMiddlewares(path, options, (newPath, newOptions) => {
       return this._request(newPath, {
         ...newOptions,
         method: 'DELETE',
-      }) as Promise<FullResponse>;
+      }) as Promise<Response>;
     });
   }
 
@@ -85,17 +93,15 @@ export class HttpClient {
     return this;
   }
 
-  private async _request(path: string, request: RequestInit): Promise<FullResponse> {
-    const res = (await fetch(path, request)) as FullResponse;
-    res.content = null;
-    return res;
+  private _request(path: string, request: RequestInit): Promise<Response> {
+    return fetch(path, request);
   }
 
   private _applyMiddlewares(
     path: string,
     options: RequestOptions | undefined,
     callback: BaseRequest,
-  ): Promise<FullResponse> {
+  ): Promise<Response> {
     const baseParams = {
       path,
       fullPath: this._getUrl(path),
@@ -105,14 +111,14 @@ export class HttpClient {
       },
     };
     const middlewares = this._middlewares.slice();
-    let response: FullResponse;
+    let response: Response;
 
-    const execution = async (params?: MiddlewareParams): Promise<FullResponse> => {
+    const execution = async (params?: MiddlewareParams): Promise<Response> => {
       if (!params) params = baseParams;
 
       const middleware = middlewares.shift();
 
-      if (!middleware) response = (await callback(params.fullPath, params.options)) as FullResponse;
+      if (!middleware) response = (await callback(params.fullPath, params.options)) as Response;
       else response = (await middleware(params, execution)) ?? response;
 
       return response;
