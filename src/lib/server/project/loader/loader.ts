@@ -1,7 +1,10 @@
-import type { ReadStream } from 'fs';
 import { join } from 'path';
 
-import { directoryContentToFileEntries } from '$lib/server/file-system/project-directory';
+import {
+  FileSystem,
+  type ProjectFile,
+  directoryContentToFileEntries,
+} from '$lib/server/file-system';
 
 import { type ProjectHandler } from '../project-handler';
 import { resolveEnv } from './env';
@@ -9,9 +12,13 @@ import type { Manifest } from './types';
 
 export class Loader {
   private readonly handler: ProjectHandler;
+  private readonly _fs: FileSystem;
+  private readonly _basePath: string;
 
   constructor(handler: ProjectHandler) {
     this.handler = handler;
+    this._basePath = join(this.handler._path, '.nanoforge', this.handler._part);
+    this._fs = new FileSystem(this._basePath);
   }
 
   getEnv(): Record<string, string> {
@@ -19,22 +26,14 @@ export class Loader {
   }
 
   getManifest(): Manifest {
-    const entries = directoryContentToFileEntries(
-      this.handler._fs.getDirectory(join('.nanoforge', this.handler._part)).read(true),
-      this.handler._path,
-    );
+    const entries = directoryContentToFileEntries(this._fs.getDirectory('.').read(true));
     return {
       version: '1.0.0',
       files: entries.map((path) => ({ path })),
     };
   }
 
-  getFile(path: string): ReadStream {
-    const fullPath = join(
-      '.nanoforge',
-      this.handler._part,
-      `${path.startsWith('/') ? path.slice(1) : path}`,
-    );
-    return this.handler._fs.getFile(fullPath).readStream();
+  getFile(path: string): ProjectFile {
+    return this._fs.getFile(path);
   }
 }

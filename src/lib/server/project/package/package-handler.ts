@@ -88,7 +88,7 @@ export class PackageHandler {
   }
 
   private _getPackageManifest(type: PackageTypeEnum, path: string): any {
-    const content = this.handler._fs.getFile(this._resolvePartPath(path)).read();
+    const content = this.handler._rootFs.getFile(this._resolvePartPath(path)).read();
     return resolveManifest(type, content);
   }
 

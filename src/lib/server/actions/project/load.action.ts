@@ -4,7 +4,7 @@ import { loadProject } from '$lib/server/project';
 import type { SessionProject } from '$lib/server/session';
 
 import { Exception } from '@utils-server/exception';
-import { type Handler, useRequestHandler } from '@utils-server/request-handler';
+import { type Handler, useActionHandler } from '@utils-server/request-handler';
 
 class LoadProjectBody {
   path?: string;
@@ -58,7 +58,7 @@ const resolveSessionFunctions: Record<
   gatewayId: resolveSessionFromGatewayId,
 };
 
-export const loadProjectAction = useRequestHandler(
+export const loadProjectAction = useActionHandler(
   async (handler) => {
     const { body } = handler;
 

@@ -1,28 +1,32 @@
-import { type Action, type ActionFailure, fail } from '@sveltejs/kit';
+import type { RequestEvent } from '@sveltejs/kit';
+
+import type { MaybePromise } from '@utils/types';
 
 import { Exception } from '../exception';
 import { parseBody } from './body';
 import { getContext } from './context';
 import { Handler } from './handler';
 import { assertRequest } from './request.policy';
-import type { Callback, RequestHandlerOptions } from './types';
+import type { RequestHandlerOptions } from './types';
 
-const handleError = (e: unknown): ActionFailure<{ error: string; message: unknown }> => {
+type Callback<Body = any> = (opts: Handler<Body>) => MaybePromise<Response | never>;
+
+const handleError = (e: unknown): Response => {
   if (e instanceof Exception) {
-    return fail(e.status, { error: e.error, message: e.message });
+    return Response.json({ error: e.error, message: e.message }, { status: e.status });
   }
-  return fail(500, { error: 'Internal Server Error', message: e });
+  return Response.json({ error: 'Internal Server Error', message: e }, { status: 500 });
 };
 
-export const useRequestHandler = <Body = any>(
+export const useRequestHandler = (
   callback: Callback<Body>,
   options?: RequestHandlerOptions<Body>,
-): Action => {
-  return async (event) => {
+): ((event: RequestEvent) => MaybePromise<Response>) => {
+  return async (event: RequestEvent) => {
     try {
       const context = await getContext(event);
 
-      const body = parseBody<Body>(await event.request.formData(), options?.body);
+      const body = parseBody<Body>(await event.request.json(), options?.body);
 
       assertRequest(context, options);
 

@@ -8,12 +8,17 @@ import { ProjectFile } from './project-file';
 export class FileSystem {
   private readonly _rootPath: string;
 
-  constructor(context: Context) {
-    if (!context.project) {
+  constructor(arg: string | Context) {
+    if (typeof arg === 'string') {
+      this._rootPath = resolveRootPath(arg);
+      return;
+    }
+
+    if (!arg.project) {
       throw new Exception('Bad Request', 'Project is not defined', 400);
     }
 
-    this._rootPath = resolveRootPath(context.project.path);
+    this._rootPath = resolveRootPath(arg.project.path);
   }
 
   getDirectory(path: string) {

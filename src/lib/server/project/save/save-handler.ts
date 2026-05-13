@@ -10,11 +10,11 @@ export class SaveHandler {
   }
 
   async getSave(): Promise<Save> {
-    return this.handler._fs.getFile(this.resolveSavePath()).readJson<Save>();
+    return this.handler._rootFs.getFile(this.resolveSavePath()).readJson<Save>();
   }
 
   async updateSave(save: Save): Promise<void> {
-    this.handler._fs.getFile(this.resolveSavePath()).writeJson(save);
+    this.handler._rootFs.getFile(this.resolveSavePath()).writeJson(save);
   }
 
   private resolveSavePath(): string {
