@@ -1,0 +1,1 @@
+export { InfoHandler } from './info';
