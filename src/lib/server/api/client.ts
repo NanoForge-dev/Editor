@@ -16,7 +16,7 @@ export interface Api {
 }
 
 export const getNoAuthApi = () => {
-  if (env.MODE !== 'ONLINE') throw new Error('API is only available in online mode');
+  if (env.PUBLIC_MODE !== 'ONLINE') throw new Error('API is only available in online mode');
   if (!env.API_URL) throw new Error('API_URL is not defined');
   if (!env.API_KEY) throw new Error('API_KEY is not defined');
 

@@ -9,7 +9,7 @@ export class Git {
   private readonly _rootPath: string;
 
   constructor() {
-    this._rootPath = resolve(env.GIT_ROOT ?? '');
+    this._rootPath = resolve(env.FS_ROOT ?? '');
   }
 
   async clone(url: string, options?: { sshKey?: string }): Promise<string> {
