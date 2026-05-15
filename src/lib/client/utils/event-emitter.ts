@@ -1,7 +1,7 @@
-import {
-  type EventTypeEnum,
-  type IEventEmitter,
-  type ListenerType,
+import type {
+  EventTypeEnum,
+  IEventEmitter,
+  ListenerType,
 } from '$lib/loader/client/types/event-emitter.type';
 
 export class EventEmitter implements IEventEmitter {

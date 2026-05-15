@@ -4,6 +4,7 @@ class AddComponentBody {
   componentNames!: [string, ...string[]];
   server: true | undefined;
 }
+
 export const addComponentProjectAction = useActionHandler(
   async ({ api, body, cli }) => {
     const registryComponents = await Promise.all(

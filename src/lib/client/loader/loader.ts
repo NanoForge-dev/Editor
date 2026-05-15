@@ -38,8 +38,8 @@ export class Loader {
       env,
       editor: {
         save,
-        coreEvents: coreEvents,
-        editorEvents: editorEvents,
+        coreEvents,
+        editorEvents,
       },
       canvas,
     }).then(() => console.log('Game ended'));
