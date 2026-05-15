@@ -3,6 +3,7 @@ import type { RefreshTokenInput, TokenResponse } from '../types';
 
 export class AuthRepository extends BaseRepository {
   refreshToken(input: RefreshTokenInput): Promise<TokenResponse> {
+    this.assertOnline();
     return this.post(`/auth/refresh-token`, input);
   }
 }

@@ -51,7 +51,7 @@ export class Handler<Body = any> {
     return this._apiCache;
   }
 
-  get cli(): any {
+  get cli(): Cli {
     if (!this._cliCache) this._cliCache = new Cli(this._context);
     return this._cliCache;
   }

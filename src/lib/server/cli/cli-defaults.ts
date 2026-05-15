@@ -11,6 +11,7 @@ import type {
 } from './cli.type';
 
 export const CLI_NEW_DEFAULTS: WithOptional<CliNewOptions, 'name'> = {
+  directory: '.',
   packageManager: 'npm',
   language: 'ts',
   strict: false,

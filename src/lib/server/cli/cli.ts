@@ -1,5 +1,15 @@
 import { env } from '$env/dynamic/private';
 
+import {
+  CLI_BUILD_DEFAULTS,
+  CLI_CREATE_DEFAULTS,
+  CLI_DEV_DEFAULTS,
+  CLI_GENERATE_DEFAULTS,
+  CLI_INSTALL_DEFAULTS,
+  CLI_NEW_DEFAULTS,
+  CLI_START_DEFAULTS,
+} from '$lib/server/cli/cli-defaults';
+
 import { camelToKebab } from '@utils/format';
 
 import type { Context } from '@utils-server/request-handler';
@@ -25,7 +35,7 @@ export class Cli {
   }
 
   new(opts: CliPartial<CliNewOptions, 'name' | 'directory'>, runOpts?: CliRunOptions): void {
-    return this.runCommand('new', [], opts, runOpts);
+    return this.runCommand('new', [], { ...CLI_NEW_DEFAULTS, ...opts }, CLI_NEW_DEFAULTS, runOpts);
   }
 
   install(
@@ -34,27 +44,57 @@ export class Cli {
     runOpts?: CliRunOptions,
   ): void {
     this.assertProject();
-    return this.runCommand('install', pkgs, { ...opts, directory: this._projectPath }, runOpts);
+    return this.runCommand(
+      'install',
+      pkgs,
+      { ...opts, directory: this._projectPath },
+      CLI_INSTALL_DEFAULTS,
+      runOpts,
+    );
   }
 
   build(opts: CliPartial<CliBuildOptions>, runOpts?: CliRunOptions): void {
     this.assertProject();
-    return this.runCommand('build', [], { ...opts, directory: this._projectPath }, runOpts);
+    return this.runCommand(
+      'build',
+      [],
+      { ...opts, directory: this._projectPath },
+      CLI_BUILD_DEFAULTS,
+      runOpts,
+    );
   }
 
   start(opts: CliPartial<CliStartOptions>, runOpts?: CliRunOptions): void {
     this.assertProject();
-    return this.runCommand('start', [], { ...opts, directory: this._projectPath }, runOpts);
+    return this.runCommand(
+      'start',
+      [],
+      { ...opts, directory: this._projectPath },
+      CLI_START_DEFAULTS,
+      runOpts,
+    );
   }
 
   dev(opts: CliPartial<CliDevOptions>, runOpts?: CliRunOptions): void {
     this.assertProject();
-    return this.runCommand('dev', [], { ...opts, directory: this._projectPath }, runOpts);
+    return this.runCommand(
+      'dev',
+      [],
+      { ...opts, directory: this._projectPath },
+      CLI_DEV_DEFAULTS,
+      runOpts,
+    );
   }
 
   generate(opts: CliPartial<CliGenerateOptions>, runOpts?: CliRunOptions): void {
     this.assertProject();
-    return this.runCommand('generate', [], { ...opts, directory: this._projectPath }, runOpts);
+    return this.runCommand(
+      'generate',
+      [],
+      { ...opts, directory: this._projectPath },
+      CLI_GENERATE_DEFAULTS,
+      runOpts,
+    );
   }
 
   create(
@@ -63,16 +103,28 @@ export class Cli {
     runOpts?: CliRunOptions,
   ): void {
     this.assertProject();
-    return this.runCommand('create', [part], { ...opts, directory: this._projectPath }, runOpts);
+    return this.runCommand(
+      'create',
+      [part],
+      { ...opts, directory: this._projectPath },
+      CLI_CREATE_DEFAULTS,
+      runOpts,
+    );
   }
 
   private runCommand(
     command: string,
     params: string[],
     opts: Record<string, string | boolean | undefined>,
+    defaultOpts: Record<string, string | boolean | undefined>,
     { async = false }: CliRunOptions = {},
   ): void {
-    const fullCommand = [env.NF_CLI_PATH ?? 'nf', command, ...params, ...this.resolveParams(opts)];
+    const fullCommand = [
+      env.NF_CLI_PATH ?? 'nf',
+      command,
+      ...params,
+      ...this.resolveParams(opts, defaultOpts),
+    ];
 
     if (async) {
       const res = Bun.spawn(fullCommand, { stdout: 'pipe', stderr: 'pipe' });
@@ -94,11 +146,23 @@ export class Cli {
     }
   }
 
-  private resolveParams(opts: Record<string, string | boolean | undefined>): string[] {
-    const params = [];
-    for (const [key, value] of Object.entries(opts)) {
-      if (value === undefined) continue;
+  private mergeParams(...opts: Record<string, string | boolean | undefined>[]) {
+    const merged: any = {};
+    for (const opt of opts) {
+      for (const [key, value] of Object.entries(opt)) {
+        if (value === undefined) continue;
+        merged[key] = value;
+      }
+    }
+    return merged;
+  }
 
+  private resolveParams(
+    opts: Record<string, string | boolean | undefined>,
+    defaultOpts: Record<string, string | boolean | undefined>,
+  ): string[] {
+    const params = [];
+    for (const [key, value] of this.mergeParams(defaultOpts, opts)) {
       const name = camelToKebab(key);
 
       if (typeof value === 'boolean') {

@@ -9,10 +9,12 @@ import type { Context } from '@utils-server/request-handler/context';
 import { useTokenMiddleware } from './middlewares/refresh-token.middleware';
 import { AuthRepository } from './repositories/auth.repository';
 import { ProjectRepository } from './repositories/projects.repository';
+import { RegistryRepository } from './repositories/registry.repository';
 
 export interface Api {
   auth: AuthRepository;
   projects: ProjectRepository;
+  registry: RegistryRepository;
 }
 
 export const getNoAuthApi = () => {
@@ -26,12 +28,10 @@ export const getNoAuthApi = () => {
       'Api-Key': env.API_KEY,
     },
   });
-  return { auth: new AuthRepository(client) };
+  return { auth: new AuthRepository(client, true) };
 };
 
 export const getApi = (context: Context, cookies: Cookies): Api => {
-  if (!context.online) throw new Error('API is only available in online mode');
-
   if (!env.API_URL) throw new Error('API_URL is not defined');
   if (!env.API_KEY) throw new Error('API_KEY is not defined');
 
@@ -41,6 +41,9 @@ export const getApi = (context: Context, cookies: Cookies): Api => {
       'Api-Key': env.API_KEY,
     },
   }).useMiddlewares(useTokenMiddleware(cookies));
-
-  return { auth: new AuthRepository(client), projects: new ProjectRepository(client) };
+  return {
+    auth: new AuthRepository(client, context.online),
+    projects: new ProjectRepository(client, context.online),
+    registry: new RegistryRepository(client, context.online),
+  };
 };

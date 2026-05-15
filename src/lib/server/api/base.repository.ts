@@ -2,9 +2,11 @@ import type { HttpClient, RequestOptions } from '@utils/http';
 
 export class BaseRepository {
   private readonly _client: HttpClient;
+  private readonly _online: boolean;
 
-  constructor(client: HttpClient) {
+  constructor(client: HttpClient, online: boolean) {
     this._client = client;
+    this._online = online;
   }
 
   protected get<R extends object = object>(path: string, options?: RequestOptions): Promise<R> {
@@ -37,6 +39,10 @@ export class BaseRepository {
 
   protected delete<R extends object = object>(path: string, options?: RequestOptions): Promise<R> {
     return this.runRequest('delete', path, options);
+  }
+
+  protected assertOnline() {
+    if (!this._online) throw new Error('This route is only available in online mode');
   }
 
   private async runRequest<R>(
