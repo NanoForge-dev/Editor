@@ -1,11 +1,13 @@
 import { type ActionClient, getActionClient } from '$lib/client/action';
-import { ProjectFileSystem } from '$lib/client/file-system';
 import { InfoHandler } from '$lib/client/info';
+import { Loader } from '$lib/client/loader';
+import { SyncFileSystem } from '$lib/client/sync-file-system';
 
 export class Project {
   private _info: InfoHandler | undefined;
   private _actions: ActionClient | undefined;
-  private _fs: ProjectFileSystem | undefined;
+  private _fs: SyncFileSystem | undefined;
+  private _loader: Loader | undefined;
 
   static reset(): void {
     InfoHandler.reset();
@@ -23,8 +25,13 @@ export class Project {
     return this._actions;
   }
 
-  get fs(): ProjectFileSystem {
-    if (!this._fs) this._fs = new ProjectFileSystem(this);
+  get fs(): SyncFileSystem {
+    if (!this._fs) this._fs = new SyncFileSystem(this, 'project');
     return this._fs;
+  }
+
+  get loader(): Loader {
+    if (!this._loader) this._loader = new Loader(this);
+    return this._loader;
   }
 }

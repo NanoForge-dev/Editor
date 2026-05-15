@@ -24,6 +24,7 @@ export default [
   {
     rules: {
       'svelte/no-unused-svelte-ignore': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
     },
   },
 ];

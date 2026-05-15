@@ -48,7 +48,7 @@ export function fetchGameFiles(manifest: IManifest): Promise<IExtendedManifestFi
     } else {
       await gameFile.write(fileContent);
     }
-    const localPath = await gameFile.getUrl(fileIsWasm ? 'application/wasm' : 'text/javascript');
+    const localPath = await gameFile.getUrl();
     return {
       gamePath: filePath,
       localPath,

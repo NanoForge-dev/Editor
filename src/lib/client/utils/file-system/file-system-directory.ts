@@ -13,12 +13,21 @@ export class FileSystemDirectory {
     this.handle = handle;
   }
 
-  getName(): string {
+  get name(): string {
     return this.handle.name;
   }
 
   async getFile(name: string, create = true): Promise<FileSystemFile> {
     return new FileSystemFile(await this.handle.getFileHandle(name, { create }));
+  }
+
+  async fileExist(name: string): Promise<boolean> {
+    try {
+      await this.handle.getFileHandle(name, { create: false });
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async getDirectory(name: string, create = true): Promise<FileSystemDirectory> {
