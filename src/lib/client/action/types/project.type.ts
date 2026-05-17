@@ -1,4 +1,8 @@
+import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
+
 import type { Project } from '$lib/server/project';
+
+import type { Save, SaveComponent, SaveSystem } from '@utils/types';
 
 export type ActionProject = Project;
 
@@ -20,18 +24,36 @@ export interface CreateProjectActionInput {
   gitRemote?: string | false;
 }
 
-export interface AddRegistryComponentActionResult {
-  newComponentsPaths: string[];
+export interface NewComponentPackageResult {
+  manifest: EditorComponentManifest;
+  save: SaveComponent;
 }
 
-export interface AddComponentActionInput {
+export interface NewSystemPackageResult {
+  manifest: EditorSystemManifest;
+  save: SaveSystem;
+}
+
+export interface AddComponentsActionInput {
   componentNames: [string, ...string[]];
-
-  server: true | undefined;
 }
 
-export interface AddSystemActionInput {
+export interface AddSystemsActionInput {
   systemNames: [string, ...string[]];
+}
 
-  server: true | undefined;
+export interface CreateComponentActionInput {
+  componentName: string;
+}
+
+export interface CreateSystemActionInput {
+  systemName: string;
+}
+
+export interface GetSaveResult {
+  save: Save;
+}
+
+export interface SetSaveInput {
+  save: Save;
 }

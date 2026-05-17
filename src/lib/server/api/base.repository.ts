@@ -4,7 +4,7 @@ export class BaseRepository {
   private readonly _client: HttpClient;
   private readonly _online: boolean;
 
-  constructor(client: HttpClient, online: boolean) {
+  constructor(client: HttpClient, online: boolean = true) {
     this._client = client;
     this._online = online;
   }

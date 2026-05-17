@@ -1,8 +1,8 @@
 import { BaseRepository } from '../base.repository';
-import type { RegistryComponentType } from '../types';
+import type { RegistryPackageType } from '../types';
 
 export class RegistryRepository extends BaseRepository {
-  getComponent(packageName: string): Promise<RegistryComponentType> {
+  getPackage(packageName: string): Promise<RegistryPackageType> {
     return this.get(`/registry/${packageName}`);
   }
 }

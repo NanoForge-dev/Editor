@@ -1,6 +1,7 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
 import { type Api, getApi } from '$lib/server/api';
+import { getNoAuthApi } from '$lib/server/api/client';
 import { Cli } from '$lib/server/cli';
 import { FileSystem } from '$lib/server/file-system';
 import { Git } from '$lib/server/git';
@@ -47,7 +48,8 @@ export class Handler<Body = any> {
   }
 
   get api(): Api {
-    if (!this._apiCache) this._apiCache = getApi(this._context, this._event.cookies);
+    if (!this._apiCache)
+      this._apiCache = this._context.online ? getApi(this._event.cookies) : getNoAuthApi();
     return this._apiCache;
   }
 

@@ -1,4 +1,4 @@
-export interface RegistryComponentType {
+export interface RegistryPackageType {
   name: string;
   type: string;
   description: string;

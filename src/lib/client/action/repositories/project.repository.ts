@@ -1,11 +1,16 @@
 import { BaseRepository } from '../base.repository';
 import type {
   ActionProject,
-  AddComponentActionInput,
-  AddRegistryComponentActionResult,
-  AddSystemActionInput,
+  AddComponentsActionInput,
+  AddSystemsActionInput,
+  CreateComponentActionInput,
   CreateProjectActionInput,
+  CreateSystemActionInput,
+  GetSaveResult,
   LoadProjectActionInput,
+  NewComponentPackageResult,
+  NewSystemPackageResult,
+  SetSaveInput,
 } from '../types';
 
 export class ProjectRepository extends BaseRepository {
@@ -21,10 +26,22 @@ export class ProjectRepository extends BaseRepository {
   build(): Promise<object> {
     return this.run(`/actions/project?/build`);
   }
-  addComponent(input: AddComponentActionInput): Promise<AddRegistryComponentActionResult> {
-    return this.run(`/actions/project?/addComponent`, input);
+  addComponents(input: AddComponentsActionInput): Promise<NewComponentPackageResult[]> {
+    return this.run(`/actions/project?/addComponents`, input);
   }
-  addSystem(input: AddSystemActionInput): Promise<AddRegistryComponentActionResult> {
-    return this.run(`/actions/project?/addSystem`, input);
+  addSystems(input: AddSystemsActionInput): Promise<NewSystemPackageResult[]> {
+    return this.run(`/actions/project?/addSystems`, input);
+  }
+  createComponent(input: CreateComponentActionInput): Promise<NewComponentPackageResult> {
+    return this.run(`/actions/project?/createComponent`, input);
+  }
+  createSystem(input: CreateSystemActionInput): Promise<NewSystemPackageResult> {
+    return this.run(`/actions/project?/createSystem`, input);
+  }
+  getSave(): Promise<GetSaveResult> {
+    return this.run(`/actions/project?/getSave`);
+  }
+  setSave(input: SetSaveInput): Promise<object> {
+    return this.run(`/actions/project?/setSave`, input);
   }
 }
