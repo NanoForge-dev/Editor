@@ -39,17 +39,7 @@ export class HttpClient {
     });
   }
 
-  post(path: string, body?: string, options?: RequestOptions): Promise<Response> {
-    return this._applyMiddlewares(path, options, (newPath, newOptions) => {
-      return this._request(newPath, {
-        ...newOptions,
-        method: 'POST',
-        body: body,
-      });
-    });
-  }
-
-  postFormData(path: string, body?: FormData, options?: RequestOptions): Promise<Response> {
+  post(path: string, body?: string | FormData, options?: RequestOptions): Promise<Response> {
     return this._applyMiddlewares(path, options, (newPath, newOptions) => {
       return this._request(newPath, {
         ...newOptions,

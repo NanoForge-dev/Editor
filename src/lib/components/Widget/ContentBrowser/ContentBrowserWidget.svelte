@@ -73,7 +73,7 @@
         {/if}
         <button
           class="cursor-pointer rounded-lg px-2 py-1 text-xs hover:bg-neutral-700"
-          onclick={() => ($CurrentDirectory = folder)}>{folder.getName()}</button
+          onclick={() => ($CurrentDirectory = folder)}>{folder.name}</button
         >
       {/each}
     </div>

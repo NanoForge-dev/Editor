@@ -11,11 +11,7 @@ export interface ActionClient {
 }
 
 export const getActionClient = (): ActionClient => {
-  const client = new HttpClient('', {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const client = new HttpClient('', {});
 
   return {
     config: new ConfigRepository(client),

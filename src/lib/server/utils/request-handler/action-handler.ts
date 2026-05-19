@@ -8,10 +8,11 @@ import { assertRequest } from './request.policy';
 import type { Callback, RequestHandlerOptions } from './types';
 
 const handleError = (e: unknown): ActionFailure<{ error: string; message: unknown }> => {
+  console.error(e);
   if (e instanceof Exception) {
     return fail(e.status, { error: e.error, message: e.message });
   }
-  return fail(500, { error: 'Internal Server Error', message: e });
+  return fail(500, { error: 'Internal Server Error', message: (e as any).toString() });
 };
 
 export const useActionHandler = <Body = any>(

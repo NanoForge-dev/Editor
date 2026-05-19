@@ -18,11 +18,7 @@ export class BaseRepository {
   }
 
   private async runRequestBody<R, I>(path: string, body?: I, options?: RequestOptions): Promise<R> {
-    const rawResult = await this._client.postFormData(
-      path,
-      this._parseBodyToFormData(body),
-      options,
-    );
+    const rawResult = await this._client.post(path, this._parseBodyToFormData(body), options);
     const result = deserialize(await rawResult.text());
 
     if (result.type === 'redirect')

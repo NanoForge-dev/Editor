@@ -146,8 +146,10 @@ export class Cli {
     }
   }
 
-  private mergeParams(...opts: Record<string, string | boolean | undefined>[]) {
-    const merged: any = {};
+  private mergeParams(
+    ...opts: Record<string, string | boolean | undefined>[]
+  ): Record<string, string | boolean | undefined> {
+    const merged: Record<string, string | boolean | undefined> = {};
     for (const opt of opts) {
       for (const [key, value] of Object.entries(opt)) {
         if (value === undefined) continue;
@@ -162,14 +164,14 @@ export class Cli {
     defaultOpts: Record<string, string | boolean | undefined>,
   ): string[] {
     const params = [];
-    for (const [key, value] of this.mergeParams(defaultOpts, opts)) {
+    for (const [key, value] of Object.entries(this.mergeParams(defaultOpts, opts))) {
       const name = camelToKebab(key);
 
       if (typeof value === 'boolean') {
         if (value) params.push(`--${name}`);
         else params.push(`--no-${name}`);
       } else {
-        params.push(`--${name}`, `'${value}'`);
+        params.push(`--${name}`, `${value}`);
       }
     }
     return params;

@@ -24,19 +24,20 @@
       return;
     }
 
-    let tabType = contentBrowserItemType.find((type) => handle.getName().endsWith(type.suffix))
-      ?.type as TabTypeId | undefined;
+    let tabType = contentBrowserItemType.find((type) => handle.name.endsWith(type.suffix))?.type as
+      | TabTypeId
+      | undefined;
     if (!tabType) return;
 
     tabsStore.openTab({
       type: tabType,
-      title: handle.getName(),
+      title: handle.name,
       file: handle,
     });
   }
 
   onMount(() => {
-    fileType = contentBrowserItemType.find((type) => handle.getName().endsWith(type.suffix));
+    fileType = contentBrowserItemType.find((type) => handle.name.endsWith(type.suffix));
   });
 </script>
 

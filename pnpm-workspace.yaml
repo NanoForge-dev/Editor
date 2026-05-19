@@ -1,6 +1,4 @@
 catalogs:
-  back-libs:
-    dotenv: ^17.4.2
   build:
     '@tsconfig/svelte': ^5.0.8
     'svelte-adapter-bun': ^1.0.1
@@ -41,6 +39,10 @@ catalogs:
     '@iconify-json/ic': ^1.2.4
     '@iconify-json/material-icon-theme': ^1.2.64
     '@iconify-json/solar': ^1.2.5
+  libs-back:
+    dotenv: ^17.4.2
+  libs-front:
+    zod: ^4.4.3
   lint:
     '@nanoforge-dev/utils-eslint-config': ^1.0.2
     '@nanoforge-dev/utils-prettier-config': ^1.0.2

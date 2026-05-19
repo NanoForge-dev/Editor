@@ -91,7 +91,7 @@ export class FileSystemFile {
     this.handle = handle;
   }
 
-  getName(): string {
+  get name(): string {
     return this.handle.name;
   }
 
