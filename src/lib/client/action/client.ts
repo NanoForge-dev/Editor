@@ -10,7 +10,7 @@ export interface ActionClient {
   project: ProjectRepository;
 }
 
-export const getActionClient = (): ActionClient => {
+const getActionClient = (): ActionClient => {
   const client = new HttpClient('', {});
 
   return {
@@ -19,3 +19,5 @@ export const getActionClient = (): ActionClient => {
     project: new ProjectRepository(client),
   };
 };
+
+export const actions = getActionClient();

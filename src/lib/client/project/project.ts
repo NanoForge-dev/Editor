@@ -1,4 +1,4 @@
-import { type ActionClient, getActionClient } from '$lib/client/action';
+import { type ActionClient, actions } from '$lib/client/action';
 import { InfoHandler } from '$lib/client/info';
 import { Loader } from '$lib/client/loader';
 import { SyncFileSystem } from '$lib/client/sync-file-system';
@@ -18,13 +18,18 @@ export class Project {
 
   constructor(public id: string) {}
 
+  async init(): Promise<Project> {
+    // @todo add init of sub parts like save
+    return this;
+  }
+
   get info(): InfoHandler {
     if (!this._info) this._info = new InfoHandler(this);
     return this._info;
   }
 
   get actions(): ActionClient {
-    if (!this._actions) this._actions = getActionClient();
+    if (!this._actions) this._actions = actions;
     return this._actions;
   }
 
