@@ -5,7 +5,7 @@
   import { createDefaultComponent } from '$lib/components/Widget/EntityInspector/component-creator';
   import { selectedEntityId } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
-  import type { SaveEntity } from '$lib/loader/client/types/save.type';
+  import type { SaveEntity } from '@utils/types';
 
   let openMap: { [key: string]: boolean } = $state({});
   let selectedEntity: SaveEntity | undefined = $state(undefined);

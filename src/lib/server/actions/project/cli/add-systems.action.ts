@@ -7,9 +7,9 @@ class AddSystemBody {
 }
 
 export const addSystemsProjectAction = useActionHandler(
-  async ({ body, project }): Promise<NewSystemPackage[]> => {
+  async ({ body, project, api }): Promise<NewSystemPackage[]> => {
     return await Promise.all(
-      body.systemNames.map((systemName) => project.client.package.installSystem(systemName)),
+      body.systemNames.map((systemName) => project.client.package.installSystem(systemName, api)),
     );
   },
   {

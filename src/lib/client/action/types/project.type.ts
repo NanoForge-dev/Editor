@@ -42,6 +42,14 @@ export interface AddSystemsActionInput {
   systemNames: [string, ...string[]];
 }
 
+export interface GetComponentsManifestsActionInput {
+  componentPaths: string[];
+}
+
+export interface GetSystemsManifestsActionInput {
+  systemPaths: string[];
+}
+
 export interface CreateComponentActionInput {
   componentName: string;
 }

@@ -14,7 +14,7 @@
   }
   let { show = $bindable(), callback }: Props = $props();
 
-  let projectLoading: Promise<void> | null = $state(null);
+  let creationPromises: Promise<unknown>[] = $state([]);
   let showAdvancedSettings: boolean = $state(false);
 
   const schema = z.object({
@@ -50,7 +50,10 @@
   }
 
   async function newProject(values: ProjectForm) {
-    const project = await ProjectLoader.create(values);
+    const projectPromise = ProjectLoader.create(values);
+    creationPromises.push(projectPromise);
+
+    const project = await projectPromise;
     callback?.(project.id);
   }
 </script>
@@ -196,11 +199,8 @@
   </Form>
 </div>
 
-{#if projectLoading !== null}
-  <ProgressBar
-    title="Creating project"
-    promises={[projectLoading]}
-    show={true}
-    callback={() => newProject(form.values)}
-  />
-{/if}
+<ProgressBar
+  title="Creating project"
+  promises={creationPromises}
+  show={creationPromises.length > 0}
+/>

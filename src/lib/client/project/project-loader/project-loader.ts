@@ -1,6 +1,11 @@
 import { get, writable } from 'svelte/store';
 
-import { type ActionProject, type CreateProjectActionInput, actions } from '$lib/client/action';
+import {
+  type ActionProject,
+  type CreateProjectActionInput,
+  type LoadProjectActionInput,
+  actions,
+} from '$lib/client/action';
 import { Project } from '$lib/client/project';
 
 const projectStore = writable<Project | null>(null);
@@ -8,6 +13,12 @@ const projectStore = writable<Project | null>(null);
 export class ProjectLoader {
   static async create(input: CreateProjectActionInput) {
     const res = await actions.project.new(input);
+
+    return ProjectLoader.init(res);
+  }
+
+  static async load(input: LoadProjectActionInput) {
+    const res = await actions.project.load(input);
 
     return ProjectLoader.init(res);
   }

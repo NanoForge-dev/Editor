@@ -7,10 +7,10 @@ class AddComponentBody {
 }
 
 export const addComponentsProjectAction = useActionHandler(
-  async ({ body, project }): Promise<NewComponentPackage[]> => {
+  async ({ body, project, api }): Promise<NewComponentPackage[]> => {
     return await Promise.all(
       body.componentNames.map((componentName) =>
-        project.client.package.installComponent(componentName),
+        project.client.package.installComponent(componentName, api),
       ),
     );
   },

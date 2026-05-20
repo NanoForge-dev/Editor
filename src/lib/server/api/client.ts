@@ -16,10 +16,7 @@ export interface Api {
 }
 
 export const getNoAuthApi = (): Api => {
-  if (!env.API_URL) throw new Error('API_URL is not defined');
-  if (!env.API_KEY) throw new Error('API_KEY is not defined');
-
-  const client = new HttpClient(env.API_URL, {
+  const client = new HttpClient(env.API_URL || 'https://api.nanoforge.eu', {
     headers: {
       'Content-Type': 'application/json',
       'Api-Key': env.API_KEY,

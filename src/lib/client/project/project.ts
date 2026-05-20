@@ -1,22 +1,26 @@
 import { type ActionClient, actions } from '$lib/client/action';
 import { InfoHandler } from '$lib/client/info';
 import { Loader } from '$lib/client/loader';
+import { PackageHandler } from '$lib/client/project/package-handler';
+import { SaveHandler } from '$lib/client/project/save-handler';
 import { SyncFileSystem } from '$lib/client/sync-file-system';
-
-import type { Save } from '@utils/types';
 
 export class Project {
   private _info: InfoHandler | undefined;
   private _actions: ActionClient | undefined;
   private _fs: SyncFileSystem | undefined;
   private _loader: Loader | undefined;
-  private _save: Save | undefined;
+  private _save: SaveHandler | undefined;
+  private _packageHandler: PackageHandler | undefined;
 
   static reset(): void {
     InfoHandler.reset();
   }
 
-  constructor(public id: string) {}
+  constructor(public id: string) {
+    this._save = new SaveHandler(this);
+    this._packageHandler = new PackageHandler(this);
+  }
 
   async init(): Promise<Project> {
     // @todo add init of sub parts like save
@@ -43,10 +47,13 @@ export class Project {
     return this._loader;
   }
 
-  async save(): Promise<Save> {
-    if (!this._save) {
-      this._save = (await this.actions.project.getSave()).save;
-    }
+  get save(): SaveHandler {
+    if (!this._save) this._save = new SaveHandler(this);
     return this._save;
+  }
+
+  get package(): PackageHandler {
+    if (!this._packageHandler) this._packageHandler = new PackageHandler(this);
+    return this._packageHandler;
   }
 }

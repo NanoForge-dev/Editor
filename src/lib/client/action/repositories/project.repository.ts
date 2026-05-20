@@ -1,3 +1,5 @@
+import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
+
 import { BaseRepository } from '../base.repository';
 import type {
   ActionProject,
@@ -6,7 +8,9 @@ import type {
   CreateComponentActionInput,
   CreateProjectActionInput,
   CreateSystemActionInput,
+  GetComponentsManifestsActionInput,
   GetSaveResult,
+  GetSystemsManifestsActionInput,
   LoadProjectActionInput,
   NewComponentPackageResult,
   NewSystemPackageResult,
@@ -37,6 +41,14 @@ export class ProjectRepository extends BaseRepository {
   }
   createSystem(input: CreateSystemActionInput): Promise<NewSystemPackageResult> {
     return this.run(`/actions/project?/createSystem`, input);
+  }
+  getComponentsManifests(
+    input: GetComponentsManifestsActionInput,
+  ): Promise<EditorComponentManifest[]> {
+    return this.run(`/actions/project?/getComponentsManifests`, input);
+  }
+  getSystemsManifests(input: GetSystemsManifestsActionInput): Promise<EditorSystemManifest[]> {
+    return this.run(`/actions/project?/getSystemsManifests`, input);
   }
   getSave(): Promise<GetSaveResult> {
     return this.run(`/actions/project?/getSave`);

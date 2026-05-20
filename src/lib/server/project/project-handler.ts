@@ -48,13 +48,13 @@ export class ProjectHandler {
     return this._loader;
   }
 
-  get package(): PackageHandler {
-    if (!this._package) this._package = new PackageHandler(this);
-    return this._package;
-  }
-
   get save(): SaveHandler {
     if (!this._save) this._save = new SaveHandler(this);
     return this._save;
+  }
+
+  get package(): PackageHandler {
+    if (!this._package) this._package = new PackageHandler(this);
+    return this._package;
   }
 }

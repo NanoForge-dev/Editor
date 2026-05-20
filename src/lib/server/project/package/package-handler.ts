@@ -1,7 +1,7 @@
 import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
 import { join } from 'path';
 
-import { getNoAuthApi } from '$lib/server/api/client';
+import { type Api } from '$lib/server/api/client';
 import { FileSystemError } from '$lib/server/file-system/file-system-error';
 import { type ProjectHandler } from '$lib/server/project';
 
@@ -17,16 +17,16 @@ export class PackageHandler {
     this.handler = handler;
   }
 
-  async installComponent(name: string): Promise<NewComponentPackage> {
-    const rc = await getNoAuthApi().registry.getPackage(name);
+  async installComponent(name: string, api: Api): Promise<NewComponentPackage> {
+    const rc = await api.registry.getPackage(name);
     if (rc.type !== 'component') throw new Error(`Can only add component: ${name} is a ${rc.type}`);
     this.handler._cli.install([name], { server: this.handler._part === 'server' || undefined });
 
     return this._getNewComponentPackage(rc.name, rc._file);
   }
 
-  async installSystem(name: string): Promise<NewSystemPackage> {
-    const rs = await getNoAuthApi().registry.getPackage(name);
+  async installSystem(name: string, api: Api): Promise<NewSystemPackage> {
+    const rs = await api.registry.getPackage(name);
     if (rs.type !== 'system') throw new Error(`Can only add system: ${name} is a ${rs.type}`);
     this.handler._cli.install([name], { server: this.handler._part === 'server' || undefined });
 
