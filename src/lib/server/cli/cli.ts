@@ -127,7 +127,11 @@ export class Cli {
     ];
 
     if (async) {
-      const res = Bun.spawn(fullCommand, { stdout: 'pipe', stderr: 'pipe' });
+      const res = Bun.spawn(fullCommand, {
+        stdout: 'pipe',
+        stderr: 'pipe',
+        cwd: env.FS_ROOT ?? undefined,
+      });
       res.exited.then((exitCode) => {
         if (exitCode !== 0) {
           console.log(res.stdout.toString());
@@ -136,7 +140,11 @@ export class Cli {
         }
       });
     } else {
-      const res = Bun.spawnSync(fullCommand, { stdout: 'pipe', stderr: 'pipe' });
+      const res = Bun.spawnSync(fullCommand, {
+        stdout: 'pipe',
+        stderr: 'pipe',
+        cwd: env.FS_ROOT ?? undefined,
+      });
 
       if (res.exitCode !== 0) {
         console.log(res.stdout.toString());
