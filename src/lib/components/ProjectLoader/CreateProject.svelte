@@ -50,6 +50,16 @@
     const project = await ProjectLoader.create(values);
     window.location.assign(`/dashboard?id=${project.id}`);
   }
+
+  const projectFullPath = $derived.by(() => {
+    const name = $form['projectName'] || '<project-name>';
+    let path = $form['projectPath'] || '';
+    if (!path.startsWith('/')) {
+      if (!path.startsWith('./') && !path.startsWith('../')) path = `./${path}`;
+    }
+    if (!path.endsWith('/')) path = `${path}/`;
+    return `${path}${name}`;
+  });
 </script>
 
 <Form form={formCtx} class="w-full">
@@ -89,7 +99,12 @@
 
     {#if showAdvancedSettings}
       <div class="flex flex-col gap-5">
-        <FormFieldInput name="projectPath" label="Project path" placeholder="/home/user/projects" />
+        <FormFieldInput
+          name="projectPath"
+          label="Project path"
+          placeholder="/home/user/projects"
+          description={`The full path will be '${projectFullPath}'`}
+        />
 
         <div class="grid grid-cols-2 gap-3">
           <FormFieldSelect

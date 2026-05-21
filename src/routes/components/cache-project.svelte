@@ -18,7 +18,7 @@
   <button
     disabled={disabled || isLoading || project.invalid}
     class={[
-      'flex items-center gap-3 p-2 rounded-lg transition-colors text-left w-full',
+      'flex items-center gap-3 p-2 rounded-lg transition-colors text-left w-[calc(100%-3.25rem)]',
       disabled || isLoading || project.invalid
         ? 'opacity-50 cursor-not-allowed'
         : 'cursor-pointer hover:bg-muted/50',

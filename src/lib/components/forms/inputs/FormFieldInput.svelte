@@ -9,6 +9,7 @@
     label?: string;
     type?: string;
     placeholder?: string;
+    description?: string;
     class?: string;
     classNames?: {
       label?: string;
@@ -16,12 +17,20 @@
     };
   }
 
-  const { name, label, type, placeholder, class: className, classNames }: Props = $props();
+  const {
+    name,
+    label,
+    type,
+    placeholder,
+    description,
+    class: className,
+    classNames,
+  }: Props = $props();
   const formCtx = getContext<() => FormInstance>('form');
   const { form } = formCtx();
 </script>
 
-<FormField {name} {label} class={className} {classNames}>
+<FormField {name} {label} class={className} {classNames} {description}>
   {#snippet children({ props })}
     <Input
       {...props}
