@@ -13,7 +13,7 @@ export class ProjectLoader {
     return ProjectLoader.init(res);
   }
 
-  static async load(resolvable: string) {
+  static async loadFromCache(resolvable: string) {
     const config = getConfig();
     const input = config.mode === 'offline' ? { path: resolvable } : { gatewayId: resolvable };
 

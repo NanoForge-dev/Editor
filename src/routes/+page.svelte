@@ -1,20 +1,21 @@
 <script lang="ts">
-  import ProjectCache from '$lib/components/Utils/LocalStorage/ProjectCache';
-  import { Button } from '$lib/components/ui/button';
+  import { createQuery } from '@tanstack/svelte-query';
 
+  import { getConfig } from '$lib/client/config';
+  import { ProjectCache } from '$lib/client/project';
+  import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import { Separator } from '$lib/components/ui/separator';
+
   import Components from './components';
-  import { createQuery } from '@tanstack/svelte-query';
-  import { getConfig } from '$lib/client/config';
 
   let showCreateProject = $state(false);
 
   const isOnline = getConfig().mode === 'online';
 
-  const { data: projectListCache, isLoading } = createQuery(() => ({
+  const query = createQuery(() => ({
     queryKey: ['projects-cache'],
-    queryFn: () => {
+    queryFn: async () => {
       return ProjectCache.getProjects();
     },
   }));
@@ -52,11 +53,11 @@
         <div class="p-5 flex flex-col gap-3 min-h-64 w-10/19">
           <p class="text-sm text-muted-foreground px-2 mb-1">Recent</p>
 
-          {#if isLoading}
+          {#if query.isLoading || !query.isFetched}
             <Components.CacheProjectListSkeleton />
-          {:else if projectListCache && projectListCache.length > 0}
+          {:else if query.data && query.data.length > 0}
             <div class="flex flex-col gap-1">
-              {#each projectListCache as project (project.name)}
+              {#each query.data as project (project.name)}
                 <Components.CacheProject {project} />
               {/each}
             </div>
