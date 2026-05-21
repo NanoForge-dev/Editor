@@ -1,4 +1,5 @@
 export interface ProjectDataCache {
+  id: string;
   name: string;
   path: string;
   imageUrl: string;

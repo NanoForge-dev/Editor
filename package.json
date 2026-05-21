@@ -70,6 +70,7 @@
     "@playwright/test": "catalog:test",
     "@sveltejs/kit": "catalog:core",
     "@sveltejs/vite-plugin-svelte": "catalog:core",
+    "@tanstack/svelte-query": "^6.1.30",
     "@trivago/prettier-plugin-sort-imports": "catalog:lint",
     "@tsconfig/svelte": "catalog:build",
     "@types/bun": "catalog:core",

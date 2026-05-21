@@ -1,7 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import Logo from '$lib/assets/logo.png';
-  import CreateProject from '$lib/components/ProjectLoader/CreateProject.svelte';
   import LoadProject from '$lib/components/ProjectLoader/LoadProject.svelte';
   import { onMount } from 'svelte';
   import ProjectCache, {
@@ -125,8 +124,10 @@
             onclick={() => {
               ProjectCache.clearProjects();
               projectListCache = [];
-            }}>Clear project cache</button
+            }}
           >
+            Clear project cache
+          </button>
         {:else}
           <div class="h-full w-fit flex items-center justify-center text-neutral-600 text-sm">
             <span>No project created</span>
@@ -136,7 +137,6 @@
     </div>
   </main>
 </div>
-<CreateProject bind:show={showCreateProject} />
 <LoadProject bind:show={showLoadProject} callback={loadProject} />
 <ProgressBar
   title="Downloading project"

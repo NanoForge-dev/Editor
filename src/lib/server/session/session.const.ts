@@ -1,1 +1,1 @@
-export const PUBLIC_PATHS = ['/load-project', '/cli?/new'];
+export const PUBLIC_PATHS = ['/', '/cli?/new'];

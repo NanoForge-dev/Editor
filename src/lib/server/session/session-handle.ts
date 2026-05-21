@@ -16,7 +16,7 @@ export const checkAuthorizationHandle: Handle = async ({ event, resolve }) => {
 
   if (isPublicPath(event.url)) return resolve(event);
 
-  if (!sessionData.path) throw redirect(302, '/load-project');
+  if (!sessionData.path) throw redirect(302, '/');
   // Replace line above with it when new session are handled
   // if (!isSessionExist(sessionData.id)) throw redirect(302, '/load-project');
   return resolve(event);

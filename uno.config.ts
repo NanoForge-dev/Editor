@@ -164,5 +164,6 @@ export default defineConfig({
     'i-ic-baseline-folder',
     'i-material-icon-theme-json',
     'i-ic-baseline-upload',
+    'i-ic-baseline-folder-open',
   ],
 });

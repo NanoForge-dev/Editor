@@ -4,6 +4,6 @@ import type { Config } from './config.type';
 
 export const getConfig = (): Config => {
   return {
-    mode: env.PUBLIC_MODE === 'offline' ? 'offline' : 'online',
+    mode: env.PUBLIC_MODE === 'online' ? 'online' : 'offline',
   };
 };
