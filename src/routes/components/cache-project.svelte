@@ -1,24 +1,56 @@
 <script lang="ts">
   import DefaultProjectCover from '$lib/assets/defaultProjectCover.png';
   import type { ProjectDataCache } from '$lib/client/project';
+  import { Spinner } from '$lib/components/ui/spinner';
 
   interface Props {
     project: ProjectDataCache;
+    disabled?: boolean;
+    isLoading?: boolean;
+    onClick?: () => void;
+    onRemove?: () => void;
   }
 
-  const { project }: Props = $props();
+  const { project, disabled, isLoading, onClick, onRemove }: Props = $props();
 </script>
 
-<button
-  class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors text-left w-full cursor-pointer"
->
-  <img
-    alt="{project.name ?? 'Unknown'} cover"
-    src={project.imageUrl || DefaultProjectCover}
-    class="size-9 rounded-md object-cover shrink-0"
-  />
-  <span class="flex flex-col min-w-0">
-    <span class="text-sm font-medium truncate">{project.name ?? 'Unknown'}</span>
-    <span class="text-xs text-muted-foreground truncate">{project.resolvable}</span>
-  </span>
-</button>
+<div class="flex items-center">
+  <button
+    disabled={disabled || isLoading || project.invalid}
+    class={[
+      'flex items-center gap-3 p-2 rounded-lg transition-colors text-left w-full',
+      disabled || isLoading || project.invalid
+        ? 'opacity-50 cursor-not-allowed'
+        : 'cursor-pointer hover:bg-muted/50',
+    ]}
+    onclick={onClick}
+  >
+    <img
+      alt="{project.name ?? 'Unknown'} cover"
+      src={project.imageUrl || DefaultProjectCover}
+      class="size-9 rounded-md object-cover shrink-0"
+    />
+    <span class="flex flex-col min-w-0">
+      <span class="text-sm font-medium truncate">{project.name ?? 'Unknown'}</span>
+      <span class="text-xs text-muted-foreground truncate">{project.resolvable}</span>
+    </span>
+  </button>
+  <div class="h-full aspect-square">
+    {#if isLoading}
+      <Spinner />
+    {:else}
+      <button
+        aria-label="Remove project"
+        title="Remove project"
+        {disabled}
+        onclick={onRemove}
+        class={[
+          'h-full w-full p-2 flex items-center justify-center rounded-lg transition-colors',
+          disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/50',
+        ]}
+      >
+        <div class="i-ic-round-close text-destructive text-xl"></div>
+      </button>
+    {/if}
+  </div>
+</div>

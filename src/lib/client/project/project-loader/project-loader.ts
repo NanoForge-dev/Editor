@@ -2,7 +2,7 @@ import { get, writable } from 'svelte/store';
 
 import { type ActionProject, type CreateProjectActionInput, actions } from '$lib/client/action';
 import { getConfig } from '$lib/client/config/config';
-import { Project } from '$lib/client/project';
+import { Project, ProjectCache, type ProjectDataCache } from '$lib/client/project';
 
 const projectStore = writable<Project | null>(null);
 
@@ -13,11 +13,33 @@ export class ProjectLoader {
     return ProjectLoader.init(res);
   }
 
-  static async loadFromCache(resolvable: string) {
+  static async oldLoad(resolvable: string) {
     const config = getConfig();
     const input = config.mode === 'offline' ? { path: resolvable } : { gatewayId: resolvable };
 
     const res = await actions.project.load(input);
+
+    return ProjectLoader.init(res);
+  }
+
+  static async loadFromCache(cache: ProjectDataCache) {
+    try {
+      return await ProjectLoader.loadFromId(cache.id);
+    } catch {
+      /* empty */
+    }
+
+    const config = getConfig();
+    const input =
+      config.mode === 'offline' ? { path: cache.resolvable } : { gatewayId: cache.resolvable };
+
+    const res = await actions.project.load(input);
+
+    return ProjectLoader.init(res);
+  }
+
+  static async loadFromId(id: string) {
+    const res = await actions.project.load({ id });
 
     return ProjectLoader.init(res);
   }
@@ -31,8 +53,16 @@ export class ProjectLoader {
     Project.reset();
 
     const project = new Project(input.id);
+    // @todo add a route to check if the project is valid
+    // @todo to move to dashboard
     await project.init();
     projectStore.set(project);
+    await ProjectCache.addProject({
+      id: input.id,
+      resolvable: input.cacheResolvable,
+      name: input.name,
+      lastOpened: Date.now(),
+    });
     return project;
   }
 }

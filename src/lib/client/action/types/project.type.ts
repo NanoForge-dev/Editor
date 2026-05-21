@@ -7,6 +7,7 @@ import type { Save, SaveComponent, SaveSystem } from '@utils/types';
 export type ActionProject = Project;
 
 export interface LoadProjectActionInput {
+  id?: string;
   path?: string;
   gitUrl?: string;
   gatewayId?: string;

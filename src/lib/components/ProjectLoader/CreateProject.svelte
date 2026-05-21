@@ -1,6 +1,5 @@
 <script lang="ts">
   import { z } from 'zod';
-  import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
   import Form from '$lib/components/forms/Form.svelte';
   import FormFieldInput from '$lib/components/forms/inputs/FormFieldInput.svelte';
   import FormFieldSelect from '$lib/components/forms/inputs/FormFieldSelect.svelte';
@@ -15,7 +14,6 @@
   }
   let { onClose }: Props = $props();
 
-  let creationPromises: Promise<unknown>[] = $state([]);
   let showAdvancedSettings: boolean = $state(false);
 
   const schema = z.object({
@@ -49,10 +47,8 @@
   const { form, submitting } = formCtx;
 
   async function newProject(values: ProjectForm) {
-    const projectPromise = ProjectLoader.create(values);
-    creationPromises.push(projectPromise);
-
-    await projectPromise;
+    const project = await ProjectLoader.create(values);
+    window.location.assign(`/dashboard?id=${project.id}`);
   }
 </script>
 
@@ -190,9 +186,3 @@
     </LoadingButton>
   </div>
 </Form>
-
-<ProgressBar
-  title="Creating project"
-  promises={creationPromises}
-  show={creationPromises.length > 0}
-/>

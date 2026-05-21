@@ -1,1 +1,1 @@
-export const PUBLIC_PATHS = ['/', '/cli?/new'];
+export const PUBLIC_PATHS = ['/', '/dashboard', '/cli?/new'];

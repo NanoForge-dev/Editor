@@ -38,7 +38,7 @@
   }
 
   export async function loadProject(values: ProjectForm) {
-    const projectPromise = ProjectLoader.loadFromCache(values.path);
+    const projectPromise = ProjectLoader.oldLoad(values.path);
     creationPromises.push(projectPromise);
 
     const project = await projectPromise;

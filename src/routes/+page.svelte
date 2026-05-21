@@ -2,7 +2,7 @@
   import { createQuery } from '@tanstack/svelte-query';
 
   import { getConfig } from '$lib/client/config';
-  import { ProjectCache } from '$lib/client/project';
+  import { ProjectCache, type ProjectDataCache, ProjectLoader } from '$lib/client/project';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import { Separator } from '$lib/components/ui/separator';
@@ -10,10 +10,11 @@
   import Components from './components';
 
   let showCreateProject = $state(false);
+  let cacheProjectLoading = $state<string | null>(null);
 
   const isOnline = getConfig().mode === 'online';
 
-  const query = createQuery(() => ({
+  const cacheQuery = createQuery(() => ({
     queryKey: ['projects-cache'],
     queryFn: async () => {
       return ProjectCache.getProjects();
@@ -27,6 +28,26 @@
 
   const handleOpenProject = () => {
     if (isOnline) return;
+  };
+
+  const handleCacheProject = async (cache: ProjectDataCache) => {
+    try {
+      cacheProjectLoading = cache.id;
+      await ProjectLoader.loadFromCache(cache);
+      cacheProjectLoading = null;
+    } catch (error) {
+      console.error(`Error loading project ${cache.id} (${cache.resolvable}) from cache:`, error);
+      await ProjectCache.invalidateProject(cache.id);
+      await cacheQuery.refetch();
+      cacheProjectLoading = null;
+    }
+  };
+
+  const handleCacheRemoveProject = async (cache: ProjectDataCache) => {
+    cacheProjectLoading = cache.id;
+    await ProjectCache.removeProject(cache.id);
+    await cacheQuery.refetch();
+    cacheProjectLoading = null;
   };
 </script>
 
@@ -50,22 +71,28 @@
 
         <Separator orientation="vertical" class="h-auto self-stretch" />
 
-        <div class="p-5 flex flex-col gap-3 min-h-64 w-10/19">
+        <div class="p-5 flex flex-col gap-3 w-10/19 h-full">
           <p class="text-sm text-muted-foreground px-2 mb-1">Recent</p>
 
-          {#if query.isLoading || !query.isFetched}
+          {#if cacheQuery.isLoading || !cacheQuery.isFetched}
             <Components.CacheProjectListSkeleton />
-          {:else if query.data && query.data.length > 0}
+          {:else if cacheQuery.data && cacheQuery.data.length > 0}
             <div class="flex flex-col gap-1">
-              {#each query.data as project (project.name)}
-                <Components.CacheProject {project} />
+              {#each cacheQuery.data as project (project.name)}
+                <Components.CacheProject
+                  {project}
+                  disabled={!!cacheProjectLoading}
+                  isLoading={cacheProjectLoading === project.id}
+                  onClick={() => handleCacheProject(project)}
+                  onRemove={() => handleCacheRemoveProject(project)}
+                />
               {/each}
             </div>
 
             <Button
               type="button"
               variant="ghost"
-              class="mt-auto text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer self-end"
+              class="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer self-end justify-self-end"
               onclick={() => {
                 ProjectCache.clearProjects();
               }}
@@ -73,8 +100,8 @@
               Clear cache
             </Button>
           {:else}
-            <div class="flex-1 flex items-center justify-center">
-              <p class="text-sm text-muted-foreground/50">No recent projects</p>
+            <div class="flex h-full items-center justify-center text-center">
+              <p class="text-sm text-muted-foreground/50 mb-2 mr-2">No recent projects</p>
             </div>
           {/if}
         </div>
