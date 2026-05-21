@@ -19,11 +19,16 @@ class CreateProjectBody {
 export const createProjectAction = useActionHandler(
   async (handler) => {
     const { body, cli } = handler;
+
+    const fullPath = body.projectPath?.split('/');
+    const path = fullPath?.slice(-1)[0];
+    const directory = fullPath?.slice(0, -1).join('/');
+
     cli.new({
       editor: true,
-      directory: body.projectPath,
+      directory: directory || undefined,
       name: body.projectName,
-      path: body.projectName,
+      path: path || undefined,
       packageManager: body.packageManager,
       language: body.language,
       server: body.multiplayerServer,
@@ -32,7 +37,7 @@ export const createProjectAction = useActionHandler(
       gitRemote: body.gitRemote,
     });
 
-    return await loadProject({ path: resolve(body.projectPath || '.', body.projectName) }, handler);
+    return await loadProject({ path: resolve(body.projectPath || body.projectName) }, handler);
   },
   {
     body: CreateProjectBody,

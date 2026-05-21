@@ -1,31 +1,40 @@
 <script lang="ts">
   import { getContext, type Snippet } from 'svelte';
   import type { FormInstance } from './form.svelte';
-  import { Label } from 'flowbite-svelte';
+  import * as Form from '$lib/components/ui/form';
+  import { cn } from '@utils/ui';
 
   interface Props {
     name: string;
     label?: string;
+    description?: string;
     class?: string;
-    classNames?: { label?: string; error?: string };
-    children: Snippet<[{ id: string; name: string; value: any; handleChange: (e: Event) => void }]>;
+    classNames?: { label?: string; description?: string };
+    children: Snippet<[{ props: any }]>;
   }
 
-  const { name, label, class: className, classNames, children }: Props = $props();
-  const form = getContext<FormInstance>('form');
+  const {
+    name,
+    label,
+    description,
+    class: className,
+    classNames,
+    children: fieldChildren,
+  }: Props = $props();
+  const formCtx = getContext<() => FormInstance>('form');
 </script>
 
-<div class={className}>
-  {#if label}
-    <Label for="form-{name}" class={classNames?.label}>{label}</Label>
+<Form.Field form={formCtx()} {name} class={cn('flex flex-col gap-2', className)}>
+  <Form.Control>
+    {#snippet children({ props })}
+      {#if label}
+        <Form.Label class={classNames?.label}>{label}</Form.Label>
+      {/if}
+      {@render fieldChildren({ props })}
+    {/snippet}
+  </Form.Control>
+  {#if description}
+    <Form.Description class={classNames?.description}>{description}</Form.Description>
   {/if}
-  {@render children({
-    id: `form-${name}`,
-    name,
-    value: form.values[name],
-    handleChange: form.handleChange,
-  })}
-  {#if form.errors[name]}
-    <small class={['text-red-500 text-sm mt-1', classNames?.error]}>{form.errors[name]}</small>
-  {/if}
-</div>
+  <Form.FieldErrors class="text-sm text-destructive" />
+</Form.Field>

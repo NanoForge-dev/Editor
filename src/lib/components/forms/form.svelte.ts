@@ -1,68 +1,29 @@
+import { type SuperForm, defaults, superForm } from 'sveltekit-superforms';
+import { zod4, zodClient } from 'sveltekit-superforms/adapters';
 import type { ZodType } from 'zod';
 
-export type FormErrors<T extends object> = {
-  [K in keyof T]?: string;
-};
+export const useForm = <T extends Record<string, unknown>>(config: {
+  schema: ZodType<T>;
+  defaultValues?: Partial<T>;
+  onSubmit?: (values: T) => void | Promise<void>;
+}): SuperForm<T> => {
+  const result = superForm(defaults(zod4(config.schema as any)), {
+    SPA: true,
+    validators: zodClient(config.schema as any),
+    resetForm: false,
+    onUpdate: async ({ form: f }) => {
+      console.log(f.data);
+      if (f.valid) {
+        await config.onSubmit?.(f.data as T);
+      }
+    },
+  });
 
-export const useForm = <T extends object>(
-  config: {
-    defaultValues?: Partial<T>;
-    schema?: ZodType<T>;
-    onSubmit?: (values: T) => void | Promise<void>;
-  } = {},
-) => {
-  const values = $state<T>({ ...(config.defaultValues ?? {}) } as T);
-  let errors = $state<FormErrors<T>>({});
-  let isSubmitting = $state(false);
-
-  function handleChange(event: Event): void {
-    const el = event.target as HTMLInputElement;
-    const field = el.name as keyof T;
-    (values as any)[field] = el.type === 'checkbox' ? el.checked : el.value;
+  if (config.defaultValues) {
+    result.form.update((v) => ({ ...v, ...config.defaultValues }));
   }
 
-  const handleSubmit = async (event: Event): Promise<void> => {
-    event.preventDefault();
-
-    if (config.schema) {
-      const result = config.schema.safeParse(values);
-      errors = {} as FormErrors<T>;
-      if (!result.success) {
-        for (const issue of result.error.issues) {
-          const key = issue.path[0] as keyof T;
-          if (key && !(errors as any)[key]) (errors as any)[key] = issue.message;
-        }
-        return;
-      }
-    }
-
-    isSubmitting = true;
-    try {
-      await config.onSubmit?.(values);
-    } finally {
-      isSubmitting = false;
-    }
-  };
-
-  const reset = (): void => {
-    Object.assign(values, { ...(config.defaultValues ?? {}) });
-    errors = {} as FormErrors<T>;
-  };
-
-  return {
-    get values() {
-      return values;
-    },
-    get errors() {
-      return errors;
-    },
-    get isSubmitting() {
-      return isSubmitting;
-    },
-    handleChange,
-    handleSubmit,
-    reset,
-  };
+  return result as unknown as SuperForm<T>;
 };
 
-export type FormInstance<T extends object = any> = ReturnType<typeof useForm<T>>;
+export type FormInstance = SuperForm<any>;

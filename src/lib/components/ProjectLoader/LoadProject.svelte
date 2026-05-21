@@ -5,7 +5,7 @@
   import FormFieldInput from '$lib/components/forms/inputs/FormFieldInput.svelte';
   import Form from '$lib/components/forms/Form.svelte';
   import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
-  import { Button } from 'flowbite-svelte';
+  import { Button } from '$lib/components/ui/button';
 
   interface Props {
     show: boolean;
@@ -21,13 +21,15 @@
 
   type ProjectForm = z.infer<typeof schema>;
 
-  const form = useForm<ProjectForm>({
+  const sf = useForm<ProjectForm>({
+    schema,
     defaultValues: {
       path: '',
     },
-    schema,
     onSubmit: loadProject,
   });
+
+  const { submitting } = sf;
 
   function handleClose(event: KeyboardEvent) {
     if (event.key === 'Escape') {
@@ -36,7 +38,7 @@
   }
 
   export async function loadProject(values: ProjectForm) {
-    const projectPromise = ProjectLoader.load(values);
+    const projectPromise = ProjectLoader.load(values.path);
     creationPromises.push(projectPromise);
 
     const project = await projectPromise;
@@ -53,15 +55,10 @@
   onkeydown={handleClose}
 >
   <Form
-    {form}
+    form={sf}
     class="bg-black outline outline-neutral-900 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-8"
   >
-    <FormFieldInput
-      name="projectName"
-      label="Project name"
-      placeholder="nanoforge-app"
-      classNames={{ input: 'w-1/2 rounded-lg px-3 py-2 outline outline-neutral-800 text-sm' }}
-    />
+    <FormFieldInput name="path" label="Project path" placeholder="/path/to/project" />
 
     <div class="flex gap-3 justify-end mt-4">
       <button
@@ -73,17 +70,17 @@
       </button>
       <Button
         type="submit"
-        disabled={form.isSubmitting}
+        disabled={$submitting}
         class="bg-purple-800 text-white px-4 py-2 rounded-lg hover:bg-purple-900 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
-        Create
+        Load
       </Button>
     </div>
   </Form>
 </div>
 
 <ProgressBar
-  title="Creating project"
+  title="Loading project"
   promises={creationPromises}
   show={creationPromises.length > 0}
 />

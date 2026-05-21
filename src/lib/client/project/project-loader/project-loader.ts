@@ -1,11 +1,7 @@
 import { get, writable } from 'svelte/store';
 
-import {
-  type ActionProject,
-  type CreateProjectActionInput,
-  type LoadProjectActionInput,
-  actions,
-} from '$lib/client/action';
+import { type ActionProject, type CreateProjectActionInput, actions } from '$lib/client/action';
+import { getConfig } from '$lib/client/config/config';
 import { Project } from '$lib/client/project';
 
 const projectStore = writable<Project | null>(null);
@@ -17,7 +13,10 @@ export class ProjectLoader {
     return ProjectLoader.init(res);
   }
 
-  static async load(input: LoadProjectActionInput) {
+  static async load(resolvable: string) {
+    const config = getConfig();
+    const input = config.mode === 'offline' ? { path: resolvable } : { gatewayId: resolvable };
+
     const res = await actions.project.load(input);
 
     return ProjectLoader.init(res);

@@ -1,37 +1,20 @@
 <script lang="ts">
   import { setContext, type Snippet } from 'svelte';
-  import type { FormInstance } from './form.svelte';
+  interface FormLike {
+    enhance: (el: HTMLFormElement) => { destroy: () => void };
+  }
 
   interface Props {
-    form: FormInstance;
+    form: FormLike;
     class?: string;
     children: Snippet;
   }
 
   let { form, class: className, children }: Props = $props();
 
-  setContext('form', {
-    get values() {
-      return form.values;
-    },
-    get errors() {
-      return form.errors;
-    },
-    get isSubmitting() {
-      return form.isSubmitting;
-    },
-    get handleChange() {
-      return form.handleChange;
-    },
-    get handleSubmit() {
-      return form.handleSubmit;
-    },
-    get reset() {
-      return form.reset;
-    },
-  } satisfies FormInstance);
+  setContext('form', () => form);
 </script>
 
-<form onsubmit={form.handleSubmit} class={className}>
+<form use:form.enhance class={className}>
   {@render children()}
 </form>

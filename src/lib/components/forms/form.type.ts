@@ -1,1 +1,1 @@
-export type { FormErrors, FormInstance } from './form.svelte';
+export type { FormInstance } from './form.svelte';

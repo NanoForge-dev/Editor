@@ -35,7 +35,7 @@ export class Cli {
   }
 
   new(opts: CliPartial<CliNewOptions, 'name' | 'directory'>, runOpts?: CliRunOptions): void {
-    return this.runCommand('new', [], { ...CLI_NEW_DEFAULTS, ...opts }, CLI_NEW_DEFAULTS, runOpts);
+    return this.runCommand('new', [], { ...opts }, CLI_NEW_DEFAULTS, runOpts);
   }
 
   install(

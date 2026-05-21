@@ -136,7 +136,7 @@
     </div>
   </main>
 </div>
-<CreateProject bind:show={showCreateProject} callback={loadProject} />
+<CreateProject bind:show={showCreateProject} />
 <LoadProject bind:show={showLoadProject} callback={loadProject} />
 <ProgressBar
   title="Downloading project"
