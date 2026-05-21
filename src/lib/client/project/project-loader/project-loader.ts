@@ -29,6 +29,7 @@ export class ProjectLoader {
       /* empty */
     }
 
+    await ProjectCache.removeProject(cache.id);
     const config = getConfig();
     const input =
       config.mode === 'offline' ? { path: cache.resolvable } : { gatewayId: cache.resolvable };
