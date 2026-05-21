@@ -1,2 +1,2 @@
-export { actions, type ActionClient } from './client';
+export { noProjectActions, type ActionClient, getActionClient } from './client';
 export * from './types';

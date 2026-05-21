@@ -1,4 +1,4 @@
-import { type ActionClient, actions } from '$lib/client/action';
+import { type ActionClient, getActionClient } from '$lib/client/action';
 import { InfoHandler } from '$lib/client/info';
 import { Loader } from '$lib/client/loader';
 import { PackageHandler } from '$lib/client/project/package-handler';
@@ -33,7 +33,7 @@ export class Project {
   }
 
   get actions(): ActionClient {
-    if (!this._actions) this._actions = actions;
+    if (!this._actions) this._actions = getActionClient(this.id);
     return this._actions;
   }
 
