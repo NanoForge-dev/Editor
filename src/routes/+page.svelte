@@ -101,7 +101,7 @@
             </Button>
           {:else}
             <div class="flex h-full items-center justify-center text-center">
-              <p class="text-sm text-muted-foreground/50 mb-2 mr-2">No recent projects</p>
+              <p class="text-sm text-muted-foreground/50 mb-4 mr-4">No recent projects</p>
             </div>
           {/if}
         </div>

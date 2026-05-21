@@ -11,9 +11,18 @@
     class?: string;
     classNames?: { label?: string };
     disabled?: boolean;
+    disableClick?: boolean;
   }
 
-  const { name, label, description, class: className, classNames, disabled }: Props = $props();
+  const {
+    name,
+    label,
+    description,
+    class: className,
+    classNames,
+    disabled,
+    disableClick,
+  }: Props = $props();
   const formCtx = getContext<() => FormInstance>('form');
   const { form } = formCtx();
 </script>
@@ -24,7 +33,7 @@
       {...props}
       {disabled}
       checked={$form[name]}
-      onCheckedChange={(v) => form.update((s) => ({ ...s, [name]: v }))}
+      onCheckedChange={disableClick ? undefined : (v) => form.update((s) => ({ ...s, [name]: v }))}
     />
   {/snippet}
 </FormField>

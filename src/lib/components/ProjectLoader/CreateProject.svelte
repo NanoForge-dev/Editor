@@ -129,6 +129,7 @@
               name="multiplayerServer"
               label="Multiplayer server"
               classNames={{ label: 'hidden' }}
+              disableClick={true}
             />
           </button>
           <button
@@ -148,6 +149,7 @@
               name="dockerContainerization"
               label="Docker containerization"
               classNames={{ label: 'hidden' }}
+              disableClick={true}
             />
           </button>
           <button
@@ -164,6 +166,7 @@
               name="createGitRepository"
               label="Git repository"
               classNames={{ label: 'hidden' }}
+              disableClick={true}
             />
           </button>
         </div>

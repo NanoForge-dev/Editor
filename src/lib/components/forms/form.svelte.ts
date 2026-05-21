@@ -12,7 +12,6 @@ export const useForm = <T extends Record<string, unknown>>(config: {
     validators: zodClient(config.schema as any),
     resetForm: false,
     onUpdate: async ({ form: f }) => {
-      console.log(f.data);
       if (f.valid) {
         await config.onSubmit?.(f.data as T);
       }
