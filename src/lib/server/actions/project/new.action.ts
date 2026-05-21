@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { join } from 'path';
 
 import { loadProject } from '$lib/server/project';
 
@@ -33,7 +33,7 @@ export const createProjectAction = useActionHandler(
       gitRemote: body.gitRemote,
     });
 
-    return await loadProject({ path: resolve(body.projectPath ?? '', body.projectName) }, handler);
+    return await loadProject({ path: join(body.projectPath ?? '', body.projectName) }, handler);
   },
   {
     body: CreateProjectBody,
