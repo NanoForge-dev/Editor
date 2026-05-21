@@ -17,7 +17,10 @@
   let showAdvancedSettings: boolean = $state(false);
 
   const schema = z.object({
-    projectName: z.string().min(1, 'Project name is required'),
+    projectName: z
+      .string()
+      .min(1, 'Project name is required')
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     projectPath: z.string().optional(),
     packageManager: z.enum(['npm', 'yarn', 'pnpm', 'bun']).default('pnpm'),
     language: z.enum(['ts', 'js']).default('ts'),
