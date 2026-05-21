@@ -57,7 +57,7 @@ export class ProjectLoader {
     // @todo to move to dashboard
     await project.init();
     projectStore.set(project);
-    await ProjectCache.addProject({
+    await ProjectCache.addOrUpdateProject({
       id: input.id,
       resolvable: input.cacheResolvable,
       name: input.name,

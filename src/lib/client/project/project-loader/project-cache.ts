@@ -62,4 +62,16 @@ export class ProjectCache {
     if (this.isOnline) return;
     localStorage.removeItem(this.storageKey);
   }
+
+  static async addOrUpdateProject(project: ProjectDataCache): Promise<void> {
+    if (this.isOnline) return;
+    const projects = await this.getProjects();
+    const projectIndex = projects.findIndex((p) => p.id === project.id);
+    if (projectIndex !== -1) {
+      projects[projectIndex] = { ...projects[projectIndex], ...project };
+    } else {
+      projects.push(project);
+    }
+    localStorage.setItem(this.storageKey, JSON.stringify(projects));
+  }
 }

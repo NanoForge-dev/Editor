@@ -18,6 +18,10 @@ export const resolveProject = (headers: Headers, session: Session) => {
   if (!session.projects.length) return null;
   const id = headers.get(SESSION_PROJECT_HEADER);
 
+  return getProject(id, session);
+};
+
+export const getProject = (id: string | null, session: Session) => {
   if (!hasRightToAccessProject(id, session)) return null;
 
   return projectStore.get(id as string) ?? null;

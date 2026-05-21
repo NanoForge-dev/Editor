@@ -1,12 +1,14 @@
 import { join } from 'path';
 
 import { loadProject } from '$lib/server/project';
+import { loadProjectFromId } from '$lib/server/project/load-project';
 import type { SessionProject } from '$lib/server/session';
 
 import { Exception } from '@utils-server/exception';
 import { type Handler, useActionHandler } from '@utils-server/request-handler';
 
 class LoadProjectBody {
+  id?: string;
   path?: string;
   gitUrl?: string;
   gatewayId?: string;
@@ -50,7 +52,7 @@ const resolveSessionFromPath = async (
 };
 
 const resolveSessionFunctions: Record<
-  keyof LoadProjectBody,
+  keyof Omit<LoadProjectBody, 'id'>,
   (el: string, options: Handler) => Promise<SessionProject>
 > = {
   path: resolveSessionFromPath,
@@ -62,7 +64,12 @@ export const loadProjectAction = useActionHandler(
   async (handler) => {
     const { body } = handler;
 
-    const el = Object.entries(body).find(([, value]) => value) as [keyof LoadProjectBody, string];
+    if (body.id) return await loadProjectFromId(body.id, handler);
+
+    const el = Object.entries(body).find(([, value]) => value) as [
+      keyof Omit<LoadProjectBody, 'id'>,
+      string,
+    ];
     if (!el) throw new Exception('Bad Request', 'No load origin provided', 400);
 
     const resolveSessionFunction = resolveSessionFunctions[el[0]];

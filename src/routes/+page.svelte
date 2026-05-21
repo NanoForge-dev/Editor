@@ -33,7 +33,8 @@
   const handleCacheProject = async (cache: ProjectDataCache) => {
     try {
       cacheProjectLoading = cache.id;
-      await ProjectLoader.loadFromCache(cache);
+      const project = await ProjectLoader.loadFromCache(cache);
+      window.location.assign(`/dashboard?id=${project.id}`);
       cacheProjectLoading = null;
     } catch (error) {
       console.error(`Error loading project ${cache.id} (${cache.resolvable}) from cache:`, error);
@@ -78,7 +79,7 @@
             <Components.CacheProjectListSkeleton />
           {:else if cacheQuery.data && cacheQuery.data.length > 0}
             <div class="flex flex-col gap-1">
-              {#each cacheQuery.data as project (project.name)}
+              {#each cacheQuery.data as project (project.id)}
                 <Components.CacheProject
                   {project}
                   disabled={!!cacheProjectLoading}
