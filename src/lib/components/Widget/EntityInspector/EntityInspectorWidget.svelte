@@ -13,9 +13,11 @@
   let selectedEntity: SaveEntity | undefined = $state(undefined);
   let openComponentSelector: boolean = $state(false);
 
+  const { packages, save } = useProject();
+
   $effect(() => {
     if ($selectedEntityId) {
-      selectedEntity = useProject()?.save.save.entities.find((e) => e.id === $selectedEntityId);
+      selectedEntity = save.save.entities.find((e) => e.id === $selectedEntityId);
     }
   });
 
@@ -67,7 +69,7 @@
             ></span>
           </button>
           {#if !openMap[componentName]}
-            {#each useProject()?.package.getComponentManifest(componentName)?.params as param (param.name)}
+            {#each packages.getComponentManifest(componentName)?.params as param (param.name)}
               <div class="grid grid-cols-[140px_1fr] m-2 mb-1 items-center gap-2">
                 <div class="text-neutral-200 text-sm">{param.name}</div>
 
@@ -110,8 +112,8 @@
       </button>
     </div>
     <ComponentSelector
-      availableComponents={useProject()?.save.save.components.filter(
-        (c) => !Object.keys(selectedEntity.components).includes(c.name),
+      availableComponents={save.save.components.filter(
+        (c) => !Object.keys(selectedEntity?.components ?? {}).includes(c.name),
       )}
       open={openComponentSelector}
       onClose={() => (openComponentSelector = false)}

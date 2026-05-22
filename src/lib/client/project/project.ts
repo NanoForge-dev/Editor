@@ -60,7 +60,7 @@ export class Project {
     return this._save;
   }
 
-  get package(): PackageHandler {
+  get packages(): PackageHandler {
     if (!this._packageHandler) this._packageHandler = new PackageHandler(this);
     return this._packageHandler;
   }
