@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { componentsManifests, save } from '$lib/components/Widget/EditorGame/game.svelte';
   import { coreEvents } from '$lib/loader/client/game';
   import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
   import { createDefaultComponent } from '$lib/components/Widget/EntityInspector/component-creator';
   import { selectedEntityId } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
   import type { SaveEntity } from '@utils/types';
+  import { useProject } from '$lib/client/project';
+  import { Input } from '$lib/components/ui/input';
+  import { Switch } from '$lib/components/ui/switch';
 
   let openMap: { [key: string]: boolean } = $state({});
   let selectedEntity: SaveEntity | undefined = $state(undefined);
@@ -13,7 +15,7 @@
 
   $effect(() => {
     if ($selectedEntityId) {
-      selectedEntity = $save.entities.find((e) => e.id === $selectedEntityId);
+      selectedEntity = useProject()?.save.save.entities.find((e) => e.id === $selectedEntityId);
     }
   });
 
@@ -65,28 +67,27 @@
             ></span>
           </button>
           {#if !openMap[componentName]}
-            {#each $componentsManifests.find((manComp) => manComp.name === componentName)?.params as param (param.name)}
+            {#each useProject()?.package.getComponentManifest(componentName)?.params as param (param.name)}
               <div class="grid grid-cols-[140px_1fr] m-2 mb-1 items-center gap-2">
                 <div class="text-neutral-200 text-sm">{param.name}</div>
 
                 {#if param.type === 'string'}
-                  <input
+                  <Input
                     class="input rounded-sm bg-neutral-800 px-2 py-0.5"
                     type="text"
                     bind:value={componentParams[param.name]}
                     onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
                   />
                 {:else if param.type === 'number'}
-                  <input
+                  <Input
                     class="input w-28 rounded-sm bg-neutral-800 px-2 py-0.5"
                     type="number"
                     bind:value={componentParams[param.name]}
                     onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
                   />
                 {:else if param.type === 'boolean'}
-                  <input
-                    class="input w-28 rounded-sm bg-neutral-800 px-2 py-0.5"
-                    type="checkbox"
+                  <Switch
+                    class="w-28 rounded-sm bg-neutral-800 px-2 py-0.5"
                     bind:checked={componentParams[param.name]}
                     onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
                   />
@@ -109,7 +110,7 @@
       </button>
     </div>
     <ComponentSelector
-      availableComponents={$save.components.filter(
+      availableComponents={useProject()?.save.save.components.filter(
         (c) => !Object.keys(selectedEntity.components).includes(c.name),
       )}
       open={openComponentSelector}

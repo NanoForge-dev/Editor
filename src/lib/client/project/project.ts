@@ -12,6 +12,7 @@ export class Project {
   private _loader: Loader | undefined;
   private _save: SaveHandler | undefined;
   private _packageHandler: PackageHandler | undefined;
+  private _inited = false;
 
   static reset(): void {
     InfoHandler.reset();
@@ -24,7 +25,14 @@ export class Project {
 
   async init(): Promise<Project> {
     // @todo add init of sub parts like save
+    await this.save.init();
+    await this.package.init();
+    this._inited = true;
     return this;
+  }
+
+  isReady(): boolean {
+    return this._inited;
   }
 
   get info(): InfoHandler {

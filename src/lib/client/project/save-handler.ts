@@ -23,7 +23,7 @@ export class SaveHandler {
   }
 
   async fetchFromServer() {
-    this._save.set((await this._project.actions.project.getSave()).save);
+    this._save.set(await this._project.actions.save.get());
   }
 
   get save(): Save {

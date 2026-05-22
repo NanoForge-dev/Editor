@@ -45,7 +45,7 @@ export const getOrCreateSession = async (sessionHandler: SvelteSession): Promise
 
   const id = generateKey(10);
   sessionStore.set(id, { id, projects: [] });
-  await sessionHandler.setData({ id, path: '' });
+  await sessionHandler.setData({ id });
   await sessionHandler.save();
   return sessionStore.get(id) as Session;
 };

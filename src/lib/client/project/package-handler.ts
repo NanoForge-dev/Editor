@@ -5,8 +5,8 @@ import type { Project } from '$lib/client/project';
 export class PackageHandler {
   private _project: Project;
 
-  private _componentsManifests: EditorComponentManifest[] = [];
-  private _systemsManifests: EditorSystemManifest[] = [];
+  private _componentsManifests: Map<string, EditorComponentManifest> = new Map();
+  private _systemsManifests: Map<string, EditorSystemManifest> = new Map();
 
   constructor(project: Project) {
     this._project = project;
@@ -14,46 +14,54 @@ export class PackageHandler {
 
   async init() {
     if (this._project.save.save.components.length > 0) {
-      await this._project.actions.project.getComponentsManifests({
-        componentPaths: this._project.save.save.components.map((c) => c.path),
-      });
+      this._componentsManifests = new Map<string, EditorComponentManifest>(
+        (
+          await this._project.actions.package.getComponentsManifests({
+            componentPaths: this._project.save.save.components.map((c) => c.path),
+          })
+        ).map((e, index) => [this._project.save.save.components[index].name, e]),
+      );
     }
     if (this._project.save.save.systems.length > 0) {
-      await this._project.actions.project.getSystemsManifests({
-        systemPaths: this._project.save.save.systems.map((s) => s.path),
-      });
+      this._systemsManifests = new Map<string, EditorSystemManifest>(
+        (
+          await this._project.actions.package.getSystemsManifests({
+            systemPaths: this._project.save.save.systems.map((s) => s.path),
+          })
+        ).map((e, index) => [this._project.save.save.systems[index].name, e]),
+      );
     }
   }
 
-  get componentsManifests(): EditorComponentManifest[] {
-    return this._componentsManifests;
+  getComponentManifest(componentName: string): EditorComponentManifest | undefined {
+    return this._componentsManifests.get(componentName);
   }
 
-  get systemsManifests(): EditorSystemManifest[] {
-    return this._systemsManifests;
+  getSystemManifest(systemName: string): EditorSystemManifest | undefined {
+    return this._systemsManifests.get(systemName);
   }
 
   async installComponent(name: string): Promise<void> {
     const newComponent = (
-      await this._project.actions.project.addComponents({ componentNames: [name] })
+      await this._project.actions.package.addComponents({ componentNames: [name] })
     )[0];
 
     this._project.save.save.components.push(newComponent.save);
-    this._componentsManifests.push(newComponent.manifest);
+    this._componentsManifests.set(newComponent.save.name, newComponent.manifest);
   }
 
   async installSystem(name: string): Promise<void> {
-    const newSystem = (await this._project.actions.project.addSystems({ systemNames: [name] }))[0];
+    const newSystem = (await this._project.actions.package.addSystems({ systemNames: [name] }))[0];
 
     this._project.save.save.systems.push(newSystem.save);
-    this._systemsManifests.push(newSystem.manifest);
+    this._systemsManifests.set(newSystem.save.name, newSystem.manifest);
   }
 
-  addComponentManifest(component: EditorComponentManifest) {
-    this._componentsManifests.push(component);
+  addComponentManifest(componentName: string, component: EditorComponentManifest) {
+    this._componentsManifests.set(componentName, component);
   }
 
-  addSystemManifest(system: EditorSystemManifest) {
-    this._systemsManifests.push(system);
+  addSystemManifest(systemName: string, system: EditorSystemManifest) {
+    this._systemsManifests.set(systemName, system);
   }
 }

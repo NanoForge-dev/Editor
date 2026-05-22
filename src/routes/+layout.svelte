@@ -5,6 +5,7 @@
   import { browser } from '$app/environment';
 
   import '../app.css';
+  import { Toaster } from '$lib/components/ui/sonner';
 
   let { children } = $props();
 
@@ -16,6 +17,8 @@
     },
   });
 </script>
+
+<Toaster />
 
 <QueryClientProvider client={queryClient}>
   {@render children()}
