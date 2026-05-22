@@ -29,6 +29,13 @@ export class ProjectCache {
     return [];
   }
 
+  static async getProject(id: string): Promise<ProjectDataCache> {
+    const projects = await this.getProjects();
+    const project = projects.find((project) => project.id === id);
+    if (project) return project;
+    throw new Error('Project not found');
+  }
+
   static async addProject(project: ProjectDataCache): Promise<void> {
     if (this.isOnline) return;
     const projects = await this.getProjects();

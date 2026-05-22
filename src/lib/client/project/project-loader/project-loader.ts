@@ -26,13 +26,29 @@ export class ProjectLoader {
     return ProjectLoader.init(res);
   }
 
-  static async loadFromCache(cache: ProjectDataCache) {
+  static async loadFromCacheWithTryId(cache: ProjectDataCache) {
     try {
       return await ProjectLoader.loadFromId(cache.id);
     } catch {
       /* empty */
     }
 
+    return ProjectLoader.loadFromCache(cache);
+  }
+
+  static async loadFromIdWithCacheFetching(id: string) {
+    try {
+      return await ProjectLoader.loadFromId(id);
+    } catch {
+      /* empty */
+    }
+
+    const cache = await ProjectCache.getProject(id);
+
+    return ProjectLoader.loadFromCache(cache);
+  }
+
+  static async loadFromCache(cache: ProjectDataCache) {
     await ProjectCache.removeProject(cache.id);
     const config = getConfig();
     const input =

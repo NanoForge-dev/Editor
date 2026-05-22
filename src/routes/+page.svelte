@@ -33,7 +33,7 @@
   const handleCacheProject = async (cache: ProjectDataCache) => {
     try {
       cacheProjectLoading = cache.id;
-      const project = await ProjectLoader.loadFromCache(cache);
+      const project = await ProjectLoader.loadFromCacheWithTryId(cache);
       window.location.assign(`/dashboard?id=${project.id}`);
       cacheProjectLoading = null;
     } catch (error) {
