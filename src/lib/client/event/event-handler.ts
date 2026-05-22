@@ -7,14 +7,14 @@ export class EventHandler {
   public readonly _coreEvents = new EventEmitter<CoreEvents, CoreEventsMap>();
   public readonly _editorEvents = new EventEmitter<EditorEvents, EditorEventsMap>();
 
-  emit<K extends keyof EditorEventsMap>(event: K, ...args: EditorEventsMap[K]) {
-    this._editorEvents.emitEvent(event, ...args);
+  emit<K extends keyof CoreEventsMap>(event: K, ...args: CoreEventsMap[K]) {
+    this._coreEvents.emitEvent(event, ...args);
   }
 
-  on<K extends keyof CoreEventsMap>(
+  on<K extends keyof EditorEventsMap>(
     event: K,
-    callback: ListenerType<CoreEvents, CoreEventsMap, K>,
+    callback: ListenerType<EditorEvents, EditorEventsMap, K>,
   ) {
-    this._coreEvents.on(event, callback);
+    this._editorEvents.on(event, callback);
   }
 }

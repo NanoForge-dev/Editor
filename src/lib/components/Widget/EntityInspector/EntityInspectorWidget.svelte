@@ -3,7 +3,7 @@
   import { selectedEntityId } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
   import type { SaveEntity } from '@utils/types';
-  import { EditorEvents } from '$lib/client/event';
+  import { CoreEvents } from '$lib/client/event';
   import { useProject } from '$lib/client/project';
   import { Input } from '$lib/components/ui/input';
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
@@ -76,20 +76,19 @@
                   <Input
                     type="text"
                     bind:value={componentParams[param.name]}
-                    onchange={() => event.emit(EditorEvents.HOT_RELOAD)}
+                    onchange={() => event.emit(CoreEvents.HOT_RELOAD)}
                   />
                 {:else if param.type === 'number'}
                   <Input
                     type="number"
                     bind:value={componentParams[param.name]}
-                    onchange={() => event.emit(EditorEvents.HOT_RELOAD)}
+                    onchange={() => event.emit(CoreEvents.HOT_RELOAD)}
                   />
                 {:else if param.type === 'boolean'}
                   <TristateSwitch
                     bind:value={componentParams[param.name]}
                     onChange={() => {
-                      event.emit(EditorEvents.HOT_RELOAD);
-                      console.log(componentParams[param.name]);
+                      event.emit(CoreEvents.HOT_RELOAD);
                     }}
                   />
                 {/if}

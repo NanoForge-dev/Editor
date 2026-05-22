@@ -18,7 +18,7 @@ export class Loader {
     await this.core.actions.loader.build();
   }
 
-  async start(canvas: HTMLCanvasElement): Promise<void> {
+  async start(container: HTMLDivElement): Promise<void> {
     const manifest = await this.fetchManifest();
     const env = await this.fetchEnv();
     const { mainFile, files } = await this.resolveGameFiles(manifest);
@@ -34,8 +34,8 @@ export class Loader {
         coreEvents: this.core.event._coreEvents as unknown as RawEventEmitter,
         editorEvents: this.core.event._editorEvents as unknown as RawEventEmitter,
       },
-      canvas,
-    }).then(() => console.log('Game ended'));
+      container,
+    }).then(() => console.log('Game started!'));
   }
 
   private async loadMainFile(file: string): Promise<MainFunction> {
@@ -75,7 +75,7 @@ export class Loader {
   private async fetchFiles(manifest: IManifest): Promise<IExtendedManifestFile[]> {
     return await Promise.all(
       manifest.files.map(async ({ path }) => {
-        const file = await this.fs.getFile(`${path}?url`);
+        const file = await this.fs.getFile(path);
         await file.fetch();
         return { gamePath: path, localPath: await file.getUrl() };
       }),

@@ -12,7 +12,7 @@ export class SfsFile {
     private _cache: FileSystemFile | null,
     private readonly _path: string,
   ) {
-    this._route = `${this._handler.route}?path=${this._path}`;
+    this._route = `${this._handler.route}?path=${encodeURIComponent(`${this._path}?url`)}`;
   }
 
   get path(): string {
@@ -45,11 +45,6 @@ export class SfsFile {
     }
     const stream = await this._cache!.handle.createWritable();
     await res.body.pipeTo(stream);
-    try {
-      await stream.close();
-    } catch {
-      /* empty */
-    }
   }
 
   async write(test: string): Promise<void> {

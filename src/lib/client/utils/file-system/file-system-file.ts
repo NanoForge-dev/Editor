@@ -84,6 +84,8 @@ const FILE_TYPES = {
   '7z': 'application/x-7z-compressed',
 };
 
+const URL_CACHE = new Map<string, string>();
+
 export class FileSystemFile {
   readonly handle: FileSystemFileHandle;
 
@@ -132,9 +134,12 @@ export class FileSystemFile {
   }
 
   async getUrl(): Promise<string> {
+    if (URL_CACHE.has(this.handle.name)) URL.revokeObjectURL(URL_CACHE.get(this.handle.name)!);
     const file = await this.handle.getFile();
     const blob = new Blob([await file.arrayBuffer()], { type: this._resolveFileType(file.name) });
-    return URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    URL_CACHE.set(this.handle.name, url);
+    return url;
   }
 
   private _resolveFileType(name: string): string {
