@@ -73,7 +73,9 @@ export class ProjectCache {
   static async addOrUpdateProject(project: ProjectDataCache): Promise<void> {
     if (this.isOnline) return;
     const projects = await this.getProjects();
-    const projectIndex = projects.findIndex((p) => p.id === project.id);
+    const projectIndex = projects.findIndex(
+      (p) => p.id === project.id || p.resolvable === project.resolvable,
+    );
     if (projectIndex !== -1) {
       projects[projectIndex] = { ...projects[projectIndex], ...project };
     } else {

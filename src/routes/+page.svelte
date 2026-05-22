@@ -8,8 +8,10 @@
   import { Separator } from '$lib/components/ui/separator';
 
   import Components from './components';
+  import { goto } from '$app/navigation';
 
   let showCreateProject = $state(false);
+  let showOpenProject = $state(false);
   let cacheProjectLoading = $state<string | null>(null);
 
   const isOnline = getConfig().mode === 'online';
@@ -28,13 +30,14 @@
 
   const handleOpenProject = () => {
     if (isOnline) return;
+    showOpenProject = true;
   };
 
   const handleCacheProject = async (cache: ProjectDataCache) => {
     try {
       cacheProjectLoading = cache.id;
       const project = await ProjectLoader.loadFromCacheWithTryId(cache);
-      window.location.assign(`/dashboard?id=${project.id}`);
+      await goto(`/dashboard?id=${project.id}`);
       cacheProjectLoading = null;
     } catch (error) {
       console.error(`Error loading project ${cache.id} (${cache.resolvable}) from cache:`, error);
@@ -68,6 +71,7 @@
           {/if}
 
           <Components.CreateProjectDialog bind:open={showCreateProject} />
+          <Components.OpenProjectDialog bind:open={showOpenProject} />
         </div>
 
         <Separator orientation="vertical" class="h-auto self-stretch" />

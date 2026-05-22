@@ -9,6 +9,7 @@
   import { LoadingButton } from '$lib/components/ui/loading-button';
   import { Button } from '$lib/components/ui/button';
   import { Label } from '$lib/components/ui/label';
+  import { goto } from '$app/navigation';
 
   interface Props {
     onClose?: () => void;
@@ -52,7 +53,7 @@
 
   async function newProject(values: ProjectForm) {
     const project = await ProjectLoader.create(values);
-    window.location.assign(`/dashboard?id=${project.id}`);
+    await goto(`/dashboard?id=${project.id}`);
   }
 
   const projectFullPath = $derived.by(() => {

@@ -1,6 +1,6 @@
 <script lang="ts">
+  import OpenProjectForm from './open-project-form.svelte';
   import * as Dialog from '$lib/components/ui/dialog';
-  import CreateProjectForm from './create-project-form.svelte';
 
   interface Props {
     open: boolean;
@@ -15,6 +15,6 @@
 
 <Dialog.Root bind:open>
   <Dialog.Content showCloseButton={false} class="p-0 gap-0 sm:max-w-xl w-[90vw] overflow-hidden">
-    <CreateProjectForm {onClose} />
+    <OpenProjectForm {onClose} />
   </Dialog.Content>
 </Dialog.Root>

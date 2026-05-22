@@ -17,15 +17,6 @@ export class ProjectLoader {
     return ProjectLoader.init(res);
   }
 
-  static async oldLoad(resolvable: string) {
-    const config = getConfig();
-    const input = config.mode === 'offline' ? { path: resolvable } : { gatewayId: resolvable };
-
-    const res = await noProjectActions.project.load(input);
-
-    return ProjectLoader.init(res);
-  }
-
   static async loadFromCacheWithTryId(cache: ProjectDataCache) {
     try {
       return await ProjectLoader.loadFromId(cache.id);
@@ -55,6 +46,12 @@ export class ProjectLoader {
       config.mode === 'offline' ? { path: cache.resolvable } : { gatewayId: cache.resolvable };
 
     const res = await noProjectActions.project.load(input);
+
+    return ProjectLoader.init(res);
+  }
+
+  static async loadFromPath(path: string) {
+    const res = await noProjectActions.project.load({ path });
 
     return ProjectLoader.init(res);
   }
