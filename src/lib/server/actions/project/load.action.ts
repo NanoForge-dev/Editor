@@ -4,7 +4,8 @@ import { loadProject } from '$lib/server/project';
 import { loadProjectFromId } from '$lib/server/project/load-project';
 import type { SessionProject } from '$lib/server/session';
 
-import { Exception } from '@utils-server/exception';
+import { Exception } from '@utils/exception';
+
 import { type Handler, useActionHandler } from '@utils-server/request-handler';
 
 export class LoadProjectBody {

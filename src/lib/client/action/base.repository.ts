@@ -1,5 +1,6 @@
 import { deserialize } from '$app/forms';
 
+import { Exception } from '@utils/exception';
 import type { HttpClient, RequestOptions } from '@utils/http';
 
 export class BaseRepository {
@@ -23,8 +24,21 @@ export class BaseRepository {
 
     if (result.type === 'redirect')
       throw new Error(`Redirect (${result.status}) - ${result.location}`);
-    if (result.type === 'error') throw new Error(`Error (${result.status}) - ${result.error}`);
-    if (result.type === 'failure') throw new Error(`Failure (${result.status}) - ${result.data}`);
+    if (result.type === 'error') {
+      if (result.error?.error && result.error?.message && result.status)
+        throw new Exception(result.error.error, result.error.message, result.status);
+      throw new Error(`Error (${result.status}) - ${result.error}`);
+    }
+
+    if (result.type === 'failure') {
+      if (result.data?.error && result.data?.message && result.status)
+        throw new Exception(
+          result.data.error as string,
+          result.data.message as string,
+          result.status,
+        );
+      throw new Error(`Failure (${result.status}) - ${result.data}`);
+    }
 
     return result.data as R;
   }

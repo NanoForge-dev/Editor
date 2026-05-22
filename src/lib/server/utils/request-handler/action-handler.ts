@@ -1,6 +1,7 @@
 import { type Action, type ActionFailure, fail } from '@sveltejs/kit';
 
-import { Exception } from '../exception';
+import { Exception } from '@utils/exception';
+
 import { parseFormDataBody } from './body';
 import { getContext } from './context';
 import { Handler } from './handler';

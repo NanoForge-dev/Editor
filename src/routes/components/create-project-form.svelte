@@ -10,6 +10,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Label } from '$lib/components/ui/label';
   import { goto } from '$app/navigation';
+  import { runSafe } from '@utils-client/error';
 
   interface Props {
     onClose?: () => void;
@@ -52,8 +53,10 @@
   const { form, submitting } = formCtx;
 
   async function newProject(values: ProjectForm) {
-    const project = await ProjectLoader.create(values);
-    await goto(`/dashboard?id=${project.id}`);
+    await runSafe('create project', async () => {
+      const project = await ProjectLoader.create(values);
+      await goto(`/dashboard?id=${project.id}`);
+    });
   }
 
   const projectFullPath = $derived.by(() => {

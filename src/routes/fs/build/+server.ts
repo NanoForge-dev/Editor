@@ -1,4 +1,5 @@
-import { Exception } from '@utils-server/exception';
+import { Exception } from '@utils/exception';
+
 import { useRequestHandler } from '@utils-server/request-handler';
 
 /**

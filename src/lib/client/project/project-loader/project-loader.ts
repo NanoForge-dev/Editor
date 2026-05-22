@@ -72,8 +72,6 @@ export class ProjectLoader {
 
     const project = new Project(input.id);
     // @todo add a route to check if the project is valid
-    // @todo to move to dashboard
-    await project.init();
     projectStore.set(project);
     await ProjectCache.addOrUpdateProject({
       id: input.id,

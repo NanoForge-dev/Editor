@@ -1,4 +1,5 @@
-import { Exception } from '@utils-server/exception';
+import { Exception } from '@utils/exception';
+
 import type { Context } from '@utils-server/request-handler/context';
 
 import { resolveRootPath } from './file-system.functions';

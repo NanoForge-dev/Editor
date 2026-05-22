@@ -11,7 +11,7 @@
 
   let showCreateProject = $state(false);
   let showOpenProject = $state(false);
-  let cacheProjectLoading = $state<string | null>(null);
+  let cacheProjectLoading = $state<string | true | null>(null);
 
   const isOnline = getConfig().mode === 'online';
 
@@ -49,6 +49,13 @@
   const handleCacheRemoveProject = async (cache: ProjectDataCache) => {
     cacheProjectLoading = cache.id;
     await ProjectCache.removeProject(cache.id);
+    await cacheQuery.refetch();
+    cacheProjectLoading = null;
+  };
+
+  const handleClearCache = async () => {
+    cacheProjectLoading = true;
+    await ProjectCache.clearProjects();
     await cacheQuery.refetch();
     cacheProjectLoading = null;
   };
@@ -97,9 +104,7 @@
               type="button"
               variant="ghost"
               class="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer self-end justify-self-end"
-              onclick={() => {
-                ProjectCache.clearProjects();
-              }}
+              onclick={handleClearCache}
             >
               Clear cache
             </Button>

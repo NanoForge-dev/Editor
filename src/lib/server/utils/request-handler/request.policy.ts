@@ -1,4 +1,5 @@
-import { Exception } from '../exception';
+import { Exception } from '@utils/exception';
+
 import type { Context } from './context';
 import type { RequestHandlerOptions } from './types';
 

@@ -6,7 +6,8 @@ import {
 } from '$lib/server/session';
 import { getProject } from '$lib/server/session/project/project-functions';
 
-import { Exception } from '@utils-server/exception';
+import { Exception } from '@utils/exception';
+
 import { type Handler } from '@utils-server/request-handler';
 
 import type { Project } from './project.type';

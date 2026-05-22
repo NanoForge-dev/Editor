@@ -7,6 +7,7 @@
   import { Button } from '$lib/components/ui/button';
   import { ProjectLoader } from '$lib/client/project';
   import { goto } from '$app/navigation';
+  import { runSafe } from '@utils-client/error';
 
   interface Props {
     onClose?: () => void;
@@ -30,8 +31,10 @@
   const { form, submitting } = formCtx;
 
   async function openProject(values: ProjectForm) {
-    const project = await ProjectLoader.loadFromPath(values.path);
-    await goto(`/dashboard?id=${project.id}`);
+    await runSafe('open project', async () => {
+      const project = await ProjectLoader.loadFromPath(values.path);
+      await goto(`/dashboard?id=${project.id}`);
+    });
   }
 
   const projectPath = $derived.by(() => {

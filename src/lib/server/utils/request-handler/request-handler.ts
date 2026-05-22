@@ -1,8 +1,8 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
+import { Exception } from '@utils/exception';
 import type { MaybePromise } from '@utils/types';
 
-import { Exception } from '../exception';
 import { parseBody } from './body';
 import { getContext } from './context';
 import { Handler } from './handler';

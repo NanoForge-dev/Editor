@@ -14,7 +14,7 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { toast } from 'svelte-sonner';
+  import { runSafe } from '@utils-client/error';
 
   let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
   let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
@@ -23,24 +23,38 @@
   onMount(async (): Promise<void> => {
     let project = useProject();
 
-    if (!project || !project.isReady()) {
+    if (!project) {
       const id = page.url.searchParams.get('id');
       if (!id) {
         await goto(resolve('/'));
         return;
       }
 
-      try {
-        project = await ProjectLoader.loadFromIdWithCacheFetching(id);
-      } catch (e) {
-        let message = 'Failed to load project: ' + e.message;
-        toast('Load project failed', {
-          description: message,
-        });
-        await goto(resolve('/'));
-        return;
-      }
+      project = await runSafe(
+        'load project',
+        async () => {
+          return await ProjectLoader.loadFromIdWithCacheFetching(id);
+        },
+        async () => {
+          await goto(resolve('/'));
+        },
+      );
+
+      if (!project) return;
     }
+
+    if (!project.isReady()) {
+      await runSafe(
+        'init project',
+        async () => {
+          await project.init();
+        },
+        async () => {
+          await goto(resolve('/'));
+        },
+      );
+    }
+
     loaded = true;
   });
 </script>

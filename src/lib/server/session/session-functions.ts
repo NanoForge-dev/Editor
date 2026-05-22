@@ -1,8 +1,7 @@
 import { type Session as SvelteSession } from 'svelte-kit-sessions';
 
+import { Exception } from '@utils/exception';
 import { generateKey } from '@utils/string';
-
-import { Exception } from '@utils-server/exception';
 
 import { PUBLIC_PATHS } from './session.const';
 import { sessionStore } from './session.store';
