@@ -9,7 +9,7 @@
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
 
-  import { ProjectLoader, useProject } from '$lib/client/project';
+  import { ProjectLoader, getProject } from '$lib/client/project';
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -21,7 +21,7 @@
   let loaded: boolean = $state(false);
 
   onMount(async (): Promise<void> => {
-    let project = useProject();
+    let project = getProject();
 
     if (!project) {
       const id = page.url.searchParams.get('id');
@@ -33,7 +33,14 @@
       project = await runSafe(
         'load project',
         async () => {
-          return await ProjectLoader.loadFromIdWithCacheFetching(id);
+          const project = await ProjectLoader.loadFromIdWithCacheFetching(id);
+          if (project.id !== id) {
+            await goto(resolve(`/dashboard?id=${project.id}`), {
+              replaceState: true,
+              keepFocus: true,
+            });
+          }
+          return project;
         },
         async () => {
           await goto(resolve('/'));

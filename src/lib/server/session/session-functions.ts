@@ -23,6 +23,8 @@ export const resolveSession = async (sessionHandler: SvelteSession): Promise<Ses
   return sessionStore.get(id) as Session;
 };
 
+export const isSessionExist = (id: string) => sessionStore.has(id);
+
 export const resetSession = (sessionHandler: SvelteSession): Promise<void> => {
   return sessionHandler.destroy();
 };
@@ -34,7 +36,7 @@ export const addProjectToSession = (session: Session, projectId: string): void =
 
   sessionStore.set(session.id, {
     ...session,
-    projects: [...session.projects, projectId],
+    projects: Array.from(new Set([...session.projects, projectId]).values()),
   });
 };
 

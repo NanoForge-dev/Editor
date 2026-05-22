@@ -83,4 +83,10 @@ export class ProjectLoader {
   }
 }
 
-export const useProject = () => get(projectStore);
+export const useProject = () => {
+  const project = get(projectStore);
+  if (!project) throw new Error('Project not loaded');
+  return project;
+};
+
+export const getProject = () => get(projectStore);
