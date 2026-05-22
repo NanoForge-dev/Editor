@@ -42,6 +42,10 @@ export default defineConfig({
         DEFAULT: 'oklch(var(--accent))',
         foreground: 'oklch(var(--accent-foreground))',
       },
+      success: {
+        DEFAULT: 'oklch(var(--success))',
+        foreground: 'oklch(var(--success-foreground))',
+      },
       destructive: {
         DEFAULT: 'oklch(var(--destructive))',
         foreground: 'oklch(var(--destructive-foreground))',

@@ -1,8 +1,10 @@
+<script lang="ts" module>
+  export type TriState = boolean | undefined;
+</script>
+
 <script lang="ts">
   import { Switch as SwitchPrimitive } from 'bits-ui';
   import { cn } from '@utils/ui';
-
-  type TriState = boolean | undefined;
 
   let {
     ref = $bindable(null),
@@ -30,11 +32,11 @@
   }
 
   const bgClass = $derived(
-    value === true ? 'bg-green-500' : value === false ? 'bg-red-500' : 'bg-neutral-500',
+    value === true ? 'bg-success' : value === false ? 'bg-destructive' : 'bg-neutral-500',
   );
 
   const thumbClass = $derived(
-    value === true ? 'translate-x-8' : value === false ? 'translate-x-0' : 'translate-x-4',
+    value === true ? 'translate-x-6' : value === false ? 'translate-x-0' : 'translate-x-3',
   );
 </script>
 
@@ -45,7 +47,7 @@
   data-slot="switch"
   data-size={size}
   class={cn(
-    'focus-visible:ring-ring/50 inline-flex h-5 w-13 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
+    'focus-visible:ring-ring/50 inline-flex h-5 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50',
     bgClass,
     className,
   )}
@@ -54,7 +56,7 @@
   <SwitchPrimitive.Thumb
     data-slot="switch-thumb"
     class={cn(
-      'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform',
+      'pointer-events-none block h-4 w-4 rounded-full bg-foreground shadow-sm ring-0 transition-transform',
       thumbClass,
     )}
   />

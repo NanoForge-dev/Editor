@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 
-import { persistedWritable } from '$lib/components/Utils/LocalStorage/persistedWritable';
+import { persistedWritable } from '@utils-client/store';
 
 import type { TabInstance, TabsState } from './types';
 

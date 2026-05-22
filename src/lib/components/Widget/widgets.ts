@@ -27,7 +27,7 @@ export const widgetsTypes: WidgetType[] = [
   },
   {
     id: 'code-editor',
-    component: MonacoEditor,
+    component: MonacoEditor as Component,
   },
   {
     id: 'output-log',
