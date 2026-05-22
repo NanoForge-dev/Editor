@@ -1,6 +1,7 @@
 import { type ActionClient, getActionClient } from '$lib/client/action';
 import { InfoHandler } from '$lib/client/info';
 import { Loader } from '$lib/client/loader';
+import { EventHandler } from '$lib/client/project/event-handler';
 import { PackageHandler } from '$lib/client/project/package-handler';
 import { SaveHandler } from '$lib/client/project/save-handler';
 import { SyncFileSystem } from '$lib/client/sync-file-system';
@@ -12,6 +13,8 @@ export class Project {
   private _loader: Loader | undefined;
   private _save: SaveHandler | undefined;
   private _packageHandler: PackageHandler | undefined;
+  private _eventHandler: EventHandler | undefined;
+
   private _inited = false;
 
   static reset(): void {
@@ -62,5 +65,10 @@ export class Project {
   get packages(): PackageHandler {
     if (!this._packageHandler) this._packageHandler = new PackageHandler(this);
     return this._packageHandler;
+  }
+
+  get event(): EventHandler {
+    if (!this._eventHandler) this._eventHandler = new EventHandler(this);
+    return this._eventHandler;
   }
 }

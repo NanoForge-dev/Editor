@@ -6,22 +6,41 @@ export enum EventTypeEnum {
   UNPAUSE_GAME = 'unpause-game',
 }
 
-export type ListenerType = (...args: any[]) => void;
+export interface EventEnumMap {
+  [EventTypeEnum.HOT_RELOAD]: [];
+  [EventTypeEnum.HARD_RELOAD]: [];
+  [EventTypeEnum.PAUSE_GAME]: [duration: number];
+  [EventTypeEnum.STOP_GAME]: [];
+  [EventTypeEnum.UNPAUSE_GAME]: [];
+}
+
+export type ListenerType<K extends keyof EventEnumMap> = (...args: EventEnumMap[K]) => void;
+
+type QueuedEvent<K extends keyof EventEnumMap = keyof EventEnumMap> = {
+  event: K;
+  args: EventEnumMap[K];
+};
 
 export interface IEventEmitter {
-  listeners: Record<EventTypeEnum | string, ListenerType[]>;
-  eventQueue: { event: EventTypeEnum | string; args: any[] }[];
+  listeners: {
+    [K in keyof EventEnumMap]?: ListenerType<K>[];
+  };
 
-  runEvents: () => void;
+  eventQueue: QueuedEvent[];
 
-  emitEvent: (event: EventTypeEnum, ...args: any) => void;
+  runEvents(): void;
 
-  addListener: (event: EventTypeEnum | string, listener: ListenerType) => void;
-  on: (event: EventTypeEnum | string, listener: ListenerType) => void;
+  emitEvent<K extends keyof EventEnumMap>(event: K, ...args: EventEnumMap[K]): void;
 
-  removeListener: (event: EventTypeEnum | string, listener: ListenerType) => void;
-  off: (event: EventTypeEnum | string, listener: ListenerType) => void;
+  addListener<K extends keyof EventEnumMap>(event: K, listener: ListenerType<K>): void;
 
-  removeListenersForEvent: (event: EventTypeEnum | string) => void;
-  removeAllListeners: () => void;
+  on<K extends keyof EventEnumMap>(event: K, listener: ListenerType<K>): void;
+
+  removeListener<K extends keyof EventEnumMap>(event: K, listener: ListenerType<K>): void;
+
+  off<K extends keyof EventEnumMap>(event: K, listener: ListenerType<K>): void;
+
+  removeListenersForEvent(event: keyof EventEnumMap): void;
+
+  removeAllListeners(): void;
 }

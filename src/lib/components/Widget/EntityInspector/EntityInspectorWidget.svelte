@@ -7,7 +7,7 @@
   import type { SaveEntity } from '@utils/types';
   import { useProject } from '$lib/client/project';
   import { Input } from '$lib/components/ui/input';
-  import { Switch } from '$lib/components/ui/switch';
+  import { TristateSwitch } from '$lib/components/ui/tristate-switch';
 
   let openMap: { [key: string]: boolean } = $state({});
   let selectedEntity: SaveEntity | undefined = $state(undefined);
@@ -75,23 +75,23 @@
 
                 {#if param.type === 'string'}
                   <Input
-                    class="input rounded-sm bg-neutral-800 px-2 py-0.5"
                     type="text"
                     bind:value={componentParams[param.name]}
                     onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
                   />
                 {:else if param.type === 'number'}
                   <Input
-                    class="input w-28 rounded-sm bg-neutral-800 px-2 py-0.5"
                     type="number"
                     bind:value={componentParams[param.name]}
                     onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
                   />
                 {:else if param.type === 'boolean'}
-                  <Switch
-                    class="w-28 rounded-sm bg-neutral-800 px-2 py-0.5"
-                    bind:checked={componentParams[param.name]}
-                    onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
+                  <TristateSwitch
+                    bind:value={componentParams[param.name]}
+                    onChange={() => {
+                      coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD);
+                      console.log(componentParams[param.name]);
+                    }}
                   />
                 {/if}
               </div>
