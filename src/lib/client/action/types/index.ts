@@ -1,4 +1,3 @@
-export * from './config.type';
 export * from './fs.type';
 export * from './loader.type';
 export * from './project.type';

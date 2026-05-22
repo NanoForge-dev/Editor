@@ -3,7 +3,6 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { Exception } from '@utils/exception';
 import type { MaybePromise } from '@utils/types';
 
-import { parseBody } from './body';
 import { getContext } from './context';
 import { Handler } from './handler';
 import { assertRequest } from './request.policy';
@@ -19,18 +18,16 @@ const handleError = (e: unknown): Response => {
 };
 
 export const useRequestHandler = (
-  callback: Callback<Body>,
-  options?: RequestHandlerOptions<Body>,
+  callback: Callback,
+  options?: RequestHandlerOptions,
 ): ((event: RequestEvent) => MaybePromise<Response>) => {
   return async (event: RequestEvent) => {
     try {
       const context = await getContext(event);
 
-      const body = parseBody<Body>(await event.request.json(), options?.body);
-
       assertRequest(context, options);
 
-      const handler = new Handler<Body>(context, event, body);
+      const handler = new Handler(context, event, {});
 
       return await callback(handler);
     } catch (e) {

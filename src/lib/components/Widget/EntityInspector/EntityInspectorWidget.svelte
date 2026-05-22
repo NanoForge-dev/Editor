@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { coreEvents } from '$lib/loader/client/game';
-  import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
   import { createDefaultComponent } from '$lib/components/Widget/EntityInspector/component-creator';
   import { selectedEntityId } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
   import type { SaveEntity } from '@utils/types';
+  import { EditorEvents } from '$lib/client/event';
   import { useProject } from '$lib/client/project';
   import { Input } from '$lib/components/ui/input';
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
@@ -13,7 +12,7 @@
   let selectedEntity: SaveEntity | undefined = $state(undefined);
   let openComponentSelector: boolean = $state(false);
 
-  const { packages, save } = useProject();
+  const { event, packages, save } = useProject();
 
   $effect(() => {
     if ($selectedEntityId) {
@@ -22,7 +21,7 @@
   });
 
   async function addComponent(componentName: string) {
-    const [name, params] = await createDefaultComponent(componentName, 'client');
+    const [name, params] = await createDefaultComponent(componentName);
     if (selectedEntity) {
       selectedEntity.components[name] = params;
     }
@@ -77,19 +76,19 @@
                   <Input
                     type="text"
                     bind:value={componentParams[param.name]}
-                    onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
+                    onchange={() => event.emit(EditorEvents.HOT_RELOAD)}
                   />
                 {:else if param.type === 'number'}
                   <Input
                     type="number"
                     bind:value={componentParams[param.name]}
-                    onchange={() => coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD)}
+                    onchange={() => event.emit(EditorEvents.HOT_RELOAD)}
                   />
                 {:else if param.type === 'boolean'}
                   <TristateSwitch
                     bind:value={componentParams[param.name]}
                     onChange={() => {
-                      coreEvents.emitEvent(EventTypeEnum.HOT_RELOAD);
+                      event.emit(EditorEvents.HOT_RELOAD);
                       console.log(componentParams[param.name]);
                     }}
                   />

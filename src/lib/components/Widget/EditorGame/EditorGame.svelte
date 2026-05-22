@@ -1,46 +1,42 @@
 <script lang="ts">
   import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
-  import { fetchGameProps } from '$lib/loader/client/fetchGameProps';
-  import { coreEvents, runGame } from '$lib/loader/client/game';
-  import { EventTypeEnum } from '$lib/loader/client/types/event-emitter.type';
-  import { localApi } from '$lib/components/Utils/api/api';
   import { GameState } from '$lib/components/Widget/EditorGame/game.svelte';
+  import { useProject } from '$lib/client/project';
+  import { EditorEvents } from '$lib/client/event';
 
   let canvas: HTMLCanvasElement;
 
   let gameState = $state(GameState.INIT_STATE);
+  const { event, loader } = useProject();
 
   let loadingPromises: Promise<unknown>[] = $state([]);
 
   async function playGameFromServer() {
     gameState = GameState.RELOAD_FROM_SERVER;
-    await localApi.buildProject();
-    loadingPromises = await fetchGameProps();
-    await Promise.all(loadingPromises);
-    loadingPromises = [];
+    await loader.build();
+    await loader.start(canvas);
     gameState = GameState.PLAY;
-    runGame(canvas);
   }
 
   async function playGameFromSave() {
     gameState = GameState.RELOAD_FROM_SAVE;
+    await loader.start(canvas);
     gameState = GameState.PLAY;
-    runGame(canvas);
   }
 
   async function unpauseGame() {
     gameState = GameState.PLAY;
-    coreEvents.emitEvent(EventTypeEnum.UNPAUSE_GAME);
+    event.emit(EditorEvents.UNPAUSE_GAME);
   }
 
   async function pauseGame() {
     gameState = GameState.PAUSE;
-    coreEvents.emitEvent(EventTypeEnum.PAUSE_GAME);
+    event.emit(EditorEvents.PAUSE_GAME, 10);
   }
 
   async function stopGame() {
     gameState = GameState.STOP;
-    coreEvents.emitEvent(EventTypeEnum.STOP_GAME);
+    event.emit(EditorEvents.STOP_GAME);
   }
 </script>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
-  import { env } from '$env/dynamic/public';
+  import { PUBLIC_PM_URL } from '$env/static/public';
 
-  const basePath = env.PUBLIC_PM_URL;
+  const basePath = PUBLIC_PM_URL || 'https://projects.nanoforge.eu';
   const createProjectPath = `${basePath}/dashboard/projects`;
   const openProjectPath = `${basePath}/dashboard/projects`;
 </script>

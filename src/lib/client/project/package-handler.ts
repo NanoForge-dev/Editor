@@ -17,7 +17,10 @@ export class PackageHandler {
       this._componentsManifests = new Map<string, EditorComponentManifest>(
         (
           await this._project.actions.package.getComponentsManifests({
-            componentPaths: this._project.save.save.components.map((c) => c.path),
+            componentPaths: this._project.save.save.components.map((c) => c.path) as [
+              string,
+              ...string[],
+            ],
           })
         ).map((e, index) => [this._project.save.save.components[index].name, e]),
       );
@@ -26,7 +29,10 @@ export class PackageHandler {
       this._systemsManifests = new Map<string, EditorSystemManifest>(
         (
           await this._project.actions.package.getSystemsManifests({
-            systemPaths: this._project.save.save.systems.map((s) => s.path),
+            systemPaths: this._project.save.save.systems.map((s) => s.path) as [
+              string,
+              ...string[],
+            ],
           })
         ).map((e, index) => [this._project.save.save.systems[index].name, e]),
       );

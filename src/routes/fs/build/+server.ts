@@ -12,7 +12,7 @@ export const GET = useRequestHandler(({ event, project }) => {
   const path = event.url.searchParams.get('path');
   if (!path) throw new Exception('Bad Request', 'Missing path query param', 400);
 
-  const file = project.client.loader.getFile(decodeURIComponent(path));
+  const file = project.client.loader.getFile(decodeURIComponent(path).replace(/\?url$/, ''));
 
   const stream = file.readStream();
 

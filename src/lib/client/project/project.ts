@@ -1,7 +1,7 @@
 import { type ActionClient, getActionClient } from '$lib/client/action';
+import { EventHandler } from '$lib/client/event';
 import { InfoHandler } from '$lib/client/info';
 import { Loader } from '$lib/client/loader';
-import { EventHandler } from '$lib/client/project/event-handler';
 import { PackageHandler } from '$lib/client/project/package-handler';
 import { SaveHandler } from '$lib/client/project/save-handler';
 import { SyncFileSystem } from '$lib/client/sync-file-system';
@@ -68,7 +68,7 @@ export class Project {
   }
 
   get event(): EventHandler {
-    if (!this._eventHandler) this._eventHandler = new EventHandler(this);
+    if (!this._eventHandler) this._eventHandler = new EventHandler();
     return this._eventHandler;
   }
 }

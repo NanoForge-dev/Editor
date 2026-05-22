@@ -1,6 +1,6 @@
 import type { Save } from '@utils/types';
 
-import type { IEventEmitter } from './event-emitter.type';
+import type { RawEventEmitter } from './event-emitter.type';
 
 export interface IGameOptions {
   canvas: HTMLCanvasElement;
@@ -8,7 +8,7 @@ export interface IGameOptions {
   env: Record<string, string | undefined>;
   editor: {
     save: Save;
-    coreEvents: IEventEmitter;
-    editorEvents: IEventEmitter;
+    coreEvents: RawEventEmitter;
+    editorEvents: RawEventEmitter;
   };
 }
