@@ -2,6 +2,8 @@
   import EntityItem from './EntityItem.svelte';
 
   import { useProject } from '$lib/client/project';
+
+  const { save } = useProject();
 </script>
 
 <div class="h-full w-full flex flex-col bg-neutral-800">
@@ -19,8 +21,8 @@
   </div>
   <span class="text-xl px-3 py-1"> Entities </span>
   <div class="h-full flex flex-col bg-neutral-900 p-1">
-    {#if useProject()?.save.save}
-      {#each useProject()?.save.save.entities as entity (entity.id)}
+    {#if save.save}
+      {#each save.save.entities as entity (entity.id)}
         <EntityItem item={entity} />
       {/each}
     {/if}
