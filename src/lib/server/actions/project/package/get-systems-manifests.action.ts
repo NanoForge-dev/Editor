@@ -2,7 +2,7 @@ import type { EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
-class GetSystemManifestBody {
+export class GetSystemManifestBody {
   systemPaths!: [string, ...string[]];
 }
 

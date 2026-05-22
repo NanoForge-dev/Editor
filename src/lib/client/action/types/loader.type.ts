@@ -1,5 +1,5 @@
-import type { IManifest } from '$lib/client/loader';
+import type { Loader } from '$lib/server/project/loader';
 
-export type ActionLoaderManifest = IManifest;
+export type ActionLoaderManifest = ReturnType<Loader['getManifest']>;
 
-export type ActionLoaderEnv = Record<string, string | undefined>;
+export type ActionLoaderEnv = ReturnType<Loader['getEnv']>;

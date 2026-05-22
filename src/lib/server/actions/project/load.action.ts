@@ -7,7 +7,7 @@ import type { SessionProject } from '$lib/server/session';
 import { Exception } from '@utils-server/exception';
 import { type Handler, useActionHandler } from '@utils-server/request-handler';
 
-class LoadProjectBody {
+export class LoadProjectBody {
   id?: string;
   path?: string;
   gitUrl?: string;

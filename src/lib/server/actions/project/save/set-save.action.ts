@@ -2,7 +2,7 @@ import { type Save } from '@utils/types';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
-class SetSaveBody {
+export class SetSaveBody {
   save!: Save;
 }
 

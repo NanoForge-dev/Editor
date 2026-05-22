@@ -2,7 +2,7 @@ import type { EditorComponentManifest } from '@nanoforge-dev/ecs-lib';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
-class GetComponentManifestBody {
+export class GetComponentManifestBody {
   componentPaths!: [string, ...string[]];
 }
 

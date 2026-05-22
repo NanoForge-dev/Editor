@@ -8,6 +8,7 @@
   import { ProjectLoader } from '$lib/client/project/project-loader/project-loader';
   import { LoadingButton } from '$lib/components/ui/loading-button';
   import { Button } from '$lib/components/ui/button';
+  import { Label } from '$lib/components/ui/label';
 
   interface Props {
     onClose?: () => void;
@@ -109,7 +110,16 @@
           description={`The full path will be '${projectFullPath}'`}
         />
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="flex justify-around flex-wrap gap-2">
+          <FormFieldSelect
+            name="language"
+            label="Language"
+            classNames={{ trigger: 'w-40 p-4', content: 'p-2', item: 'p-2' }}
+            options={[
+              { value: 'ts', label: 'Typescript' },
+              { value: 'js', label: 'Javascript' },
+            ]}
+          />
           <FormFieldSelect
             name="packageManager"
             label="Package manager"
@@ -121,72 +131,30 @@
               { value: 'bun', label: 'bun' },
             ]}
           />
-          <FormFieldSelect
-            name="language"
-            label="Language"
-            classNames={{ trigger: 'w-40 p-4', content: 'p-2', item: 'p-2' }}
-            options={[
-              { value: 'ts', label: 'Typescript' },
-              { value: 'js', label: 'Javascript' },
-            ]}
-          />
         </div>
 
         <div class="flex flex-col gap-1">
-          <button
-            type="button"
-            class="toggle-row"
-            onclick={() =>
-              form.update((s) => ({ ...s, multiplayerServer: !$form.multiplayerServer }))}
-          >
+          <Label class="toggle-row">
             <div>
               <p class="toggle-row-title">Multiplayer server</p>
               <p class="toggle-row-desc">Enable real-time collaboration</p>
             </div>
-            <FormFieldSwitch
-              name="multiplayerServer"
-              label="Multiplayer server"
-              classNames={{ label: 'hidden' }}
-              disableClick={true}
-            />
-          </button>
-          <button
-            type="button"
-            class="toggle-row"
-            onclick={() =>
-              form.update((s) => ({
-                ...s,
-                dockerContainerization: !$form.dockerContainerization,
-              }))}
-          >
+            <FormFieldSwitch name="multiplayerServer" />
+          </Label>
+          <Label class="toggle-row">
             <div>
               <p class="toggle-row-title">Docker containerization</p>
               <p class="toggle-row-desc">Bundle with a Dockerfile</p>
             </div>
-            <FormFieldSwitch
-              name="dockerContainerization"
-              label="Docker containerization"
-              classNames={{ label: 'hidden' }}
-              disableClick={true}
-            />
-          </button>
-          <button
-            type="button"
-            class="toggle-row"
-            onclick={() =>
-              form.update((s) => ({ ...s, createGitRepository: !$form.createGitRepository }))}
-          >
+            <FormFieldSwitch name="dockerContainerization" />
+          </Label>
+          <Label class="toggle-row">
             <div>
               <p class="toggle-row-title">Git repository</p>
               <p class="toggle-row-desc">Initialize with git init</p>
             </div>
-            <FormFieldSwitch
-              name="createGitRepository"
-              label="Git repository"
-              classNames={{ label: 'hidden' }}
-              disableClick={true}
-            />
-          </button>
+            <FormFieldSwitch name="createGitRepository" />
+          </Label>
         </div>
 
         {#if $form.createGitRepository}

@@ -2,7 +2,7 @@ import type { NewSystemPackage } from '$lib/server/project/package/package.type'
 
 import { useActionHandler } from '@utils-server/request-handler';
 
-class AddSystemBody {
+export class AddSystemBody {
   systemNames!: [string, ...string[]];
 }
 

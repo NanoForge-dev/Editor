@@ -9,4 +9,8 @@ export class ProjectLoaderRepository extends BaseRepository {
   manifest(): Promise<ActionLoaderManifest> {
     return this.run(`/actions/project/loader?/manifest`);
   }
+
+  build(): Promise<object> {
+    return this.run(`/actions/project/loader?/build`);
+  }
 }

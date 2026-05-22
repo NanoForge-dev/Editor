@@ -2,7 +2,7 @@ import type { NewComponentPackage } from '$lib/server/project/package/package.ty
 
 import { useActionHandler } from '@utils-server/request-handler';
 
-class CreateComponentBody {
+export class CreateComponentBody {
   componentName!: string;
 }
 

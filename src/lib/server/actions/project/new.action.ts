@@ -4,7 +4,7 @@ import { loadProject } from '$lib/server/project';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
-class CreateProjectBody {
+export class CreateProjectBody {
   projectName!: string;
 
   projectPath?: string;
