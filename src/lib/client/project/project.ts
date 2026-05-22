@@ -24,9 +24,8 @@ export class Project {
   }
 
   async init(): Promise<Project> {
-    // @todo add init of sub parts like save
     await this.save.init();
-    await this.package.init();
+    await this.packages.init();
     this._inited = true;
     return this;
   }
