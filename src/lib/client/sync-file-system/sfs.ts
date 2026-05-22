@@ -14,10 +14,12 @@ const FS_ROUTE: Record<SyncFileSystemPart, string> = {
 
 export class SyncFileSystem {
   public readonly route: string;
+  public readonly projectId: string;
   public readonly cache: FileSystemManager;
 
   constructor(project: Project, part: SyncFileSystemPart) {
     this.route = FS_ROUTE[part];
+    this.projectId = project.id;
     this.cache = new FileSystemManager(`projects/${project.id}/${part}`);
   }
 

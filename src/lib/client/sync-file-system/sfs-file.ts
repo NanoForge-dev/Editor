@@ -1,5 +1,7 @@
 import type { SyncFileSystem } from '$lib/client/sync-file-system/sfs';
 
+import { SESSION_PROJECT_HEADER } from '@utils/const';
+
 import { type FileSystemFile } from '@utils-client/file-system';
 
 export class SfsFile {
@@ -36,13 +38,13 @@ export class SfsFile {
     await this._preWrite();
     const res = await fetch(this._route, {
       method: 'GET',
+      headers: { [SESSION_PROJECT_HEADER]: this._handler.projectId },
     });
-    if (!res.ok) {
+    if (!res.ok || !res.body) {
       throw new Error('Failed to fetch file');
     }
-    const b = await res.blob();
     const stream = await this._cache!.handle.createWritable();
-    await stream.write(b);
+    await res.body.pipeTo(stream);
     await stream.close();
   }
 
@@ -64,6 +66,7 @@ export class SfsFile {
     const res = await fetch(this._route, {
       body: file.stream(),
       method: 'POST',
+      headers: { [SESSION_PROJECT_HEADER]: this._handler.projectId },
     });
     if (!res.ok) throw new Error('Failed to sync file');
   }
