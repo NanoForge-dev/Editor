@@ -1,3 +1,4 @@
+import type { GatewayProject } from '$lib/server/actions/project/gateway.action';
 import type { InfoProject, InfoProjectBody } from '$lib/server/actions/project/info.action';
 import type { LoadProjectBody } from '$lib/server/actions/project/load.action';
 import type { CreateProjectBody } from '$lib/server/actions/project/new.action';
@@ -11,3 +12,5 @@ export type CreateProjectActionInput = CreateProjectBody;
 
 export type InfoProjectResult = InfoProject;
 export type InfoProjectInput = InfoProjectBody;
+
+export type GatewayProjectResult = GatewayProject;

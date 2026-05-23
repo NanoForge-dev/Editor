@@ -6,4 +6,9 @@ export class ProjectRepository extends BaseRepository {
     this.assertOnline();
     return this.get(`/editor/projects/${id}`);
   }
+
+  getProjects(): Promise<ApiProject[]> {
+    this.assertOnline();
+    return this.get(`/projects}`);
+  }
 }

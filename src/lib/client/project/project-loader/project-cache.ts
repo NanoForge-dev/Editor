@@ -1,4 +1,7 @@
+import { noProjectActions } from '$lib/client/action';
 import { getConfig } from '$lib/client/config';
+
+import { generateKey } from '@utils/string';
 
 export interface ProjectDataCache {
   id: string;
@@ -25,8 +28,13 @@ export class ProjectCache {
   }
 
   static async getOnlineProjects(): Promise<ProjectDataCache[]> {
-    // @todo to be implemented
-    return [];
+    const projects = await noProjectActions.project.getGatewayProjects();
+    return projects.map((project) => ({
+      id: generateKey(10),
+      resolvable: project.gatewayId,
+      lastOpened: Date.now(),
+      name: project.name,
+    }));
   }
 
   static async getProject(id: string): Promise<ProjectDataCache> {

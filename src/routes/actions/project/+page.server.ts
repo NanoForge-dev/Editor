@@ -1,3 +1,4 @@
+import { getGatewayProjectsAction } from '$lib/server/actions/project/gateway.action';
 import {
   getInfoProjectAction,
   setInfoProjectAction,
@@ -10,4 +11,5 @@ export const actions = {
   new: createProjectAction,
   'get-info': getInfoProjectAction,
   'set-info': setInfoProjectAction,
+  'get-gateway-projects': getGatewayProjectsAction,
 };

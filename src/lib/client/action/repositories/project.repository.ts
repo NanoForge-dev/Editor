@@ -2,6 +2,7 @@ import { BaseRepository } from '../base.repository';
 import type {
   ActionProject,
   CreateProjectActionInput,
+  GatewayProjectResult,
   InfoProjectInput,
   InfoProjectResult,
   LoadProjectActionInput,
@@ -22,5 +23,9 @@ export class ProjectRepository extends BaseRepository {
 
   setInfo(input: InfoProjectInput): Promise<object> {
     return this.run(`/actions/project?/set-info`, input);
+  }
+
+  getGatewayProjects(): Promise<GatewayProjectResult[]> {
+    return this.run(`/actions/project?/get-gateway-projects`);
   }
 }
