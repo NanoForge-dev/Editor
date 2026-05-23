@@ -30,6 +30,9 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
+        env:
+          PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
+          PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
 
       - name: Release packages
         uses: ./node_modules/@nanoforge-dev/actions/dist/create-release-pr
