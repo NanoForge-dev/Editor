@@ -35,9 +35,6 @@ catalogs:
       specifier: ^17.0.5
       version: 17.0.5
   components:
-    bits-ui:
-      specifier: ^2.18.1
-      version: 2.18.1
     flowbite:
       specifier: ^4.0.2
       version: 4.0.2
@@ -120,17 +117,11 @@ catalogs:
     '@iconify-json/solar':
       specifier: ^1.2.5
       version: 1.2.5
-    '@lucide/svelte':
-      specifier: ^1.16.0
-      version: 1.16.0
   libs-back:
     dotenv:
       specifier: ^17.4.2
       version: 17.4.2
   libs-front:
-    '@internationalized/date':
-      specifier: ^3.12.1
-      version: 3.12.1
     '@tanstack/svelte-query':
       specifier: ^6.1.30
       version: 6.1.30
@@ -226,10 +217,10 @@ importers:
         specifier: catalog:i18n
         version: 2.18.1(typescript@6.0.3)
       '@internationalized/date':
-        specifier: catalog:libs-front
+        specifier: ^3.12.0
         version: 3.12.1
       '@lucide/svelte':
-        specifier: catalog:icons
+        specifier: ^1.16.0
         version: 1.16.0(svelte@5.55.9(@typescript-eslint/types@8.59.4))
       '@nanoforge-dev/actions':
         specifier: catalog:ci
@@ -283,7 +274,7 @@ importers:
         specifier: catalog:test
         version: 4.1.7(@vitest/browser@4.1.7)(vitest@4.1.7)
       bits-ui:
-        specifier: catalog:components
+        specifier: ^2.16.3
         version: 2.18.1(@internationalized/date@3.12.1)(@sveltejs/kit@2.60.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.9(@typescript-eslint/types@8.59.4))(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0)(yaml@2.9.0)))(svelte@5.55.9(@typescript-eslint/types@8.59.4))(typescript@6.0.3)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0)(yaml@2.9.0)))(svelte@5.55.9(@typescript-eslint/types@8.59.4))
       bun:
         specifier: catalog:core

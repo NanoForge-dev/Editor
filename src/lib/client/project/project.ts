@@ -27,6 +27,7 @@ export class Project {
   }
 
   async init(): Promise<Project> {
+    await this.fs.init();
     await this.save.init();
     await this.packages.init();
     this._inited = true;

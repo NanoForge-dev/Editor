@@ -7,6 +7,9 @@ import {
 } from '$lib/client/action';
 import { getConfig } from '$lib/client/config/config';
 import { Project, ProjectCache, type ProjectDataCache } from '$lib/client/project';
+import { SfsTreeCache } from '$lib/client/sync-file-system';
+
+import { FileSystemManager } from '@utils-client/file-system';
 
 const projectStore = writable<Project | null>(null);
 
@@ -46,6 +49,14 @@ export class ProjectLoader {
       config.mode === 'offline' ? { path: cache.resolvable } : { gatewayId: cache.resolvable };
 
     const res = await noProjectActions.project.load(input);
+
+    const treeCache = new SfsTreeCache(cache.id);
+    await treeCache.init();
+    await treeCache.changeId(res.id);
+
+    const fs = new FileSystemManager('projects');
+    const dir = await fs.getDirectory(cache.id);
+    await dir.rename(res.id);
 
     return ProjectLoader.init(res);
   }

@@ -38,7 +38,7 @@ export class SfsFile {
     await this._preWrite();
     const res = await fetch(this._route, {
       method: 'GET',
-      headers: { [SESSION_PROJECT_HEADER]: this._handler.projectId },
+      headers: { [SESSION_PROJECT_HEADER]: this._handler.project.id },
     });
     if (!res.ok || !res.body) {
       throw new Error('Failed to fetch file');
@@ -65,9 +65,14 @@ export class SfsFile {
     const res = await fetch(this._route, {
       body: file.stream(),
       method: 'POST',
-      headers: { [SESSION_PROJECT_HEADER]: this._handler.projectId },
+      headers: { [SESSION_PROJECT_HEADER]: this._handler.project.id },
     });
     if (!res.ok) throw new Error('Failed to sync file');
+  }
+
+  async getFile(): Promise<FileSystemFile> {
+    await this._preRead();
+    return this._cache!;
   }
 
   private async _preRead() {

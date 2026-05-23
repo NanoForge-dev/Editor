@@ -72,4 +72,8 @@ export class FileSystemDirectory {
       await this.removeChild(name);
     }
   }
+
+  async rename(name: string): Promise<void> {
+    await (this.handle as any).move(name);
+  }
 }
