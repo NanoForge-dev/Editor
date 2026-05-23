@@ -84,10 +84,13 @@ export class ProjectLoader {
     const project = new Project(input.id);
     // @todo add a route to check if the project is valid
     projectStore.set(project);
+
+    const infos = await project.info.get();
+
     await ProjectCache.addOrUpdateProject({
       id: input.id,
       resolvable: input.cacheResolvable,
-      name: input.name,
+      name: infos.name,
       lastOpened: Date.now(),
     });
     return project;

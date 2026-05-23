@@ -24,16 +24,11 @@ export const loadProject = async (
 
   handler.context = { ...handler.context, project: projectSession };
 
-  const { fs } = handler;
-
-  const pkg = await fs.getFile('package.json').readJson();
-
   return {
     id: projectId,
     cacheResolvable: handler.context.online
       ? (projectSession.gateway?.id as string)
       : projectSession.path,
-    name: pkg.name,
   };
 };
 
@@ -49,15 +44,10 @@ export const loadProjectFromId = async (id: string, handler: Handler): Promise<P
 
   handler.context = { ...handler.context, project: projectSession };
 
-  const { fs } = handler;
-
-  const pkg = await fs.getFile('package.json').readJson();
-
   return {
     id,
     cacheResolvable: handler.context.online
       ? (projectSession.gateway?.id as string)
       : projectSession.path,
-    name: pkg.name,
   };
 };

@@ -6,10 +6,10 @@ import { getComponentsManifestsAction } from '$lib/server/actions/project/packag
 import { getSystemsManifestsAction } from '$lib/server/actions/project/package/get-systems-manifests.action';
 
 export const actions = {
-  addComponents: addComponentsProjectAction,
-  addSystems: addSystemsProjectAction,
-  createComponent: createComponentProjectAction,
-  createSystem: createSystemProjectAction,
-  getComponentsManifests: getComponentsManifestsAction,
-  getSystemsManifests: getSystemsManifestsAction,
+  'add-components': addComponentsProjectAction,
+  'add-systems': addSystemsProjectAction,
+  'create-component': createComponentProjectAction,
+  'create-system': createSystemProjectAction,
+  'get-components-manifests': getComponentsManifestsAction,
+  'get-systems-manifests': getSystemsManifestsAction,
 };
