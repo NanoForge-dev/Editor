@@ -61,8 +61,8 @@
     "@iconify-json/material-icon-theme": "catalog:icons",
     "@iconify-json/solar": "catalog:icons",
     "@inlang/paraglide-js": "catalog:i18n",
-    "@internationalized/date": "^3.12.0",
-    "@lucide/svelte": "^1.16.0",
+    "@internationalized/date": "catalog:libs-front",
+    "@lucide/svelte": "catalog:icons",
     "@nanoforge-dev/actions": "catalog:ci",
     "@nanoforge-dev/ecs-lib": "catalog:core",
     "@nanoforge-dev/utils-eslint-config": "catalog:lint",
@@ -80,7 +80,7 @@
     "@unocss/preset-wind4": "catalog:css",
     "@vitest/browser-playwright": "catalog:test",
     "@vitest/coverage-v8": "catalog:test",
-    "bits-ui": "^2.16.3",
+    "bits-ui": "catalog:components",
     "bun": "catalog:core",
     "clsx": "catalog:css",
     "dotenv": "catalog:libs-back",
@@ -114,7 +114,7 @@
     "vitest-browser-svelte": "catalog:test",
     "zod": "catalog:libs-front"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.3.0",
   "engines": {
     "node": "25"
   },
