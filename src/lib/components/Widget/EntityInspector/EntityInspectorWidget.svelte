@@ -1,50 +1,55 @@
 <script lang="ts">
   import { createDefaultComponent } from '$lib/components/Widget/EntityInspector/component-creator';
-  import { selectedEntityId } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
+  import {
+    selectedEntityId,
+    selectedEntity,
+  } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
   import type { SaveEntity } from '@utils/types';
   import { CoreEvents } from '$lib/client/event';
   import { useProject } from '$lib/client/project';
   import { Input } from '$lib/components/ui/input';
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
+  import { get } from 'svelte/store';
 
   let openMap: { [key: string]: boolean } = $state({});
-  let selectedEntity: SaveEntity | undefined = $state(undefined);
+  let reactiveSelectedEntity: SaveEntity | undefined = $state(undefined);
   let openComponentSelector: boolean = $state(false);
 
   const { event, packages, save } = useProject();
 
   $effect(() => {
     if ($selectedEntityId) {
-      selectedEntity = save.save.entities.find((e) => e.id === $selectedEntityId);
+      selectedEntity.set(save.save.entities.find((e) => e.id === $selectedEntityId));
+      reactiveSelectedEntity = get(selectedEntity);
     }
   });
 
   async function addComponent(componentName: string) {
     const [name, params] = await createDefaultComponent(componentName);
-    if (selectedEntity) {
-      selectedEntity.components[name] = params;
+    if ($selectedEntity) {
+      $selectedEntity.components[name] = params;
     }
   }
 
   async function removeComponent(componentName: string) {
-    if (!selectedEntity) return;
+    if (!$selectedEntity) return;
     // eslint-disable-next-line  @typescript-eslint/no-dynamic-delete
-    delete selectedEntity.components[componentName];
+    delete $selectedEntity.components[componentName];
   }
 </script>
 
 <div class="h-full w-full overflow-y-scroll bg-neutral-900 py-1 text-md">
-  {#if selectedEntity}
+  {#if $selectedEntity && reactiveSelectedEntity}
     <div class="mb-1">
       <div
         class="w-full flex items-center bg-neutral-800 px-2 py-1 font-semibold text-neutral-300 text-lg"
       >
-        {selectedEntity.id}
+        {$selectedEntity.id}
       </div>
 
       <div class="my-2">
-        {#each Object.entries(selectedEntity.components) as [componentName, componentParams] (componentName)}
+        {#each Object.keys($selectedEntity.components) as componentName (componentName)}
           <button
             class="text-neutral-200 text-md px-4 w-full flex cursor-pointer items-center gap-1 bg-neutral-800 px-2 py-1 font-semibold text-neutral-300 text-sm"
             onclick={() => (openMap[componentName] = !openMap[componentName])}
@@ -75,21 +80,19 @@
                 {#if param.type === 'string'}
                   <Input
                     type="text"
-                    bind:value={componentParams[param.name]}
+                    bind:value={$selectedEntity.components[componentName][param.name]}
                     onchange={() => event.emit(CoreEvents.HOT_RELOAD)}
                   />
                 {:else if param.type === 'number'}
                   <Input
                     type="number"
-                    bind:value={componentParams[param.name]}
+                    bind:value={$selectedEntity.components[componentName][param.name]}
                     onchange={() => event.emit(CoreEvents.HOT_RELOAD)}
                   />
                 {:else if param.type === 'boolean'}
                   <TristateSwitch
-                    bind:value={componentParams[param.name]}
-                    onChange={() => {
-                      event.emit(CoreEvents.HOT_RELOAD);
-                    }}
+                    bind:value={$selectedEntity.components[componentName][param.name]}
+                    onChange={() => event.emit(CoreEvents.HOT_RELOAD)}
                   />
                 {/if}
               </div>
@@ -111,7 +114,7 @@
     </div>
     <ComponentSelector
       availableComponents={save.save.components.filter(
-        (c) => !Object.keys(selectedEntity?.components ?? {}).includes(c.name),
+        (c) => !Object.keys($selectedEntity?.components ?? {}).includes(c.name),
       )}
       open={openComponentSelector}
       onClose={() => (openComponentSelector = false)}
@@ -126,15 +129,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  input[type='number']::-webkit-inner-spin-button,
-  input[type='number']::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type='number'] {
-    -moz-appearance: textfield;
-  }
-</style>
