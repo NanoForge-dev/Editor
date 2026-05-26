@@ -5,15 +5,12 @@
     selectedEntity,
   } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
-  import type { SaveEntity } from '@utils/types';
   import { CoreEvents } from '$lib/client/event';
   import { useProject } from '$lib/client/project';
   import { Input } from '$lib/components/ui/input';
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
-  import { get } from 'svelte/store';
 
   let openMap: { [key: string]: boolean } = $state({});
-  let reactiveSelectedEntity: SaveEntity | undefined = $state(undefined);
   let openComponentSelector: boolean = $state(false);
 
   const { event, packages, save } = useProject();
@@ -21,7 +18,6 @@
   $effect(() => {
     if ($selectedEntityId) {
       selectedEntity.set(save.save.entities.find((e) => e.id === $selectedEntityId));
-      reactiveSelectedEntity = get(selectedEntity);
     }
   });
 
@@ -40,7 +36,7 @@
 </script>
 
 <div class="h-full w-full overflow-y-scroll bg-neutral-900 py-1 text-md">
-  {#if $selectedEntity && reactiveSelectedEntity}
+  {#if $selectedEntity}
     <div class="mb-1">
       <div
         class="w-full flex items-center bg-neutral-800 px-2 py-1 font-semibold text-neutral-300 text-lg"
