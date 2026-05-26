@@ -7,7 +7,6 @@ export const parseFormDataBody = <Body = any>(
   const baseBody = Object.fromEntries(
     Array.from(rawBody.entries()).map(([key, value]) => [key, JSON.parse(value)]),
   );
-  // @todo add class validation and class transformation
   return parseBody(baseBody, c);
 };
 

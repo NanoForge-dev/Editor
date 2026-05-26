@@ -97,7 +97,7 @@ export class PackageHandler {
   }
 
   private _getNewSystemPackage(name: string, fileName: string): NewSystemPackage {
-    const path = './systems/' + fileName;
+    const path = `./systems/${fileName}`;
     return {
       manifest: this._findPackageManifest(this.getSystemManifest, path),
       save: { name, path },
