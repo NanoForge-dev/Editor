@@ -74,6 +74,7 @@ export class FileSystemDirectory {
   }
 
   async rename(name: string): Promise<void> {
-    await (this.handle as any).move(name);
+    if ('move' in this.handle && typeof this.handle.move === 'function')
+      return await this.handle.move(name);
   }
 }

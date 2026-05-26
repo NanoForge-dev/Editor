@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { useProject } from '$lib/client/project';
   import { tabsStore } from '$lib/components/Tabs/store';
   import type { TabTypeId } from '$lib/components/Tabs/types';
   import { TooltipText } from '$lib/components/ui/tooltip-text';
@@ -13,8 +12,6 @@
     item: ContentBrowserItem;
   }
   let { item }: Props = $props();
-
-  const { fs } = useProject();
 
   const FILE_TYPES: [TabTypeId, string[]][] = [
     ['ts', ['ts', 'js']],
@@ -38,12 +35,12 @@
       return;
     }
 
-    const file = await fs.getFile(path);
-
     await tabsStore.openTab({
       type: getType(),
       title: item.name,
-      file: await file.getFile(),
+      metadata: {
+        path,
+      },
     });
   };
 </script>

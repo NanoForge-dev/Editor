@@ -230,4 +230,4 @@ dist
 .svelte-kit/
 test-results/
 
-public/
+#public/assets/fonts/

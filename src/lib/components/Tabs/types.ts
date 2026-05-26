@@ -1,7 +1,5 @@
 import type { Component } from 'svelte';
 
-import type { FileSystemFile } from '@utils-client/file-system';
-
 export type TabTypeId = 'main' | 'ts' | '3d' | 'song' | 'img' | 'unknown';
 
 export interface Tab {
@@ -14,7 +12,9 @@ export interface TabInstance {
   id: string;
   type: TabTypeId;
   title: string;
-  file?: FileSystemFile;
+  metadata?: {
+    path?: string;
+  };
 }
 
 export interface TabsState {
