@@ -1,7 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
-import { type Api, getApi } from '$lib/server/api';
-import { getNoAuthApi } from '$lib/server/api/client';
+import { type Api, getApi, getNoAuthApi } from '$lib/server/api';
 import { Cli } from '$lib/server/cli';
 import { FileSystem } from '$lib/server/file-system';
 import { Git } from '$lib/server/git';
@@ -69,7 +68,7 @@ export class Handler<Body = any> {
   }
 
   get project(): ProjectManager {
-    if (!this._projectCache) this._projectCache = new ProjectManager(this._context);
+    if (!this._projectCache) this._projectCache = new ProjectManager(this, this._context);
     return this._projectCache;
   }
 }
