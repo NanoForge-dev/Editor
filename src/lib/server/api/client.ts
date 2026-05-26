@@ -18,7 +18,7 @@ export interface Api {
 const DEFAULT_API_URL = 'https://api.nanoforge.eu';
 
 export const getNoAuthApi = (): Api => {
-  const client = new HttpClient(env.API_URL || 'https://api.nanoforge.eu', {
+  const client = new HttpClient(env.API_URL ?? DEFAULT_API_URL, {
     headers: {
       'Content-Type': 'application/json',
     },
@@ -33,6 +33,7 @@ export const getNoAuthApi = (): Api => {
 
 export const getApi = (cookies: Cookies): Api => {
   if (env.PUBLIC_MODE !== 'ONLINE') throw new Error('API is only available in online mode');
+  if (!env.API_KEY) throw new Error('API_KEY is not defined');
   const client = new HttpClient(env.API_URL ?? DEFAULT_API_URL, {
     headers: {
       'Content-Type': 'application/json',

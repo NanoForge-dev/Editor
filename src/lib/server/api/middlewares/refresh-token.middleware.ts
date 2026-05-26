@@ -1,11 +1,11 @@
 import type { Cookies } from '@sveltejs/kit';
 
-import { getNoAuthApi } from '$lib/server/api/client';
-
 import { Exception } from '@utils/exception';
 import type { MiddlewareNext, MiddlewareParams } from '@utils/http';
 
 import { setTokensInCookies } from '@utils-server/cookies';
+
+import { getNoAuthApi } from '../client';
 
 const refreshToken = async (cookies: Cookies, force: boolean = false): Promise<string> => {
   let accessToken = force ? undefined : cookies.get('accessToken');

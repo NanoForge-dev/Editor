@@ -3,6 +3,6 @@ import type { RegistryPackageType } from '../types';
 
 export class RegistryRepository extends BaseRepository {
   getPackage(packageName: string): Promise<RegistryPackageType> {
-    return this.get(`/registry/${packageName}`);
+    return this.get(`/registry/${packageName}`, { offline: true });
   }
 }

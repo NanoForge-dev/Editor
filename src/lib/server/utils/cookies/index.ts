@@ -2,7 +2,7 @@ import type { Cookies } from '@sveltejs/kit';
 
 import { env } from '$env/dynamic/private';
 
-import type { TokenResponse } from '$lib/server/api/types/auth.type';
+import type { TokenResponse } from '$lib/server/api';
 
 export const setTokensInCookies = (
   cookies: Cookies,
