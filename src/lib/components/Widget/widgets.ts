@@ -1,11 +1,11 @@
 import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
-import ContentBrowserWidget from './ContentBrowser/ContentBrowserWidget.svelte';
 import ECSTreeWidget from './ECSTree/ECSTree.svelte';
 import EditorGame from './EditorGame/EditorGame.svelte';
 import EntityInspectorWidget from './EntityInspector/EntityInspectorWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
+import { ContentBrowserWidget } from './content-browser';
 
 export interface WidgetType {
   id: string;
@@ -27,7 +27,7 @@ export const widgetsTypes: WidgetType[] = [
   },
   {
     id: 'code-editor',
-    component: MonacoEditor,
+    component: MonacoEditor as Component,
   },
   {
     id: 'output-log',

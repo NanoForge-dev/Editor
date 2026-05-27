@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { SaveEntity } from '$lib/loader/client/types/save.type';
   import { selectedEntityId } from './entity-selected.store.svelte';
+  import type { SaveEntity } from '@utils/types';
 
   interface Props {
     item: SaveEntity;

@@ -40,5 +40,5 @@
 </script>
 
 <div class="h-full w-full" data-layout-container>
-  <Layout {layout} onLayoutChange={handleLayoutChange} />
+  <Layout {layout} onLayoutChange={handleLayoutChange} bind:tab />
 </div>

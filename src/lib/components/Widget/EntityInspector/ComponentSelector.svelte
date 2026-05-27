@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SaveComponent } from '$lib/loader/client/types/save.type';
+  import type { SaveComponent } from '@utils/types';
 
   interface Props {
     availableComponents: SaveComponent[];
@@ -44,14 +44,12 @@
       onclick={(e) => e.stopPropagation()}
       aria-hidden="true"
     >
-      <!-- input stays fixed -->
       <input
         class="w-full mb-3 px-3 py-2 rounded bg-neutral-800 text-neutral-200 outline-none text-lg"
         placeholder="Search component..."
         bind:value={search}
       />
 
-      <!-- THIS scrolls -->
       <div class="flex-1 overflow-y-auto min-h-0">
         {#if availableComponents.length === 0}
           <div class="text-neutral-400 text-sm px-2 py-1">No component found</div>

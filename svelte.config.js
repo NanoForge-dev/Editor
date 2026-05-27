@@ -14,8 +14,11 @@ export default {
     }),
     alias: {
       '@utils/*': './src/lib/utils/*',
-      '@utils-client/*': './src/lib/utils-client/*',
+      '@utils-client/*': './src/lib/client/utils/*',
       '@utils-server/*': './src/lib/server/utils/*',
+    },
+    files: {
+      assets: 'public',
     },
   },
 };

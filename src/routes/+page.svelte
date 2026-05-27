@@ -1,58 +1,120 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import MenuBar from '$lib/components/Menu/MenuBar.svelte';
-  import Logo from '$lib/assets/logo.png';
-  import TabBar from '$lib/components/Tabs/TabBar.svelte';
-  import { tabRegistry } from '$lib/components/Tabs/registry';
-  import { tabsStore } from '$lib/components/Tabs/store';
-  import { onMount } from 'svelte';
-  import { localApi } from '$lib/components/Utils/api/api';
+  import { createQuery } from '@tanstack/svelte-query';
 
-  let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
-  let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
+  import { getConfig } from '$lib/client/config';
+  import { ProjectCache, type ProjectDataCache, ProjectLoader } from '$lib/client/project';
+  import { Button } from '$lib/components/ui/button';
+  import * as Card from '$lib/components/ui/card';
+  import { Separator } from '$lib/components/ui/separator';
+  import Components from './components';
+  import { goto } from '$app/navigation';
 
-  onMount(async () => {
-    await localApi.fetchSave('client');
-  });
+  let showCreateProject = $state(false);
+  let showOpenProject = $state(false);
+  let cacheProjectLoading = $state<string | true | null>(null);
+
+  const isOnline = getConfig().mode === 'online';
+
+  const cacheQuery = createQuery(() => ({
+    queryKey: ['projects-cache'],
+    queryFn: async () => {
+      return ProjectCache.getProjects();
+    },
+  }));
+
+  const handleCreateProject = () => {
+    if (isOnline) return;
+    showCreateProject = true;
+  };
+
+  const handleOpenProject = () => {
+    if (isOnline) return;
+    showOpenProject = true;
+  };
+
+  const handleCacheProject = async (cache: ProjectDataCache) => {
+    try {
+      cacheProjectLoading = cache.id;
+      const project = await ProjectLoader.loadFromCacheWithTryId(cache);
+      await goto(`/dashboard?id=${project.id}`);
+      cacheProjectLoading = null;
+    } catch (error) {
+      console.error(`Error loading project ${cache.id} (${cache.resolvable}) from cache:`, error);
+      await ProjectCache.invalidateProject(cache.id);
+      await cacheQuery.refetch();
+      cacheProjectLoading = null;
+    }
+  };
+
+  const handleCacheRemoveProject = async (cache: ProjectDataCache) => {
+    cacheProjectLoading = cache.id;
+    await ProjectCache.removeProject(cache.id);
+    await cacheQuery.refetch();
+    cacheProjectLoading = null;
+  };
+
+  const handleClearCache = async () => {
+    cacheProjectLoading = true;
+    await ProjectCache.clearProjects();
+    await cacheQuery.refetch();
+    cacheProjectLoading = null;
+  };
 </script>
 
-<div class="h-screen flex flex-col gap-1">
-  <header class="h-16 flex bg-neutral-900">
-    <div class="h-full w-full flex">
-      <a href={resolve('/')} class="h-full px-3 pb-1 pt-2">
-        <img src={Logo} alt="Logo" class="h-full rounded-full" />
-      </a>
-      <div class="h-full w-full flex flex-col justify-between">
-        <MenuBar />
-        <TabBar />
-      </div>
-    </div>
-    <div class="h-full flex items-center py-2 gap-2">
-      <button
-        aria-label="push"
-        class="flex cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-1 font-medium text-sm bg-none outline-none hover:font-semibold"
-      >
-        <span class="i-ic-baseline-file-upload"></span>
-      </button>
-      <button
-        class="w-42 flex cursor-pointer items-center justify-between gap-2 rounded-md px-4 py-2 font-medium text-sm outline-2 outline-neutral-700 outline-solid hover:outline-3 hover:font-semibold"
-      >
-        <img
-          class="h-7 w-7 rounded-sm"
-          src="https://i1.sndcdn.com/artworks-mwgT5qK6AvkAzuNM-DcYxOA-t500x500.jpg"
-          alt="game cover"
-        />
-        <span class="w-full font-semibold">Jump Out</span>
-      </button>
-      <button aria-label="profile" class="i-solar-user-circle-bold mx-4 h-12 w-12 cursor-pointer"
-      ></button>
-    </div>
-  </header>
-  <main class="h-full min-h-0 w-full flex-1 bg-neutral-900 p-2">
-    {#key $tabsStore.selectedTabId}
-      {#if Component && tab}
-        <Component bind:tab />
-      {/if}
-    {/key}
+<div class="min-h-screen w-full flex flex-col bg-background text-foreground text-base">
+  <Components.Header />
+
+  <main class="flex-1 flex items-center justify-center p-6">
+    <Card.Root class="w-full max-w-2xl">
+      <Card.Content class="p-0 flex justify-between h-[30vh]">
+        <div class="flex flex-col gap-2 p-5 w-8/19">
+          <p class="text-sm text-muted-foreground px-2 mb-1">Projects</p>
+
+          {#if isOnline}
+            <Components.OnlineProjectButtons />
+          {:else}
+            <Components.OfflineProjectButtons {handleCreateProject} {handleOpenProject} />
+          {/if}
+
+          <Components.CreateProjectDialog bind:open={showCreateProject} />
+          <Components.OpenProjectDialog bind:open={showOpenProject} />
+        </div>
+
+        <Separator orientation="vertical" class="h-auto self-stretch" />
+
+        <div class="p-5 flex flex-col gap-3 w-10/19 h-full">
+          <p class="text-sm text-muted-foreground px-2 mb-1">Recent</p>
+
+          {#if cacheQuery.isLoading || !cacheQuery.isFetched}
+            <Components.CacheProjectListSkeleton />
+          {:else if cacheQuery.data && cacheQuery.data.length > 0}
+            <div class="flex flex-col gap-1">
+              {#each cacheQuery.data as project (project.id)}
+                <Components.CacheProject
+                  {project}
+                  disabled={!!cacheProjectLoading}
+                  isLoading={cacheProjectLoading === project.id}
+                  onClick={() => handleCacheProject(project)}
+                  onRemove={() => handleCacheRemoveProject(project)}
+                />
+              {/each}
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              class="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer self-end justify-self-end"
+              onclick={handleClearCache}
+            >
+              Clear cache
+            </Button>
+          {:else}
+            <div class="flex h-full items-center justify-center text-center">
+              <p class="text-sm text-muted-foreground/50 mb-4 mr-4">No recent projects</p>
+            </div>
+          {/if}
+        </div>
+      </Card.Content>
+    </Card.Root>
   </main>
 </div>

@@ -1,0 +1,37 @@
+import type { RequestEvent } from '@sveltejs/kit';
+
+import { Exception } from '@utils/exception';
+import type { MaybePromise } from '@utils/types';
+
+import { getContext } from './context';
+import { Handler } from './handler';
+import { assertRequest } from './request.policy';
+import type { RequestHandlerOptions } from './types';
+
+type Callback<Body = any> = (opts: Handler<Body>) => MaybePromise<Response | never>;
+
+const handleError = (e: unknown): Response => {
+  if (e instanceof Exception) {
+    return Response.json({ error: e.error, message: e.message }, { status: e.status });
+  }
+  return Response.json({ error: 'Internal Server Error', message: e }, { status: 500 });
+};
+
+export const useRequestHandler = (
+  callback: Callback,
+  options?: RequestHandlerOptions,
+): ((event: RequestEvent) => MaybePromise<Response>) => {
+  return async (event: RequestEvent) => {
+    try {
+      const context = await getContext(event);
+
+      assertRequest(context, options);
+
+      const handler = new Handler(context, event, {});
+
+      return await callback(handler);
+    } catch (e) {
+      return handleError(e);
+    }
+  };
+};

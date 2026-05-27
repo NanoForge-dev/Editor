@@ -35,9 +35,7 @@
       />
     </MenuItem>
     <MenuItem icon="i-solar-file-send-bold-duotone">Export</MenuItem>
-    <MenuItem icon="i-solar-exit-bold-duotone" onClick={() => goto(resolve('/load-project'))}
-      >Exit</MenuItem
-    >
+    <MenuItem icon="i-solar-exit-bold-duotone" onClick={() => goto(resolve('/'))}>Exit</MenuItem>
   </MenuButton>
   <MenuButton title="Edit">
     <MenuItem icon="i-solar-arrow-left-bold-duotone">Undo</MenuItem>

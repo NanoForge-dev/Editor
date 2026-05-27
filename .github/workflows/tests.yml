@@ -18,6 +18,9 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
+        env:
+          PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
+          PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
 
       - name: Run linter
         run: pnpm lint

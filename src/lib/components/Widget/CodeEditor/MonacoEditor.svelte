@@ -1,11 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import type { TabInstance } from '$lib/components/Tabs/types';
+  import { useProject } from '$lib/client/project';
 
   interface Props {
     tab: TabInstance;
   }
   let { tab = $bindable() }: Props = $props();
+
+  const { fs } = useProject();
 
   let container: HTMLDivElement;
   let editor: any;
@@ -13,8 +16,12 @@
   onMount(async () => {
     const monaco = await import('monaco-editor');
 
+    if (!tab.metadata?.path) throw new Error('Tab metadata is missing path');
+
+    const file = await fs.getFile(tab.metadata.path);
+
     editor = monaco.editor.create(container, {
-      value: (await tab.file?.read()) || '',
+      value: (await file.read()) || '',
       language: 'typescript',
       theme: 'vs-dark',
       readOnly: false,
@@ -35,8 +42,8 @@
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      if (tab.file) {
-        tab.file.write(editor.getValue());
+      if (file) {
+        file.write(editor.getValue());
       }
     });
   });

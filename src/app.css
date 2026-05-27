@@ -10,8 +10,77 @@
   }
 }
 
+/* White theme */
+/*:root {*/
+/*  --background: 0.9851 0 0;*/
+/*  --foreground: 0.2046 0 0;*/
+
+/*  --border: 0.9288 0.0126 255.51;*/
+/*  --input: 0.9683 0.0069 247.9;*/
+/*  --ring: 0.4493 0.1953 294.69;*/
+
+/*  --card: 1 0 0;*/
+/*  --card-foreground: 0.2046 0 0;*/
+
+/*  --popover: 1 0 0;*/
+/*  --popover-foreground: 0.2046 0 0;*/
+
+/*  --primary: 0.4493 0.1953 294.69;*/
+/*  --primary-foreground: 0.9842 0.0034 247.86;*/
+
+/*  --secondary: 0.9683 0.0069 247.9;*/
+/*  --secondary-foreground: 0.2077 0.0398 265.75;*/
+
+/*  --muted: 0.9683 0.0069 247.9;*/
+/*  --muted-foreground: 0.5544 0.0407 257.42;*/
+
+/*  --accent: 0.4493 0.1953 294.69;*/
+/*  --accent-foreground: 0.9842 0.0034 247.86;*/
+
+/*  --destructive: 0.6368 0.2078 25.33;*/
+/*  --destructive-foreground: 0.9842 0.0034 247.86;*/
+/*}*/
+
+/* Dark theme */
+/*.dark {*/
 :root {
+  --background: 0.115 0 89.876;
+  --foreground: 0.9461 0 0;
+
+  --border: 0.264 0 89.876;
+  --input: 0.244 0 89.876;
+  --ring: 0.4493 0.1953 294.69;
+
+  --card: 0.1683 0 0;
+  --card-foreground: 0.9461 0 0;
+
+  --popover: 0.115 0 89.876;
+  --popover-foreground: 0.9461 0 0;
+
+  --primary: 0.4493 0.1953 294.69;
+  --primary-foreground: 0.9461 0 0;
+
+  --secondary: 0.244 0 89.876;
+  --secondary-foreground: 0.9461 0 0;
+
+  --muted: 0.205 0 89.876;
+  --muted-foreground: 0.7107 0.0351 256.79;
+
+  --accent: 0.4493 0.1953 294.69;
+  --accent-foreground: 0.9461 0 0;
+
+  --success: 0.4546 0.1348 141.88;
+  --success-foreground: 0.9461 0 0;
+
+  --destructive: 0.3958 0.1331 25.72;
+  --destructive-foreground: 0.9461 0 0;
+}
+
+body {
+  background: oklch(var(--background));
+  color: oklch(var(--foreground));
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+
   line-height: 1.5;
   font-weight: 400;
 
@@ -19,8 +88,6 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @apply color-neutral-200 bg-neutral-900;
 }
 
 html {
@@ -40,4 +107,22 @@ html::-webkit-scrollbar-track {
 html::-webkit-scrollbar-thumb {
   background: #52525b;
   border-radius: 9999px;
+}
+
+@keyframes enter {
+  from {
+    opacity: var(--un-enter-opacity, 1);
+    transform: translate3d(var(--un-enter-translate-x, 0), var(--un-enter-translate-y, 0), 0)
+      scale3d(var(--un-enter-scale, 1), var(--un-enter-scale, 1), var(--un-enter-scale, 1))
+      rotate(var(--un-enter-rotate, 0));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--un-exit-opacity, 1);
+    transform: translate3d(var(--un-exit-translate-x, 0), var(--un-exit-translate-y, 0), 0)
+      scale3d(var(--un-exit-scale, 1), var(--un-exit-scale, 1), var(--un-exit-scale, 1))
+      rotate(var(--un-exit-rotate, 0));
+  }
 }

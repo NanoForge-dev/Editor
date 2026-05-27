@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 
-import { persistedWritable } from '$lib/components/Utils/LocalStorage/persistedWritable';
+import { persistedWritable } from '@utils-client/store';
 
 import type { TabInstance, TabsState } from './types';
 
@@ -10,6 +10,7 @@ const initialState: TabsState = {
       id: 'tab-main',
       type: 'main',
       title: 'Game',
+      metadata: {},
     },
   ],
   selectedTabId: 'tab-main',
@@ -94,11 +95,11 @@ function createTabsStore() {
     tab: Omit<TabInstance, 'id'> & { id?: string },
   ): Promise<TabInstance | undefined> {
     const tabs = get({ subscribe }).tabs;
-    if (tab.file) {
+    if (tab.metadata?.path) {
       for (const t of tabs) {
-        if (!t.file) continue;
+        if (!t.metadata?.path) continue;
 
-        if (await t.file.isSameFile(tab.file)) {
+        if (t.metadata.path === tab.metadata.path) {
           return t;
         }
       }
