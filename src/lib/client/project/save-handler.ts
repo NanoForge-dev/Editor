@@ -13,6 +13,7 @@ export class SaveHandler {
     components: [],
     systems: [],
   });
+  private _readyToSync = true;
 
   constructor(project: Project) {
     this._project = project;
@@ -20,10 +21,24 @@ export class SaveHandler {
 
   async init() {
     await this.fetchFromServer();
+    this._save.subscribe(() => {
+      this.syncToServer();
+    });
   }
 
   async fetchFromServer() {
     this._save.set(await this._project.actions.save.get());
+  }
+
+  async syncToServer() {
+    if (this._readyToSync) {
+      this._readyToSync = false;
+      console.log('set save');
+      await this._project.actions.save.set({ save: get(this._save) });
+    }
+    setTimeout(() => {
+      this._readyToSync = true;
+    }, 100);
   }
 
   get save(): Save {
