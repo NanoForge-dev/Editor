@@ -10,7 +10,7 @@ import {
   CLI_START_DEFAULTS,
 } from '$lib/server/cli/cli-defaults';
 
-import { camelToKebab } from '@utils/format';
+import { formatFrom } from '@utils/format';
 
 import type { Context } from '@utils-server/request-handler';
 
@@ -173,7 +173,7 @@ export class Cli {
   ): string[] {
     const params = [];
     for (const [key, value] of Object.entries(this.mergeParams(defaultOpts, opts))) {
-      const name = camelToKebab(key);
+      const name = formatFrom.camel(key).toKebab();
 
       if (typeof value === 'boolean') {
         if (value) params.push(`--${name}`);

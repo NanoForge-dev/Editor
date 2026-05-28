@@ -1,4 +1,4 @@
-import type { NewSystemPackage } from '$lib/server/project/package/package.type';
+import type { SystemPackage } from '$lib/server/project/package/package.type';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
@@ -7,7 +7,7 @@ export class CreateSystemBody {
 }
 
 export const createSystemProjectAction = useActionHandler(
-  async ({ body, project }): Promise<NewSystemPackage> => {
+  async ({ body, project }): Promise<SystemPackage> => {
     return project.client.package.createSystem(body.systemName);
   },
   {

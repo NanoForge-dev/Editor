@@ -1,4 +1,4 @@
-import type { NewComponentPackage } from '$lib/server/project/package/package.type';
+import type { ComponentPackage } from '$lib/server/project/package/package.type';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
@@ -7,7 +7,7 @@ export class CreateComponentBody {
 }
 
 export const createComponentProjectAction = useActionHandler(
-  async ({ body, project }): Promise<NewComponentPackage> => {
+  async ({ body, project }): Promise<ComponentPackage> => {
     return project.client.package.createComponent(body.componentName);
   },
   {

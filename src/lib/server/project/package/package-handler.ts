@@ -4,10 +4,10 @@ import { join } from 'path';
 import { FileSystemError } from '$lib/server/file-system/file-system-error';
 import { type ProjectHandler } from '$lib/server/project';
 
-import { toCamelCase, toKebabCase, toPascalCase } from '@utils/format';
+import { formatFrom } from '@utils/format';
 
 import { resolveManifest } from './manifest-resolver';
-import { type NewComponentPackage, type NewSystemPackage, PackageTypeEnum } from './package.type';
+import { type ComponentPackage, PackageTypeEnum, type SystemPackage } from './package.type';
 
 export class PackageHandler {
   private readonly handler: ProjectHandler;
@@ -16,7 +16,7 @@ export class PackageHandler {
     this.handler = handler;
   }
 
-  async installComponent(name: string): Promise<NewComponentPackage> {
+  async installComponent(name: string): Promise<ComponentPackage> {
     const rc = await this.handler._api.registry.getPackage(name);
     if (rc.type !== 'component') throw new Error(`Can only add component: ${name} is a ${rc.type}`);
     this.handler._cli.install([name], { server: this.handler._part === 'server' || undefined });
@@ -24,7 +24,7 @@ export class PackageHandler {
     return this._getNewComponentPackage(rc.name, rc._file);
   }
 
-  async installSystem(name: string): Promise<NewSystemPackage> {
+  async installSystem(name: string): Promise<SystemPackage> {
     const rs = await this.handler._api.registry.getPackage(name);
     if (rs.type !== 'system') throw new Error(`Can only add system: ${name} is a ${rs.type}`);
     this.handler._cli.install([name], { server: this.handler._part === 'server' || undefined });
@@ -38,11 +38,11 @@ export class PackageHandler {
    *
    * @param {string} name - Name of the component
    */
-  createComponent(name: string): NewComponentPackage {
+  createComponent(name: string): ComponentPackage {
     this._createPackage(PackageTypeEnum.COMPONENT, name);
     return this._getNewComponentPackage(
-      toPascalCase(name) + 'Component',
-      toKebabCase(name) + '.component',
+      formatFrom.all(name).toPascal() + 'Component',
+      formatFrom.all(name).toKebab() + '.component',
     );
   }
 
@@ -52,9 +52,12 @@ export class PackageHandler {
    *
    * @param {string} name - Name of the system
    */
-  createSystem(name: string): NewSystemPackage {
+  createSystem(name: string): SystemPackage {
     this._createPackage(PackageTypeEnum.SYSTEM, name);
-    return this._getNewSystemPackage(toCamelCase(name) + 'System', toKebabCase(name) + '.system');
+    return this._getNewSystemPackage(
+      formatFrom.all(name).toCamel() + 'System',
+      formatFrom.all(name).toKebab() + '.system',
+    );
   }
 
   /**
@@ -81,7 +84,17 @@ export class PackageHandler {
     return this._getPackageManifest(PackageTypeEnum.SYSTEM, path);
   }
 
-  private _getNewComponentPackage(name: string, fileName: string): NewComponentPackage {
+  async getComponents(): Promise<ComponentPackage[]> {
+    // @todo implement it
+    return Promise.reject('Not implemented yet');
+  }
+
+  async getSystems(): Promise<SystemPackage[]> {
+    // @todo implement it
+    return Promise.reject('Not implemented yet');
+  }
+
+  private _getNewComponentPackage(name: string, fileName: string): ComponentPackage {
     const path = `./components/${fileName}`;
 
     const manifest = this._findPackageManifest(this.getComponentManifest, path);
@@ -96,7 +109,7 @@ export class PackageHandler {
     };
   }
 
-  private _getNewSystemPackage(name: string, fileName: string): NewSystemPackage {
+  private _getNewSystemPackage(name: string, fileName: string): SystemPackage {
     const path = `./systems/${fileName}`;
     return {
       manifest: this._findPackageManifest(this.getSystemManifest, path),
