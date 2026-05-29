@@ -15,7 +15,7 @@ export class SaveHandler {
   });
   private _readyToSync = true;
   private _syncTimer?: Timer;
-  private _needSync: boolean = $state(false);
+  private _needSync: Writable<boolean> = writable(false);
 
   constructor(project: Project) {
     this._project = project;
@@ -40,18 +40,19 @@ export class SaveHandler {
 
       this._syncTimer = setTimeout(() => {
         this._readyToSync = true;
-        if (this._needSync) {
+        if (get(this._needSync)) {
           this.syncToServer();
+          this._needSync.set(false);
         }
       }, 5000);
     } else {
-      this._needSync = true;
+      this._needSync.set(true);
     }
   }
 
   async forceSyncToServer() {
     this._readyToSync = true;
-    this._needSync = false;
+    this._needSync.set(false);
     clearTimeout(this._syncTimer);
     await this.syncToServer();
   }
@@ -60,7 +61,7 @@ export class SaveHandler {
     return get(this._save);
   }
 
-  get needSync(): boolean {
+  get needSync(): Writable<boolean> {
     return this._needSync;
   }
 

@@ -38,6 +38,11 @@
     await save.forceSyncToServer();
     refresh++;
   }
+
+  function hotReloadAndSync() {
+    save.syncToServer();
+    event.emit(CoreEvents.HOT_RELOAD);
+  }
 </script>
 
 <div class="h-full w-full overflow-y-scroll bg-neutral-900 py-1 text-md">
@@ -91,27 +96,18 @@
                     <Input
                       type="text"
                       bind:value={$selectedEntity.components[componentName][param.name]}
-                      onchange={() => {
-                        save.syncToServer();
-                        event.emit(CoreEvents.HOT_RELOAD);
-                      }}
+                      onchange={hotReloadAndSync}
                     />
                   {:else if param.type === 'number'}
                     <Input
                       type="number"
                       bind:value={$selectedEntity.components[componentName][param.name]}
-                      onchange={() => {
-                        save.syncToServer();
-                        event.emit(CoreEvents.HOT_RELOAD);
-                      }}
+                      onchange={hotReloadAndSync}
                     />
                   {:else if param.type === 'boolean'}
                     <TristateSwitch
                       bind:value={$selectedEntity.components[componentName][param.name]}
-                      onChange={() => {
-                        save.syncToServer();
-                        event.emit(CoreEvents.HOT_RELOAD);
-                      }}
+                      onChange={hotReloadAndSync}
                     />
                   {/if}
                 </div>
