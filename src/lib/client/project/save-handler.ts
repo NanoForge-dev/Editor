@@ -14,6 +14,8 @@ export class SaveHandler {
     systems: [],
   });
   private _readyToSync = true;
+  private _syncTimer?: Timer;
+  private _needSync: boolean = $state(false);
 
   constructor(project: Project) {
     this._project = project;
@@ -33,16 +35,33 @@ export class SaveHandler {
   async syncToServer() {
     if (this._readyToSync) {
       this._readyToSync = false;
-      console.log('set save');
+
       await this._project.actions.save.set({ save: get(this._save) });
+
+      this._syncTimer = setTimeout(() => {
+        this._readyToSync = true;
+        if (this._needSync) {
+          this.syncToServer();
+        }
+      }, 5000);
+    } else {
+      this._needSync = true;
     }
-    setTimeout(() => {
-      this._readyToSync = true;
-    }, 100);
+  }
+
+  async forceSyncToServer() {
+    this._readyToSync = true;
+    this._needSync = false;
+    clearTimeout(this._syncTimer);
+    await this.syncToServer();
   }
 
   get save(): Save {
     return get(this._save);
+  }
+
+  get needSync(): boolean {
+    return this._needSync;
   }
 
   addComponent(component: SaveComponent) {

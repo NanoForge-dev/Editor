@@ -27,7 +27,7 @@
       throw new Error(`Can't create ${componentName}: manifest not found`);
     }
     save.addComponentToEntity($selectedEntityId, componentName, componentManifest);
-    await save.syncToServer();
+    await save.forceSyncToServer();
     refresh++;
   }
 
@@ -35,7 +35,7 @@
     if (!$selectedEntity) return;
     // eslint-disable-next-line  @typescript-eslint/no-dynamic-delete
     delete $selectedEntity.components[componentName];
-    await save.syncToServer();
+    await save.forceSyncToServer();
     refresh++;
   }
 </script>
