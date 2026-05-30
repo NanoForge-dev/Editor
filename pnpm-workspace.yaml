@@ -44,7 +44,9 @@ catalogs:
   i18n:
     '@inlang/paraglide-js': ^2.18.1
   icons:
+    '@iconify-json/clarity': ^1.2.4
     '@iconify-json/ic': ^1.2.4
+    '@iconify-json/icomoon-free': ^1.2.1
     '@iconify-json/material-icon-theme': ^1.2.66
     '@iconify-json/solar': ^1.2.5
     '@lucide/svelte': ^1.16.0
