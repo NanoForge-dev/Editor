@@ -3,7 +3,7 @@ import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-d
 import type { Project } from '$lib/client/project';
 
 export class PackageHandler {
-  private _project: Project;
+  private readonly _project: Project;
 
   private _componentsManifests: Map<string, EditorComponentManifest> = new Map();
   private _systemsManifests: Map<string, EditorSystemManifest> = new Map();

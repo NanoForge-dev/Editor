@@ -2,6 +2,7 @@ import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-d
 import { join } from 'path';
 
 import { FileSystemError } from '$lib/server/file-system/file-system-error';
+import type { DirectoryContent } from '$lib/server/file-system/project-directory';
 import { type ProjectHandler } from '$lib/server/project';
 
 import { formatFrom } from '@utils/format';
@@ -85,13 +86,52 @@ export class PackageHandler {
   }
 
   async getComponents(): Promise<ComponentPackage[]> {
-    // @todo implement it
-    return Promise.reject('Not implemented yet');
+    return this._resolvesPackages(PackageTypeEnum.COMPONENT);
   }
 
   async getSystems(): Promise<SystemPackage[]> {
-    // @todo implement it
-    return Promise.reject('Not implemented yet');
+    return this._resolvesPackages(PackageTypeEnum.SYSTEM);
+  }
+
+  private _resolvesPackages<T extends PackageTypeEnum>(
+    type: T,
+  ): (T extends PackageTypeEnum.COMPONENT ? ComponentPackage : SystemPackage)[] {
+    const basePath = type === PackageTypeEnum.COMPONENT ? './components' : './systems';
+    const dir = this.handler.fs.getDirectory(basePath);
+    const content = dir.read(true);
+    const paths = this._resolvesPackageFilesPathFromContent(content);
+    return paths.map((path) => this._resolvesPackage<T>(type, join(basePath, path)));
+  }
+
+  private _resolvesPackage<T extends PackageTypeEnum>(
+    type: T,
+    path: string,
+  ): T extends PackageTypeEnum.COMPONENT ? ComponentPackage : SystemPackage {
+    const manifest = this._getPackageManifest(type, path);
+    const res: any = {
+      manifest,
+      save: {
+        name: manifest.name,
+        path,
+      },
+    };
+    if (type === PackageTypeEnum.COMPONENT) {
+      res.save.params = manifest.params.map(({ name }: { name: string }) => name);
+    }
+    return res;
+  }
+
+  private _resolvesPackageFilesPathFromContent(
+    content: DirectoryContent,
+    path: string = '',
+  ): string[] {
+    const files = content.files.map((file) => join(path, file));
+    const directories = Object.entries(content.directories).map(([key, value]) => {
+      if (!value) return [];
+      return this._resolvesPackageFilesPathFromContent(value, join(path, key)).filter(Boolean);
+    });
+
+    return [...files, ...directories.flat()];
   }
 
   private _getNewComponentPackage(name: string, fileName: string): ComponentPackage {
