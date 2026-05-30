@@ -13,6 +13,9 @@ export class SaveHandler {
     components: [],
     systems: [],
   });
+  private _readyToSync = true;
+  private _syncTimer?: Timer;
+  private _needSync: Writable<boolean> = writable(false);
 
   constructor(project: Project) {
     this._project = project;
@@ -20,14 +23,46 @@ export class SaveHandler {
 
   async init() {
     await this.fetchFromServer();
+    this._save.subscribe(() => {
+      this.syncToServer();
+    });
   }
 
   async fetchFromServer() {
     this._save.set(await this._project.actions.save.get());
   }
 
+  async syncToServer() {
+    if (this._readyToSync) {
+      this._readyToSync = false;
+
+      await this._project.actions.save.set({ save: get(this._save) });
+
+      this._syncTimer = setTimeout(() => {
+        this._readyToSync = true;
+        if (get(this._needSync)) {
+          this.syncToServer();
+          this._needSync.set(false);
+        }
+      }, 5000);
+    } else {
+      this._needSync.set(true);
+    }
+  }
+
+  async forceSyncToServer() {
+    this._readyToSync = true;
+    this._needSync.set(false);
+    clearTimeout(this._syncTimer);
+    await this.syncToServer();
+  }
+
   get save(): Save {
     return get(this._save);
+  }
+
+  get needSync(): Writable<boolean> {
+    return this._needSync;
   }
 
   addComponent(component: SaveComponent) {
