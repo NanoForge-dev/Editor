@@ -135,10 +135,10 @@ export default defineConfig({
     ],
     ['toggle-row-title', 'text-sm text-foreground font-medium leading-tight'],
     ['toggle-row-desc', 'text-xs text-muted-foreground mt-0.5'],
-    ['btn-ghost', 'px-4 py-2 text-sm rounded-lg transition-all duration-150 cursor-pointer'],
+    ['btn-ghost', 'px-4 py-2 text-sm rounded-lg transition-all duration-150'],
     [
       'btn-primary',
-      'flex items-center hover:bg-primary/80 gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer',
+      'flex items-center hover:bg-primary/80 gap-2 px-5 py-2 text-sm font-medium rounded-lg transition-colors duration-150 disabled:opacity-40',
     ],
   ],
   presets: [

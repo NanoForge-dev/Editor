@@ -13,7 +13,7 @@
 
 <div>
   <Button
-    class="cursor-pointer rounded-none py-1 hover:bg-neutral-800 {isOpen
+    class="rounded-none py-1 hover:bg-neutral-800 {isOpen
       ? 'bg-neutral-800 '
       : ''} px-4 text-xs text-white font-normal"
   >

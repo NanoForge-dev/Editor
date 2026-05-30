@@ -103,7 +103,7 @@
             <Button
               type="button"
               variant="ghost"
-              class="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer self-end justify-self-end"
+              class="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors self-end justify-self-end"
               onclick={handleClearCache}
             >
               Clear cache

@@ -22,7 +22,7 @@
     <Breadcrumb.List>
       {#each dirs as dir, i (i)}
         <Breadcrumb.Item>
-          <Button variant="ghost" class="cursor-pointer" onclick={() => onDirClick(i)}>
+          <Button variant="ghost" onclick={() => onDirClick(i)}>
             {dir}
           </Button>
         </Breadcrumb.Item>

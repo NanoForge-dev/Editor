@@ -8,22 +8,14 @@
 </script>
 
 <a href={createProjectPath}>
-  <Button
-    variant="link"
-    size="lg"
-    class="justify-start gap-2 w-full text-foreground cursor-pointer"
-  >
+  <Button variant="link" size="lg" class="justify-start gap-2 w-full text-foreground">
     <span class="i-ic-baseline-open-in-new"></span>
     Create project
   </Button>
 </a>
 
 <a href={openProjectPath}>
-  <Button
-    variant="link"
-    size="lg"
-    class="justify-start gap-2 w-full text-foreground cursor-pointer"
-  >
+  <Button variant="link" size="lg" class="justify-start gap-2 w-full text-foreground">
     <span class="i-ic-baseline-open-in-new"></span>
     Open project
   </Button>

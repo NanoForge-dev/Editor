@@ -37,7 +37,9 @@
   </button>
   <div class="h-full aspect-square">
     {#if isLoading}
-      <Spinner />
+      <div class="h-full w-full flex items-center justify-center">
+        <Spinner class="text-xl" />
+      </div>
     {:else}
       <button
         aria-label="Remove project"
