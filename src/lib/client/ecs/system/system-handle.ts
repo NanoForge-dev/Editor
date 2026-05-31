@@ -18,6 +18,10 @@ export class SystemHandle {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
   update(system: Partial<System>) {
     this._store.set({ ...get(this._store), ...system });
   }

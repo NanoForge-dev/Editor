@@ -24,12 +24,24 @@ export class SceneEntityHandle {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
+  get components() {
+    return this._components;
+  }
+
   update(entity: Partial<Entity>) {
     this._store.set({ ...get(this._store), ...entity });
   }
 
   delete() {
     this.manager.delete(this.id);
+  }
+
+  setSelected() {
+    this.manager.selected = this;
   }
 
   private _listen() {

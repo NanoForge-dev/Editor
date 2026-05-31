@@ -35,7 +35,7 @@ export class ECSHandler {
     this._componentManager = new ComponentManager(componentsTransformer(components));
     this._systemManager = new SystemManager(systemsTransformer(systems));
     // Scene Manager needs others managers to be initialized
-    this._sceneManager = new SceneManager(this, scenesTransformer(save), 'default');
+    this._sceneManager = new SceneManager(this, scenesTransformer(save), ['default'], 'default');
   }
 
   get scenes(): SceneManager {

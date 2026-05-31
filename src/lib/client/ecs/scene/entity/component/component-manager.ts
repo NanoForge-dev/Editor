@@ -1,4 +1,4 @@
-import { type Writable, get, writable } from 'svelte/store';
+import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
 import type { SceneEntityHandle } from '../entity-handle';
 import { EntityComponentHandle } from './component-handle';
@@ -6,6 +6,7 @@ import { EntityComponentHandle } from './component-handle';
 export class EntityComponentManager {
   public readonly entity: SceneEntityHandle;
   private readonly _store: Writable<Record<string, Record<string, string>>>;
+  private readonly _subscriptions: Record<string, Unsubscriber> = {};
 
   constructor(entity: SceneEntityHandle, components: Record<string, Record<string, string>>) {
     this.entity = entity;
@@ -18,17 +19,23 @@ export class EntityComponentManager {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
   add(component: string) {
     const components = get(this._store);
     components[component] = {};
     this._store.set(components);
   }
 
-  get(id: string) {
+  get(id: string): EntityComponentHandle {
     const params = get(this._store)[id];
     if (!params) throw new Error(`Component with id ${id} not found`);
     const handle = new EntityComponentHandle(this, id, params);
-    handle.params.values.subscribe((params) => this._update(id, params));
+
+    this._subscribe(id, handle);
+
     return handle;
   }
 
@@ -39,6 +46,8 @@ export class EntityComponentManager {
       if (key !== id) newComponents[key] = params;
     });
     this._store.set(newComponents);
+
+    if (id in this._subscriptions) this._subscriptions[id]();
   }
 
   private _listen() {
@@ -50,6 +59,14 @@ export class EntityComponentManager {
       });
       this._store.set(newComponents);
     });
+  }
+
+  private _subscribe(id: string, handle: EntityComponentHandle) {
+    setTimeout(() => {
+      this._subscriptions[id] = handle.params.values.subscribe((params) =>
+        this._update(id, params),
+      );
+    }, 0);
   }
 
   private _update(id: string, params: Record<string, string>) {

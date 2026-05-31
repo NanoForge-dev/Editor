@@ -26,13 +26,14 @@ export class ComponentParamManager {
     return this._valuesStore;
   }
 
-  get(id: string) {
+  get(id: string): ComponentParamHandle {
     const param = get(this._store).find((param) => param.name === id);
     if (!param) throw new Error(`Param with id ${id} not found`);
 
     const value = get(this._valuesStore)[id];
     const handle = new ComponentParamHandle(this, param, value);
-    this._subscriptions[id] = handle.value.subscribe((param) => this._updateParam(id, param));
+
+    this._subscribe(id, handle);
 
     return handle;
   }
@@ -42,6 +43,8 @@ export class ComponentParamManager {
     this._store.set(
       params.map((param) => (param.name === id ? { ...param, value: undefined } : param)),
     );
+
+    if (id in this._subscriptions) this._subscriptions[id]();
   }
 
   private _listen() {
@@ -50,7 +53,13 @@ export class ComponentParamManager {
     });
   }
 
-  private _updateParam(id: string, value: any | undefined) {
+  private _subscribe(id: string, handle: ComponentParamHandle) {
+    setTimeout(() => {
+      this._subscriptions[id] = handle.store.subscribe((param) => this._update(id, param));
+    }, 0);
+  }
+
+  private _update(id: string, value: any | undefined) {
     const params = get(this._valuesStore);
     params[id] = value;
     this._valuesStore.set(params);

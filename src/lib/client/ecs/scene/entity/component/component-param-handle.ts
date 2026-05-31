@@ -1,4 +1,4 @@
-import { type Writable, writable } from 'svelte/store';
+import { type Readable, type Writable, writable } from 'svelte/store';
 
 import type { ComponentParam } from '../../../component/component.type';
 import type { ComponentParamManager } from './component-param-manager';
@@ -18,7 +18,7 @@ export class ComponentParamHandle {
     this._listen();
   }
 
-  get store() {
+  get store(): Readable<ComponentParam> {
     return this._store;
   }
 

@@ -18,6 +18,10 @@ export class ComponentHandle {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
   update(component: Partial<Component>) {
     this._store.set({ ...get(this._store), ...component });
   }

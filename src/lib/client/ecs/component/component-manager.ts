@@ -8,11 +8,15 @@ export class ComponentManager {
   private readonly _subscriptions: Record<string, Unsubscriber> = {};
 
   constructor(components: Component[]) {
-    this._store = writable<Component[]>(components);
+    this._store = writable(components);
   }
 
   get store() {
     return this._store;
+  }
+
+  get data() {
+    return get(this._store);
   }
 
   add(component: Component) {
@@ -26,7 +30,8 @@ export class ComponentManager {
     if (!component) throw new Error(`Component with id ${id} not found`);
     const handle = new ComponentHandle(this, component);
 
-    this._subscriptions[id] = handle.store.subscribe((component) => this._update(id, component));
+    this._subscribe(id, handle);
+
     return handle;
   }
 
@@ -35,6 +40,12 @@ export class ComponentManager {
     this._store.set(components.filter((component) => component.id !== id));
 
     if (id in this._subscriptions) this._subscriptions[id]();
+  }
+
+  private _subscribe(id: string, handle: ComponentHandle) {
+    setTimeout(() => {
+      this._subscriptions[id] = handle.store.subscribe((component) => this._update(id, component));
+    }, 0);
   }
 
   private _update(id: string, component: Component) {

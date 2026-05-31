@@ -27,6 +27,18 @@ export class SceneHandle {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
+  get entities() {
+    return this._entities;
+  }
+
+  get systems() {
+    return this._systems;
+  }
+
   update(scene: Partial<Scene>) {
     this._store.set({ ...get(this._store), ...scene });
   }
@@ -35,12 +47,12 @@ export class SceneHandle {
     this.manager.delete(this.id);
   }
 
-  entities() {
-    return this._entities;
+  setActive() {
+    this.manager.active = this;
   }
 
-  systems() {
-    return this._systems;
+  setDefault() {
+    this.manager.default = this.id;
   }
 
   private _listen() {

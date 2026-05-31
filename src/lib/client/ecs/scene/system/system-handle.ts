@@ -1,4 +1,4 @@
-import { type Writable } from 'svelte/store';
+import { type Readable } from 'svelte/store';
 
 import type { System } from '../../system/system.type';
 import type { SceneSystemManager } from './system-manager';
@@ -6,7 +6,7 @@ import type { SceneSystemManager } from './system-manager';
 export class SceneSystemHandle {
   public readonly manager: SceneSystemManager;
   public readonly id: string;
-  private readonly _store: Writable<System>;
+  private readonly _store: Readable<System>;
 
   constructor(manager: SceneSystemManager, systemId: string) {
     this.manager = manager;
@@ -16,6 +16,10 @@ export class SceneSystemHandle {
 
   get store() {
     return this._store;
+  }
+
+  get data() {
+    return get(this._store);
   }
 
   delete() {

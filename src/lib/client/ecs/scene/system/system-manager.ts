@@ -18,6 +18,10 @@ export class SceneSystemManager {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
   add(system: string) {
     const systems = get(this._store);
     systems.push(system);

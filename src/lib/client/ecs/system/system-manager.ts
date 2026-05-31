@@ -1,7 +1,6 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
-import { SystemHandle } from '$lib/client/ecs/system/system-handle';
-
+import { SystemHandle } from './system-handle';
 import type { System } from './system.type';
 
 export class SystemManager {
@@ -16,6 +15,10 @@ export class SystemManager {
     return this._store;
   }
 
+  get data() {
+    return get(this._store);
+  }
+
   add(system: System) {
     const systems = get(this._store);
     systems.push(system);
@@ -27,7 +30,8 @@ export class SystemManager {
     if (!system) throw new Error(`System with id ${id} not found`);
     const handle = new SystemHandle(this, system);
 
-    this._subscriptions[id] = handle.store.subscribe((system) => this._update(id, system));
+    this._subscribe(id, handle);
+
     return handle;
   }
 
@@ -36,6 +40,12 @@ export class SystemManager {
     this._store.set(systems.filter((system) => system.id !== id));
 
     if (id in this._subscriptions) this._subscriptions[id]();
+  }
+
+  private _subscribe(id: string, handle: SystemHandle) {
+    setTimeout(() => {
+      this._subscriptions[id] = handle.store.subscribe((system) => this._update(id, system));
+    }, 0);
   }
 
   private _update(id: string, system: System) {

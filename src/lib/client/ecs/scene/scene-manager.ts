@@ -7,28 +7,64 @@ import type { Scene } from './scene.type';
 export class SceneManager {
   public readonly ecs: ECSHandler;
   private readonly _store: Writable<Scene[]>;
+  private readonly _rootScenes: Writable<string[]>;
   private readonly _subscriptions: Record<string, Unsubscriber> = {};
-  private _activeScene: SceneHandle;
+  private readonly _activeScene: Writable<SceneHandle>;
+  private readonly _defaultScene: Writable<string>;
 
-  constructor(ecs: ECSHandler, scenes: Scene[], defaultSceneId: string) {
+  constructor(ecs: ECSHandler, scenes: Scene[], rootScenes: string[], defaultSceneId: string) {
     this.ecs = ecs;
     this._store = writable<Scene[]>(scenes);
 
     const defaultScene = scenes.find((scene) => scene.id === defaultSceneId);
     if (!defaultScene) throw new Error(`Default scene with id ${defaultSceneId} not found`);
-    this._activeScene = new SceneHandle(this, defaultScene);
+    this._activeScene = writable(new SceneHandle(this, defaultScene));
+    this._defaultScene = writable(defaultSceneId);
+    this._rootScenes = writable(rootScenes);
   }
 
   get store() {
     return this._store;
   }
 
-  get activeScene(): SceneHandle {
+  get data() {
+    return get(this._store);
+  }
+
+  get active(): SceneHandle {
+    return get(this._activeScene);
+  }
+
+  get activeStore(): Writable<SceneHandle> {
     return this._activeScene;
   }
 
-  set activeScene(handle: SceneHandle) {
-    this._activeScene = handle;
+  set active(handle: SceneHandle) {
+    this._activeScene.set(handle);
+  }
+
+  get default(): string {
+    return get(this._defaultScene);
+  }
+
+  get defaultStore(): Writable<string> {
+    return this._defaultScene;
+  }
+
+  set default(handle: string) {
+    this._defaultScene.set(handle);
+  }
+
+  get rootScenes(): string[] {
+    return get(this._rootScenes);
+  }
+
+  get rootScenesStore(): Writable<string[]> {
+    return this._rootScenes;
+  }
+
+  set rootScenes(scenes: string[]) {
+    this._rootScenes.set(scenes);
   }
 
   add(scene: Scene) {
@@ -37,12 +73,12 @@ export class SceneManager {
     this._store.set(scenes);
   }
 
-  get(id: string) {
+  get(id: string): SceneHandle {
     const scene = get(this._store).find((scene) => scene.id === id);
     if (!scene) throw new Error(`Scene with id ${id} not found`);
-
     const handle = new SceneHandle(this, scene);
-    this._subscriptions[id] = handle.store.subscribe((scene) => this._update(id, scene));
+
+    this._subscribe(id, handle);
 
     return handle;
   }
@@ -52,6 +88,12 @@ export class SceneManager {
     this._store.set(scenes.filter((scene) => scene.id !== id));
 
     if (id in this._subscriptions) this._subscriptions[id]();
+  }
+
+  private _subscribe(id: string, handle: SceneHandle) {
+    setTimeout(() => {
+      this._subscriptions[id] = handle.store.subscribe((scene) => this._update(id, scene));
+    }, 0);
   }
 
   private _update(id: string, scene: Scene) {
