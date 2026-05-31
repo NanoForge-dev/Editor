@@ -13,6 +13,7 @@ export class PackageHandler {
   }
 
   async init() {
+    // Not working but not used currently
     // if (this._project.save.save.components.length > 0) {
     //   this._componentsManifests = new Map<string, EditorComponentManifest>(
     //     (
@@ -41,6 +42,10 @@ export class PackageHandler {
 
   getComponentManifest(componentName: string): EditorComponentManifest | undefined {
     return this._componentsManifests.get(componentName);
+  }
+
+  getSystemManifest(systemName: string): EditorSystemManifest | undefined {
+    return this._systemsManifests.get(systemName);
   }
 
   async installComponent(name: string): Promise<void> {
