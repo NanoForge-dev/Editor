@@ -28,7 +28,7 @@
   const drag = getContext<EntityDragContext>(ENTITY_DRAG_KEY);
 
   const entity = $derived(handle.store);
-  const selectedEntity = $derived(handle.manager.selectedStore);
+  const selectedEntity = $derived(handle.manager.selected);
 
   const pl = $derived(8 + depth * 12);
 
@@ -39,7 +39,9 @@
 
   const isDragging = $derived(drag.dragging?.type === 'entity' && drag.dragging.id === $entity.id);
 
-  const onSelect = () => {
+  const onSelect = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     handle.setSelected();
   };
 
@@ -51,11 +53,15 @@
     handle.delete();
   };
 
-  const onEdit = () => {
+  const onEdit = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     editOpen = true;
   };
 
-  const onDelete = () => {
+  const onDelete = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     deleteOpen = true;
   };
 </script>

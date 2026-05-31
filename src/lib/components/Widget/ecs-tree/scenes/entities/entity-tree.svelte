@@ -191,7 +191,9 @@
   };
 
   const onNew = (kind: 'entity' | 'folder', path: string) => {
-    return () => {
+    return (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
       newPath = path;
       if (kind === 'entity') newEntityOpen = true;
       else newFolderOpen = true;

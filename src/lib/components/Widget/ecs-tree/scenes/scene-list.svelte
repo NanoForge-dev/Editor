@@ -99,7 +99,7 @@
     }
   };
 
-  const onAdd = (name: string) => {
+  const handleAdd = (name: string) => {
     manager.add({
       id: name,
       name,
@@ -124,7 +124,7 @@
   };
 </script>
 
-<DialogNewScene bind:open={addOpen} onConfirm={onAdd} />
+<DialogNewScene bind:open={addOpen} onConfirm={handleAdd} />
 
 {#snippet sceneRow(scene: Scene, depth: number)}
   {@const isSelf = dragSceneId === scene.id}

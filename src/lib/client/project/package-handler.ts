@@ -13,38 +13,34 @@ export class PackageHandler {
   }
 
   async init() {
-    if (this._project.save.save.components.length > 0) {
-      this._componentsManifests = new Map<string, EditorComponentManifest>(
-        (
-          await this._project.actions.package.getComponentsManifests({
-            componentPaths: this._project.save.save.components.map((c) => c.path) as [
-              string,
-              ...string[],
-            ],
-          })
-        ).map((e, index) => [this._project.save.save.components[index].name, e]),
-      );
-    }
-    if (this._project.save.save.systems.length > 0) {
-      this._systemsManifests = new Map<string, EditorSystemManifest>(
-        (
-          await this._project.actions.package.getSystemsManifests({
-            systemPaths: this._project.save.save.systems.map((s) => s.path) as [
-              string,
-              ...string[],
-            ],
-          })
-        ).map((e, index) => [this._project.save.save.systems[index].name, e]),
-      );
-    }
+    // if (this._project.save.save.components.length > 0) {
+    //   this._componentsManifests = new Map<string, EditorComponentManifest>(
+    //     (
+    //       await this._project.actions.package.getComponentsManifests({
+    //         componentPaths: this._project.save.save.components.map((c) => c.path) as [
+    //           string,
+    //           ...string[],
+    //         ],
+    //       })
+    //     ).map((e, index) => [this._project.save.save.components[index].name, e]),
+    //   );
+    // }
+    // if (this._project.save.save.systems.length > 0) {
+    //   this._systemsManifests = new Map<string, EditorSystemManifest>(
+    //     (
+    //       await this._project.actions.package.getSystemsManifests({
+    //         systemPaths: this._project.save.save.systems.map((s) => s.path) as [
+    //           string,
+    //           ...string[],
+    //         ],
+    //       })
+    //     ).map((e, index) => [this._project.save.save.systems[index].name, e]),
+    //   );
+    // }
   }
 
   getComponentManifest(componentName: string): EditorComponentManifest | undefined {
     return this._componentsManifests.get(componentName);
-  }
-
-  getSystemManifest(systemName: string): EditorSystemManifest | undefined {
-    return this._systemsManifests.get(systemName);
   }
 
   async installComponent(name: string): Promise<void> {

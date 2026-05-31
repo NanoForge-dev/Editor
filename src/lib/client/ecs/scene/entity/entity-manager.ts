@@ -35,11 +35,11 @@ export class SceneEntityManager {
     return get(this._store);
   }
 
-  get selected(): SceneEntityHandle | undefined {
+  get selectedData(): SceneEntityHandle | undefined {
     return get(selectedEntity);
   }
 
-  get selectedStore(): Writable<SceneEntityHandle | undefined> {
+  get selected(): Writable<SceneEntityHandle | undefined> {
     return selectedEntity;
   }
 

@@ -14,7 +14,7 @@
   const { ecs } = useProject();
 
   const scene = $derived(handle.store);
-  const activeScene = $derived(ecs.scenes.activeStore);
+  const activeScene = $derived(ecs.scenes.active);
 
   const isActive = $derived($activeScene.id === handle.id);
 </script>

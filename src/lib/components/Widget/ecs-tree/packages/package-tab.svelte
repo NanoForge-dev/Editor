@@ -47,7 +47,7 @@
   let createOpen = $state(false);
   let importOpen = $state(false);
 
-  const onCreate = (name: string, path: string) => {
+  const handleCreate = (name: string, path: string) => {
     // @todo create package
     manager.add({
       id: name,
@@ -57,7 +57,7 @@
     });
   };
 
-  const onImport = (name: string, path: string) => {
+  const handleImport = (name: string, path: string) => {
     // @todo import package
     manager.add({
       id: name,
@@ -68,8 +68,8 @@
   };
 </script>
 
-<DialogCreatePackage name={nameCapitalized} bind:open={createOpen} onConfirm={onCreate} />
-<DialogImportPackage name={nameCapitalized} bind:open={importOpen} onConfirm={onImport} />
+<DialogCreatePackage name={nameCapitalized} bind:open={createOpen} onConfirm={handleCreate} />
+<DialogImportPackage name={nameCapitalized} bind:open={importOpen} onConfirm={handleImport} />
 
 <div class="flex flex-col flex-1 min-h-0">
   <div class="flex items-center gap-1.5 px-2 py-1.5 border-b border-border shrink-0">

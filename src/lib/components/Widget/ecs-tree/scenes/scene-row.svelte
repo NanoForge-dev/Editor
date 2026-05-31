@@ -35,22 +35,28 @@
   let deleteOpen = $state(false);
 
   const scene = $derived(handle.store);
-  const activeScene = $derived(ecs.scenes.activeStore);
-  const defaultScene = $derived(ecs.scenes.defaultStore);
+  const activeScene = $derived(ecs.scenes.active);
+  const defaultScene = $derived(ecs.scenes.default);
 
   const isActive = $derived($activeScene.id === handle.id);
   const isDefault = $derived($defaultScene === handle.id);
   const paddingLeft = $derived(8 + depth * 12);
 
-  const onSetActive = () => {
+  const onSetActive = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     handle.setActive();
   };
 
-  const onSetDefault = () => {
+  const onSetDefault = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     handle.setDefault();
   };
 
-  const onUpdate = () => {
+  const onUpdate = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     editOpen = true;
   };
 
@@ -58,7 +64,9 @@
     handle.update({ name });
   };
 
-  const onDelete = () => {
+  const onDelete = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     deleteOpen = true;
   };
 

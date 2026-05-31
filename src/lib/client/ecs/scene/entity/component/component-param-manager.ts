@@ -82,7 +82,7 @@ export class ComponentParamManager {
     setTimeout(() => {
       const subscriptions = get(_subscriptions);
       if (subscriptions[id]) return;
-      subscriptions[id] = handle.store.subscribe((param) => this._update(id, param));
+      subscriptions[id] = handle.value.subscribe((param) => this._update(id, param));
       _subscriptions.set(subscriptions);
     }, 0);
   }

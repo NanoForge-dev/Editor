@@ -77,11 +77,15 @@
     for (const p of [...folders]) if (p.startsWith(node.path + '/')) folders.delete(p);
   };
 
-  const onEdit = () => {
+  const onEdit = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     editOpen = true;
   };
 
-  const onDelete = () => {
+  const onDelete = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     deleteOpen = true;
   };
 </script>

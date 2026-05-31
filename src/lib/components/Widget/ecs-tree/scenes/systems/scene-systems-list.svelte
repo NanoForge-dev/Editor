@@ -26,26 +26,32 @@
 
   let addOpen = $state(false);
 
-  const onAdd = (systemName: string) => {
+  const handleAdd = (systemName: string) => {
     manager.add(systemName);
   };
 
-  const onDelete = (systemName: string) => {
+  const onDelete = (systemName: string) => (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     manager.delete(systemName);
   };
 
-  const onOpenCode = (systemName: string) => {
+  const onOpenCode = (systemName: string) => (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     // @todo open code editor
     console.log('open code', systemName);
   };
 
-  const onOpenSystem = (systemName: string) => {
+  const onOpenSystem = (systemName: string) => (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     // @todo open to systems tab
     console.log('open system', systemName);
   };
 </script>
 
-<DialogAddSceneSystem open={addOpen} systems={availableSystems} onConfirm={onAdd} />
+<DialogAddSceneSystem open={addOpen} systems={availableSystems} onConfirm={handleAdd} />
 
 <div
   class="flex items-center justify-between px-2 py-1 border-b border-border/50 text-muted-foreground"
@@ -66,16 +72,16 @@
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onclick={() => onOpenCode(sysName)}>
+        <ContextMenuItem onclick={onOpenCode(sysName)}>
           <span class="i-ic:baseline-open-in-new"></span>
           Open code
         </ContextMenuItem>
-        <ContextMenuItem onclick={() => onOpenSystem(sysName)}>
+        <ContextMenuItem onclick={onOpenSystem(sysName)}>
           <span class="i-ic:baseline-open-in-new"></span>
           Find in systems
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem variant="destructive" onclick={() => onDelete(sysName)}>
+        <ContextMenuItem variant="destructive" onclick={onDelete(sysName)}>
           <span class="i-ic-baseline-delete"></span>
           Remove from scene
         </ContextMenuItem>

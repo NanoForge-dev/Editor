@@ -38,18 +38,22 @@
 
   const items: PackageItems = $derived(ITEMS[type]);
 
-  const onAdd = () => {
+  const onAdd = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (type === 'component') {
-      const entity = ecs.scenes.active.entities.selected;
+      const entity = ecs.scenes.activeData.entities.selectedData;
       if (!entity) return;
       entity.components.add(get(pkg).id);
     } else {
-      ecs.scenes.active.systems.add(get(pkg).id);
+      ecs.scenes.activeData.systems.add(get(pkg).id);
     }
   };
 
-  const onOpen = () => {
-    // @todo handle open code edito
+  const onOpenCode = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // @todo handle open code editor
   };
 
   const handleDelete = () => {
@@ -57,7 +61,9 @@
     handle.delete();
   };
 
-  const onDelete = () => {
+  const onDelete = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     deleteOpen = true;
   };
 </script>
@@ -99,7 +105,7 @@
     </div>
   </ContextMenuTrigger>
   <ContextMenuContent>
-    <ContextMenuItem onclick={onOpen}>
+    <ContextMenuItem onclick={onOpenCode}>
       <span class="i-ic-baseline-open-in-new"></span>
       Open code
     </ContextMenuItem>

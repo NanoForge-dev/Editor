@@ -43,11 +43,11 @@ export class SceneManager {
     return get(_storage);
   }
 
-  get active(): SceneHandle {
+  get activeData(): SceneHandle {
     return get(_activeSceneStorage);
   }
 
-  get activeStore(): Writable<SceneHandle> {
+  get active(): Writable<SceneHandle> {
     return _activeSceneStorage;
   }
 
@@ -55,11 +55,11 @@ export class SceneManager {
     _activeSceneStorage.set(handle);
   }
 
-  get default(): string {
+  get defaultData(): string {
     return get(_defaultSceneStorage);
   }
 
-  get defaultStore(): Writable<string> {
+  get default(): Writable<string> {
     return _defaultSceneStorage;
   }
 
