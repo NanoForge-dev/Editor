@@ -8,7 +8,6 @@
   import type { Component } from '$lib/client/ecs';
 
   let openComponentSelector: boolean = $state(false);
-  // let refresh: number = $state(0);
 
   const { event, save, ecs } = useProject();
 
