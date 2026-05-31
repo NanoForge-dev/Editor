@@ -1,0 +1,9 @@
+import type { PackageItems } from '../types';
+
+export const SYSTEM_ITEMS: PackageItems = {
+  icon: {
+    name: 'i-icomoon-free-steam',
+    color: 'text-amber-400',
+  },
+  addTooltip: 'Add to active scene',
+};

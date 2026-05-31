@@ -1,8 +1,5 @@
 <script lang="ts">
-  import {
-    selectedEntityId,
-    selectedEntity,
-  } from '$lib/components/Widget/ECSTree/entity-selected.store.svelte';
+  import { selectedEntityId, selectedEntity } from '$lib/components/Widget/ecs-tree/store';
   import ComponentSelector from '$lib/components/Widget/EntityInspector/ComponentSelector.svelte';
   import { CoreEvents } from '$lib/client/event';
   import { useProject } from '$lib/client/project';
