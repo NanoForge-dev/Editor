@@ -1,16 +1,32 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
+import { resetListeners, resetSubscriptions } from '../../../utils';
+import { resolveStore } from '../../../utils';
 import type { SceneEntityHandle } from '../entity-handle';
 import { EntityComponentHandle } from './component-handle';
+
+const _storage = writable<Record<string, Writable<Record<string, Record<string, string>>>>>({});
+
+const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
+
+const _listener = writable<Unsubscriber[] | null>();
 
 export class EntityComponentManager {
   public readonly entity: SceneEntityHandle;
   private readonly _store: Writable<Record<string, Record<string, string>>>;
-  private readonly _subscriptions: Record<string, Unsubscriber> = {};
+
+  static reset() {
+    _storage.set({});
+    resetSubscriptions(_subscriptions);
+    resetListeners(_listener);
+  }
 
   constructor(entity: SceneEntityHandle, components: Record<string, Record<string, string>>) {
     this.entity = entity;
-    this._store = writable(components);
+
+    const storageResolvable = `${this.entity.manager.scene.id}/${this.entity.id}`;
+
+    this._store = resolveStore(_storage, storageResolvable, components);
 
     this._listen();
   }
@@ -47,11 +63,17 @@ export class EntityComponentManager {
     });
     this._store.set(newComponents);
 
-    if (id in this._subscriptions) this._subscriptions[id]();
+    const subscriptions = get(_subscriptions);
+    if (subscriptions[id]) {
+      subscriptions[id]();
+      subscriptions[id] = null;
+      _subscriptions.set(subscriptions);
+    }
   }
 
   private _listen() {
-    this.entity.manager.scene.manager.ecs.components.store.subscribe((components) => {
+    if (get(_listener)) return;
+    const unsub = this.entity.manager.scene.manager.ecs.components.store.subscribe((components) => {
       const entityComponents = get(this._store);
       const newComponents: Record<string, Record<string, string>> = {};
       Object.entries(entityComponents).forEach(([key, params]) => {
@@ -59,13 +81,15 @@ export class EntityComponentManager {
       });
       this._store.set(newComponents);
     });
+    _listener.set([unsub]);
   }
 
   private _subscribe(id: string, handle: EntityComponentHandle) {
     setTimeout(() => {
-      this._subscriptions[id] = handle.params.values.subscribe((params) =>
-        this._update(id, params),
-      );
+      const subscriptions = get(_subscriptions);
+      if (subscriptions[id]) return;
+      subscriptions[id] = handle.params.values.subscribe((params) => this._update(id, params));
+      _subscriptions.set(subscriptions);
     }, 0);
   }
 

@@ -1,19 +1,30 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
+import { resetSubscriptions } from '../../utils';
+import { resolveStore } from '../../utils';
 import type { SceneHandle } from '../scene-handle';
 import { SceneEntityHandle } from './entity-handle';
 import type { Entity } from './entity.type';
+
+const _storage = writable<Record<string, Writable<Entity[]>>>({});
+
+const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
 
 const selectedEntity = writable<SceneEntityHandle | undefined>(undefined);
 
 export class SceneEntityManager {
   public readonly scene: SceneHandle;
   private readonly _store: Writable<Entity[]>;
-  private readonly _subscriptions: Record<string, Unsubscriber> = {};
+
+  static reset() {
+    _storage.set({});
+    resetSubscriptions(_subscriptions);
+  }
 
   constructor(scene: SceneHandle, entities: Entity[]) {
     this.scene = scene;
-    this._store = writable(entities);
+
+    this._store = resolveStore(_storage, this.scene.id, entities);
   }
 
   get store() {
@@ -56,12 +67,20 @@ export class SceneEntityManager {
     const entities = get(this._store);
     this._store.set(entities.filter((entity) => entity.id !== id));
 
-    if (id in this._subscriptions) this._subscriptions[id]();
+    const subscriptions = get(_subscriptions);
+    if (subscriptions[id]) {
+      subscriptions[id]();
+      subscriptions[id] = null;
+      _subscriptions.set(subscriptions);
+    }
   }
 
   private _subscribe(id: string, handle: SceneEntityHandle) {
     setTimeout(() => {
-      this._subscriptions[id] = handle.store.subscribe((entity) => this._update(id, entity));
+      const subscriptions = get(_subscriptions);
+      if (subscriptions[id]) return;
+      subscriptions[id] = handle.store.subscribe((entity) => this._update(id, entity));
+      _subscriptions.set(subscriptions);
     }, 0);
   }
 

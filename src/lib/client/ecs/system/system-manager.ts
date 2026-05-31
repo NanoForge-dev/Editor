@@ -1,32 +1,38 @@
-import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
+import { type Unsubscriber, get, writable } from 'svelte/store';
 
+import { resetSubscriptions } from '../utils';
 import { SystemHandle } from './system-handle';
 import type { System } from './system.type';
 
+const _storage = writable<System[]>([]);
+const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
+
 export class SystemManager {
-  private readonly _store: Writable<System[]>;
-  private readonly _subscriptions: Record<string, Unsubscriber> = {};
+  static reset() {
+    _storage.set([]);
+    resetSubscriptions(_subscriptions);
+  }
 
   constructor(systems: System[]) {
-    this._store = writable<System[]>(systems);
+    _storage.set(systems);
   }
 
   get store() {
-    return this._store;
+    return _storage;
   }
 
   get data() {
-    return get(this._store);
+    return get(_storage);
   }
 
   add(system: System) {
-    const systems = get(this._store);
+    const systems = get(_storage);
     systems.push(system);
-    this._store.set(systems);
+    _storage.set(systems);
   }
 
   get(id: string): SystemHandle {
-    const system = get(this._store).find((system) => system.id === id);
+    const system = get(_storage).find((system) => system.id === id);
     if (!system) throw new Error(`System with id ${id} not found`);
     const handle = new SystemHandle(this, system);
 
@@ -36,23 +42,31 @@ export class SystemManager {
   }
 
   delete(id: string) {
-    const systems = get(this._store);
-    this._store.set(systems.filter((system) => system.id !== id));
+    const systems = get(_storage);
+    _storage.set(systems.filter((system) => system.id !== id));
 
-    if (id in this._subscriptions) this._subscriptions[id]();
+    const subscriptions = get(_subscriptions);
+    if (subscriptions[id]) {
+      subscriptions[id]();
+      subscriptions[id] = null;
+      _subscriptions.set(subscriptions);
+    }
   }
 
   private _subscribe(id: string, handle: SystemHandle) {
     setTimeout(() => {
-      this._subscriptions[id] = handle.store.subscribe((system) => this._update(id, system));
+      const subscriptions = get(_subscriptions);
+      if (subscriptions[id]) return;
+      subscriptions[id] = handle.store.subscribe((system) => this._update(id, system));
+      _subscriptions.set(subscriptions);
     }, 0);
   }
 
   private _update(id: string, system: System) {
-    const systems = get(this._store);
+    const systems = get(_storage);
     const index = systems.findIndex((s) => s.id === id);
     if (index === -1) return;
     systems[index] = system;
-    this._store.set(systems);
+    _storage.set(systems);
   }
 }

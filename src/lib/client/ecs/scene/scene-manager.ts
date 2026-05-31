@@ -1,80 +1,92 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
 import type { ECSHandler } from '../ecs-handler';
+import { resetSubscriptions } from '../utils';
 import { SceneHandle } from './scene-handle';
 import type { Scene } from './scene.type';
 
+const _storage = writable<Scene[]>([]);
+const _rootScenesStorage = writable<string[]>([]);
+const _activeSceneStorage = writable<SceneHandle>();
+const _defaultSceneStorage = writable<string>();
+
+const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
+
 export class SceneManager {
   public readonly ecs: ECSHandler;
-  private readonly _store: Writable<Scene[]>;
-  private readonly _rootScenes: Writable<string[]>;
-  private readonly _subscriptions: Record<string, Unsubscriber> = {};
-  private readonly _activeScene: Writable<SceneHandle>;
-  private readonly _defaultScene: Writable<string>;
+
+  static reset() {
+    _storage.set([]);
+    _rootScenesStorage.set([]);
+    _activeSceneStorage.set(undefined as any);
+    _defaultSceneStorage.set(undefined as any);
+    resetSubscriptions(_subscriptions);
+  }
 
   constructor(ecs: ECSHandler, scenes: Scene[], rootScenes: string[], defaultSceneId: string) {
     this.ecs = ecs;
-    this._store = writable<Scene[]>(scenes);
+    _storage.set(scenes);
 
     const defaultScene = scenes.find((scene) => scene.id === defaultSceneId);
     if (!defaultScene) throw new Error(`Default scene with id ${defaultSceneId} not found`);
-    this._activeScene = writable(new SceneHandle(this, defaultScene));
-    this._defaultScene = writable(defaultSceneId);
-    this._rootScenes = writable(rootScenes);
+
+    _activeSceneStorage.set(new SceneHandle(this, defaultScene));
+    _defaultSceneStorage.set(defaultSceneId);
+    _rootScenesStorage.set(rootScenes);
   }
 
   get store() {
-    return this._store;
+    return _storage;
   }
 
   get data() {
-    return get(this._store);
+    return get(_storage);
   }
 
   get active(): SceneHandle {
-    return get(this._activeScene);
+    return get(_activeSceneStorage);
   }
 
   get activeStore(): Writable<SceneHandle> {
-    return this._activeScene;
+    return _activeSceneStorage;
   }
 
   set active(handle: SceneHandle) {
-    this._activeScene.set(handle);
+    _activeSceneStorage.set(handle);
   }
 
   get default(): string {
-    return get(this._defaultScene);
+    return get(_defaultSceneStorage);
   }
 
   get defaultStore(): Writable<string> {
-    return this._defaultScene;
+    return _defaultSceneStorage;
   }
 
   set default(handle: string) {
-    this._defaultScene.set(handle);
+    _defaultSceneStorage.set(handle);
   }
 
   get rootScenes(): string[] {
-    return get(this._rootScenes);
+    return get(_rootScenesStorage);
   }
 
   get rootScenesStore(): Writable<string[]> {
-    return this._rootScenes;
+    return _rootScenesStorage;
   }
 
   set rootScenes(scenes: string[]) {
-    this._rootScenes.set(scenes);
+    _rootScenesStorage.set(scenes);
   }
 
   add(scene: Scene) {
-    const scenes = get(this._store);
+    const scenes = get(_storage);
     scenes.push(scene);
-    this._store.set(scenes);
+    _storage.set(scenes);
   }
 
   get(id: string): SceneHandle {
-    const scene = get(this._store).find((scene) => scene.id === id);
+    const scene = get(_storage).find((scene) => scene.id === id);
     if (!scene) throw new Error(`Scene with id ${id} not found`);
     const handle = new SceneHandle(this, scene);
 
@@ -84,23 +96,31 @@ export class SceneManager {
   }
 
   delete(id: string) {
-    const scenes = get(this._store);
-    this._store.set(scenes.filter((scene) => scene.id !== id));
+    const scenes = get(_storage);
+    _storage.set(scenes.filter((scene) => scene.id !== id));
 
-    if (id in this._subscriptions) this._subscriptions[id]();
+    const subscriptions = get(_subscriptions);
+    if (subscriptions[id]) {
+      subscriptions[id]();
+      subscriptions[id] = null;
+      _subscriptions.set(subscriptions);
+    }
   }
 
   private _subscribe(id: string, handle: SceneHandle) {
     setTimeout(() => {
-      this._subscriptions[id] = handle.store.subscribe((scene) => this._update(id, scene));
+      const subscriptions = get(_subscriptions);
+      if (subscriptions[id]) return;
+      subscriptions[id] = handle.store.subscribe((scene) => this._update(id, scene));
+      _subscriptions.set(subscriptions);
     }, 0);
   }
 
   private _update(id: string, scene: Scene) {
-    const scenes = get(this._store);
+    const scenes = get(_storage);
     const index = scenes.findIndex((s) => s.id === id);
     if (index === -1) return;
     scenes[index] = scene;
-    this._store.set(scenes);
+    _storage.set(scenes);
   }
 }

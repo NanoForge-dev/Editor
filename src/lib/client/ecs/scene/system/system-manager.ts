@@ -1,15 +1,26 @@
-import { type Writable, get, writable } from 'svelte/store';
+import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
+import { resetListeners, resolveStore } from '../../utils';
 import type { SceneHandle } from '../scene-handle';
 import { SceneSystemHandle } from './system-handle';
+
+const _storage = writable<Record<string, Writable<string[]>>>({});
+
+const _listener = writable<Unsubscriber[] | null>();
 
 export class SceneSystemManager {
   public readonly scene: SceneHandle;
   private readonly _store: Writable<string[]>;
 
+  static reset() {
+    _storage.set({});
+    resetListeners(_listener);
+  }
+
   constructor(scene: SceneHandle, systems: string[]) {
     this.scene = scene;
-    this._store = writable<string[]>(systems);
+
+    this._store = resolveStore(_storage, this.scene.id, systems);
 
     this._listen();
   }
@@ -40,10 +51,12 @@ export class SceneSystemManager {
   }
 
   private _listen() {
-    this.scene.manager.ecs.systems.store.subscribe((systems) => {
+    if (get(_listener)) return;
+    const unsub = this.scene.manager.ecs.systems.store.subscribe((systems) => {
       const sceneSystems = get(this._store);
       sceneSystems.filter((system) => systems.find((s) => s.id === system));
       this._store.set(sceneSystems);
     });
+    _listener.set([unsub]);
   }
 }

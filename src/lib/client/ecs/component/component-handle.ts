@@ -1,17 +1,25 @@
 import { type Writable, get, writable } from 'svelte/store';
 
+import { resolveStore } from '../utils';
 import type { ComponentManager } from './component-manager';
 import type { Component } from './component.type';
+
+const _storage = writable<Record<string, Writable<Component>>>({});
 
 export class ComponentHandle {
   private _manager: ComponentManager;
   private readonly _store: Writable<Component>;
   public readonly id: string;
 
+  static reset() {
+    _storage.set({});
+  }
+
   constructor(manager: ComponentManager, component: Component) {
     this._manager = manager;
-    this._store = writable(component);
     this.id = component.id;
+
+    this._store = resolveStore(_storage, this.id, component);
   }
 
   get store() {

@@ -1,4 +1,4 @@
-import { type Readable } from 'svelte/store';
+import { type Readable, get } from 'svelte/store';
 
 import type { System } from '../../system/system.type';
 import type { SceneSystemManager } from './system-manager';
@@ -10,8 +10,9 @@ export class SceneSystemHandle {
 
   constructor(manager: SceneSystemManager, systemId: string) {
     this.manager = manager;
-    this._store = manager.scene.manager.ecs.systems.get(systemId).store;
     this.id = systemId;
+
+    this._store = manager.scene.manager.ecs.systems.get(systemId).store;
   }
 
   get store() {

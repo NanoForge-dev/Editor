@@ -1,19 +1,37 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
 import type { ComponentParam } from '../../../component/component.type';
-import { type EntityComponentHandle } from './component-handle';
+import { resetListeners, resetSubscriptions } from '../../../utils';
+import { resolveStore } from '../../../utils';
+import type { EntityComponentHandle } from './component-handle';
 import { ComponentParamHandle } from './component-param-handle';
+
+const _storage = writable<Record<string, Writable<ComponentParam[]>>>({});
+const _valueStorage = writable<Record<string, Writable<Record<string, string>>>>({});
+
+const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
+
+const _listener = writable<Unsubscriber[] | null>();
 
 export class ComponentParamManager {
   public readonly component: EntityComponentHandle;
   private readonly _store: Writable<ComponentParam[]>;
   private readonly _valuesStore: Writable<Record<string, string>>;
-  private readonly _subscriptions: Record<string, Unsubscriber> = {};
+
+  static reset() {
+    _storage.set({});
+    _valueStorage.set({});
+    resetSubscriptions(_subscriptions);
+    resetListeners(_listener);
+  }
 
   constructor(component: EntityComponentHandle, params: Record<string, string>) {
     this.component = component;
-    this._store = writable(get(component.store).params);
-    this._valuesStore = writable(params);
+
+    const storageResolvable = `${this.component.manager.entity.manager.scene.id}/${this.component.manager.entity.id}/${this.component.id}`;
+
+    this._store = resolveStore(_storage, storageResolvable, get(component.store).params);
+    this._valuesStore = resolveStore(_valueStorage, storageResolvable, params);
 
     this._listen();
   }
@@ -44,18 +62,28 @@ export class ComponentParamManager {
       params.map((param) => (param.name === id ? { ...param, value: undefined } : param)),
     );
 
-    if (id in this._subscriptions) this._subscriptions[id]();
+    const subscriptions = get(_subscriptions);
+    if (subscriptions[id]) {
+      subscriptions[id]();
+      subscriptions[id] = null;
+      _subscriptions.set(subscriptions);
+    }
   }
 
   private _listen() {
-    this.component.store.subscribe((component) => {
+    if (get(_listener)) return;
+    const unsub = this.component.store.subscribe((component) => {
       this._store.set(component.params);
     });
+    _listener.set([unsub]);
   }
 
   private _subscribe(id: string, handle: ComponentParamHandle) {
     setTimeout(() => {
-      this._subscriptions[id] = handle.store.subscribe((param) => this._update(id, param));
+      const subscriptions = get(_subscriptions);
+      if (subscriptions[id]) return;
+      subscriptions[id] = handle.store.subscribe((param) => this._update(id, param));
+      _subscriptions.set(subscriptions);
     }, 0);
   }
 
