@@ -9,7 +9,7 @@
 
   const { manager }: Props = $props();
 
-  let selected = $state<string | null>(null);
+  let selected = $state<string | null>(manager.defaultData);
 </script>
 
 <div class="flex flex-1 min-h-0">

@@ -21,7 +21,9 @@
     deleteOpen = true;
   };
 
-  const handleDelete = () => {};
+  const handleDelete = () => {
+    handle.delete();
+  };
 </script>
 
 <DeleteConfirmDialog
