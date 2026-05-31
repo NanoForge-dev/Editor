@@ -1,4 +1,3 @@
-import type { EditorComponentManifest } from '@nanoforge-dev/ecs-lib';
 import { type Writable, get, writable } from 'svelte/store';
 
 import type { Project } from '$lib/client/project';
@@ -62,20 +61,6 @@ export class SaveHandler {
 
   get save(): Save {
     return get(this._save);
-  }
-
-  addComponentToEntity(
-    entityId: string,
-    componentName: string,
-    componentManifest: EditorComponentManifest,
-  ) {
-    const entity = get(this._save).entities.find((e) => e.id === entityId);
-    if (!entity) {
-      throw new Error('Entity not found: ' + entityId);
-    }
-    const newComp: Record<string, any> = {};
-    componentManifest.params.forEach((c) => (newComp[c.name] = c.default));
-    entity.components[componentName] = newComp;
   }
 
   private _listeners() {
