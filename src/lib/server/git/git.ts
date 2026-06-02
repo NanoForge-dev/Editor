@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 import { env } from '$env/dynamic/private';
 
-import { generateKey } from '@utils/string';
+import { generateKey } from '@utils-server/string';
 
 export class Git {
   private readonly _rootPath: string;

@@ -76,13 +76,16 @@ export class SaveHandler {
       void this.forceSyncToServer();
     });
 
-    this._project.ecs.systems.store.subscribe((systems) => {
+    this._project.ecs.scenes.activeData.systems.store.subscribe((systems) => {
       this._save.set({
         ...this.save,
-        systems: systems.map((system) => ({
-          name: system.name,
-          path: system.path,
-        })),
+        systems: systems.map((name) => {
+          const system = this._project.ecs.systems.get(name).data;
+          return {
+            name: system.name,
+            path: system.path,
+          };
+        }),
       });
       void this.forceSyncToServer();
     });

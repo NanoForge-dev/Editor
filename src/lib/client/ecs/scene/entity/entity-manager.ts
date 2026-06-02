@@ -1,6 +1,6 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
-import { resetSubscriptions } from '../../utils';
+import { getId, resetSubscriptions } from '../../utils';
 import { resolveStore } from '../../utils';
 import type { SceneHandle } from '../scene-handle';
 import { SceneEntityHandle } from './entity-handle';
@@ -47,10 +47,12 @@ export class SceneEntityManager {
     selectedEntity.set(entity);
   }
 
-  add(entity: Entity) {
+  add(entity: Omit<Entity, 'id'>): string {
     const entities = get(this._store);
-    entities.push(entity);
+    const id = getId(this.data, entity.name);
+    entities.push({ ...entity, id });
     this._store.set(entities);
+    return id;
   }
 
   get(id: string): SceneEntityHandle {
@@ -72,6 +74,10 @@ export class SceneEntityManager {
       subscriptions[id]();
       subscriptions[id] = null;
       _subscriptions.set(subscriptions);
+    }
+
+    if (this.selectedData?.id === id) {
+      this.selected = undefined;
     }
   }
 

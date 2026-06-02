@@ -24,7 +24,7 @@
     folders: Set<string>;
     expandedFolders: Set<string>;
     onToggleFolder: (path: string) => void;
-    onNew?: (kind: 'entity' | 'folder', path: string) => void;
+    onNew?: (kind: 'entity' | 'folder', path: string) => (e: MouseEvent) => void;
   }
 
   let {
@@ -35,7 +35,7 @@
     folders = $bindable(),
     expandedFolders,
     onToggleFolder,
-    onNew = () => {},
+    onNew = () => () => {},
   }: Props = $props();
 
   const drag = getContext<EntityDragContext>(ENTITY_DRAG_KEY);
@@ -107,7 +107,7 @@
   <ContextMenuTrigger>
     <button
       draggable={!readonly}
-      class="flex w-full items-center gap-1.5 py-0.5 hover:bg-neutral-800 text-muted-foreground transition-colors
+      class="flex w-full items-center gap-1.5 py-0.5 hover:bg-neutral-800 text-muted-foreground transition-colors group
           {hovered && !isDragging ? 'bg-primary/20 ring-2 ring-inset ring-primary' : ''}
           {isDragging ? 'opacity-40' : ''}"
       style="padding-left:{pl}px; padding-right:8px"
@@ -142,18 +142,21 @@
       ></span>
       <span class="i-ic-baseline-folder w-3.5 h-3.5 text-yellow-600 shrink-0"></span>
       <span class="flex-1 truncate text-left text-xs">{node.name}</span>
-      <span class="text-xs text-muted-foreground/50">
-        {node.children.filter((c) => c.kind === 'entity').length}
-      </span>
+      <span
+        class={[
+          'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100  duration-150',
+          isDragging ? 'opacity-100' : 'opacity-0',
+        ]}
+      ></span>
     </button>
   </ContextMenuTrigger>
   {#if !readonly}
     <ContextMenuContent>
-      <ContextMenuItem onclick={() => onNew('entity', node.path)}>
+      <ContextMenuItem onclick={onNew('entity', node.path)}>
         <span class="i-ic-baseline-add-circle"></span>
         New entity
       </ContextMenuItem>
-      <ContextMenuItem onclick={() => onNew('folder', node.path)}>
+      <ContextMenuItem onclick={onNew('folder', node.path)}>
         <span class="i-ic-baseline-folder"></span>
         New folder
       </ContextMenuItem>

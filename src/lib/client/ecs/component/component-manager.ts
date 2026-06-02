@@ -1,6 +1,6 @@
 import { type Unsubscriber, get, writable } from 'svelte/store';
 
-import { resetSubscriptions } from '../utils';
+import { getId, resetSubscriptions } from '../utils';
 import { ComponentHandle } from './component-handle';
 import type { Component } from './component.type';
 
@@ -26,10 +26,12 @@ export class ComponentManager {
     return get(_storage);
   }
 
-  add(component: Component) {
+  add(component: Omit<Component, 'id' | 'path'> & Partial<Pick<Component, 'path'>>) {
     const components = get(_storage);
-    components.push(component);
+    const id = getId(this.data, component.name);
+    components.push({ ...component, id, path: component.path ?? `components/${id}.ts` });
     _storage.set(components);
+    return id;
   }
 
   get(id: string): ComponentHandle {

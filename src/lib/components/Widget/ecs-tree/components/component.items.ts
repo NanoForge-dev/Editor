@@ -6,4 +6,6 @@ export const COMPONENT_ITEMS: PackageItems = {
     color: 'text-blue-400',
   },
   addTooltip: 'Add to selected entity',
+  disableAddTooltipNotSelected: 'No entity selected',
+  disableAddTooltipAlreadyAdded: 'The selected entity already had this component',
 };

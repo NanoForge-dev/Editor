@@ -3,7 +3,7 @@ import { sveltekitSessionHandle } from 'svelte-kit-sessions';
 
 import { env } from '$env/dynamic/private';
 
-import { generateKey } from '@utils/string';
+import { generateKey } from '@utils-server/string';
 
 import { isPublicPath, isSessionExist, resetSession } from './session-functions';
 

@@ -9,6 +9,7 @@
     children?: Snippet<[confirm: () => void, cancel: () => void]>;
     confirmText?: string;
     cancelText?: string;
+    confirmDisabled?: boolean;
     onOpenChange?: (open: boolean) => void;
     reset?: () => void;
     onConfirm?: (...args: any[]) => void;

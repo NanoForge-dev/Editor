@@ -6,4 +6,6 @@ export const SYSTEM_ITEMS: PackageItems = {
     color: 'text-amber-400',
   },
   addTooltip: 'Add to active scene',
+  disableAddTooltipNotSelected: 'No active scene',
+  disableAddTooltipAlreadyAdded: 'The active scene already had this system',
 };

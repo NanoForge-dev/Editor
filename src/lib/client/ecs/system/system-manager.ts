@@ -1,6 +1,6 @@
 import { type Unsubscriber, get, writable } from 'svelte/store';
 
-import { resetSubscriptions } from '../utils';
+import { getId, resetSubscriptions } from '../utils';
 import { SystemHandle } from './system-handle';
 import type { System } from './system.type';
 
@@ -25,10 +25,12 @@ export class SystemManager {
     return get(_storage);
   }
 
-  add(system: System) {
+  add(system: Omit<System, 'id' | 'path'> & Partial<Pick<System, 'path'>>): string {
     const systems = get(_storage);
-    systems.push(system);
+    const id = getId(this.data, system.name);
+    systems.push({ ...system, id, path: system.path ?? `systems/${id}.ts` });
     _storage.set(systems);
+    return id;
   }
 
   get(id: string): SystemHandle {

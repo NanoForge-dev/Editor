@@ -34,9 +34,32 @@
 
   const pkg = $derived(handle.store);
 
-  let deleteOpen = $state(false);
+  const activeScene = $derived(ecs.scenes.active);
+  const activeSceneData = $derived($activeScene?.store);
 
+  const selectedEntity = $derived($activeScene.entities.selected);
+  const selectedEntityData = $derived($selectedEntity?.store);
+
+  const disabled = $derived.by<'added' | 'selected' | null>(() => {
+    const isNotSelected = type === 'component' ? !$selectedEntity : !$activeScene;
+    if (isNotSelected) return 'selected';
+
+    const isAlreadyAdded =
+      type === 'component'
+        ? !!$selectedEntityData?.components[handle.id]
+        : $activeSceneData.systems.includes(handle.id);
+    if (isAlreadyAdded) return 'added';
+
+    return null;
+  });
   const items: PackageItems = $derived(ITEMS[type]);
+  const tooltip = $derived.by(() => {
+    if (disabled === 'added') return items.disableAddTooltipAlreadyAdded;
+    if (disabled === 'selected') return items.disableAddTooltipNotSelected;
+    return items.addTooltip;
+  });
+
+  let deleteOpen = $state(false);
 
   const onAdd = (e: MouseEvent) => {
     e.preventDefault();
@@ -87,8 +110,8 @@
           <div class="mt-0.5 text-xs text-muted-foreground truncate pl-5">{$pkg.path}</div>
         </div>
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-          <TooltipText text={items.addTooltip}>
-            <Button variant="ghost" size="icon" onclick={onAdd}>
+          <TooltipText text={tooltip}>
+            <Button disabled={!!disabled} variant="ghost" size="icon" onclick={onAdd}>
               <span class="i-ic-baseline-add-circle text-green-400"></span>
             </Button>
           </TooltipText>
@@ -109,7 +132,7 @@
       <span class="i-ic-baseline-open-in-new"></span>
       Open code
     </ContextMenuItem>
-    <ContextMenuItem onclick={onAdd}>
+    <ContextMenuItem disabled={!!disabled} onclick={onAdd}>
       <span class="i-ic-baseline-add-circle text-green-400"></span>
       {items.addTooltip}
     </ContextMenuItem>

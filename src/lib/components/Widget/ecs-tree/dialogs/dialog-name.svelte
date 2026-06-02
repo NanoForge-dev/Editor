@@ -39,7 +39,14 @@
   };
 </script>
 
-<InputDialog {title} {confirmText} bind:open onConfirm={handleConfirm} {reset}>
+<InputDialog
+  {title}
+  {confirmText}
+  confirmDisabled={!nameValue}
+  bind:open
+  onConfirm={handleConfirm}
+  {reset}
+>
   {#snippet children(confirm)}
     <div class="flex flex-col gap-3 py-2">
       <Input

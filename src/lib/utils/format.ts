@@ -20,6 +20,10 @@ class WordList {
       )
       .join('');
   }
+
+  toSnake() {
+    return this.words.join('_');
+  }
 }
 
 const toWords = (str: string): string[] => {

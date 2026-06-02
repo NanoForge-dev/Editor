@@ -50,14 +50,25 @@
   };
 </script>
 
-<InputDialog {title} {confirmText} bind:open onConfirm={handleConfirm} {reset}>
+<InputDialog
+  {title}
+  {confirmText}
+  confirmDisabled={!options.length || !value}
+  bind:open
+  onConfirm={handleConfirm}
+  {reset}
+>
   <div class="py-2">
     <Select type="single" bind:value>
       <SelectTrigger class="w-full">{selectedLabel}</SelectTrigger>
       <SelectContent>
-        {#each options as opt (getValue(opt))}
-          <SelectItem value={getValue(opt)}>{getLabel(opt)}</SelectItem>
-        {/each}
+        {#if !!options.length}
+          {#each options as opt (getValue(opt))}
+            <SelectItem value={getValue(opt)}>{getLabel(opt)}</SelectItem>
+          {/each}
+        {:else}
+          <div class="px-4 py-2 text-muted-foreground italic">No options</div>
+        {/if}
       </SelectContent>
     </Select>
   </div>

@@ -17,6 +17,7 @@
     children?: Snippet<[confirm: () => void, cancel: () => void]>;
     confirmText?: string;
     cancelText?: string;
+    confirmDisabled?: boolean;
     onOpenChange?: (open: boolean) => void;
     onConfirm?: (...args: any[]) => void;
   }
@@ -28,6 +29,7 @@
     children,
     confirmText,
     cancelText,
+    confirmDisabled,
     onOpenChange,
     onConfirm,
   }: Props = $props();
@@ -59,7 +61,7 @@
     {@render children?.(confirm, cancel)}
     <DialogFooter>
       <Button variant="ghost" onclick={cancel}>{cancelText ?? 'Cancel'}</Button>
-      <Button onclick={confirm}>{confirmText ?? 'Confirm'}</Button>
+      <Button disabled={confirmDisabled} onclick={confirm}>{confirmText ?? 'Confirm'}</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>

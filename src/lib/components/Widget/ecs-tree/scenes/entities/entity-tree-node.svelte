@@ -20,10 +20,10 @@
     handle: SceneEntityHandle;
     depth?: number;
     readonly?: boolean;
-    onNew?: (kind: 'entity' | 'folder', path: string) => void;
+    onNew?: (kind: 'entity' | 'folder', path: string) => (e: MouseEvent) => void;
   }
 
-  const { handle, depth = 0, readonly = false, onNew = () => {} }: Props = $props();
+  const { handle, depth = 0, readonly = false, onNew = () => () => {} }: Props = $props();
 
   const drag = getContext<EntityDragContext>(ENTITY_DRAG_KEY);
 
@@ -82,14 +82,14 @@
   <ContextMenuTrigger>
     <button
       draggable={!readonly}
-      class={`flex w-full items-center gap-1.5 py-0.5 pr-2 transition-colors
-          ${
-            $selectedEntity?.id === $entity.id
-              ? 'bg-primary/20 text-purple-300'
-              : 'text-neutral-300 hover:bg-neutral-800'
-          }
-          ${hovered && !isDragging ? 'ring-2 ring-inset ring-blue-primary' : ''}
-          ${isDragging ? 'opacity-40' : ''}`}
+      class={[
+        $selectedEntity?.id === $entity.id
+          ? 'bg-primary/20 text-purple-300'
+          : 'text-neutral-300 hover:bg-neutral-800',
+        hovered && !isDragging ? 'ring-2 ring-inset ring-primary' : '',
+        isDragging ? 'opacity-40' : '',
+        'flex w-full items-center gap-1.5 py-0.5 pr-2 transition-colors group',
+      ]}
       style="padding-left:{pl}px"
       onclick={onSelect}
       ondragstart={(e) => {
@@ -120,18 +120,22 @@
       <span class="flex-1 truncate text-left text-xs {readonly ? 'text-neutral-400' : ''}">
         {$entity.name}
       </span>
-      <span class="text-xs text-muted-foreground/50 shrink-0">
-        {Object.keys($entity.components).length}
+      <span
+        class={[
+          'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100  duration-150',
+          isDragging ? 'opacity-100' : 'opacity-0',
+        ]}
+      >
       </span>
     </button>
   </ContextMenuTrigger>
   {#if !readonly}
     <ContextMenuContent>
-      <ContextMenuItem onclick={() => onNew('entity', resolveParentPath($entity.treePath))}>
+      <ContextMenuItem onclick={onNew('entity', resolveParentPath($entity.treePath))}>
         <span class="i-ic-baseline-add-circle"></span>
         New entity
       </ContextMenuItem>
-      <ContextMenuItem onclick={() => onNew('folder', resolveParentPath($entity.treePath))}>
+      <ContextMenuItem onclick={onNew('folder', resolveParentPath($entity.treePath))}>
         <span class="i-ic-baseline-folder"></span>
         New folder
       </ContextMenuItem>

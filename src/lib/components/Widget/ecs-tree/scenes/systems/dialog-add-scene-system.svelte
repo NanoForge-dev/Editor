@@ -9,12 +9,12 @@
     onConfirm: (systemId: string) => void;
   }
 
-  let { open, systems, onConfirm }: Props = $props();
+  let { open = $bindable(), systems, onConfirm }: Props = $props();
 </script>
 
 <DialogSelect
   title="Add System to Scene"
   options={systems.map((sys) => ({ label: sys.name, value: sys.id }))}
-  {open}
+  bind:open
   {onConfirm}
 />

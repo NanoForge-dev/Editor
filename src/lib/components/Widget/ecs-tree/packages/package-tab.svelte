@@ -47,22 +47,18 @@
   let createOpen = $state(false);
   let importOpen = $state(false);
 
-  const handleCreate = (name: string, path: string) => {
+  const handleCreate = (name: string) => {
     // @todo create package
     manager.add({
-      id: name,
       name,
-      path,
       params: [],
     });
   };
 
-  const handleImport = (name: string, path: string) => {
+  const handleImport = (name: string) => {
     // @todo import package
     manager.add({
-      id: name,
       name,
-      path,
       params: [],
     });
   };
@@ -124,7 +120,7 @@
 
     {#if sorted.length === 0}
       <div class="py-12 text-center text-xs text-muted-foreground">
-        {query ? 'No matches.' : `No ${namePlural} — add one with +.`}
+        {query ? 'No matches.' : `No ${namePlural} - add one with +.`}
       </div>
     {/if}
   </ScrollArea>

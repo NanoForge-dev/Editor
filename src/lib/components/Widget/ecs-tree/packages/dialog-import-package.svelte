@@ -1,16 +1,16 @@
 <script lang="ts">
-  import DialogNamePath from '../dialogs/dialog-name-path.svelte';
+  import DialogName from '../dialogs/dialog-name.svelte';
 
   interface Props {
     name: string;
     open: boolean;
-    onConfirm: (name: string, path: string) => void;
+    onConfirm: (name: string) => void;
   }
 
   let { name, open = $bindable(false), onConfirm }: Props = $props();
 </script>
 
-<DialogNamePath
+<DialogName
   title={`Import ${name}`}
   nameText={`${name} name`}
   confirmText="Import"

@@ -51,7 +51,7 @@
   };
 </script>
 
-<DialogAddSceneSystem open={addOpen} systems={availableSystems} onConfirm={handleAdd} />
+<DialogAddSceneSystem bind:open={addOpen} systems={availableSystems} onConfirm={handleAdd} />
 
 <div
   class="flex items-center justify-between px-2 py-1 border-b border-border/50 text-muted-foreground"
@@ -90,6 +90,6 @@
   {/each}
 
   {#if $systems.length === 0}
-    <div class="py-6 text-center text-xs text-muted-foreground">No systems — use + to add one.</div>
+    <div class="py-6 text-center text-xs text-muted-foreground">No systems - use + to add one.</div>
   {/if}
 </div>

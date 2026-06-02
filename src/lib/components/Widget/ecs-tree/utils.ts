@@ -11,7 +11,14 @@ export const resolveParentPath = (path: string): string => {
 export function buildTree(
   entities: (Entity & { scene?: string })[],
   extraFolderPaths: Iterable<string> = [],
+  search?: string,
 ): TreeNode[] {
+  if (search) {
+    entities = entities.filter((e) => e.id.includes(search));
+    extraFolderPaths = Array.from(extraFolderPaths).filter((p) =>
+      p.split('/').at(-1)?.includes(search),
+    );
+  }
   const folderMap = new Map<string, TreeFolder>();
   const root: TreeNode[] = [];
 

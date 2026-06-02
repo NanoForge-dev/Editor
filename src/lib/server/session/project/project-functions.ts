@@ -1,5 +1,6 @@
 import { SESSION_PROJECT_HEADER } from '@utils/const';
-import { generateKey } from '@utils/string';
+
+import { generateKey } from '@utils-server/string';
 
 import type { Session } from '../session.type';
 import { projectStore } from './project.store';

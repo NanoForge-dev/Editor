@@ -100,8 +100,7 @@
   };
 
   const handleAdd = (name: string) => {
-    manager.add({
-      id: name,
+    const id = manager.add({
       name,
       path: `./scenes/${name}.ts`,
       subScenes: [],
@@ -109,7 +108,7 @@
       systems: [],
       entities: [],
     });
-    manager.rootScenes = [...manager.rootScenes, name];
+    manager.rootScenes = [...manager.rootScenes, id];
   };
 
   const toggleExpand = (id: string, force?: boolean) => {
@@ -146,9 +145,14 @@
       {/if}
       <div
         aria-hidden="true"
-        class="{isSelf ? 'opacity-40' : ''} {isDropOn
-          ? 'ring-2 ring-inset ring-primary rounded-sm'
-          : ''}"
+        class={[
+          isSelf ? 'opacity-40' : '',
+          isDropOn ? 'ring-2 ring-inset ring-primary rounded-sm' : '',
+          selected === scene.id
+            ? 'bg-neutral-700 text-neutral-100'
+            : 'text-neutral-300 hover:bg-neutral-800',
+          'transition-colors',
+        ]}
         draggable="true"
         ondragstart={(e) => {
           dragSceneId = scene.id;
@@ -180,7 +184,7 @@
         <SceneRow
           {handle}
           {depth}
-          isSelected={selected === scene.id}
+          isDragging={dragSceneId === scene.id}
           isExpanded={expandedSceneItems.has(scene.id)}
           onSelect={() => (selected = scene.id)}
           onToggleExpand={() => toggleExpand(scene.id)}
@@ -254,7 +258,7 @@
       dropTarget = null;
     }}
   >
-    {#each rootScenes as scene (scene)}
+    {#each rootScenes as scene (scene.id)}
       {@render sceneRow(scene, 0)}
     {/each}
   </div>

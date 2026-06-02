@@ -18,6 +18,12 @@
   import EntityTreeNode from './entity-tree-node.svelte';
   import FolderTreeNode from './folder-tree-node.svelte';
   import { useProject } from '$lib/client/project';
+  import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+  } from '$lib/components/ui/input-group';
 
   interface Props {
     manager: SceneEntityManager;
@@ -49,6 +55,9 @@
   let folders = new SvelteSet<string>();
   let folderSceneId = $state('');
 
+  let search = $state('');
+  let searchOpen = $state(false);
+
   $effect.pre(() => {
     const id = manager.scene.id;
     if (id !== folderSceneId) {
@@ -68,8 +77,8 @@
     for (const p of [...folders]) if (p.startsWith(folderPath + '/')) folders.delete(p);
   };
 
-  const tree = $derived(buildTree($entities, folders));
-  const inheritedTree = $derived(buildTree(inherited));
+  const tree = $derived(buildTree($entities, folders, search));
+  const inheritedTree = $derived(buildTree(inherited, [], search));
 
   let expandedFolders = new SvelteSet<string>();
   let inheritedCollapsed = $state(true);
@@ -101,11 +110,9 @@
   const dropOnFolder = (folderPath: string) => {
     if (!dragging) return;
     if (dragging.type === 'entity') {
-      const e = $entities.find((e) => e.id === (dragging as { type: 'entity'; id: string }).id);
-      if (e) {
-        e.treePath = folderPath;
-        trackFolders(folderPath);
-      }
+      const handle = manager.get(dragging.id);
+      if (handle.data.treePath !== folderPath) handle.update({ treePath: folderPath });
+      trackFolders(folderPath);
     } else {
       const { path } = dragging as { type: 'folder'; path: string };
       if (path === folderPath || folderPath.startsWith(path + '/')) return;
@@ -127,11 +134,9 @@
     if (dragging.type === 'entity') {
       const { id } = dragging as { type: 'entity'; id: string };
       if (id !== entityId) {
-        const e = $entities.find((e) => e.id === id);
-        if (e) {
-          e.treePath = targetPath;
-          if (targetPath) trackFolders(targetPath);
-        }
+        const handle = manager.get(id);
+        if (handle.data.treePath !== targetPath) handle.update({ treePath: targetPath });
+        trackFolders(targetPath);
       }
     } else {
       const { path } = dragging as { type: 'folder'; path: string };
@@ -146,8 +151,8 @@
     if (!dragging) return;
     if (dragging.type === 'entity') {
       const { id } = dragging as { type: 'entity'; id: string };
-      const e = $entities.find((e) => e.id === id);
-      if (e) e.treePath = '';
+      const handle = manager.get(id);
+      if (handle.data.treePath !== '') handle.update({ treePath: '' });
     } else {
       const { path } = dragging as { type: 'folder'; path: string };
       const name = path.split('/').pop()!;
@@ -180,7 +185,7 @@
   };
 
   const handleNewEntity = (name: string) => {
-    manager.add({ id: name, name, treePath: newPath, components: {} });
+    manager.add({ name, treePath: newPath, components: {} });
     resetTarget();
   };
 
@@ -192,7 +197,6 @@
 
   const onNew = (kind: 'entity' | 'folder', path: string) => {
     return (e: MouseEvent) => {
-      e.preventDefault();
       e.stopPropagation();
       newPath = path;
       if (kind === 'entity') newEntityOpen = true;
@@ -204,29 +208,65 @@
 <DialogNewEntity kind="entity" bind:open={newEntityOpen} onConfirm={handleNewEntity} />
 <DialogNewEntity kind="folder" bind:open={newFolderOpen} onConfirm={handleNewFolder} />
 
-<div
-  class="flex items-center justify-between px-2 py-1 border-b border-border/50 text-muted-foreground"
->
-  <span class="text-xs font-semibold tracking-wide">Entities</span>
-  <DropdownMenu>
-    <DropdownMenuTrigger>
-      {#snippet child({ props })}
-        <Button variant="ghost" size="icon-xs" {...props}>
-          <span class="i-ic-baseline-add"></span>
-        </Button>
-      {/snippet}
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem onclick={onNew('entity', '')}>
-        <span class="i-ic-baseline-category"></span>
-        New entity
-      </DropdownMenuItem>
-      <DropdownMenuItem onclick={onNew('folder', '')}>
-        <span class="i-ic-baseline-folder"></span>
-        New folder
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+<div class="px-2 py-1 border-b border-border/50 text-muted-foreground">
+  <div class="flex items-center justify-between">
+    <span class="text-xs font-semibold tracking-wide">Entities</span>
+    <div class="flex items-center gap-1">
+      <Button
+        size="icon-xs"
+        variant="ghost"
+        onclick={() => {
+          searchOpen = !searchOpen;
+          search = '';
+        }}
+      >
+        <span class={[searchOpen ? 'i-ic-outline-filter-alt-off' : 'i-ic-outline-filter-alt']}
+        ></span>
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger>
+          {#snippet child({ props })}
+            <Button variant="ghost" size="icon-xs" {...props}>
+              <span class="i-ic-baseline-add"></span>
+            </Button>
+          {/snippet}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onclick={onNew('entity', '')}>
+            <span class="i-ic-baseline-category"></span>
+            New entity
+          </DropdownMenuItem>
+          <DropdownMenuItem onclick={onNew('folder', '')}>
+            <span class="i-ic-baseline-folder"></span>
+            New folder
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  </div>
+  {#if searchOpen}
+    <InputGroup class="h-6 my-1">
+      <InputGroupInput
+        placeholder="Search entities..."
+        bind:value={search}
+        class="text-xs md:text-xs"
+      />
+      <InputGroupAddon>
+        <span class="i-ic-baseline-search h-4"></span>
+      </InputGroupAddon>
+      {#if search}
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            onclick={() => (search = '')}
+            variant="ghost"
+            class="rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <span class="i-ic-round-close h-4 w-4"></span>
+          </InputGroupButton>
+        </InputGroupAddon>
+      {/if}
+    </InputGroup>
+  {/if}
 </div>
 
 {#if ancestor && inherited.length > 0}
@@ -290,7 +330,7 @@
 
   {#if $entities.length === 0 && folders.size === 0}
     <div class="py-6 text-center text-xs text-muted-foreground">
-      No entities — use + to add one.
+      No entities - use + to add one.
     </div>
   {/if}
 </div>

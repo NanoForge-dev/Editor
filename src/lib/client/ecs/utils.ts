@@ -1,5 +1,8 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
+import { formatFrom } from '@utils/format';
+import { randomString } from '@utils/string';
+
 export const resetSubscriptions = (store: Writable<Record<string, Unsubscriber | null>>) => {
   const subscriptions = get(store);
   Object.values(subscriptions).forEach((sub) => {
@@ -34,4 +37,13 @@ export const resolveStore = <T>(
   content[resolvable] = writable(defaultValue);
   storage.set(content);
   return content[resolvable];
+};
+
+export const getId = (data: { id: string }[], name: string): string => {
+  const baseId = formatFrom.all(name).toSnake();
+  let id = baseId;
+  while (data.find((d) => d.id === id)) {
+    id = `${baseId}_${randomString(5)}`;
+  }
+  return id;
 };

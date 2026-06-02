@@ -4,6 +4,8 @@ export interface PackageItems {
     color: string;
   };
   addTooltip: string;
+  disableAddTooltipNotSelected: string;
+  disableAddTooltipAlreadyAdded: string;
 }
 
 export type TreeEntity = { kind: 'entity'; id: string; scene?: string };

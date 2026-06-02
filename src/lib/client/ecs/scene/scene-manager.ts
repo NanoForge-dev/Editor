@@ -1,7 +1,7 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
 import type { ECSHandler } from '../ecs-handler';
-import { resetSubscriptions } from '../utils';
+import { getId, resetSubscriptions } from '../utils';
 import { SceneHandle } from './scene-handle';
 import type { Scene } from './scene.type';
 
@@ -76,13 +76,15 @@ export class SceneManager {
   }
 
   set rootScenes(scenes: string[]) {
-    _rootScenesStorage.set(scenes);
+    _rootScenesStorage.set(Array.from(new Set(scenes)));
   }
 
-  add(scene: Scene) {
+  add(scene: Omit<Scene, 'id'>): string {
     const scenes = get(_storage);
-    scenes.push(scene);
+    const id = getId(this.data, scene.name);
+    scenes.push({ ...scene, id });
     _storage.set(scenes);
+    return id;
   }
 
   get(id: string): SceneHandle {
@@ -104,6 +106,20 @@ export class SceneManager {
       subscriptions[id]();
       subscriptions[id] = null;
       _subscriptions.set(subscriptions);
+    }
+
+    if (this.rootScenes.includes(id))
+      this.rootScenes = this.rootScenes.filter((scene) => scene !== id);
+
+    if (this.defaultData === id) {
+      this.get(this.data.find((v) => !!v)?.id ?? '').setDefault();
+    }
+
+    if (this.activeData.id === id) {
+      this.get(
+        (this.data.find((scene) => scene.id === this.defaultData) ?? this.data.find((v) => !!v))
+          ?.id ?? '',
+      ).setActive();
     }
   }
 
