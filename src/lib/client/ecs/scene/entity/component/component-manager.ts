@@ -41,7 +41,14 @@ export class EntityComponentManager {
 
   add(component: string) {
     const components = get(this._store);
-    components[component] = {};
+    const manifest = this.entity.manager.scene.manager.ecs.components.get(component).data;
+    components[component] = {
+      ...Object.fromEntries(
+        manifest.params
+          .filter((param) => param.default)
+          .map((param) => [param.name, param.default as string]),
+      ),
+    };
     this._store.set(components);
   }
 

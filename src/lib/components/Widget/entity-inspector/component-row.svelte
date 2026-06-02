@@ -16,7 +16,6 @@
   let deleteOpen = $state(false);
 
   const onDelete = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     deleteOpen = true;
   };

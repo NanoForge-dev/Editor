@@ -1,5 +1,6 @@
 import {
   componentsTransformer,
+  librariesTransformer,
   scenesTransformer,
   systemsTransformer,
 } from '$lib/client/ecs/transformers';
@@ -7,6 +8,8 @@ import type { Project } from '$lib/client/project';
 
 import { ComponentHandle } from './component/component-handle';
 import { ComponentManager } from './component/component-manager';
+import { LibraryHandle } from './library/library-handle';
+import { LibraryManager } from './library/library-manager';
 import { EntityComponentManager } from './scene/entity/component/component-manager';
 import { ComponentParamHandle } from './scene/entity/component/component-param-handle';
 import { ComponentParamManager } from './scene/entity/component/component-param-manager';
@@ -24,12 +27,15 @@ export class ECSHandler {
   private _sceneManager: SceneManager | undefined;
   private _componentManager: ComponentManager | undefined;
   private _systemManager: SystemManager | undefined;
+  private _libraryManager: LibraryManager | undefined;
 
   static reset() {
     ComponentHandle.reset();
     ComponentManager.reset();
     SystemManager.reset();
     SystemHandle.reset();
+    LibraryManager.reset();
+    LibraryHandle.reset();
     SceneHandle.reset();
     SceneManager.reset();
     SceneSystemManager.reset();
@@ -58,6 +64,7 @@ export class ECSHandler {
 
     this._componentManager = new ComponentManager(componentsTransformer(components));
     this._systemManager = new SystemManager(systemsTransformer(systems));
+    this._libraryManager = new LibraryManager(librariesTransformer(save));
     // Scene Manager needs others managers to be initialized
     this._sceneManager = new SceneManager(this, scenesTransformer(save), ['default'], 'default');
   }
@@ -75,5 +82,10 @@ export class ECSHandler {
   get systems(): SystemManager {
     if (!this._systemManager) throw new Error('ECS handler not initialized');
     return this._systemManager;
+  }
+
+  get libraries(): LibraryManager {
+    if (!this._libraryManager) throw new Error('ECS handler not initialized');
+    return this._libraryManager;
   }
 }

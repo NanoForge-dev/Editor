@@ -38,8 +38,8 @@
   };
 
   const handleSelect = (component: Component) => (e: MouseEvent) => {
-    e.stopPropagation();
     e.preventDefault();
+    e.stopPropagation();
     onSelect(component);
     close();
   };

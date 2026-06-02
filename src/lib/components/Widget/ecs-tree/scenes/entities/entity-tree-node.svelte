@@ -40,7 +40,6 @@
   const isDragging = $derived(drag.dragging?.type === 'entity' && drag.dragging.id === $entity.id);
 
   const onSelect = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     handle.setSelected();
   };
@@ -54,13 +53,11 @@
   };
 
   const onEdit = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     editOpen = true;
   };
 
   const onDelete = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     deleteOpen = true;
   };
@@ -122,8 +119,9 @@
       </span>
       <span
         class={[
-          'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100  duration-150',
-          isDragging ? 'opacity-100' : 'opacity-0',
+          'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator duration-150',
+          isDragging && !readonly ? 'opacity-100' : 'opacity-0',
+          !readonly ? 'group-hover:opacity-100' : '',
         ]}
       >
       </span>

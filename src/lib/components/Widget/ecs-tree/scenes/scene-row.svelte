@@ -43,19 +43,16 @@
   const paddingLeft = $derived(8 + depth * 12);
 
   const onSetActive = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     handle.setActive();
   };
 
   const onSetDefault = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     handle.setDefault();
   };
 
   const onUpdate = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     editOpen = true;
   };
@@ -65,7 +62,6 @@
   };
 
   const onDelete = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     deleteOpen = true;
   };

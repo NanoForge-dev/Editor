@@ -1,4 +1,4 @@
-import type { Component, Scene, System } from '$lib/client/ecs';
+import type { Component, Library, Scene, System } from '$lib/client/ecs';
 import type { ComponentPackage, SystemPackage } from '$lib/server/project/package';
 
 import type { Save } from '@utils/types';
@@ -16,6 +16,12 @@ export const systemsTransformer = (systems: SystemPackage[]): System[] =>
     id: system.manifest.name,
     name: system.manifest.name,
     path: system.save.path,
+  }));
+
+export const librariesTransformer = (save: Save): Library[] =>
+  save.libraries.map((lib) => ({
+    id: lib.path,
+    name: lib.name,
   }));
 
 export const scenesTransformer = (save: Save): Scene[] => [

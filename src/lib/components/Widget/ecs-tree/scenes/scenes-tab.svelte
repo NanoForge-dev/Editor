@@ -10,6 +10,10 @@
   const { manager }: Props = $props();
 
   let selected = $state<string | null>(manager.defaultData);
+
+  manager.store.subscribe((scenes) => {
+    if (!scenes.find((scene) => scene.id === selected)) selected = null;
+  });
 </script>
 
 <div class="flex flex-1 min-h-0">

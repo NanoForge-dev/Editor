@@ -10,12 +10,14 @@
   import TooltipText from '$lib/components/ui/tooltip-text/tooltip-text.svelte';
   import { type PackageItems } from '../types';
   import { COMPONENT_ITEMS } from '../components/component.items';
+  import { LIBRARY_ITEMS } from '../libraries/library.items';
   import { SYSTEM_ITEMS } from '../systems/system.items';
+  import type { Package } from '../types';
   import { DeleteConfirmDialog } from '$lib/components/dialogs';
   import { capitalize } from '@utils/string';
-  import type { ComponentHandle, SystemHandle } from '$lib/client/ecs';
+  import type { ComponentHandle, SystemHandle, LibraryHandle } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
-  import { get } from 'svelte/store';
+  import { get, type Writable } from 'svelte/store';
 
   type Props =
     | {
@@ -25,14 +27,18 @@
     | {
         type: 'system';
         handle: SystemHandle;
+      }
+    | {
+        type: 'library';
+        handle: LibraryHandle;
       };
 
-  const ITEMS = { component: COMPONENT_ITEMS, system: SYSTEM_ITEMS };
+  const ITEMS = { component: COMPONENT_ITEMS, system: SYSTEM_ITEMS, library: LIBRARY_ITEMS };
 
   const { type, handle }: Props = $props();
   const { ecs } = useProject();
 
-  const pkg = $derived(handle.store);
+  const pkg = $derived<Writable<Package>>(handle.store);
 
   const activeScene = $derived(ecs.scenes.active);
   const activeSceneData = $derived($activeScene?.store);
@@ -62,7 +68,6 @@
   let deleteOpen = $state(false);
 
   const onAdd = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     if (type === 'component') {
       const entity = ecs.scenes.activeData.entities.selectedData;
@@ -74,7 +79,6 @@
   };
 
   const onOpenCode = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     // @todo handle open code editor
   };
@@ -85,7 +89,6 @@
   };
 
   const onDelete = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     deleteOpen = true;
   };
@@ -93,7 +96,7 @@
 
 <DeleteConfirmDialog
   type={capitalize(type)}
-  name={$pkg.name}
+  name={$pkg.name ?? $pkg.id}
   bind:open={deleteOpen}
   onConfirm={handleDelete}
 />
@@ -107,14 +110,18 @@
             <span class={['w-3.5 h-3.5 shrink-0', items.icon.name, items.icon.color]}></span>
             <span class="font-medium text-foreground flex-1 truncate text-xs">{$pkg.name}</span>
           </div>
-          <div class="mt-0.5 text-xs text-muted-foreground truncate pl-5">{$pkg.path}</div>
+          <div class="mt-0.5 text-xs text-muted-foreground truncate pl-5">
+            {$pkg.path ?? $pkg.id}
+          </div>
         </div>
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-          <TooltipText text={tooltip}>
-            <Button disabled={!!disabled} variant="ghost" size="icon" onclick={onAdd}>
-              <span class="i-ic-baseline-add-circle text-green-400"></span>
-            </Button>
-          </TooltipText>
+          {#if tooltip}
+            <TooltipText text={tooltip}>
+              <Button disabled={!!disabled} variant="ghost" size="icon" onclick={onAdd}>
+                <span class="i-ic-baseline-add-circle text-green-400"></span>
+              </Button>
+            </TooltipText>
+          {/if}
           <Button
             variant="ghost"
             size="icon"
@@ -128,15 +135,17 @@
     </div>
   </ContextMenuTrigger>
   <ContextMenuContent>
-    <ContextMenuItem onclick={onOpenCode}>
-      <span class="i-ic-baseline-open-in-new"></span>
-      Open code
-    </ContextMenuItem>
-    <ContextMenuItem disabled={!!disabled} onclick={onAdd}>
-      <span class="i-ic-baseline-add-circle text-green-400"></span>
-      {items.addTooltip}
-    </ContextMenuItem>
-    <ContextMenuSeparator />
+    {#if type !== 'library'}
+      <ContextMenuItem onclick={onOpenCode}>
+        <span class="i-ic-baseline-open-in-new"></span>
+        Open code
+      </ContextMenuItem>
+      <ContextMenuItem disabled={!!disabled} onclick={onAdd}>
+        <span class="i-ic-baseline-add-circle text-green-400"></span>
+        {items.addTooltip}
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+    {/if}
     <ContextMenuItem variant="destructive" onclick={onDelete}>
       <span class="i-ic-baseline-delete"></span>
       Delete

@@ -4,6 +4,10 @@ export type { ComponentHandle } from './component/component-handle';
 export type { ComponentManager } from './component/component-manager';
 export type { Component, ComponentParam } from './component/component.type';
 
+export type { LibraryManager } from './library/library-manager';
+export type { LibraryHandle } from './library/library-handle';
+export type { Library } from './library/library.type';
+
 export type { SystemManager } from './system/system-manager';
 export type { SystemHandle } from './system/system-handle';
 export type { System } from './system/system.type';

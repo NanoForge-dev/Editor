@@ -17,7 +17,9 @@
   } from '$lib/components/ui/input-group';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { capitalize } from '@utils/string';
-  import type { ComponentManager, SystemManager } from '$lib/client/ecs';
+  import type { ComponentManager, SystemManager, LibraryManager } from '$lib/client/ecs';
+  import type { Writable } from 'svelte/store';
+  import type { Package } from '../types';
 
   type Props =
     | {
@@ -27,21 +29,25 @@
     | {
         type: 'system';
         manager: SystemManager;
+      }
+    | {
+        type: 'library';
+        manager: LibraryManager;
       };
 
   const { type, manager }: Props = $props();
 
-  const packages = $derived(manager.store);
+  const packages = $derived<Writable<Package[]>>(manager.store);
 
   const nameCapitalized = $derived(capitalize(type));
-  const namePlural = $derived(type + 's');
+  const namePlural = $derived(type === 'library' ? 'libraries' : type + 's');
 
   let query = $state('');
 
   const sorted = $derived(
     $packages
-      .filter((c) => !query || c.name.toLowerCase().includes(query.toLowerCase()))
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .filter((c) => !query || (c.name ?? c.id).toLowerCase().includes(query.toLowerCase()))
+      .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)),
   );
 
   let createOpen = $state(false);
@@ -100,10 +106,12 @@
         {/snippet}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onclick={() => (createOpen = true)}>
-          <span class="i-ic-baseline-note-add mr-2 text-sm"></span>
-          Create
-        </DropdownMenuItem>
+        {#if type !== 'library'}
+          <DropdownMenuItem onclick={() => (createOpen = true)}>
+            <span class="i-ic-baseline-note-add mr-2 text-sm"></span>
+            Create
+          </DropdownMenuItem>
+        {/if}
         <DropdownMenuItem onclick={() => (importOpen = true)}>
           <span class="i-ic-baseline-file-upload mr-2 text-sm"></span>
           Import

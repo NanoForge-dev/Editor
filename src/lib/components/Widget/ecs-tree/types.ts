@@ -3,9 +3,9 @@ export interface PackageItems {
     name: string;
     color: string;
   };
-  addTooltip: string;
-  disableAddTooltipNotSelected: string;
-  disableAddTooltipAlreadyAdded: string;
+  addTooltip: string | null;
+  disableAddTooltipNotSelected: string | null;
+  disableAddTooltipAlreadyAdded: string | null;
 }
 
 export type TreeEntity = { kind: 'entity'; id: string; scene?: string };
@@ -21,4 +21,10 @@ export interface EntityDragContext {
   dropOnFolder(folderPath: string): void;
   dropOnEntity(entityId: string): void;
   dropOnRoot(): void;
+}
+
+export interface Package {
+  id: string;
+  name?: string;
+  path?: string;
 }

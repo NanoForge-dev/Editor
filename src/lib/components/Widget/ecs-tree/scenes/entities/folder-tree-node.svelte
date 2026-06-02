@@ -15,6 +15,7 @@
   import DialogDeleteEntity from './dialog-delete-entity.svelte';
   import DialogEditEntity from './dialog-edit-entity.svelte';
   import { resolveParentPath } from '../../utils';
+  import { useProject } from '$lib/client/project';
 
   interface Props {
     manager: SceneEntityManager;
@@ -37,6 +38,8 @@
     onToggleFolder,
     onNew = () => () => {},
   }: Props = $props();
+
+  const { ecs } = useProject();
 
   const drag = getContext<EntityDragContext>(ENTITY_DRAG_KEY);
 
@@ -78,13 +81,11 @@
   };
 
   const onEdit = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     editOpen = true;
   };
 
   const onDelete = (e: MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
     deleteOpen = true;
   };
@@ -144,8 +145,9 @@
       <span class="flex-1 truncate text-left text-xs">{node.name}</span>
       <span
         class={[
-          'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100  duration-150',
-          isDragging ? 'opacity-100' : 'opacity-0',
+          'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator duration-150',
+          isDragging && !readonly ? 'opacity-100' : 'opacity-0',
+          !readonly ? 'group-hover:opacity-100' : '',
         ]}
       ></span>
     </button>
@@ -176,7 +178,14 @@
 {#if expandedFolders.has(node.path)}
   {#each node.children as child (child.kind === 'entity' ? child.id : child.path)}
     {#if child.kind === 'entity'}
-      <EntityTreeNode handle={manager.get(child.id)} {readonly} depth={depth + 1} {onNew} />
+      <EntityTreeNode
+        handle={child.scene
+          ? ecs.scenes.get(child.scene).entities.get(child.id)
+          : manager.get(child.id)}
+        {readonly}
+        depth={depth + 1}
+        {onNew}
+      />
     {:else}
       <FolderTreeNode
         {manager}

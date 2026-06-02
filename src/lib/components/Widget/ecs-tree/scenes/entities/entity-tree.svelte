@@ -61,6 +61,7 @@
   $effect.pre(() => {
     const id = manager.scene.id;
     if (id !== folderSceneId) {
+      folders.clear();
       untrack(() => {
         folderSceneId = id;
         $entities.forEach((e) => folderPaths(e.treePath).forEach((p) => folders.add(p)));

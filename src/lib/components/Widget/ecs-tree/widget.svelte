@@ -2,6 +2,7 @@
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
   import ScenesTab from './scenes/scenes-tab.svelte';
   import ComponentsTab from './components/components-tab.svelte';
+  import LibrariesTab from './libraries/libraries-tab.svelte';
   import SystemsTab from './systems/systems-tab.svelte';
   import { useProject } from '$lib/client/project';
 
@@ -21,6 +22,7 @@
     <TabsTrigger value="scenes" class="px-2 py-1 mx-2 my-1">Scenes</TabsTrigger>
     <TabsTrigger value="components" class="px-2 py-1 mx-2 my-1">Components</TabsTrigger>
     <TabsTrigger value="systems" class="px-2 py-1 mx-2 my-1">Systems</TabsTrigger>
+    <TabsTrigger value="libraries" class="px-2 py-1 mx-2 my-1">Libraries</TabsTrigger>
   </TabsList>
   <TabsContent value="scenes" class="flex-1 min-h-0">
     <ScenesTab manager={ecs.scenes} />
@@ -30,5 +32,8 @@
   </TabsContent>
   <TabsContent value="systems" class="flex-1 min-h-0">
     <SystemsTab manager={ecs.systems} />
+  </TabsContent>
+  <TabsContent value="libraries" class="flex-1 min-h-0">
+    <LibrariesTab manager={ecs.libraries} />
   </TabsContent>
 </Tabs>
