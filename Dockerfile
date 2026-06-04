@@ -14,6 +14,12 @@ WORKDIR /app
 
 FROM base AS prod
 
+ARG PUBLIC_MODE
+ARG PUBLIC_PM_URL
+
+ENV PUBLIC_MODE=${PUBLIC_MODE}
+ENV PUBLIC_PM_URL=${PUBLIC_PM_URL}
+
 RUN pnpm install --frozen-lockfile
 COPY . /app
 RUN pnpm run build
