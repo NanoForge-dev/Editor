@@ -1,9 +1,8 @@
-import type { EditorComponentManifest } from '@nanoforge-dev/ecs-lib';
 import { type Writable, get, writable } from 'svelte/store';
 
 import type { Project } from '$lib/client/project';
 
-import type { Save, SaveComponent, SaveEntity, SaveSystem } from '@utils/types';
+import type { Save } from '@utils/types';
 
 export class SaveHandler {
   private _project: Project;
@@ -23,6 +22,9 @@ export class SaveHandler {
 
   async init() {
     await this.fetchFromServer();
+
+    this._listeners();
+
     this._save.subscribe(() => {
       this.syncToServer();
     });
@@ -61,33 +63,43 @@ export class SaveHandler {
     return get(this._save);
   }
 
-  get needSync(): Writable<boolean> {
-    return this._needSync;
-  }
+  private _listeners() {
+    this._project.ecs.components.store.subscribe((components) => {
+      this._save.set({
+        ...this.save,
+        components: components.map((component) => ({
+          name: component.name,
+          path: component.path,
+          paramsNames: component.params.map((p) => p.name),
+        })),
+      });
+      void this.forceSyncToServer();
+    });
 
-  addComponent(component: SaveComponent) {
-    get(this._save).components.push(component);
-  }
+    this._project.ecs.scenes.activeData.systems.store.subscribe((systems) => {
+      this._save.set({
+        ...this.save,
+        systems: systems.map((name) => {
+          const system = this._project.ecs.systems.get(name).data;
+          return {
+            name: system.name,
+            path: system.path,
+          };
+        }),
+      });
+      void this.forceSyncToServer();
+    });
 
-  addEntity(entity: SaveEntity) {
-    get(this._save).entities.push(entity);
-  }
-
-  addSystem(system: SaveSystem) {
-    get(this._save).systems.push(system);
-  }
-
-  addComponentToEntity(
-    entityId: string,
-    componentName: string,
-    componentManifest: EditorComponentManifest,
-  ) {
-    const entity = get(this._save).entities.find((e) => e.id === entityId);
-    if (!entity) {
-      throw new Error('Entity not found: ' + entityId);
-    }
-    const newComp: Record<string, any> = {};
-    componentManifest.params.forEach((c) => (newComp[c.name] = c.default));
-    entity.components[componentName] = newComp;
+    this._project.ecs.scenes.activeData.entities.store.subscribe((entities) => {
+      this._save.set({
+        ...this.save,
+        entities: entities.map((entity) => ({
+          id: entity.id,
+          treePath: entity.treePath,
+          components: entity.components,
+        })),
+      });
+      void this.syncToServer();
+    });
   }
 }

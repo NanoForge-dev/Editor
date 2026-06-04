@@ -21,7 +21,7 @@
 </script>
 
 <button
-  class="h-7 flex items-center justify-start text-left gap-1 text-neutral-200 text-md hover:bg-neutral-800 text-nowrapcursor-pointer"
+  class="h-7 flex items-center justify-start text-left gap-1 text-neutral-200 text-md hover:bg-neutral-800 text-nowrap cursor-pointer"
   style={`padding-left: ${tab * 8}px`}
   onclick={handleOpen}
 >

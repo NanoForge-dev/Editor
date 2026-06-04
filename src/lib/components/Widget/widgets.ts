@@ -1,11 +1,11 @@
 import type { Component } from 'svelte';
 
 import MonacoEditor from './CodeEditor/MonacoEditor.svelte';
-import ECSTreeWidget from './ECSTree/ECSTree.svelte';
 import EditorGame from './EditorGame/EditorGame.svelte';
-import EntityInspectorWidget from './EntityInspector/EntityInspectorWidget.svelte';
 import OutputLogWidget from './OutputLog/OutputLogWidget.svelte';
 import { ContentBrowserWidget } from './content-browser';
+import { ECSTreeWidget } from './ecs-tree';
+import { EntityInspectorWidget } from './entity-inspector';
 
 export interface WidgetType {
   id: string;

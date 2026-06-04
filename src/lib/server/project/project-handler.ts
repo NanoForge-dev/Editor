@@ -9,6 +9,7 @@ import type { Part } from '@utils/types';
 
 import { type Context, type Handler } from '@utils-server/request-handler';
 
+import { LibraryHandler } from './library/library-handler';
 import { Loader } from './loader';
 import { PackageHandler } from './package/package-handler';
 import { SaveHandler } from './save/save-handler';
@@ -24,6 +25,7 @@ export class ProjectHandler {
   private _loader: Loader | undefined;
   private _save: SaveHandler | undefined;
   private _package: PackageHandler | undefined;
+  private _library: LibraryHandler | undefined;
 
   constructor(handler: Handler, context: Context, part: Part) {
     if (!context.project) throw new Exception('Bad Request', 'Project missing in context', 400);
@@ -59,5 +61,10 @@ export class ProjectHandler {
   get package(): PackageHandler {
     if (!this._package) this._package = new PackageHandler(this);
     return this._package;
+  }
+
+  get library(): LibraryHandler {
+    if (!this._library) this._library = new LibraryHandler(this);
+    return this._library;
   }
 }

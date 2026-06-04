@@ -4,28 +4,28 @@ import { BaseRepository } from '../base.repository';
 import type {
   AddComponentsActionInput,
   AddSystemsActionInput,
+  ComponentPackageResult,
   CreateComponentActionInput,
   CreateSystemActionInput,
   GetComponentsManifestsActionInput,
   GetSystemsManifestsActionInput,
-  NewComponentPackageResult,
-  NewSystemPackageResult,
+  SystemPackageResult,
 } from '../types';
 
 export class ProjectPackageRepository extends BaseRepository {
-  addComponents(input: AddComponentsActionInput): Promise<NewComponentPackageResult[]> {
+  addComponents(input: AddComponentsActionInput): Promise<ComponentPackageResult[]> {
     return this.run(`/actions/project/package?/add-components`, input);
   }
 
-  addSystems(input: AddSystemsActionInput): Promise<NewSystemPackageResult[]> {
+  addSystems(input: AddSystemsActionInput): Promise<SystemPackageResult[]> {
     return this.run(`/actions/project/package?/add-systems`, input);
   }
 
-  createComponent(input: CreateComponentActionInput): Promise<NewComponentPackageResult> {
+  createComponent(input: CreateComponentActionInput): Promise<ComponentPackageResult> {
     return this.run(`/actions/project/package?/create-component`, input);
   }
 
-  createSystem(input: CreateSystemActionInput): Promise<NewSystemPackageResult> {
+  createSystem(input: CreateSystemActionInput): Promise<SystemPackageResult> {
     return this.run(`/actions/project/package?/create-system`, input);
   }
 
@@ -37,5 +37,13 @@ export class ProjectPackageRepository extends BaseRepository {
 
   getSystemsManifests(input: GetSystemsManifestsActionInput): Promise<EditorSystemManifest[]> {
     return this.run(`/actions/project/package?/get-systems-manifests`, input);
+  }
+
+  getComponents(): Promise<ComponentPackageResult[]> {
+    return this.run(`/actions/project/package?/get-components`);
+  }
+
+  getSystems(): Promise<SystemPackageResult[]> {
+    return this.run(`/actions/project/package?/get-systems`);
   }
 }

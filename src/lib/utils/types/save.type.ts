@@ -27,6 +27,7 @@ export interface SaveSystem {
 
 export interface SaveEntity {
   id: string;
+  treePath: string;
   components: Record<string, Record<string, any>>;
 }
 

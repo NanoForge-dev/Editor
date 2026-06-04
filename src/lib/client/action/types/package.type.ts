@@ -4,14 +4,11 @@ import type { CreateComponentBody } from '$lib/server/actions/project/package/cr
 import type { CreateSystemBody } from '$lib/server/actions/project/package/create-system.action';
 import type { GetComponentManifestBody } from '$lib/server/actions/project/package/get-components-manifests.action';
 import type { GetSystemManifestBody } from '$lib/server/actions/project/package/get-systems-manifests.action';
-import type {
-  NewComponentPackage,
-  NewSystemPackage,
-} from '$lib/server/project/package/package.type';
+import type { ComponentPackage, SystemPackage } from '$lib/server/project/package/package.type';
 
-export type NewComponentPackageResult = NewComponentPackage;
+export type ComponentPackageResult = ComponentPackage;
 
-export type NewSystemPackageResult = NewSystemPackage;
+export type SystemPackageResult = SystemPackage;
 
 export type AddComponentsActionInput = AddComponentBody;
 

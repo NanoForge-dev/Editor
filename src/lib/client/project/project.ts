@@ -1,4 +1,5 @@
 import { type ActionClient, getActionClient } from '$lib/client/action';
+import { ECSHandler } from '$lib/client/ecs';
 import { EventHandler } from '$lib/client/event';
 import { InfoHandler } from '$lib/client/info';
 import { Loader } from '$lib/client/loader';
@@ -14,6 +15,7 @@ export class Project {
   private _save: SaveHandler | undefined;
   private _packageHandler: PackageHandler | undefined;
   private _eventHandler: EventHandler | undefined;
+  private _ecsHandler: ECSHandler | undefined;
 
   private _inited = false;
 
@@ -28,6 +30,7 @@ export class Project {
 
   async init(): Promise<Project> {
     await this.fs.init();
+    await this.ecs.init();
     await this.save.init();
     await this.packages.init();
     this._inited = true;
@@ -71,5 +74,10 @@ export class Project {
   get event(): EventHandler {
     if (!this._eventHandler) this._eventHandler = new EventHandler();
     return this._eventHandler;
+  }
+
+  get ecs(): ECSHandler {
+    if (!this._ecsHandler) this._ecsHandler = new ECSHandler(this);
+    return this._ecsHandler;
   }
 }

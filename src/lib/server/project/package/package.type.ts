@@ -7,12 +7,12 @@ export enum PackageTypeEnum {
   SYSTEM = 'system',
 }
 
-export interface NewComponentPackage {
+export interface ComponentPackage {
   manifest: EditorComponentManifest;
   save: SaveComponent;
 }
 
-export interface NewSystemPackage {
+export interface SystemPackage {
   manifest: EditorSystemManifest;
   save: SaveSystem;
 }

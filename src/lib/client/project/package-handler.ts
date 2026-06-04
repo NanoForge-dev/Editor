@@ -3,7 +3,7 @@ import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-d
 import type { Project } from '$lib/client/project';
 
 export class PackageHandler {
-  private _project: Project;
+  private readonly _project: Project;
 
   private _componentsManifests: Map<string, EditorComponentManifest> = new Map();
   private _systemsManifests: Map<string, EditorSystemManifest> = new Map();
@@ -13,30 +13,31 @@ export class PackageHandler {
   }
 
   async init() {
-    if (this._project.save.save.components.length > 0) {
-      this._componentsManifests = new Map<string, EditorComponentManifest>(
-        (
-          await this._project.actions.package.getComponentsManifests({
-            componentPaths: this._project.save.save.components.map((c) => c.path) as [
-              string,
-              ...string[],
-            ],
-          })
-        ).map((e, index) => [this._project.save.save.components[index].name, e]),
-      );
-    }
-    if (this._project.save.save.systems.length > 0) {
-      this._systemsManifests = new Map<string, EditorSystemManifest>(
-        (
-          await this._project.actions.package.getSystemsManifests({
-            systemPaths: this._project.save.save.systems.map((s) => s.path) as [
-              string,
-              ...string[],
-            ],
-          })
-        ).map((e, index) => [this._project.save.save.systems[index].name, e]),
-      );
-    }
+    // Not working but not used currently
+    // if (this._project.save.save.components.length > 0) {
+    //   this._componentsManifests = new Map<string, EditorComponentManifest>(
+    //     (
+    //       await this._project.actions.package.getComponentsManifests({
+    //         componentPaths: this._project.save.save.components.map((c) => c.path) as [
+    //           string,
+    //           ...string[],
+    //         ],
+    //       })
+    //     ).map((e, index) => [this._project.save.save.components[index].name, e]),
+    //   );
+    // }
+    // if (this._project.save.save.systems.length > 0) {
+    //   this._systemsManifests = new Map<string, EditorSystemManifest>(
+    //     (
+    //       await this._project.actions.package.getSystemsManifests({
+    //         systemPaths: this._project.save.save.systems.map((s) => s.path) as [
+    //           string,
+    //           ...string[],
+    //         ],
+    //       })
+    //     ).map((e, index) => [this._project.save.save.systems[index].name, e]),
+    //   );
+    // }
   }
 
   getComponentManifest(componentName: string): EditorComponentManifest | undefined {

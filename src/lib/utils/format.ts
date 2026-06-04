@@ -1,3 +1,31 @@
+class WordList {
+  words: string[];
+
+  constructor(words: string[]) {
+    this.words = words;
+  }
+
+  toKebab() {
+    return this.words.join('-');
+  }
+
+  toPascal() {
+    return this.words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join('');
+  }
+
+  toCamel() {
+    return this.words
+      .map((word, i) =>
+        i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1),
+      )
+      .join('');
+  }
+
+  toSnake() {
+    return this.words.join('_');
+  }
+}
+
 const toWords = (str: string): string[] => {
   return str
     .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -8,26 +36,23 @@ const toWords = (str: string): string[] => {
     .filter(Boolean);
 };
 
-export const toKebabCase = (str: string): string => {
-  return toWords(str)
-    .map((word) => word.toLowerCase())
-    .join('-');
-};
+const fromKebab = (str: string): WordList => new WordList(str.split('-'));
 
-export const toPascalCase = (str: string): string => {
-  return toWords(str)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
-};
+const fromPascal = (str: string): WordList =>
+  new WordList(str.split(/(?=[A-Z])/).map((word) => word.toLowerCase()));
 
-export const toCamelCase = (str: string): string => {
-  const words = toWords(str);
-  return words
-    .map((word, i) =>
-      i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-    )
-    .join('');
-};
+const fromCamel = (str: string): WordList =>
+  new WordList(str.split(/(?=[A-Z])/).map((word) => word.toLowerCase()));
 
-export const camelToKebab = (str: string) =>
-  str.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+const fromSnake = (str: string): WordList => new WordList(str.split('_'));
+
+const fromAll = (str: string): WordList =>
+  new WordList(toWords(str).map((word) => word.toLowerCase()));
+
+export const formatFrom = {
+  kebab: fromKebab,
+  pascal: fromPascal,
+  camel: fromCamel,
+  snake: fromSnake,
+  all: fromAll,
+};
