@@ -1,6 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 
-import { env } from '$env/dynamic/private';
+import { PUBLIC_MODE } from '$env/static/public';
 
 import {
   type Session,
@@ -20,7 +20,7 @@ export const getContext = async (event: RequestEvent): Promise<Context> => {
   const project = resolveProject(event.request.headers, session) as SessionProject;
 
   return {
-    online: env.PUBLIC_MODE === 'ONLINE',
+    online: PUBLIC_MODE === 'ONLINE',
     session,
     project,
   };

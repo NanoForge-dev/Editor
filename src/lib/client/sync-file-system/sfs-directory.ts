@@ -1,7 +1,7 @@
-import { type SyncFileSystem } from '$lib/client/sync-file-system/sfs';
+import type { SyncFileSystem } from '$lib/client/sync-file-system/sfs';
 import type { DirectoryContent } from '$lib/server/file-system/project-directory';
 
-import { type FileSystemDirectory } from '@utils-client/file-system';
+import type { FileSystemDirectory } from '@utils-client/file-system';
 
 import { SfsFile } from './sfs-file';
 

@@ -1,4 +1,4 @@
-import type { EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
+import type { SystemManifest } from '$lib/server/project/package';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
@@ -7,7 +7,7 @@ export class GetSystemManifestBody {
 }
 
 export const getSystemsManifestsAction = useActionHandler(
-  async ({ body, project }): Promise<EditorSystemManifest[]> => {
+  async ({ body, project }): Promise<SystemManifest[]> => {
     return await Promise.all(
       body.systemPaths.map((path) => project.client.package.getSystemManifest(path)),
     );

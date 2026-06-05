@@ -1,12 +1,11 @@
-import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
-
 import type { Project } from '$lib/client/project';
+import type { ComponentManifest, SystemManifest } from '$lib/server/project/package';
 
 export class PackageHandler {
   private readonly _project: Project;
 
-  private _componentsManifests: Map<string, EditorComponentManifest> = new Map();
-  private _systemsManifests: Map<string, EditorSystemManifest> = new Map();
+  private _componentsManifests: Map<string, ComponentManifest> = new Map();
+  private _systemsManifests: Map<string, SystemManifest> = new Map();
 
   constructor(project: Project) {
     this._project = project;
@@ -40,11 +39,11 @@ export class PackageHandler {
     // }
   }
 
-  getComponentManifest(componentName: string): EditorComponentManifest | undefined {
+  getComponentManifest(componentName: string): ComponentManifest | undefined {
     return this._componentsManifests.get(componentName);
   }
 
-  getSystemManifest(systemName: string): EditorSystemManifest | undefined {
+  getSystemManifest(systemName: string): SystemManifest | undefined {
     return this._systemsManifests.get(systemName);
   }
 
@@ -64,11 +63,11 @@ export class PackageHandler {
     this._systemsManifests.set(newSystem.save.name, newSystem.manifest);
   }
 
-  addComponentManifest(componentName: string, component: EditorComponentManifest) {
+  addComponentManifest(componentName: string, component: ComponentManifest) {
     this._componentsManifests.set(componentName, component);
   }
 
-  addSystemManifest(systemName: string, system: EditorSystemManifest) {
+  addSystemManifest(systemName: string, system: SystemManifest) {
     this._systemsManifests.set(systemName, system);
   }
 }

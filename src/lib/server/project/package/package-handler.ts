@@ -1,14 +1,19 @@
-import type { EditorComponentManifest, EditorSystemManifest } from '@nanoforge-dev/ecs-lib';
 import { join } from 'path';
 
 import { FileSystemError } from '$lib/server/file-system/file-system-error';
 import type { DirectoryContent } from '$lib/server/file-system/project-directory';
-import { type ProjectHandler } from '$lib/server/project';
+import type { ProjectHandler } from '$lib/server/project';
 
 import { formatFrom } from '@utils/format';
 
 import { resolveManifest } from './manifest-resolver';
-import { type ComponentPackage, PackageTypeEnum, type SystemPackage } from './package.type';
+import {
+  type ComponentManifest,
+  type ComponentPackage,
+  PackageTypeEnum,
+  type SystemManifest,
+  type SystemPackage,
+} from './package.type';
 
 export class PackageHandler {
   private readonly handler: ProjectHandler;
@@ -69,7 +74,7 @@ export class PackageHandler {
    *
    * @returns Manifest of the component
    */
-  getComponentManifest(path: string): EditorComponentManifest {
+  getComponentManifest(path: string): ComponentManifest {
     return this._getPackageManifest(PackageTypeEnum.COMPONENT, path);
   }
 
@@ -81,7 +86,7 @@ export class PackageHandler {
    *
    * @returns Manifest of the system
    */
-  getSystemManifest(path: string): EditorSystemManifest {
+  getSystemManifest(path: string): SystemManifest {
     return this._getPackageManifest(PackageTypeEnum.SYSTEM, path);
   }
 
@@ -111,7 +116,7 @@ export class PackageHandler {
     const res: any = {
       manifest,
       save: {
-        name: manifest.name,
+        name: manifest.id,
         path,
       },
     };

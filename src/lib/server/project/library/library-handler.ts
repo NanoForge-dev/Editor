@@ -1,8 +1,8 @@
-import { type ProjectHandler } from '$lib/server/project';
+import type { ProjectHandler } from '$lib/server/project';
 
 import { formatFrom } from '@utils/format';
 
-import { type LibraryPackage } from './library.type';
+import type { LibraryPackage } from './library.type';
 
 export class LibraryHandler {
   private readonly handler: ProjectHandler;

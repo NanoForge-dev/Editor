@@ -1,6 +1,6 @@
 import type { ClassType, MaybePromise } from '@utils/types';
 
-import { type Handler } from './handler';
+import type { Handler } from './handler';
 
 export type Callback<Body = any> = (opts: Handler<Body>) => MaybePromise<object | never>;
 

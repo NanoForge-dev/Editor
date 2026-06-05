@@ -1,6 +1,7 @@
 import { BaseRepository } from '../base.repository';
 import type {
   ActionProject,
+  CompleteProjectActionInput,
   CreateProjectActionInput,
   GatewayProjectResult,
   InfoProjectInput,
@@ -15,6 +16,10 @@ export class ProjectRepository extends BaseRepository {
 
   new(input: CreateProjectActionInput): Promise<ActionProject> {
     return this.run(`/actions/project?/new`, input);
+  }
+
+  complete(input: CompleteProjectActionInput): Promise<ActionProject> {
+    return this.run(`/actions/project?/complete`, input);
   }
 
   getInfo(): Promise<InfoProjectResult> {

@@ -60,7 +60,7 @@ export class BaseRepository {
     const res = await this._client[request](path, options);
     if (!res.ok)
       throw new Error(`Request failed with status code ${res.status}`, {
-        cause: res,
+        cause: await res.json(),
       });
     return (await res.json()) as R;
   }

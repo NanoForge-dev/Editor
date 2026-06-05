@@ -1,6 +1,6 @@
-import type { EditorComponentManifest } from '@nanoforge-dev/ecs-lib';
+import type { ComponentManifest } from '$lib/server/project/package';
 
-export type ComponentParam = EditorComponentManifest['params'][number];
+export type ComponentParam = ComponentManifest['params'][number];
 
 export interface Component {
   id: string;

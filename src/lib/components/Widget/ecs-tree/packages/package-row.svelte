@@ -8,7 +8,7 @@
     ContextMenuTrigger,
   } from '$lib/components/ui/context-menu';
   import TooltipText from '$lib/components/ui/tooltip-text/tooltip-text.svelte';
-  import { type PackageItems } from '../types';
+  import type { PackageItems } from '../types';
   import { COMPONENT_ITEMS } from '../components/component.items';
   import { LIBRARY_ITEMS } from '../libraries/library.items';
   import { SYSTEM_ITEMS } from '../systems/system.items';

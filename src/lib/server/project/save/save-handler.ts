@@ -1,4 +1,4 @@
-import { type ProjectHandler } from '$lib/server/project';
+import type { ProjectHandler } from '$lib/server/project';
 
 import type { Save } from '@utils/types';
 

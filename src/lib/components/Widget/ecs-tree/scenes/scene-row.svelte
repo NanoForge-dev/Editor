@@ -1,12 +1,12 @@
 <script lang="ts">
   import {
     ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuSeparator,
+    // ContextMenuContent,
+    // ContextMenuItem,
+    // ContextMenuSeparator,
     ContextMenuTrigger,
   } from '$lib/components/ui/context-menu';
-  import { type SceneHandle } from '$lib/client/ecs';
+  import type { SceneHandle } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
   import DialogEditScene from './dialog-edit-scene.svelte';
   import { DeleteConfirmDialog } from '$lib/components/dialogs';
@@ -42,29 +42,29 @@
   const isDefault = $derived($defaultScene === handle.id);
   const paddingLeft = $derived(8 + depth * 12);
 
-  const onSetActive = (e: MouseEvent) => {
-    e.stopPropagation();
-    handle.setActive();
-  };
+  // const onSetActive = (e: MouseEvent) => {
+  //   e.stopPropagation();
+  //   handle.setActive();
+  // };
 
-  const onSetDefault = (e: MouseEvent) => {
-    e.stopPropagation();
-    handle.setDefault();
-  };
+  // const onSetDefault = (e: MouseEvent) => {
+  //   e.stopPropagation();
+  //   handle.setDefault();
+  // };
 
-  const onUpdate = (e: MouseEvent) => {
-    e.stopPropagation();
-    editOpen = true;
-  };
+  // const onUpdate = (e: MouseEvent) => {
+  //   e.stopPropagation();
+  //   editOpen = true;
+  // };
 
   const handleUpdate = (name: string) => {
     handle.update({ name });
   };
 
-  const onDelete = (e: MouseEvent) => {
-    e.stopPropagation();
-    deleteOpen = true;
-  };
+  // const onDelete = (e: MouseEvent) => {
+  //   e.stopPropagation();
+  //   deleteOpen = true;
+  // };
 
   const handleDelete = () => {
     handle.delete();
@@ -117,30 +117,31 @@
       </button>
     </div>
   </ContextMenuTrigger>
-  <ContextMenuContent>
-    <ContextMenuItem onclick={onUpdate}>
-      <span class="i-ic-baseline-edit"></span>
-      Edit
-    </ContextMenuItem>
-    <ContextMenuSeparator />
-    {#if !isActive || !isDefault}
-      {#if !isActive}
-        <ContextMenuItem onclick={onSetActive}>
-          <span class="i-ic-round-play-arrow text-green-400"></span>
-          Set active
-        </ContextMenuItem>
-      {/if}
-      {#if !isDefault}
-        <ContextMenuItem onclick={onSetDefault}>
-          <span class="i-ic-baseline-star text-amber-400"></span>
-          Set default
-        </ContextMenuItem>
-      {/if}
-      <ContextMenuSeparator />
-    {/if}
-    <ContextMenuItem variant="destructive" onclick={onDelete}>
-      <span class="i-ic-baseline-delete"></span>
-      Delete
-    </ContextMenuItem>
-  </ContextMenuContent>
+  <!-- Disabled for now until scenes are fully handled -->
+  <!--  <ContextMenuContent>-->
+  <!--    <ContextMenuItem onclick={onUpdate}>-->
+  <!--      <span class="i-ic-baseline-edit"></span>-->
+  <!--      Edit-->
+  <!--    </ContextMenuItem>-->
+  <!--    <ContextMenuSeparator />-->
+  <!--    {#if !isActive || !isDefault}-->
+  <!--      {#if !isActive}-->
+  <!--        <ContextMenuItem onclick={onSetActive}>-->
+  <!--          <span class="i-ic-round-play-arrow text-green-400"></span>-->
+  <!--          Set active-->
+  <!--        </ContextMenuItem>-->
+  <!--      {/if}-->
+  <!--      {#if !isDefault}-->
+  <!--        <ContextMenuItem onclick={onSetDefault}>-->
+  <!--          <span class="i-ic-baseline-star text-amber-400"></span>-->
+  <!--          Set default-->
+  <!--        </ContextMenuItem>-->
+  <!--      {/if}-->
+  <!--      <ContextMenuSeparator />-->
+  <!--    {/if}-->
+  <!--    <ContextMenuItem variant="destructive" onclick={onDelete}>-->
+  <!--      <span class="i-ic-baseline-delete"></span>-->
+  <!--      Delete-->
+  <!--    </ContextMenuItem>-->
+  <!--  </ContextMenuContent>-->
 </ContextMenu>

@@ -11,7 +11,7 @@
   import { ENTITY_DRAG_KEY } from '../../const';
   import EntityTreeNode from './entity-tree-node.svelte';
   import FolderTreeNode from './folder-tree-node.svelte';
-  import { type SceneEntityManager } from '$lib/client/ecs';
+  import type { SceneEntityManager } from '$lib/client/ecs';
   import DialogDeleteEntity from './dialog-delete-entity.svelte';
   import DialogEditEntity from './dialog-edit-entity.svelte';
   import { resolveParentPath } from '../../utils';

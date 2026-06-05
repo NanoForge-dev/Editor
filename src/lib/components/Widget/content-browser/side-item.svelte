@@ -2,7 +2,7 @@
   import ContentBrowserIcon from './icon.svelte';
   import ContentBrowserSideList from './side-list.svelte';
   import { currentDir } from './store';
-  import { type ContentBrowserItemDir } from './types';
+  import type { ContentBrowserItemDir } from './types';
 
   interface Props {
     path: string;

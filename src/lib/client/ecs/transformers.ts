@@ -5,7 +5,7 @@ import type { Save } from '@utils/types';
 
 export const componentsTransformer = (components: ComponentPackage[]): Component[] =>
   components.map((component) => ({
-    id: component.manifest.name,
+    id: component.manifest.id,
     name: component.manifest.name,
     path: component.save.path,
     params: component.manifest.params,
@@ -13,7 +13,7 @@ export const componentsTransformer = (components: ComponentPackage[]): Component
 
 export const systemsTransformer = (systems: SystemPackage[]): System[] =>
   systems.map((system) => ({
-    id: system.manifest.name,
+    id: system.manifest.id,
     name: system.manifest.name,
     path: system.save.path,
   }));
@@ -27,7 +27,7 @@ export const librariesTransformer = (save: Save): Library[] =>
 export const scenesTransformer = (save: Save): Scene[] => [
   {
     id: 'default',
-    name: 'Default',
+    name: 'Default Scene',
     path: 'unknown',
     subScenes: [],
     assets: [],

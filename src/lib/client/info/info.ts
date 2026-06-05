@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 
-import { type Project } from '$lib/client/project';
+import type { Project } from '$lib/client/project';
 
 import { infoStore } from './info.store';
 import type { ProjectInfo, ProjectInfoInput } from './info.type';

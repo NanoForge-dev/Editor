@@ -6,7 +6,7 @@ import {
   directoryContentToFileEntries,
 } from '$lib/server/file-system';
 
-import { type ProjectHandler } from '../project-handler';
+import type { ProjectHandler } from '../project-handler';
 import { resolveEnv } from './env';
 import type { Manifest } from './types';
 

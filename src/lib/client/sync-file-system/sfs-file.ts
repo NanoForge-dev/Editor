@@ -2,7 +2,7 @@ import type { SyncFileSystem } from '$lib/client/sync-file-system/sfs';
 
 import { SESSION_PROJECT_HEADER } from '@utils/const';
 
-import { type FileSystemFile } from '@utils-client/file-system';
+import type { FileSystemFile } from '@utils-client/file-system';
 
 export class SfsFile {
   private readonly _route: string;

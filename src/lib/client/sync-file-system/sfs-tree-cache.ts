@@ -1,6 +1,6 @@
 import { IndexedDB } from '@utils-client/indexed-db';
 
-import { type SfsDirectoryMap } from './sfs-directory';
+import type { SfsDirectoryMap } from './sfs-directory';
 
 export const SFS_DB_STORE_NAME = 'fs-project-tree';
 

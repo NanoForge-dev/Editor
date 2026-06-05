@@ -7,6 +7,6 @@ export class ProjectRepository extends BaseRepository {
   }
 
   getProjects(): Promise<ApiProject[]> {
-    return this.get(`/projects}`);
+    return this.get(`/projects`);
   }
 }

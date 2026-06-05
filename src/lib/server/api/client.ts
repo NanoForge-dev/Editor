@@ -1,6 +1,7 @@
 import type { Cookies } from '@sveltejs/kit';
 
 import { env } from '$env/dynamic/private';
+import { PUBLIC_MODE } from '$env/static/public';
 
 import { HttpClient } from '@utils/http';
 
@@ -23,7 +24,7 @@ export const getNoAuthApi = (): Api => {
       'Content-Type': 'application/json',
     },
   });
-  const isOnline = env.PUBLIC_MODE === 'ONLINE';
+  const isOnline = PUBLIC_MODE === 'ONLINE';
 
   return {
     auth: new AuthRepository(client, isOnline),
@@ -32,7 +33,7 @@ export const getNoAuthApi = (): Api => {
 };
 
 export const getApi = (cookies: Cookies): Api => {
-  if (env.PUBLIC_MODE !== 'ONLINE') throw new Error('API is only available in online mode');
+  if (PUBLIC_MODE !== 'ONLINE') throw new Error('API is only available in online mode');
   if (!env.API_KEY) throw new Error('API_KEY is not defined');
   const client = new HttpClient(env.API_URL ?? DEFAULT_API_URL, {
     headers: {

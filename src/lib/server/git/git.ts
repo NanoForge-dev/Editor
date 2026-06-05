@@ -1,4 +1,5 @@
 import { $ } from 'bun';
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 
 import { env } from '$env/dynamic/private';
@@ -14,24 +15,29 @@ export class Git {
 
   async clone(url: string, options?: { sshKey?: string }): Promise<string> {
     const path = await this.resolvePath(url);
-    await this.runCommand('clone', `${url} ${path}`, { ...options });
+    if (existsSync(path)) return path;
+    await this.runCommand('clone', [url, path], { ...options });
     return path;
   }
 
   private async runCommand(
     command: string,
-    params: string,
+    params: string[],
     options?: { path?: string; sshKey?: string },
   ) {
-    let sshPath = undefined;
+    let sshPath: string | undefined;
     if (options?.sshKey) {
       sshPath = await this.createSshKeyFile(options.sshKey);
     }
-    const sshConfig = sshPath ? `-c core.sshCommand="ssh -i ${sshPath}" ` : '';
-    const cwd = resolve(this._rootPath, options?.path ?? '');
 
-    await $`git ${command} ${sshConfig}${params}`.cwd(cwd);
-    if (sshPath) await this.deleteSshKeyFile(sshPath);
+    const cwd = resolve(this._rootPath, options?.path ?? '');
+    const sshEnv = sshPath ? { GIT_SSH_COMMAND: `ssh -i ${sshPath}` } : {};
+
+    try {
+      await $`git ${command} ${params}`.cwd(cwd).env({ ...process.env, ...sshEnv });
+    } finally {
+      if (sshPath) await this.deleteSshKeyFile(sshPath);
+    }
   }
 
   private async createSshKeyFile(sshKey: string): Promise<string> {
