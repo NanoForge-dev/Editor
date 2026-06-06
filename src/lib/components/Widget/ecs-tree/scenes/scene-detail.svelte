@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
   import EntityTree from './entities/entity-tree.svelte';
-  import SceneSystemsList from './systems/scene-systems-list.svelte';
+  import SceneSystemList from './systems/scene-system-list.svelte';
   import type { SceneHandle } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
 
@@ -43,7 +43,7 @@
       <EntityTree manager={handle.entities} />
     </TabsContent>
     <TabsContent value="sceneSystems" class="flex-1 min-h-0 overflow-y-auto">
-      <SceneSystemsList manager={handle.systems} />
+      <SceneSystemList manager={handle.systems} />
     </TabsContent>
   </Tabs>
 </div>
