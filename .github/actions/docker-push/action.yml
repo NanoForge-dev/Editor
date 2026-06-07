@@ -1,6 +1,12 @@
 name: docker-push
 description: Push Docker image on registry
 inputs:
+  target:
+    description: Target name
+    required: true
+  args:
+    description: Arguments to pass to docker build
+    required: false
   registry:
     description: Docker registry
     required: true
@@ -13,9 +19,16 @@ inputs:
   github-token:
     description: Github token
     required: true
+  config-file:
+    description: Path to config file
+    required: true
 runs:
   using: composite
   steps:
+    - name: Fetch all history for all tags
+      run: git fetch --prune --unshallow
+      shell: bash
+
     - name: Determine latest tag
       id: tag
       shell: bash
@@ -45,6 +58,7 @@ runs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        build-args: ${{ inputs.args }}
 
     - name: checkout cloud for tags update
       uses: actions/checkout@v6
@@ -65,8 +79,8 @@ runs:
       shell: sh
       run: |
         cd cloud-iac
-        python -m yq -Y --indentless --in-place '.image.tag = "${{ steps.tag.outputs.tag }}"' kubernetes/nanoforge/editor-override.yaml
+        python -m yq -Y --indentless --in-place '.image.tag = "${{ steps.tag.outputs.tag }}"' ${{ inputs.config-file }}
 
-        git add kubernetes/nanoforge/editor-override.yaml || echo "No changes to add"
-        git commit -m "chore(editor): release docker nanoforge-dev/editor@${{ steps.tag.outputs.tag }}" || echo "No changes to commit"
+        git add ${{ inputs.config-file }} || echo "No changes to add"
+        git commit -m "chore(${{ inputs.target }}): release docker nanoforge-dev/${{ inputs.target }}@${{ steps.tag.outputs.tag }}" || echo "No changes to commit"
         git push || echo "No changes to push"

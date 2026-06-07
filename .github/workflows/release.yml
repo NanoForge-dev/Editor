@@ -1,12 +1,11 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Perform a dry run?
-        type: boolean
-        default: false
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -21,16 +20,13 @@ permissions:
   id-token: write
 
 jobs:
-  create-release:
-    name: Create release
+  release:
+    name: Release
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'NanoForge-dev'
+    if: github.repository_owner == 'NanoForge-dev' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'releases/')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          fetch-tags: true
 
       - name: Prepare
         uses: ./.github/actions/prepare
@@ -39,19 +35,89 @@ jobs:
           PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
 
       - name: Release packages
-        uses: ./node_modules/@nanoforge-dev/actions/dist/release-packages
+        uses: ./node_modules/@nanoforge-dev/actions/actions/release-packages
         with:
-          package: '@nanoforge-dev/editor'
-          dry: ${{ inputs.dry_run }}
-          format: '{version}'
+          packages: '@nanoforge-dev/editor'
+          tag-format: '{version}'
+          latest: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  beta-release:
+    name: Beta release
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'NanoForge-dev' && github.event.pull_request.merged == true && !startsWith(github.head_ref, 'releases/')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Release beta
+        uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
+        with:
+          package: '@nanoforge-dev/editor'
+          tag: beta
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  push-image:
+    name: Push image
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'NanoForge-dev'
+    needs: [release]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
       - name: Push Docker image
         uses: ./.github/actions/docker-push
         with:
+          target: editor
           registry: ${{ env.REGISTRY }}
           image: ${{ env.ORG_NAME }}/${{ env.IMAGE_NAME }}
           token: ${{ secrets.TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: ${{ env.CONFIG_FILE }}
+          args: |
+            PUBLIC_MODE
+            PUBLIC_PM_URL
+        env:
+          PUBLIC_MODE: ONLINE
+          PUBLIC_PM_URL: https://projects.nanoforge.eu
+
+  publish-docs:
+    name: Publish docs
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'NanoForge-dev'
+    needs: [push-image]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout docs repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          path: docs-dist
+          repository: nanoforge-dev/docs
+          token: ${{ secrets.ACTIONS_KEY }}
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Publish docs
+        uses: ./node_modules/@nanoforge-dev/actions/actions/synchronize-docs
+        with:
+          repository: editor
+          category: editor
