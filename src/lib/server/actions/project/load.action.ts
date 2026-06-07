@@ -1,3 +1,5 @@
+import { Expose } from 'class-transformer';
+import { IsOptional, IsString } from 'class-validator';
 import { join } from 'path';
 
 import { loadProject } from '$lib/server/project';
@@ -9,9 +11,24 @@ import { Exception } from '@utils/exception';
 import { type Handler, useActionHandler } from '@utils-server/request-handler';
 
 export class LoadProjectBody {
+  @Expose()
+  @IsString()
+  @IsOptional()
   id?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
   path?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
   gitUrl?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
   gatewayId?: string;
 }
 
