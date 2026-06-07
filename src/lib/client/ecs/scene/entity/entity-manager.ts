@@ -69,10 +69,11 @@ export class SceneEntityManager {
     const entities = get(this._store);
     this._store.set(entities.filter((entity) => entity.id !== id));
 
+    const fullId = `${this.scene.id}/${id}`;
     const subscriptions = get(_subscriptions);
-    if (subscriptions[id]) {
-      subscriptions[id]();
-      subscriptions[id] = null;
+    if (subscriptions[fullId]) {
+      subscriptions[fullId]();
+      subscriptions[fullId] = null;
       _subscriptions.set(subscriptions);
     }
 
@@ -83,9 +84,10 @@ export class SceneEntityManager {
 
   private _subscribe(id: string, handle: SceneEntityHandle) {
     setTimeout(() => {
+      const fullId = `${this.scene.id}/${id}`;
       const subscriptions = get(_subscriptions);
-      if (subscriptions[id]) return;
-      subscriptions[id] = handle.store.subscribe((entity) => this._update(id, entity));
+      if (subscriptions[fullId]) return;
+      subscriptions[fullId] = handle.store.subscribe((entity) => this._update(id, entity));
       _subscriptions.set(subscriptions);
     }, 0);
   }

@@ -15,6 +15,8 @@ export class EntityComponentManager {
   public readonly entity: SceneEntityHandle;
   private readonly _store: Writable<Record<string, Record<string, string>>>;
 
+  private readonly _storageResolvable: string;
+
   static reset() {
     _storage.set({});
     resetSubscriptions(_subscriptions);
@@ -24,9 +26,9 @@ export class EntityComponentManager {
   constructor(entity: SceneEntityHandle, components: Record<string, Record<string, string>>) {
     this.entity = entity;
 
-    const storageResolvable = `${this.entity.manager.scene.id}/${this.entity.id}`;
+    this._storageResolvable = `${this.entity.manager.scene.id}/${this.entity.id}`;
 
-    this._store = resolveStore(_storage, storageResolvable, components);
+    this._store = resolveStore(_storage, this._storageResolvable, components);
 
     this._listen();
   }
@@ -70,10 +72,11 @@ export class EntityComponentManager {
     });
     this._store.set(newComponents);
 
+    const fullId = `${this._storageResolvable}/${id}`;
     const subscriptions = get(_subscriptions);
-    if (subscriptions[id]) {
-      subscriptions[id]();
-      subscriptions[id] = null;
+    if (subscriptions[fullId]) {
+      subscriptions[fullId]();
+      subscriptions[fullId] = null;
       _subscriptions.set(subscriptions);
     }
   }
@@ -93,9 +96,10 @@ export class EntityComponentManager {
 
   private _subscribe(id: string, handle: EntityComponentHandle) {
     setTimeout(() => {
+      const fullId = `${this._storageResolvable}/${id}`;
       const subscriptions = get(_subscriptions);
-      if (subscriptions[id]) return;
-      subscriptions[id] = handle.params.values.subscribe((params) => this._update(id, params));
+      if (subscriptions[fullId]) return;
+      subscriptions[fullId] = handle.params.values.subscribe((params) => this._update(id, params));
       _subscriptions.set(subscriptions);
     }, 0);
   }
