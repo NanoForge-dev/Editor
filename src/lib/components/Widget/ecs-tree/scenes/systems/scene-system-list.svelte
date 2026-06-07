@@ -8,6 +8,7 @@
   } from '$lib/components/ui/context-menu';
   import { Button } from '$lib/components/ui/button';
   import DialogAddSceneSystem from './dialog-add-scene-system.svelte';
+  import SceneSystemRow from './scene-system-row.svelte';
   import type { SceneSystemManager, System } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
   import type { Writable } from 'svelte/store';
@@ -97,6 +98,7 @@
       dropTarget.pos === 'before'}
     {@const isDropAfter =
       !isNext(dragId, sysName, 'after') && dropTarget?.id === sysName && dropTarget.pos === 'after'}
+    {@const handle = manager.get(sysName)}
 
     <ContextMenu>
       <ContextMenuTrigger class="relative">
@@ -138,8 +140,7 @@
             handleDrop(sysName);
           }}
         >
-          <span class="i-icomoon-free-steam w-3.5 h-3.5 shrink-0 text-amber-400"></span>
-          <span class="flex-1 truncate text-xs text-foreground">{sysName}</span>
+          <SceneSystemRow {handle} />
           <span
             class={[
               'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100 duration-150 self-end',

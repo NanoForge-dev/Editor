@@ -7,12 +7,15 @@ export enum PackageTypeEnum {
   SYSTEM = 'system',
 }
 
+export type ComponentManifest = EditorComponentManifest & { id: string };
+export type SystemManifest = EditorSystemManifest & { id: string };
+
 export interface ComponentPackage {
-  manifest: EditorComponentManifest;
+  manifest: ComponentManifest;
   save: SaveComponent;
 }
 
 export interface SystemPackage {
-  manifest: EditorSystemManifest;
+  manifest: SystemManifest;
   save: SaveSystem;
 }

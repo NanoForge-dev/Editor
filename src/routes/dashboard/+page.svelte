@@ -5,9 +5,6 @@
 
   import { tabsStore } from '$lib/components/Tabs/store';
   import { tabRegistry } from '$lib/components/Tabs/registry';
-  import { Spinner } from '$lib/components/ui/spinner';
-  import { Button } from '$lib/components/ui/button';
-  import * as Card from '$lib/components/ui/card';
 
   import { ProjectLoader, getProject } from '$lib/client/project';
   import { resolve } from '$app/paths';
@@ -15,6 +12,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { runSafe } from '@utils-client/error';
+  import { FullPageProjectSpinner } from '$lib/components/project-loader';
 
   let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
   let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
@@ -106,25 +104,5 @@
     </main>
   </div>
 {:else}
-  <div class="w-screen h-screen flex items-center justify-center">
-    <Card.Root class="flex flex-col items-center p-6 animate-spin scale-150">
-      <Card.Header class="flex flex-col items-center text-center">
-        <Spinner />
-        <Card.Title>Project loading...</Card.Title>
-        <Card.Description>Retrieving save</Card.Description>
-      </Card.Header>
-
-      <Card.Content class="mt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onclick={() => {
-            goto(resolve('/'));
-          }}
-        >
-          Cancel
-        </Button>
-      </Card.Content>
-    </Card.Root>
-  </div>
+  <FullPageProjectSpinner />
 {/if}

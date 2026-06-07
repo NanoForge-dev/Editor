@@ -1,6 +1,6 @@
 import { EventEmitter } from './event-emitter';
-import { type CoreEvents, type CoreEventsMap } from './events/core-events';
-import { type EditorEvents, type EditorEventsMap } from './events/editor-events';
+import type { CoreEvents, CoreEventsMap } from './events/core-events';
+import type { EditorEvents, EditorEventsMap } from './events/editor-events';
 import type { ListenerType } from './types';
 
 export class EventHandler {

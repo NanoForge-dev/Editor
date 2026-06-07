@@ -2,7 +2,12 @@
   import { createQuery } from '@tanstack/svelte-query';
 
   import { getConfig } from '$lib/client/config';
-  import { ProjectCache, type ProjectDataCache, ProjectLoader } from '$lib/client/project';
+  import {
+    ProjectCache,
+    type ProjectDataCache,
+    ProjectLoader,
+    PLException,
+  } from '$lib/client/project';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import { Separator } from '$lib/components/ui/separator';
@@ -39,6 +44,10 @@
       await goto(`/dashboard?id=${project.id}`);
       cacheProjectLoading = null;
     } catch (error) {
+      if (error instanceof PLException) {
+        await error.fb();
+        return;
+      }
       console.error(`Error loading project ${cache.id} (${cache.resolvable}) from cache:`, error);
       await ProjectCache.invalidateProject(cache.id);
       await cacheQuery.refetch();
@@ -61,6 +70,9 @@
   };
 </script>
 
+<Components.CreateProjectDialog bind:open={showCreateProject} />
+<Components.OpenProjectDialog bind:open={showOpenProject} />
+
 <div class="min-h-screen w-full flex flex-col bg-background text-foreground text-base">
   <Components.Header />
 
@@ -75,9 +87,6 @@
           {:else}
             <Components.OfflineProjectButtons {handleCreateProject} {handleOpenProject} />
           {/if}
-
-          <Components.CreateProjectDialog bind:open={showCreateProject} />
-          <Components.OpenProjectDialog bind:open={showOpenProject} />
         </div>
 
         <Separator orientation="vertical" class="h-auto self-stretch" />

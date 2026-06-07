@@ -2,12 +2,24 @@ import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import { sveltekit } from '@sveltejs/kit/vite';
 import extractorSvelte from '@unocss/extractor-svelte';
 import { playwright } from '@vitest/browser-playwright';
+import { builtinModules } from 'module';
 import UnoCSS from 'unocss/vite';
 import { defineConfig } from 'vitest/config';
+
+const ssrNodeBuiltinsPlugin = {
+  name: 'ssr-node-builtins',
+  enforce: 'pre',
+  resolveId(id: string, _importer: string | undefined, options: { ssr?: boolean }) {
+    if (options?.ssr && builtinModules.includes(id) && !id.startsWith('bun')) {
+      return { id: `node:${id}`, external: true };
+    }
+  },
+};
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    ssrNodeBuiltinsPlugin,
     UnoCSS({
       extractors: [extractorSvelte()],
     }),

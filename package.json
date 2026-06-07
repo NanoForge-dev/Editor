@@ -52,6 +52,12 @@
     "test:coverage": "pnpm run test:unit --coverage && pnpm run test:e2e --coverage",
     "prepare": "husky"
   },
+  "dependencies": {
+    "@nanoforge-dev/schematics": "^2.1.3",
+    "bun": "catalog:core",
+    "dotenv": "catalog:libs-back",
+    "typescript": "catalog:build"
+  },
   "devDependencies": {
     "@alexanderniebuhr/prettier-plugin-unocss": "catalog:css",
     "@commitlint/cli": "catalog:ci",
@@ -83,13 +89,9 @@
     "@vitest/browser-playwright": "catalog:test",
     "@vitest/coverage-v8": "catalog:test",
     "bits-ui": "catalog:components",
-    "bun": "catalog:core",
     "clsx": "catalog:css",
-    "dotenv": "catalog:libs-back",
     "eslint": "catalog:lint",
     "eslint-plugin-svelte": "catalog:lint",
-    "flowbite": "catalog:components",
-    "flowbite-svelte": "catalog:components",
     "formsnap": "catalog:libs-front",
     "globals": "catalog:lint",
     "husky": "catalog:ci",
@@ -108,7 +110,6 @@
     "tailwind-merge": "catalog:css",
     "tailwind-variants": "catalog:css",
     "tailwindcss": "catalog:css",
-    "typescript": "catalog:build",
     "typescript-eslint": "catalog:lint",
     "unocss": "catalog:css",
     "vite": "catalog:core",
@@ -116,7 +117,7 @@
     "vitest-browser-svelte": "catalog:test",
     "zod": "catalog:libs-front"
   },
-  "packageManager": "pnpm@11.3.0",
+  "packageManager": "pnpm@11.5.1",
   "engines": {
     "node": "25"
   },

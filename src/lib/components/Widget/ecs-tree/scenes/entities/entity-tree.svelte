@@ -13,7 +13,7 @@
 
   import { ENTITY_DRAG_KEY } from '../../const';
   import { buildTree, folderPaths } from '../../utils';
-  import { type EntityDragContext, type EntityDragItem } from '../../types';
+  import type { EntityDragContext, EntityDragItem } from '../../types';
   import DialogNewEntity from './dialog-new-entity.svelte';
   import EntityTreeNode from './entity-tree-node.svelte';
   import FolderTreeNode from './folder-tree-node.svelte';

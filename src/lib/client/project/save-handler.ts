@@ -68,7 +68,7 @@ export class SaveHandler {
       this._save.set({
         ...this.save,
         components: components.map((component) => ({
-          name: component.name,
+          name: component.id,
           path: component.path,
           paramsNames: component.params.map((p) => p.name),
         })),
@@ -79,10 +79,10 @@ export class SaveHandler {
     this._project.ecs.scenes.activeData.systems.store.subscribe((systems) => {
       this._save.set({
         ...this.save,
-        systems: systems.map((name) => {
-          const system = this._project.ecs.systems.get(name).data;
+        systems: systems.map((id) => {
+          const system = this._project.ecs.systems.get(id).data;
           return {
-            name: system.name,
+            name: system.id,
             path: system.path,
           };
         }),

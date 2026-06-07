@@ -1,4 +1,4 @@
-import { type Session as SvelteSession } from 'svelte-kit-sessions';
+import type { Session as SvelteSession } from 'svelte-kit-sessions';
 
 import { Exception } from '@utils/exception';
 

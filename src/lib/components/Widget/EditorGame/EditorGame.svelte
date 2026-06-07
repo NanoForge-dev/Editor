@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ProgressBar from '$lib/components/ProjectLoader/ProgressBar.svelte';
+  import { ProgressBar } from '../../project-loader';
   import { GameState } from '$lib/components/Widget/EditorGame/game.svelte';
   import { useProject } from '$lib/client/project';
   import { CoreEvents } from '$lib/client/event';

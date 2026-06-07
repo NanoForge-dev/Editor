@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { Button, Dropdown } from 'flowbite-svelte';
+  import { Button } from '$lib/components/ui/button';
+  import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+  } from '$lib/components/ui/dropdown-menu';
 
   interface Props {
     title: string;
@@ -12,21 +17,19 @@
 </script>
 
 <div>
-  <Button
-    class="rounded-none py-1 hover:bg-neutral-800 {isOpen
-      ? 'bg-neutral-800 '
-      : ''} px-4 text-xs text-white font-normal"
-  >
-    {title}
-  </Button>
-  <Dropdown
-    bind:isOpen
-    simple
-    placement="bottom-start"
-    class="rounded-tl-none bg-neutral-800 text-white"
-    transitionParams={{ duration: 0 }}
-    offset={0}
-  >
-    {@render children?.()}
-  </Dropdown>
+  <DropdownMenu>
+    <DropdownMenuTrigger>
+      <Button
+        variant="ghost"
+        class="rounded-none py-1 hover:bg-neutral-800 {isOpen
+          ? 'bg-neutral-800 '
+          : ''} px-4 text-xs text-white font-normal"
+      >
+        {title}
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent class="w-40">
+      {@render children?.()}
+    </DropdownMenuContent>
+  </DropdownMenu>
 </div>

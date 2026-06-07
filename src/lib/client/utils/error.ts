@@ -1,3 +1,5 @@
+import { PLException } from '$lib/client/project';
+
 import { Exception } from '@utils/exception';
 import type { MaybePromise } from '@utils/types';
 
@@ -22,6 +24,10 @@ export const runSafe = async <T = undefined>(
   try {
     return await cb();
   } catch (error) {
+    if (error instanceof PLException) {
+      error.fb();
+      return null;
+    }
     handleError(error, context);
   }
   fallback?.();

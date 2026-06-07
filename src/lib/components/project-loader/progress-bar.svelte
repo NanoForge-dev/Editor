@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Progressbar } from 'flowbite-svelte';
+  import { Progress } from '$lib/components/ui/progress';
 
   interface Props {
     title: string;
@@ -36,6 +36,6 @@
     class="bg-black outline outline-neutral-900 rounded-xl p-6 w-full max-w-sm shadow-2xl flex flex-col"
   >
     <span id="project-title" class="text-2xl font-bold mb-8 text-center">{title}</span>
-    <Progressbar progress={(completed / total) * 100} />
+    <Progress value={(completed / total) * 100} />
   </div>
 </div>

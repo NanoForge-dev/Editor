@@ -19,6 +19,20 @@ const findManifestNode = (title: string, source: ts.SourceFile): ts.VariableDecl
   return res;
 };
 
+const getName = (source: ts.SourceFile): string | null => {
+  let res = null;
+  source.forEachChild((node) => {
+    if (!ts.isExportAssignment(node)) return;
+    if (
+      !node.getChildren().some((n) => n.getText() === 'export') ||
+      !node.getChildren().some((n) => n.getText() === 'default')
+    )
+      return;
+    res = node.expression.getFirstToken()?.getText();
+  });
+  return res;
+};
+
 const parseProperty = (prop: ObjectLiteralElementLike): any => {
   if (!ts.isPropertyAssignment(prop)) return {};
 
@@ -58,7 +72,10 @@ const getManifestFromNode = (source: ts.VariableDeclaration | null): any | null 
 };
 
 const parseManifest = (title: string, source: ts.SourceFile): any | null => {
-  return getManifestFromNode(findManifestNode(title, source));
+  const id = getName(source);
+  const manifest = getManifestFromNode(findManifestNode(title, source));
+  if (!id || !manifest) return null;
+  return { id, ...manifest };
 };
 
 export const resolveManifest = (type: PackageTypeEnum, content: string): any | null => {

@@ -2,20 +2,36 @@ import { get, writable } from 'svelte/store';
 
 import {
   type ActionProject,
+  type CompleteProjectActionInput,
   type CreateProjectActionInput,
   noProjectActions,
 } from '$lib/client/action';
 import { getConfig } from '$lib/client/config/config';
 import { Project, ProjectCache, type ProjectDataCache } from '$lib/client/project';
+import { PLErrors, PLException, runPLSafe } from '$lib/client/project/project-loader/exceptions';
 import { SfsTreeCache } from '$lib/client/sync-file-system';
 
 import { FileSystemManager } from '@utils-client/file-system';
+
+type ProjectCacheResolvable = ActionProject;
 
 const projectStore = writable<Project | null>(null);
 
 export class ProjectLoader {
   static async create(input: CreateProjectActionInput) {
-    const res = await noProjectActions.project.new(input);
+    const res = await runPLSafe(
+      () => noProjectActions.project.new(input),
+      (e) => new PLException(PLErrors.Invalid_Create_Action, e),
+    );
+
+    return ProjectLoader.init(res);
+  }
+
+  static async complete(input: CompleteProjectActionInput) {
+    const res = await runPLSafe(
+      () => noProjectActions.project.complete(input),
+      (e) => new PLException(PLErrors.Invalid_Complete_Action, e),
+    );
 
     return ProjectLoader.init(res);
   }
@@ -58,11 +74,17 @@ export class ProjectLoader {
     const dir = await fs.getDirectory(cache.id);
     await dir.rename(res.id);
 
-    return ProjectLoader.init(res);
+    return await ProjectLoader.init(res);
   }
 
   static async loadFromPath(path: string) {
     const res = await noProjectActions.project.load({ path });
+
+    return ProjectLoader.init(res);
+  }
+
+  static async loadFromGatewayId(gatewayId: string) {
+    const res = await noProjectActions.project.load({ gatewayId });
 
     return ProjectLoader.init(res);
   }
@@ -73,19 +95,16 @@ export class ProjectLoader {
     return ProjectLoader.init(res);
   }
 
-  static unload() {
-    projectStore.set(null);
-    Project.reset();
-  }
-
-  static async init(input: ActionProject): Promise<Project> {
+  static async init(input: ProjectCacheResolvable): Promise<Project> {
     Project.reset();
 
     const project = new Project(input.id);
-    // @todo add a route to check if the project is valid
     projectStore.set(project);
 
-    const infos = await project.info.get();
+    const infos = await runPLSafe(
+      () => project.info.get(),
+      () => new PLException(PLErrors.Empty_Project, input.id, input.cacheResolvable),
+    );
 
     await ProjectCache.addOrUpdateProject({
       id: input.id,
@@ -95,11 +114,27 @@ export class ProjectLoader {
     });
     return project;
   }
+
+  static unload() {
+    projectStore.set(null);
+    Project.reset();
+  }
 }
 
 export const useProject = () => {
   const project = get(projectStore);
-  if (!project) throw new Error('Project not loaded');
+  if (!project) {
+    const error = new PLException(PLErrors.No_Project);
+    void error.fb();
+    throw error;
+  }
+
+  if (!project.isReady()) {
+    const error = new PLException(PLErrors.No_Init_Project, project.id);
+    void error.fb();
+    throw error;
+  }
+
   return project;
 };
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SceneList from './scene-list.svelte';
+  // import SceneList from './scene-list.svelte';
   import SceneDetail from './scene-detail.svelte';
   import type { SceneManager } from '$lib/client/ecs';
 
@@ -9,15 +9,20 @@
 
   const { manager }: Props = $props();
 
-  let selected = $state<string | null>(manager.defaultData);
+  let selected = $state<string | null>(null);
 
-  manager.store.subscribe((scenes) => {
-    if (!scenes.find((scene) => scene.id === selected)) selected = null;
+  $effect(() => {
+    selected = manager.defaultData;
+
+    manager.store.subscribe((scenes) => {
+      if (!scenes.find((scene) => scene.id === selected)) selected = null;
+    });
   });
 </script>
 
 <div class="flex flex-1 min-h-0">
-  <SceneList {manager} bind:selected />
+  <!-- Disabled for now until scenes are fully handled -->
+  <!--  <SceneList {manager} bind:selected />-->
 
   {#if selected}
     <SceneDetail handle={manager.get(selected)} />

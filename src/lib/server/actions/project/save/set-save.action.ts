@@ -1,4 +1,4 @@
-import { type Save } from '@utils/types';
+import type { Save } from '@utils/types';
 
 import { useActionHandler } from '@utils-server/request-handler';
 

@@ -52,7 +52,7 @@ const resolveSessionFromPath = async (
   return { path };
 };
 
-const resolveSessionFunctions: Record<
+export const resolveSessionFunctions: Record<
   keyof Omit<LoadProjectBody, 'id'>,
   (el: string, options: Handler) => Promise<SessionProject>
 > = {
