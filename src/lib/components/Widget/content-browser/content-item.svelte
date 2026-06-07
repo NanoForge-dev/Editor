@@ -1,31 +1,17 @@
 <script lang="ts">
   import { tabsStore } from '$lib/components/Tabs/store';
-  import type { TabTypeId } from '$lib/components/Tabs/types';
   import { TooltipText } from '$lib/components/ui/tooltip-text';
 
   import ContentBrowserIcon from './icon.svelte';
   import { currentDir } from './store';
   import type { ContentBrowserItem } from './types';
   import { joinPath } from './utils';
+  import { getType } from '@utils/file';
 
   interface Props {
     item: ContentBrowserItem;
   }
   let { item }: Props = $props();
-
-  const FILE_TYPES: [TabTypeId, string[]][] = [
-    ['ts', ['ts', 'js']],
-    ['3d', ['fbd']],
-    ['song', ['mp3', 'wav', 'flac']],
-    ['img', ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']],
-  ];
-
-  const getType = () => {
-    const [type] = FILE_TYPES.find(([, exts]) => exts.includes(item.name.split('.').pop()!)) ?? [
-      'unknown',
-    ];
-    return type;
-  };
 
   const handleClick = async () => {
     const path = joinPath($currentDir, item.name);
@@ -36,7 +22,7 @@
     }
 
     await tabsStore.openTab({
-      type: getType(),
+      type: getType(item.name),
       title: item.name,
       metadata: {
         path,

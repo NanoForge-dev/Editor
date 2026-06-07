@@ -25,6 +25,6 @@ export interface EntityDragContext {
 
 export interface Package {
   id: string;
-  name?: string;
+  name: string;
   path?: string;
 }

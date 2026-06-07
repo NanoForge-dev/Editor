@@ -12,6 +12,9 @@
   import type { SceneSystemManager, System } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
   import type { Writable } from 'svelte/store';
+  import { tabsStore } from '$lib/components/Tabs/store';
+  import { getType } from '@utils/file';
+  import { getContext } from 'svelte';
 
   interface Props {
     manager: SceneSystemManager;
@@ -20,6 +23,9 @@
   const { manager }: Props = $props();
 
   const { ecs } = useProject();
+
+  const selectTab = getContext<(tab: string) => void>('selectTab');
+  const ecsQuery = getContext<{ packages: string }>('ecsQuery');
 
   const systems = $derived(manager.store);
   const allSystems = $derived<Writable<System[]>>(ecs.systems.store);
@@ -57,14 +63,23 @@
 
   const onOpenCode = (systemName: string) => (e: MouseEvent) => {
     e.stopPropagation();
-    // @todo open code editor
-    console.log('open code', systemName);
+
+    const handle = manager.get(systemName);
+    const item = handle.data;
+
+    tabsStore.openTab({
+      type: getType(item.path),
+      title: item.name,
+      metadata: {
+        path: item.path,
+      },
+    });
   };
 
   const onOpenSystem = (systemName: string) => (e: MouseEvent) => {
     e.stopPropagation();
-    // @todo open to systems tab
-    console.log('open system', systemName);
+    ecsQuery.packages = systemName;
+    selectTab('systems');
   };
 
   const isNext = (a: string | null, b: string | null, pos: 'before' | 'after') => {

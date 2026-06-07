@@ -18,6 +18,8 @@
   import type { ComponentHandle, SystemHandle, LibraryHandle } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
   import { get, type Writable } from 'svelte/store';
+  import { tabsStore } from '$lib/components/Tabs/store';
+  import { getType } from '@utils/file';
 
   type Props =
     | {
@@ -80,7 +82,15 @@
 
   const onOpenCode = (e: MouseEvent) => {
     e.stopPropagation();
-    // @todo handle open code editor
+    const item = get(pkg);
+    if (type === 'library' || !item.path) return;
+    tabsStore.openTab({
+      type: getType(item.path),
+      title: item.name,
+      metadata: {
+        path: item.path,
+      },
+    });
   };
 
   const handleDelete = () => {

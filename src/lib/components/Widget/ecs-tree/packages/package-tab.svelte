@@ -21,6 +21,7 @@
   import type { Writable } from 'svelte/store';
   import type { Package } from '../types';
   import { formatFrom } from '@utils/format';
+  import { getContext } from 'svelte';
 
   type Props =
     | {
@@ -43,7 +44,19 @@
   const nameCapitalized = $derived(capitalize(type));
   const namePlural = $derived(type === 'library' ? 'libraries' : type + 's');
 
+  const ecsQuery = getContext<{ packages: string }>('ecsQuery');
+
   let query = $state('');
+
+  $effect(() => {
+    const q = `${ecsQuery.packages}`;
+    if (q.length > 0) {
+      setTimeout(() => {
+        query = q;
+        ecsQuery.packages = '';
+      });
+    }
+  });
 
   const sorted = $derived(
     $packages
