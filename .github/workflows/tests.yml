@@ -9,13 +9,14 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
+  PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
+  PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
+  PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
+
 jobs:
   tests:
-    env:
-      PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
-      PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
-      PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
-      PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

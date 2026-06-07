@@ -13,6 +13,11 @@ env:
   IMAGE_NAME: ${{ github.event.repository.name }}
   CONFIG_FILE: kubernetes/nanoforge/editor-override.yaml
 
+  PUBLIC_MODE: ONLINE
+  PUBLIC_PM_URL: https://projects.nanoforge.eu
+  PUBLIC_DOCS_URL: https://docs.nanoforge.eu
+  PUBLIC_LANDING_URL: https://nanoforge.eu
+
 permissions:
   contents: write
   packages: write
@@ -90,11 +95,6 @@ jobs:
             PUBLIC_PM_URL
             PUBLIC_DOCS_URL
             PUBLIC_LANDING_URL
-        env:
-          PUBLIC_MODE: ONLINE
-          PUBLIC_PM_URL: https://projects.nanoforge.eu
-          PUBLIC_DOCS_URL: https://docs.nanoforge.eu
-          PUBLIC_LANDING_URL: https://nanoforge.eu
 
   publish-docs:
     name: Publish docs
