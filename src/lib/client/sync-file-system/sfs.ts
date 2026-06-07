@@ -28,6 +28,8 @@ export class SyncFileSystem {
 
   async init(): Promise<void> {
     await this.treeCache?.init();
+    const dir = await this.getDirectory();
+    await dir.readdir(true);
   }
 
   async getFile(path: string): Promise<SfsFile> {

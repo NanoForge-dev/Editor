@@ -1,6 +1,9 @@
 import { type Unsubscriber, get, writable } from 'svelte/store';
 
-import { getId, resetSubscriptions } from '../utils';
+import { useProject } from '$lib/client/project';
+
+import { systemTransformer, systemsTransformer } from '../transformers';
+import { resetSubscriptions } from '../utils';
 import { SystemHandle } from './system-handle';
 import type { System } from './system.type';
 
@@ -25,12 +28,27 @@ export class SystemManager {
     return get(_storage);
   }
 
-  add(system: Omit<System, 'id' | 'path'> & Partial<Pick<System, 'path'>>): string {
-    const systems = get(_storage);
-    const id = getId(this.data, system.name);
-    systems.push({ ...system, id, path: system.path ?? `systems/${id}.ts` });
-    _storage.set(systems);
-    return id;
+  async create(name: string) {
+    const { actions, fs } = useProject();
+    const system = await actions.package.createSystem({ systemName: name });
+    this._add(systemTransformer(system));
+    const dir = await fs.getDirectory();
+    await dir.readdir(true);
+  }
+
+  async import(names: [string, ...string[]]) {
+    const { actions, ecs, fs } = useProject();
+    await actions.package.addSystems({ systemNames: names });
+    await this.sync();
+    await ecs.components.sync();
+    const dir = await fs.getDirectory();
+    await dir.readdir(true);
+  }
+
+  async sync() {
+    const { actions } = useProject();
+    const systems = await actions.package.getSystems();
+    _storage.set(systemsTransformer(systems));
   }
 
   get(id: string): SystemHandle {
@@ -53,6 +71,12 @@ export class SystemManager {
       subscriptions[id] = null;
       _subscriptions.set(subscriptions);
     }
+  }
+
+  private _add(system: System) {
+    const systems = get(_storage);
+    systems.push(system);
+    _storage.set(systems);
   }
 
   private _subscribe(id: string, handle: SystemHandle) {

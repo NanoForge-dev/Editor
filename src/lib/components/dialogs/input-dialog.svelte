@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import BaseDialog from './base-dialog.svelte';
+  import type { MaybePromise } from '@utils/types';
 
   interface Props {
     open?: boolean;
@@ -12,7 +13,7 @@
     confirmDisabled?: boolean;
     onOpenChange?: (open: boolean) => void;
     reset?: () => void;
-    onConfirm?: (...args: any[]) => void;
+    onConfirm?: (...args: any[]) => MaybePromise<void>;
   }
 
   let { open = $bindable(false), onOpenChange, reset, ...props }: Props = $props();

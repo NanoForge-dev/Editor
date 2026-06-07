@@ -142,7 +142,7 @@ export class PackageHandler {
   private _getNewComponentPackage(name: string, fileName: string): ComponentPackage {
     const path = `./components/${fileName}`;
 
-    const manifest = this._findPackageManifest(this.getComponentManifest, path);
+    const manifest = this._findPackageManifest((p) => this.getComponentManifest(p), path);
 
     return {
       manifest,
@@ -157,7 +157,7 @@ export class PackageHandler {
   private _getNewSystemPackage(name: string, fileName: string): SystemPackage {
     const path = `./systems/${fileName}`;
     return {
-      manifest: this._findPackageManifest(this.getSystemManifest, path),
+      manifest: this._findPackageManifest((p) => this.getSystemManifest(p), path),
       save: { name, path },
     };
   }

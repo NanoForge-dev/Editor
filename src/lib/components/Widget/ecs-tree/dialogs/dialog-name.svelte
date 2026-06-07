@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Input } from '$lib/components/ui/input';
   import { InputDialog } from '$lib/components/dialogs';
+  import type { MaybePromise } from '@utils/types';
 
   interface Props {
     open?: boolean;
@@ -8,7 +9,8 @@
     nameText?: string;
     nameValue?: string;
     confirmText?: string;
-    onConfirm?: (name: string) => void;
+    onConfirm?: (name: string) => MaybePromise<void>;
+    validate?: (name: string) => string | null;
   }
 
   let {
@@ -18,6 +20,7 @@
     nameValue = $bindable(''),
     confirmText,
     onConfirm,
+    validate,
   }: Props = $props();
 
   const handleEnterConfirm = (confirm: () => void) => (e: KeyboardEvent) => {
@@ -28,11 +31,14 @@
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (validate?.(nameValue.trim())) return;
     const n = nameValue.trim();
     if (!n) throw 'Name is required';
-    onConfirm?.(n);
+    await onConfirm?.(n);
   };
+
+  const error = $derived(validate?.(nameValue.trim()));
 
   const reset = () => {
     nameValue = '';
@@ -54,6 +60,9 @@
         bind:value={nameValue}
         onkeydown={handleEnterConfirm(confirm)}
       />
+      {#if error}
+        <span class="text-xs text-destructive">Error: {error}</span>
+      {/if}
     </div>
   {/snippet}
 </InputDialog>
