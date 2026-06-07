@@ -88,9 +88,13 @@ jobs:
           args: |
             PUBLIC_MODE
             PUBLIC_PM_URL
+            PUBLIC_DOCS_URL
+            PUBLIC_LANDING_URL
         env:
           PUBLIC_MODE: ONLINE
           PUBLIC_PM_URL: https://projects.nanoforge.eu
+          PUBLIC_DOCS_URL: https://docs.nanoforge.eu
+          PUBLIC_LANDING_URL: https://nanoforge.eu
 
   publish-docs:
     name: Publish docs
