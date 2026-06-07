@@ -63,11 +63,14 @@ export class SfsFile {
     if (!this._cache) return;
     const file = await this._cache.getFile();
     const res = await fetch(this._route, {
-      body: file.stream(),
+      body: file,
       method: 'POST',
-      headers: { [SESSION_PROJECT_HEADER]: this._handler.project.id },
+      headers: {
+        [SESSION_PROJECT_HEADER]: this._handler.project.id,
+        'Content-Type': 'application/octet-stream',
+      },
     });
-    if (!res.ok) throw new Error('Failed to sync file');
+    if (!res.ok) throw new Error(`Failed to sync file: ${await res.text()}`);
   }
 
   async getFile(): Promise<FileSystemFile> {
