@@ -16,6 +16,7 @@
     {#if link}
       <a
         href={link}
+        target="_blank"
         class="flex cursor-pointer items-center gap-2 px-3 py-2 text-white text-xs hover:bg-neutral-600 w-full"
       >
         <span class="{icon || 'opacity-0'} w-4 h-4 text-xs text-neutral-200 rounded-none"></span>
