@@ -17,7 +17,7 @@
 >
   <TabsList
     variant="line"
-    class="w-full justify-start rounded-none border-b border-border bg-neutral-800 shrink-0 h-auto py-0 px-0 gap-0"
+    class="w-full justify-start rounded-none border-b border-border bg-neutral-800 shrink-0 h-auto py-0 px-0 gap-0 overflow-x-scroll"
   >
     <TabsTrigger value="scenes" class="px-2 py-1 mx-2 my-1">Scenes</TabsTrigger>
     <TabsTrigger value="components" class="px-2 py-1 mx-2 my-1">Components</TabsTrigger>
