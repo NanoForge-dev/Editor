@@ -86,7 +86,7 @@
     if (type === 'library' || !item.path) return;
     tabsStore.openTab({
       type: getType(item.path),
-      title: item.name,
+      title: item.path.split('/').at(-1) ?? item.name,
       metadata: {
         path: item.path,
       },
