@@ -1,6 +1,12 @@
+import { Expose } from 'class-transformer';
+import { IsOptional, IsString } from 'class-validator';
+
 import { useActionHandler } from '@utils-server/request-handler';
 
 export class ReaddirFsBody {
+  @Expose()
+  @IsString()
+  @IsOptional()
   path?: string;
 }
 

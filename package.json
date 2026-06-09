@@ -55,6 +55,8 @@
   "dependencies": {
     "@nanoforge-dev/schematics": "^2.1.3",
     "bun": "catalog:core",
+    "class-transformer": "catalog:libs-back",
+    "class-validator": "catalog:libs-back",
     "dotenv": "catalog:libs-back",
     "typescript": "catalog:build"
   },

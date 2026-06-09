@@ -1,8 +1,14 @@
+import { Expose } from 'class-transformer';
+import { IsNotEmpty, IsString } from 'class-validator';
+
 import type { ComponentManifest } from '$lib/server/project/package';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
 export class GetComponentManifestBody {
+  @Expose()
+  @IsString({ each: true })
+  @IsNotEmpty()
   componentPaths!: [string, ...string[]];
 }
 

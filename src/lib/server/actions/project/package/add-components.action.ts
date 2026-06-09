@@ -1,8 +1,14 @@
+import { Expose } from 'class-transformer';
+import { IsNotEmpty, IsString } from 'class-validator';
+
 import type { ComponentPackage } from '$lib/server/project/package/package.type';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
 export class AddComponentBody {
+  @Expose()
+  @IsString({ each: true })
+  @IsNotEmpty()
   componentNames!: [string, ...string[]];
 }
 

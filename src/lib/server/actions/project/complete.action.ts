@@ -1,12 +1,26 @@
+import { Expose } from 'class-transformer';
+import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+
 import { resolveSessionFunctions } from '$lib/server/actions/project/load.action';
 import { loadProject } from '$lib/server/project';
 
 import { useActionHandler } from '@utils-server/request-handler';
 
 export class CompleteProjectBody {
+  @Expose()
+  @IsUUID(8)
+  @IsNotEmpty()
   gatewayId!: string;
 
+  @Expose()
+  @IsString()
+  @IsOptional()
+  @IsEnum(['js', 'ts'])
   language?: 'js' | 'ts';
+
+  @Expose()
+  @IsBoolean()
+  @IsOptional()
   multiplayerServer?: boolean;
 }
 
