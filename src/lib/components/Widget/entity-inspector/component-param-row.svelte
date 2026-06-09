@@ -37,7 +37,7 @@
               <div class="px-4 py-2 text-muted-foreground italic">No options</div>
             {/if}
           {:else}
-            {#if !!$param.enum.length}
+            {#if Object.keys($param.enum).length === 0}
               {#each Object.entries($param.enum) as [displayOpt, realOpt] (displayOpt)}
                 <SelectItem value={realOpt}>{displayOpt}</SelectItem>
               {/each}
