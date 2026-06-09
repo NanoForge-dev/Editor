@@ -15,11 +15,12 @@
   import { page } from '$app/state';
   import { runSafe } from '@utils-client/error';
   import { FullPageProjectSpinner } from '$lib/components/project-loader';
-  import { infoStore } from '$lib/client/info/info.store';
 
   let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
   let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
   let loaded: boolean = $state(false);
+
+  let projectName = $state('untitled');
 
   onMount(async (): Promise<void> => {
     let project = getProject();
@@ -50,6 +51,8 @@
 
       if (!project) return;
     }
+
+    projectName = (await project.info.get()).name;
 
     if (!project.isReady()) {
       await runSafe(
@@ -82,7 +85,7 @@
           class="w-42 flex cursor-pointer items-center justify-between gap-2 rounded-md px-4 py-2 font-medium text-sm outline-2 outline-neutral-700 outline-solid hover:outline-3 hover:font-semibold"
         >
           <img class="h-7 w-7 rounded-sm" src={DefaultProjectCover} alt="game cover" />
-          <span class="w-full font-semibold">{$infoStore?.name || 'untitled'}</span>
+          <span class="w-full font-semibold">{projectName}</span>
         </button>
       </div>
     </header>
