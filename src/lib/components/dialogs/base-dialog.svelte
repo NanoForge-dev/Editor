@@ -9,6 +9,8 @@
     DialogDescription,
   } from '$lib/components/ui/dialog';
   import type { Snippet } from 'svelte';
+  import type { MaybePromise } from '@utils/types';
+  import { LoadingButton } from '$lib/components/ui/loading-button';
 
   interface Props {
     open?: boolean;
@@ -19,7 +21,7 @@
     cancelText?: string;
     confirmDisabled?: boolean;
     onOpenChange?: (open: boolean) => void;
-    onConfirm?: (...args: any[]) => void;
+    onConfirm?: (...args: any[]) => MaybePromise<void>;
   }
 
   let {
@@ -34,8 +36,17 @@
     onConfirm,
   }: Props = $props();
 
-  const confirm = () => {
-    onConfirm?.();
+  let isLoading = $state(false);
+
+  const confirm = async () => {
+    isLoading = true;
+    try {
+      await onConfirm?.();
+    } catch (e) {
+      isLoading = false;
+      throw e;
+    }
+    isLoading = false;
     open = false;
     onOpenChange?.(false);
   };
@@ -61,7 +72,9 @@
     {@render children?.(confirm, cancel)}
     <DialogFooter>
       <Button variant="ghost" onclick={cancel}>{cancelText ?? 'Cancel'}</Button>
-      <Button disabled={confirmDisabled} onclick={confirm}>{confirmText ?? 'Confirm'}</Button>
+      <LoadingButton loading={isLoading} disabled={confirmDisabled} onclick={confirm}>
+        {confirmText ?? 'Confirm'}
+      </LoadingButton>
     </DialogFooter>
   </DialogContent>
 </Dialog>

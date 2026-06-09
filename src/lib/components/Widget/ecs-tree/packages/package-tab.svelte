@@ -20,6 +20,7 @@
   import type { ComponentManager, SystemManager, LibraryManager } from '$lib/client/ecs';
   import type { Writable } from 'svelte/store';
   import type { Package } from '../types';
+  import { formatFrom } from '@utils/format';
 
   type Props =
     | {
@@ -53,24 +54,33 @@
   let createOpen = $state(false);
   let importOpen = $state(false);
 
-  const handleCreate = (name: string) => {
-    // @todo create package
-    manager.add({
-      name,
-      params: [],
-    });
+  const handleCreate = async (name: string) => {
+    if (!('create' in manager))
+      throw new Error(`Cannot create in library - use the "Import Library" button instead.`);
+    await manager.create(name);
   };
 
-  const handleImport = (name: string) => {
-    // @todo import package
-    manager.add({
-      name,
-      params: [],
-    });
+  const handleImport = async (names: string) => {
+    if (!('import' in manager)) throw new Error(`Cannot import in library`);
+    // if (names.length === 0) throw new Error('No elements selected');
+    await manager.import([names] as [string, ...string[]]);
+  };
+
+  const validate = (raw: string, suffix: string = nameCapitalized) => {
+    if (!raw) return 'Name is required';
+    const name = `${formatFrom.all(raw)[type === 'system' ? 'toCamel' : 'toPascal']()}${suffix}`;
+    console.log(name, $packages);
+    if ($packages.find((p) => p.id === name)) return `${nameCapitalized} already exists`;
+    return null;
   };
 </script>
 
-<DialogCreatePackage name={nameCapitalized} bind:open={createOpen} onConfirm={handleCreate} />
+<DialogCreatePackage
+  name={nameCapitalized}
+  bind:open={createOpen}
+  onConfirm={handleCreate}
+  {validate}
+/>
 <DialogImportPackage name={nameCapitalized} bind:open={importOpen} onConfirm={handleImport} />
 
 <div class="flex flex-col flex-1 min-h-0">
@@ -93,7 +103,7 @@
       {/if}
     </InputGroup>
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger disabled={type === 'library'}>
         {#snippet child({ props })}
           <Button
             {...props}

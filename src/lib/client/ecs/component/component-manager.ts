@@ -1,6 +1,9 @@
 import { type Unsubscriber, get, writable } from 'svelte/store';
 
-import { getId, resetSubscriptions } from '../utils';
+import { useProject } from '$lib/client/project';
+
+import { componentTransformer, componentsTransformer } from '../transformers';
+import { resetSubscriptions } from '../utils';
 import { ComponentHandle } from './component-handle';
 import type { Component } from './component.type';
 
@@ -26,12 +29,27 @@ export class ComponentManager {
     return get(_storage);
   }
 
-  add(component: Omit<Component, 'id' | 'path'> & Partial<Pick<Component, 'path'>>) {
-    const components = get(_storage);
-    const id = getId(this.data, component.name);
-    components.push({ ...component, id, path: component.path ?? `components/${id}.ts` });
-    _storage.set(components);
-    return id;
+  async create(name: string) {
+    const { actions, fs } = useProject();
+    const component = await actions.package.createComponent({ componentName: name });
+    this._add(componentTransformer(component));
+    const dir = await fs.getDirectory();
+    await dir.readdir(true);
+  }
+
+  async import(names: [string, ...string[]]) {
+    const { actions, ecs, fs } = useProject();
+    await actions.package.addComponents({ componentNames: names });
+    await this.sync();
+    await ecs.components.sync();
+    const dir = await fs.getDirectory();
+    await dir.readdir(true);
+  }
+
+  async sync() {
+    const { actions } = useProject();
+    const components = await actions.package.getComponents();
+    _storage.set(componentsTransformer(components));
   }
 
   get(id: string): ComponentHandle {
@@ -54,6 +72,12 @@ export class ComponentManager {
       subscriptions[id] = null;
       _subscriptions.set(subscriptions);
     }
+  }
+
+  private _add(component: Component) {
+    const components = get(_storage);
+    components.push(component);
+    _storage.set(components);
   }
 
   private _subscribe(id: string, handle: ComponentHandle) {

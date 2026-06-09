@@ -123,6 +123,7 @@
             </TooltipText>
           {/if}
           <Button
+            disabled={type === 'library'}
             variant="ghost"
             size="icon"
             class="text-destructive hover:text-destructive hover:bg-destructive/20"
@@ -146,7 +147,7 @@
       </ContextMenuItem>
       <ContextMenuSeparator />
     {/if}
-    <ContextMenuItem variant="destructive" onclick={onDelete}>
+    <ContextMenuItem disabled={type === 'library'} variant="destructive" onclick={onDelete}>
       <span class="i-ic-baseline-delete"></span>
       Delete
     </ContextMenuItem>
