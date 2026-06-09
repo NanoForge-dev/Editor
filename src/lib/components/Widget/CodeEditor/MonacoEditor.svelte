@@ -38,6 +38,7 @@
     monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
       noSemanticValidation: false,
       noSyntaxValidation: false,
+      diagnosticCodesToIgnore: [2307], // Todo: Delete when lib types import work
     });
 
     const rootDir = await fs.getDirectory();
