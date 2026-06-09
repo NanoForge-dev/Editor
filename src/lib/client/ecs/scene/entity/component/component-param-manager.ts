@@ -18,6 +18,8 @@ export class ComponentParamManager {
   private readonly _store: Writable<ComponentParam[]>;
   private readonly _valuesStore: Writable<Record<string, string>>;
 
+  private readonly _storageResolvable: string;
+
   static reset() {
     _storage.set({});
     _valueStorage.set({});
@@ -28,10 +30,10 @@ export class ComponentParamManager {
   constructor(component: EntityComponentHandle, params: Record<string, string>) {
     this.component = component;
 
-    const storageResolvable = `${this.component.manager.entity.manager.scene.id}/${this.component.manager.entity.id}/${this.component.id}`;
+    this._storageResolvable = `${this.component.manager.entity.manager.scene.id}/${this.component.manager.entity.id}/${this.component.id}`;
 
-    this._store = resolveStore(_storage, storageResolvable, get(component.store).params);
-    this._valuesStore = resolveStore(_valueStorage, storageResolvable, params);
+    this._store = resolveStore(_storage, this._storageResolvable, get(component.store).params);
+    this._valuesStore = resolveStore(_valueStorage, this._storageResolvable, params);
 
     this._listen();
   }
@@ -62,10 +64,11 @@ export class ComponentParamManager {
       params.map((param) => (param.name === id ? { ...param, value: undefined } : param)),
     );
 
+    const fullId = `${this._storageResolvable}/${id}`;
     const subscriptions = get(_subscriptions);
-    if (subscriptions[id]) {
-      subscriptions[id]();
-      subscriptions[id] = null;
+    if (subscriptions[fullId]) {
+      subscriptions[fullId]();
+      subscriptions[fullId] = null;
       _subscriptions.set(subscriptions);
     }
   }
@@ -80,9 +83,10 @@ export class ComponentParamManager {
 
   private _subscribe(id: string, handle: ComponentParamHandle) {
     setTimeout(() => {
+      const fullId = `${this._storageResolvable}/${id}`;
       const subscriptions = get(_subscriptions);
-      if (subscriptions[id]) return;
-      subscriptions[id] = handle.value.subscribe((param) => this._update(id, param));
+      if (subscriptions[fullId]) return;
+      subscriptions[fullId] = handle.value.subscribe((param) => this._update(id, param));
       _subscriptions.set(subscriptions);
     }, 0);
   }

@@ -5,10 +5,19 @@
   import LibrariesTab from './libraries/libraries-tab.svelte';
   import SystemsTab from './systems/systems-tab.svelte';
   import { useProject } from '$lib/client/project';
+  import { setContext } from 'svelte';
 
   const { ecs } = useProject();
 
   let selectedTab = $state('scenes');
+  let query = $state({ entities: '', packages: '' });
+
+  const selectTab = (tab: string) => {
+    selectedTab = tab;
+  };
+
+  setContext('selectTab', selectTab);
+  setContext('ecsQuery', query);
 </script>
 
 <Tabs
