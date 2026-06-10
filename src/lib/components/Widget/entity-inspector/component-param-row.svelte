@@ -25,7 +25,7 @@
 
   {#if $param.type === 'string'}
     {#if $param.enum}
-      <Select type="single" bind:value>
+      <Select type="single" bind:value onValueChange={handleChange}>
         <SelectTrigger class="w-full">{value}</SelectTrigger>
         <SelectContent>
           {#if Array.isArray($param.enum)}
