@@ -1,5 +1,6 @@
 import { type Writable, get, writable } from 'svelte/store';
 
+import { getConfig } from '$lib/client/config';
 import { CoreEvents } from '$lib/client/event';
 import type { Project } from '$lib/client/project';
 
@@ -16,6 +17,7 @@ export class SaveHandler {
   private _readyToSync = true;
   private _syncTimer?: Timer;
   private _needSync: Writable<boolean> = writable(false);
+  private _syncGatewayEnable?: boolean = true;
 
   constructor(project: Project) {
     this._project = project;
@@ -30,6 +32,9 @@ export class SaveHandler {
       this.syncToServer();
       this._project.event.emit(CoreEvents.HOT_RELOAD, this.save);
     });
+    if (getConfig().mode === 'online') {
+      this.initSyncGateway();
+    }
   }
 
   async fetchFromServer() {
@@ -102,6 +107,21 @@ export class SaveHandler {
         })),
       });
       void this.syncToServer();
+    });
+  }
+
+  private initSyncGateway() {
+    setInterval(
+      async () => {
+        if (this._syncGatewayEnable) {
+          await this._project.actions.project.syncGatewayProject();
+        }
+      },
+      1000 * 60 * 5,
+    );
+    window.addEventListener('beforeunload', (e) => {
+      const res = this._project.actions.project.syncGatewayProject();
+      if (!res) e.preventDefault();
     });
   }
 }

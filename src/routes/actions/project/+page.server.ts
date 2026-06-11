@@ -1,5 +1,8 @@
 import { completeProjectAction } from '$lib/server/actions/project/complete.action';
-import { getGatewayProjectsAction } from '$lib/server/actions/project/gateway.action';
+import {
+  getGatewayProjectsAction,
+  syncGatewayProjectAction,
+} from '$lib/server/actions/project/gateway.action';
 import {
   getInfoProjectAction,
   setInfoProjectAction,
@@ -14,4 +17,5 @@ export const actions = {
   'get-info': getInfoProjectAction,
   'set-info': setInfoProjectAction,
   'get-gateway-projects': getGatewayProjectsAction,
+  'sync-gateway-project': syncGatewayProjectAction,
 };

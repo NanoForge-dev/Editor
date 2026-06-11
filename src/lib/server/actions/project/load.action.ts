@@ -2,6 +2,7 @@ import { Expose } from 'class-transformer';
 import { IsOptional, IsString } from 'class-validator';
 import { join } from 'path';
 
+import { Git } from '$lib/server/git';
 import { loadProject } from '$lib/server/project';
 import { loadProjectFromId } from '$lib/server/project/load-project';
 import type { SessionProject } from '$lib/server/session';
@@ -34,18 +35,21 @@ export class LoadProjectBody {
 
 const resolveSessionFromGatewayId = async (
   gatewayId: string,
-  { api, git, context }: Handler,
+  { api, context }: Handler,
 ): Promise<SessionProject> => {
   if (!context.online)
     throw new Exception('Bad Request', 'Cannot load project from gatewayId while offline', 400);
 
   const project = await api.projects.getProject(gatewayId);
-  const basePath = await git.clone(project.gatewayProjectRegistryUrl, {
-    sshKey: project.gatewayProjectRegistryMetadata.sshKey,
+
+  const git = new Git({
+    ...context,
+    project: { path: '', gateway: { id: gatewayId, token: project.token } },
   });
+  const basePath = await git.clone(project.gatewayProjectRegistryUrl);
   return {
     path: join(basePath, project.gatewayProjectRegistryMetadata.dir ?? ''),
-    gateway: { id: gatewayId, sshKey: project.gatewayProjectRegistryMetadata.sshKey },
+    gateway: { id: gatewayId, token: project.token },
   };
 };
 
