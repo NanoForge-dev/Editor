@@ -176,7 +176,7 @@
 </ContextMenu>
 
 {#if expandedFolders.has(node.path)}
-  {#each node.children as child (child.kind === 'entity' ? child.id : child.path)}
+  {#each node.children as child (child.kind === 'entity' ? child.id : `${child.path}-folder`)}
     {#if child.kind === 'entity'}
       <EntityTreeNode
         handle={child.scene
