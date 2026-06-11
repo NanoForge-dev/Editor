@@ -61,9 +61,16 @@ export class SystemManager {
     return handle;
   }
 
-  delete(id: string) {
+  async delete(id: string) {
     const systems = get(_storage);
-    _storage.set(systems.filter((system) => system.id !== id));
+    const system = systems.find((s) => s.id === id);
+
+    if (!system) throw new Error(`System not found: ${id}`);
+
+    _storage.set(systems.filter((s) => s.id !== id));
+    const { fs } = useProject();
+    const file = await fs.getFile(system.path);
+    await file.delete();
 
     const subscriptions = get(_subscriptions);
     if (subscriptions[id]) {

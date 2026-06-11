@@ -35,6 +35,6 @@ export class ComponentHandle {
   }
 
   delete() {
-    this._manager.delete(this.id);
+    return this._manager.delete(this.id);
   }
 }

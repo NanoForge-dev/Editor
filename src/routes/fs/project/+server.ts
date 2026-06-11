@@ -40,3 +40,20 @@ export const POST = useRequestHandler(async ({ event, project }) => {
 
   return Response.json({ success: true });
 });
+
+/**
+ * To delete a project file, use the following URL:
+ * /fs/project?path=path/to/file
+ * The path must be relative to /client
+ * Only the client is handled for now
+ */
+export const DELETE = useRequestHandler(async ({ event, project }) => {
+  const path = event.url.searchParams.get('path');
+  if (!path) throw new Exception('Bad Request', 'Missing path query param', 400);
+
+  const file = project.client.fs.getFile(decodeURIComponent(path).replace(/\?url$/, ''));
+
+  file.delete();
+
+  return Response.json({ success: true });
+});

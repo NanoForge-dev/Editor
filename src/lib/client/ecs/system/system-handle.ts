@@ -35,6 +35,6 @@ export class SystemHandle {
   }
 
   delete() {
-    this._manager.delete(this.id);
+    return this._manager.delete(this.id);
   }
 }
