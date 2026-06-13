@@ -15,6 +15,10 @@
   import { page } from '$app/state';
   import { runSafe } from '@utils-client/error';
   import { FullPageProjectSpinner } from '$lib/components/project-loader';
+  import { MarketplaceDialog, setMarketplaceContext } from '$lib/components/marketplace';
+
+  let marketplaceOpen = $state(false);
+  setMarketplaceContext({ open: () => (marketplaceOpen = true) });
 
   let tab = $derived($tabsStore.tabs.find((t) => t.id === $tabsStore.selectedTabId));
   let Component = $derived(tab ? tabRegistry[tab.type]?.component : null);
@@ -71,6 +75,7 @@
 </script>
 
 {#if loaded}
+  <MarketplaceDialog bind:open={marketplaceOpen} />
   <div class="h-screen flex flex-col gap-1 bg-neutral-900">
     <header class="h-16 flex">
       <div class="h-full w-full flex">

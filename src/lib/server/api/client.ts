@@ -7,11 +7,13 @@ import { HttpClient } from '@utils/http';
 
 import { useTokenMiddleware } from './middlewares/refresh-token.middleware';
 import { AuthRepository } from './repositories/auth.repository';
+import { PackageRepository } from './repositories/package.repository';
 import { ProjectRepository } from './repositories/projects.repository';
 import { RegistryRepository } from './repositories/registry.repository';
 
 export interface Api {
   auth: AuthRepository;
+  packages: PackageRepository;
   projects: ProjectRepository;
   registry: RegistryRepository;
 }
@@ -28,6 +30,7 @@ export const getNoAuthApi = (): Api => {
 
   return {
     auth: new AuthRepository(client, isOnline),
+    packages: new PackageRepository(client, isOnline),
     registry: new RegistryRepository(client, isOnline),
   } as Api;
 };
@@ -43,6 +46,7 @@ export const getApi = (cookies: Cookies): Api => {
   }).useMiddlewares(useTokenMiddleware(cookies));
   return {
     auth: new AuthRepository(client),
+    packages: new PackageRepository(client),
     projects: new ProjectRepository(client),
     registry: new RegistryRepository(client),
   };

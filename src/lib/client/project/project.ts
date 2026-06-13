@@ -32,7 +32,6 @@ export class Project {
     await this.fs.init();
     await this.ecs.init();
     await this.save.init();
-    await this.packages.init();
     this._inited = true;
     return this;
   }

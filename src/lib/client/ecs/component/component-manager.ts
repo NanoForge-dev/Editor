@@ -1,5 +1,6 @@
 import { type Unsubscriber, get, writable } from 'svelte/store';
 
+import type { ComponentPkg } from '$lib/client/action';
 import { useProject } from '$lib/client/project';
 
 import { componentTransformer, componentsTransformer } from '../transformers';
@@ -37,13 +38,8 @@ export class ComponentManager {
     await dir.readdir(true);
   }
 
-  async import(names: [string, ...string[]]) {
-    const { actions, ecs, fs } = useProject();
-    await actions.package.addComponents({ componentNames: names });
-    await this.sync();
-    await ecs.components.sync();
-    const dir = await fs.getDirectory();
-    await dir.readdir(true);
+  add(component: ComponentPkg) {
+    this._add(componentTransformer(component));
   }
 
   async sync() {

@@ -71,14 +71,14 @@ const getManifestFromNode = (source: ts.VariableDeclaration | null): any | null 
   return parseElement(init);
 };
 
-const parseManifest = (title: string, source: ts.SourceFile): any | null => {
+const parseManifest = (type: PackageTypeEnum, source: ts.SourceFile): any | null => {
   const id = getName(source);
-  const manifest = getManifestFromNode(findManifestNode(title, source));
+  const manifest = getManifestFromNode(findManifestNode(MANIFEST_TITLES[type], source));
   if (!id || !manifest) return null;
-  return { id, ...manifest };
+  return { id, type, ...manifest };
 };
 
 export const resolveManifest = (type: PackageTypeEnum, content: string): any | null => {
   const source = ts.createSourceFile('tmp.ts', content, ts.ScriptTarget.ESNext, true);
-  return parseManifest(MANIFEST_TITLES[type], source);
+  return parseManifest(type, source);
 };
