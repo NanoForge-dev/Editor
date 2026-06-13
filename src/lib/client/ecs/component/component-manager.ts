@@ -62,9 +62,16 @@ export class ComponentManager {
     return handle;
   }
 
-  delete(id: string) {
+  async delete(id: string) {
     const components = get(_storage);
-    _storage.set(components.filter((component) => component.id !== id));
+    const component = components.find((c) => c.id === id);
+
+    if (!component) throw new Error(`System not found: ${id}`);
+
+    _storage.set(components.filter((c) => c.id !== id));
+    const { fs } = useProject();
+    const file = await fs.getFile(component.path);
+    await file.delete();
 
     const subscriptions = get(_subscriptions);
     if (subscriptions[id]) {

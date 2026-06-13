@@ -20,6 +20,7 @@
   import { get, type Writable } from 'svelte/store';
   import { tabsStore } from '$lib/components/Tabs/store';
   import { getType } from '@utils/file';
+  import { Spinner } from '$lib/components/ui/spinner';
 
   type Props =
     | {
@@ -48,7 +49,9 @@
   const selectedEntity = $derived($activeScene.entities.selected);
   const selectedEntityData = $derived($selectedEntity?.store);
 
-  const disabled = $derived.by<'added' | 'selected' | null>(() => {
+  let deleteLoading = $state(false);
+
+  const disabled = $derived.by<'added' | 'selected' | 'delete' | null>(() => {
     const isNotSelected = type === 'component' ? !$selectedEntity : !$activeScene;
     if (isNotSelected) return 'selected';
 
@@ -57,6 +60,8 @@
         ? !!$selectedEntityData?.components[handle.id]
         : $activeSceneData.systems.includes(handle.id);
     if (isAlreadyAdded) return 'added';
+
+    if (deleteLoading) return 'delete';
 
     return null;
   });
@@ -93,9 +98,10 @@
     });
   };
 
-  const handleDelete = () => {
-    // @todo delete package
-    handle.delete();
+  const handleDelete = async () => {
+    deleteLoading = true;
+    await handle.delete();
+    deleteLoading = false;
   };
 
   const onDelete = (e: MouseEvent) => {
@@ -133,13 +139,17 @@
             </TooltipText>
           {/if}
           <Button
-            disabled={type === 'library'}
+            disabled={type === 'library' || deleteLoading}
             variant="ghost"
             size="icon"
             class="text-destructive hover:text-destructive hover:bg-destructive/20"
             onclick={onDelete}
           >
-            <span class="i-ic-baseline-delete"></span>
+            {#if deleteLoading}
+              <Spinner class="w-3 h-3" />
+            {:else}
+              <span class="i-ic-baseline-delete"></span>
+            {/if}
           </Button>
         </div>
       </div>
@@ -157,8 +167,16 @@
       </ContextMenuItem>
       <ContextMenuSeparator />
     {/if}
-    <ContextMenuItem disabled={type === 'library'} variant="destructive" onclick={onDelete}>
-      <span class="i-ic-baseline-delete"></span>
+    <ContextMenuItem
+      disabled={type === 'library' || deleteLoading}
+      variant="destructive"
+      onclick={onDelete}
+    >
+      {#if deleteLoading}
+        <Spinner class="w-3 h-3" />
+      {:else}
+        <span class="i-ic-baseline-delete"></span>
+      {/if}
       Delete
     </ContextMenuItem>
   </ContextMenuContent>
