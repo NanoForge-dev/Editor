@@ -11,4 +11,4 @@
 </script>
 
 <span class="i-icomoon-free-steam w-3.5 h-3.5 shrink-0 text-amber-400"></span>
-<span class="flex-1 truncate text-xs text-foreground">{$system.name}</span>
+<span class="flex-1 truncate text-md text-foreground">{$system.name}</span>

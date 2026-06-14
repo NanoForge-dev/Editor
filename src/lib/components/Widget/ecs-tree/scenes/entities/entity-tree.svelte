@@ -313,7 +313,7 @@
   </div>
 {/if}
 
-<div class="py-0.5">
+<div class="py-0.5 flex flex-col overflow-y-scroll">
   {#each tree as node (node.kind === 'entity' ? node.id : `${node.path}-folder`)}
     {#if node.kind === 'entity'}
       <EntityTreeNode handle={manager.get(node.id)} {onNew} />

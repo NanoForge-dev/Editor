@@ -85,7 +85,7 @@
           : 'text-neutral-300 hover:bg-neutral-800',
         hovered && !isDragging ? 'ring-2 ring-inset ring-primary' : '',
         isDragging ? 'opacity-40' : '',
-        'flex w-full items-center gap-1.5 py-0.5 pr-2 transition-colors group',
+        'flex w-full items-center gap-1.5 py-0.5 pr-2 transition-colors group hover:cursor-pointer',
       ]}
       style="padding-left:{pl}px"
       onclick={onSelect}
@@ -114,7 +114,7 @@
     >
       <span class="w-3 h-3 shrink-0"></span>
       <span class="i-ic-baseline-category w-3.5 h-3.5 shrink-0 text-sky-400"></span>
-      <span class="flex-1 truncate text-left text-xs {readonly ? 'text-neutral-400' : ''}">
+      <span class="flex-1 truncate text-left text-md {readonly ? 'text-neutral-400' : ''}">
         {$entity.name}
       </span>
       <span

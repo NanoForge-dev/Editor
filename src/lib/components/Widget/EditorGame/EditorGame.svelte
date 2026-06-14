@@ -93,8 +93,8 @@
         >
           <span
             class="block h-7 w-7 i-ic-round-autorenew {gameState !== GameState.RELOAD_FROM_SERVER
-              ? 'text-blue-500'
-              : 'text-blue-950'}"
+              ? 'text-sky-600'
+              : 'text-sky-950'}"
           ></span>
         </button>
       </div>

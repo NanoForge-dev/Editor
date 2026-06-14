@@ -108,7 +108,7 @@
   <ContextMenuTrigger>
     <button
       draggable={!readonly}
-      class="flex w-full items-center gap-1.5 py-0.5 hover:bg-neutral-800 text-muted-foreground transition-colors group
+      class="flex w-full items-center gap-1.5 py-0.5 hover:bg-neutral-800 text-neutral-200 transition-colors group hover:cursor-pointer
           {hovered && !isDragging ? 'bg-primary/20 ring-2 ring-inset ring-primary' : ''}
           {isDragging ? 'opacity-40' : ''}"
       style="padding-left:{pl}px; padding-right:8px"
@@ -142,7 +142,7 @@
           : 'i-ic-baseline-keyboard-arrow-right'}"
       ></span>
       <span class="i-ic-baseline-folder w-3.5 h-3.5 text-yellow-600 shrink-0"></span>
-      <span class="flex-1 truncate text-left text-xs">{node.name}</span>
+      <span class="flex-1 truncate text-left text-md">{node.name}</span>
       <span
         class={[
           'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator duration-150',
