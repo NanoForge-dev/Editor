@@ -14,6 +14,7 @@ const handleError = (e: unknown): Response => {
   if (e instanceof Exception) {
     return Response.json({ error: e.error, message: e.message }, { status: e.status });
   }
+  console.error(e);
   return Response.json({ error: 'Internal Server Error', message: e }, { status: 500 });
 };
 

@@ -7,3 +7,7 @@ export const resolveRootPath = (userPath: string) => {
 
   return resolve(rootPath, userPath);
 };
+
+export const resolveArchiveRootPath = () => {
+  return resolve(env.ARCHIVE_ROOT ?? '');
+};
