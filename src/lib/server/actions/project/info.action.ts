@@ -1,3 +1,6 @@
+import { Expose } from 'class-transformer';
+import { IsOptional, IsString } from 'class-validator';
+
 import { useActionHandler } from '@utils-server/request-handler';
 
 export interface InfoProject {
@@ -7,6 +10,9 @@ export interface InfoProject {
 }
 
 export class InfoProjectBody {
+  @Expose()
+  @IsString()
+  @IsOptional()
   name?: string;
 }
 

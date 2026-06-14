@@ -73,6 +73,16 @@ export class SfsFile {
     if (!res.ok) throw new Error(`Failed to sync file: ${await res.text()}`);
   }
 
+  async delete(): Promise<void> {
+    const res = await fetch(this._route, {
+      method: 'DELETE',
+      headers: {
+        [SESSION_PROJECT_HEADER]: this._handler.project.id,
+      },
+    });
+    if (!res.ok) throw new Error(`Failed to delete file: ${await res.text()}`);
+  }
+
   async getFile(): Promise<FileSystemFile> {
     await this._preRead();
     return this._cache!;

@@ -16,7 +16,7 @@ const handleError = (e: unknown): ActionFailure<{ error: string; message: unknow
   return fail(500, { error: 'Internal Server Error', message: (e as any).toString() });
 };
 
-export const useActionHandler = <Body = any>(
+export const useActionHandler = <Body extends object = any>(
   callback: Callback<Body>,
   options?: RequestHandlerOptions<Body>,
 ): Action => {
@@ -24,7 +24,7 @@ export const useActionHandler = <Body = any>(
     try {
       const context = await getContext(event);
 
-      const body = parseFormDataBody<Body>(await event.request.formData(), options?.body);
+      const body = await parseFormDataBody<Body>(await event.request.formData(), options?.body);
 
       assertRequest(context, options);
 
