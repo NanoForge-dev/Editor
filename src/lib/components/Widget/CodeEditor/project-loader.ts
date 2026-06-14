@@ -1,12 +1,11 @@
-import type * as Monaco from 'monaco-editor';
-import { Uri } from 'monaco-editor';
+import type Monaco from 'monaco-editor';
 
 import { type SfsDirectory } from '$lib/client/sync-file-system';
 import type { DirectoryContent } from '$lib/server/file-system/project-directory';
 
-export function pathToUri(path: string) {
+export function pathToUri(monaco: typeof Monaco, path: string) {
   const clean = normalizePath(path);
-  return Uri.parse(`file:///${clean}`);
+  return monaco.Uri.parse(`file:///${clean}`);
 }
 
 export function normalizePath(path: string) {
@@ -28,7 +27,7 @@ export async function loadMonacoProject(monaco: typeof Monaco, fsRoot: SfsDirect
       const file = await dir.getFile(fileName);
       const text = (await file.read()) ?? '';
 
-      const uri = pathToUri(fullPath);
+      const uri = pathToUri(monaco, fullPath);
 
       let model = monaco.editor.getModel(uri);
 

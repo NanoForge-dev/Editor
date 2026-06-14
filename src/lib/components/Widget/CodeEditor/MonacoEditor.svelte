@@ -44,7 +44,7 @@
     const rootDir = await fs.getDirectory();
     await loadMonacoProject(monaco, rootDir);
 
-    const uri = pathToUri(tab.metadata.path);
+    const uri = pathToUri(monaco, tab.metadata.path);
 
     let model = monaco.editor.getModel(uri);
     if (!model) {
