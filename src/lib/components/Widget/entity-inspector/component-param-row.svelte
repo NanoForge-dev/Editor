@@ -3,6 +3,7 @@
   import { Input } from '$lib/components/ui/input';
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
   import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+  import { untrack } from 'svelte';
 
   interface Props {
     handle: ComponentParamHandle;
@@ -14,6 +15,13 @@
   const defaultValue = $derived(handle.value);
 
   let value = $state<any>($defaultValue);
+
+  $effect(() => {
+    defaultValue.subscribe(() => {
+      const v = untrack(() => value);
+      if (v !== $defaultValue) value = $defaultValue;
+    });
+  });
 
   const handleChange = () => {
     handle.value.set(value);

@@ -1,5 +1,6 @@
 import { type Writable, get, writable } from 'svelte/store';
 
+import { CoreEvents } from '$lib/client/event';
 import type { Project } from '$lib/client/project';
 
 import type { Save } from '@utils/types';
@@ -27,6 +28,7 @@ export class SaveHandler {
 
     this._save.subscribe(() => {
       this.syncToServer();
+      this._project.event.emit(CoreEvents.HOT_RELOAD, this.save);
     });
   }
 

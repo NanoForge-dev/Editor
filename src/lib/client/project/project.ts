@@ -21,6 +21,7 @@ export class Project {
 
   static reset(): void {
     InfoHandler.reset();
+    EventHandler.reset();
   }
 
   constructor(public id: string) {
@@ -32,6 +33,7 @@ export class Project {
     await this.fs.init();
     await this.ecs.init();
     await this.save.init();
+    await this.event.init();
     this._inited = true;
     return this;
   }

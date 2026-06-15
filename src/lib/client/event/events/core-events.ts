@@ -1,3 +1,5 @@
+import type { Save } from '@utils/types';
+
 export enum CoreEvents {
   HOT_RELOAD = 'hot-reload',
   HARD_RELOAD = 'hard-reload',
@@ -7,9 +9,9 @@ export enum CoreEvents {
 }
 
 export interface CoreEventsMap {
-  [CoreEvents.HOT_RELOAD]: [];
-  [CoreEvents.HARD_RELOAD]: [];
-  [CoreEvents.PAUSE_GAME]: [duration: number];
+  [CoreEvents.HOT_RELOAD]: [save: Save];
+  [CoreEvents.HARD_RELOAD]: [save: Save];
+  [CoreEvents.PAUSE_GAME]: [];
   [CoreEvents.STOP_GAME]: [];
   [CoreEvents.UNPAUSE_GAME]: [];
 }
