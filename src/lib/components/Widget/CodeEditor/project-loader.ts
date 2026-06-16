@@ -22,7 +22,7 @@ export async function loadMonacoProject(monaco: typeof Monaco, fsRoot: SfsDirect
   async function loadDirectory(dir: SfsDirectory, content: DirectoryContent, basePath: string) {
     for (const fileName of content.files) {
       const fullPath = joinPath(basePath, fileName);
-      if (!/\.(ts|js|tsx|jsx)$/.test(fileName)) continue;
+      if (!/\.(ts|js)$/.test(fileName)) continue;
 
       const file = await dir.getFile(fileName);
       const text = (await file.read()) ?? '';
