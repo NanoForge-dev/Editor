@@ -59,6 +59,11 @@ export class SfsFile {
     await this.sync();
   }
 
+  async createWritable(): Promise<FileSystemWritableFileStream> {
+    await this._preWrite();
+    return await this._cache!.createWritable();
+  }
+
   async sync(): Promise<void> {
     if (!this._cache) return;
     const file = await this._cache.getFile();

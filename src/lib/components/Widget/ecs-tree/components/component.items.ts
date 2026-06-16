@@ -8,4 +8,7 @@ export const COMPONENT_ITEMS: PackageItems = {
   addTooltip: 'Add to selected entity',
   disableAddTooltipNotSelected: 'No entity selected',
   disableAddTooltipAlreadyAdded: 'The selected entity already had this component',
+  canAdd: true,
+  canDelete: true,
+  canImport: true,
 };

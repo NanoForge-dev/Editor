@@ -5,7 +5,4 @@ export const LIBRARY_ITEMS: PackageItems = {
     name: 'i-ic-round-library-books',
     color: 'text-teal-400',
   },
-  addTooltip: null,
-  disableAddTooltipNotSelected: null,
-  disableAddTooltipAlreadyAdded: null,
 };

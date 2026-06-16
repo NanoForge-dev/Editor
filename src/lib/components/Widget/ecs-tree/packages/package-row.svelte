@@ -9,13 +9,14 @@
   } from '$lib/components/ui/context-menu';
   import TooltipText from '$lib/components/ui/tooltip-text/tooltip-text.svelte';
   import type { PackageItems } from '../types';
+  import { ASSET_ITEMS } from '../assets/asset.items';
   import { COMPONENT_ITEMS } from '../components/component.items';
   import { LIBRARY_ITEMS } from '../libraries/library.items';
   import { SYSTEM_ITEMS } from '../systems/system.items';
   import type { Package } from '../types';
   import { DeleteConfirmDialog } from '$lib/components/dialogs';
   import { capitalize } from '@utils/string';
-  import type { ComponentHandle, SystemHandle, LibraryHandle } from '$lib/client/ecs';
+  import type { ComponentHandle, SystemHandle, LibraryHandle, AssetHandle } from '$lib/client/ecs';
   import { useProject } from '$lib/client/project';
   import { get, type Writable } from 'svelte/store';
   import { tabsStore } from '$lib/components/Tabs/store';
@@ -23,6 +24,10 @@
   import { Spinner } from '$lib/components/ui/spinner';
 
   type Props =
+    | {
+        type: 'asset';
+        handle: AssetHandle;
+      }
     | {
         type: 'component';
         handle: ComponentHandle;
@@ -36,7 +41,12 @@
         handle: LibraryHandle;
       };
 
-  const ITEMS = { component: COMPONENT_ITEMS, system: SYSTEM_ITEMS, library: LIBRARY_ITEMS };
+  const ITEMS = {
+    asset: ASSET_ITEMS,
+    component: COMPONENT_ITEMS,
+    system: SYSTEM_ITEMS,
+    library: LIBRARY_ITEMS,
+  };
 
   const { type, handle }: Props = $props();
   const { ecs } = useProject();
@@ -91,7 +101,7 @@
     if (type === 'library' || !item.path) return;
     tabsStore.openTab({
       type: getType(item.path),
-      title: item.path.split('/').at(-1) ?? item.name,
+      title: item.path.split('/').at(-1) ?? item.name ?? item.id,
       metadata: {
         path: item.path,
       },
@@ -124,7 +134,9 @@
         <div>
           <div class="flex items-center gap-2">
             <span class={['w-3.5 h-3.5 shrink-0', items.icon.name, items.icon.color]}></span>
-            <span class="font-medium text-foreground flex-1 truncate text-xs">{$pkg.name}</span>
+            <span class="font-medium text-foreground flex-1 truncate text-xs">
+              {$pkg.name ?? $pkg.path?.split('/').at(-1) ?? $pkg.id}
+            </span>
           </div>
           <div class="mt-0.5 text-xs text-muted-foreground truncate pl-5">
             {$pkg.path ?? $pkg.id}
@@ -161,10 +173,12 @@
         <span class="i-ic-baseline-open-in-new"></span>
         Open code
       </ContextMenuItem>
-      <ContextMenuItem disabled={!!disabled} onclick={onAdd}>
-        <span class="i-ic-baseline-add-circle text-green-400"></span>
-        {items.addTooltip}
-      </ContextMenuItem>
+      {#if type !== 'asset'}
+        <ContextMenuItem disabled={!!disabled} onclick={onAdd}>
+          <span class="i-ic-baseline-add-circle text-green-400"></span>
+          {items.addTooltip}
+        </ContextMenuItem>
+      {/if}
       <ContextMenuSeparator />
     {/if}
     <ContextMenuItem

@@ -1,5 +1,9 @@
 export { ECSHandler } from './ecs-handler';
 
+export type { AssetHandle } from './asset/asset-handle';
+export type { AssetManager } from './asset/asset-manager';
+export type { Asset } from './asset/asset.type';
+
 export type { ComponentHandle } from './component/component-handle';
 export type { ComponentManager } from './component/component-manager';
 export type { Component, ComponentParam } from './component/component.type';

@@ -1,5 +1,5 @@
-import type { ComponentPkg, SystemPkg } from '$lib/client/action';
-import type { Component, Library, Scene, System } from '$lib/client/ecs';
+import type { AssetPkg, ComponentPkg, SystemPkg } from '$lib/client/action';
+import type { Asset, Component, Library, Scene, System } from '$lib/client/ecs';
 
 import type { Save, SaveLibrary } from '@utils/types';
 
@@ -21,6 +21,13 @@ export const systemTransformer = (system: SystemPkg): System => ({
 
 export const systemsTransformer = (systems: SystemPkg[]): System[] =>
   systems.map(systemTransformer);
+
+export const assetTransformer = (asset: AssetPkg): Asset => ({
+  id: asset.path,
+  path: asset.path,
+});
+
+export const assetsTransformer = (assets: AssetPkg[]): Asset[] => assets.map(assetTransformer);
 
 export const libraryTransformer = (lib: SaveLibrary): Library => ({
   id: lib.path,

@@ -1,12 +1,9 @@
-import type { ComponentManifest, SystemManifest } from '$lib/server/project/package';
-
 import { BaseRepository } from '../base.repository';
 import type {
+  AssetPkg,
   ComponentPkg,
   CreateComponentActionInput,
   CreateSystemActionInput,
-  GetComponentsManifestsActionInput,
-  GetSystemsManifestsActionInput,
   InstallPackagesActionInput,
   Package,
   SearchInput,
@@ -23,20 +20,16 @@ export class ProjectPackageRepository extends BaseRepository {
     return this.run(`/actions/project/package?/create-system`, input);
   }
 
-  getComponentsManifests(input: GetComponentsManifestsActionInput): Promise<ComponentManifest[]> {
-    return this.run(`/actions/project/package?/get-components-manifests`, input);
-  }
-
-  getSystemsManifests(input: GetSystemsManifestsActionInput): Promise<SystemManifest[]> {
-    return this.run(`/actions/project/package?/get-systems-manifests`, input);
-  }
-
   getComponents(): Promise<ComponentPkg[]> {
     return this.run(`/actions/project/package?/get-components`);
   }
 
   getSystems(): Promise<SystemPkg[]> {
     return this.run(`/actions/project/package?/get-systems`);
+  }
+
+  getAssets(): Promise<AssetPkg[]> {
+    return this.run(`/actions/project/package?/get-assets`);
   }
 
   installPackages(input: InstallPackagesActionInput): Promise<Package[]> {

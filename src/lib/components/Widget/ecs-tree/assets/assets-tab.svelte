@@ -9,4 +9,4 @@
   const { manager }: Props = $props();
 </script>
 
-<PackageTab type="component" {manager} />
+<PackageTab type="asset" {manager} />

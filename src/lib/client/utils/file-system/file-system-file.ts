@@ -133,6 +133,10 @@ export class FileSystemFile {
     return this.write(raw);
   }
 
+  async createWritable(): Promise<FileSystemWritableFileStream> {
+    return this.handle.createWritable();
+  }
+
   async getUrl(): Promise<string> {
     if (URL_CACHE.has(this.handle.name)) URL.revokeObjectURL(URL_CACHE.get(this.handle.name)!);
     const file = await this.handle.getFile();

@@ -1,4 +1,5 @@
 import {
+  assetsTransformer,
   componentsTransformer,
   librariesTransformer,
   scenesTransformer,
@@ -6,6 +7,8 @@ import {
 } from '$lib/client/ecs/transformers';
 import type { Project } from '$lib/client/project';
 
+import { AssetHandle } from './asset/asset-handle';
+import { AssetManager } from './asset/asset-manager';
 import { ComponentHandle } from './component/component-handle';
 import { ComponentManager } from './component/component-manager';
 import { LibraryHandle } from './library/library-handle';
@@ -25,11 +28,14 @@ export class ECSHandler {
   private readonly _project: Project;
 
   private _sceneManager: SceneManager | undefined;
+  private _assetManager: AssetManager | undefined;
   private _componentManager: ComponentManager | undefined;
   private _systemManager: SystemManager | undefined;
   private _libraryManager: LibraryManager | undefined;
 
   static reset() {
+    AssetHandle.reset();
+    AssetManager.reset();
     ComponentHandle.reset();
     ComponentManager.reset();
     SystemManager.reset();
@@ -57,11 +63,13 @@ export class ECSHandler {
      * When scenes will be implemented, this init must be changed accordingly
      */
 
+    const assets = await this._project.actions.package.getAssets();
     const components = await this._project.actions.package.getComponents();
     const systems = await this._project.actions.package.getSystems();
     // Cannot use save handler as it needs to use ecs handler to subscribe to ecs changes
     const save = await this._project.actions.save.get();
 
+    this._assetManager = new AssetManager(assetsTransformer(assets));
     this._componentManager = new ComponentManager(componentsTransformer(components));
     this._systemManager = new SystemManager(systemsTransformer(systems));
     this._libraryManager = new LibraryManager(librariesTransformer(save));
@@ -72,6 +80,11 @@ export class ECSHandler {
   get scenes(): SceneManager {
     if (!this._sceneManager) throw new Error('ECS handler not initialized');
     return this._sceneManager;
+  }
+
+  get assets(): AssetManager {
+    if (!this._assetManager) throw new Error('ECS handler not initialized');
+    return this._assetManager;
   }
 
   get components(): ComponentManager {

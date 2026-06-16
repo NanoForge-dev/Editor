@@ -1,6 +1,7 @@
 import ts, { type Expression, type ObjectLiteralElementLike } from 'typescript';
 
-import { PackageTypeEnum } from './package.type';
+import { PackageTypeEnum } from '../package.enum';
+import type { ManifestPackage } from '../package.type';
 
 export const MANIFEST_TITLES = {
   [PackageTypeEnum.COMPONENT]: 'EDITOR_COMPONENT_MANIFEST',
@@ -71,14 +72,14 @@ const getManifestFromNode = (source: ts.VariableDeclaration | null): any | null 
   return parseElement(init);
 };
 
-const parseManifest = (type: PackageTypeEnum, source: ts.SourceFile): any | null => {
+const parseManifest = (type: ManifestPackage, source: ts.SourceFile): any | null => {
   const id = getName(source);
   const manifest = getManifestFromNode(findManifestNode(MANIFEST_TITLES[type], source));
   if (!id || !manifest) return null;
   return { id, type, ...manifest };
 };
 
-export const resolveManifest = (type: PackageTypeEnum, content: string): any | null => {
+export const resolveManifest = (type: ManifestPackage, content: string): any | null => {
   const source = ts.createSourceFile('tmp.ts', content, ts.ScriptTarget.ESNext, true);
   return parseManifest(type, source);
 };
