@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import type { TabInstance } from '$lib/components/Tabs/types';
   import { useProject } from '$lib/client/project';
+  import { loadMonacoProject, pathToUri } from '$lib/components/Widget/CodeEditor/project-loader';
 
   interface Props {
     tab: TabInstance;
@@ -20,8 +21,39 @@
 
     const file = await fs.getFile(tab.metadata.path);
 
+    monaco.typescript.typescriptDefaults.setCompilerOptions({
+      module: monaco.typescript.ModuleKind.ESNext,
+      moduleResolution: monaco.typescript.ModuleResolutionKind.NodeJs,
+      baseUrl: 'file:///',
+      paths: {
+        '*': ['*'],
+      },
+      allowNonTsExtensions: true,
+      noEmit: true,
+      target: monaco.typescript.ScriptTarget.ESNext,
+      allowImportingTsExtensions: true,
+    });
+
+    monaco.typescript.typescriptDefaults.setEagerModelSync(true);
+    monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false,
+      diagnosticCodesToIgnore: [2307], // Todo: Delete when lib types import work
+    });
+
+    const rootDir = await fs.getDirectory();
+    await loadMonacoProject(monaco, rootDir);
+
+    const uri = pathToUri(monaco, tab.metadata.path);
+
+    let model = monaco.editor.getModel(uri);
+    if (!model) {
+      const content = (await file.read()) ?? '';
+      model = monaco.editor.createModel(content, 'typescript', uri);
+    }
+
     editor = monaco.editor.create(container, {
-      value: (await file.read()) || '',
+      model,
       language: 'typescript',
       theme: 'vs-dark',
       readOnly: false,
