@@ -7,8 +7,8 @@
   } from '$lib/components/ui/dropdown-menu';
   import PackageRow from './package-row.svelte';
   import DialogCreatePackage from './dialog-create-package.svelte';
-  import DialogImportPackage from './dialog-import-package.svelte';
   import { Button } from '$lib/components/ui/button';
+  import { getMarketplaceContext } from '$lib/components/marketplace';
   import {
     InputGroup,
     InputGroupAddon,
@@ -45,6 +45,7 @@
   const namePlural = $derived(type === 'library' ? 'libraries' : type + 's');
 
   const ecsQuery = getContext<{ packages: string }>('ecsQuery');
+  const marketplace = getMarketplaceContext();
 
   let query = $state('');
 
@@ -65,18 +66,11 @@
   );
 
   let createOpen = $state(false);
-  let importOpen = $state(false);
 
   const handleCreate = async (name: string) => {
     if (!('create' in manager))
       throw new Error(`Cannot create in library - use the "Import Library" button instead.`);
     await manager.create(name);
-  };
-
-  const handleImport = async (names: string) => {
-    if (!('import' in manager)) throw new Error(`Cannot import in library`);
-    // if (names.length === 0) throw new Error('No elements selected');
-    await manager.import([names] as [string, ...string[]]);
   };
 
   const validate = (raw: string, suffix: string = nameCapitalized) => {
@@ -94,7 +88,6 @@
   onConfirm={handleCreate}
   {validate}
 />
-<DialogImportPackage name={nameCapitalized} bind:open={importOpen} onConfirm={handleImport} />
 
 <div class="flex flex-col flex-1 min-h-0">
   <div class="flex items-center gap-1.5 px-2 py-1.5 border-b border-border shrink-0">
@@ -135,7 +128,7 @@
             Create
           </DropdownMenuItem>
         {/if}
-        <DropdownMenuItem onclick={() => (importOpen = true)}>
+        <DropdownMenuItem onclick={() => marketplace.open()}>
           <span class="i-ic-baseline-file-upload mr-2 text-sm"></span>
           Import
         </DropdownMenuItem>

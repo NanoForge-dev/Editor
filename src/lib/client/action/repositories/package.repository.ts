@@ -2,30 +2,24 @@ import type { ComponentManifest, SystemManifest } from '$lib/server/project/pack
 
 import { BaseRepository } from '../base.repository';
 import type {
-  AddComponentsActionInput,
-  AddSystemsActionInput,
-  ComponentPackageResult,
+  ComponentPkg,
   CreateComponentActionInput,
   CreateSystemActionInput,
   GetComponentsManifestsActionInput,
   GetSystemsManifestsActionInput,
-  SystemPackageResult,
+  InstallPackagesActionInput,
+  Package,
+  SearchInput,
+  SearchPackages,
+  SystemPkg,
 } from '../types';
 
 export class ProjectPackageRepository extends BaseRepository {
-  addComponents(input: AddComponentsActionInput): Promise<ComponentPackageResult[]> {
-    return this.run(`/actions/project/package?/add-components`, input);
-  }
-
-  addSystems(input: AddSystemsActionInput): Promise<SystemPackageResult[]> {
-    return this.run(`/actions/project/package?/add-systems`, input);
-  }
-
-  createComponent(input: CreateComponentActionInput): Promise<ComponentPackageResult> {
+  createComponent(input: CreateComponentActionInput): Promise<ComponentPkg> {
     return this.run(`/actions/project/package?/create-component`, input);
   }
 
-  createSystem(input: CreateSystemActionInput): Promise<SystemPackageResult> {
+  createSystem(input: CreateSystemActionInput): Promise<SystemPkg> {
     return this.run(`/actions/project/package?/create-system`, input);
   }
 
@@ -37,11 +31,19 @@ export class ProjectPackageRepository extends BaseRepository {
     return this.run(`/actions/project/package?/get-systems-manifests`, input);
   }
 
-  getComponents(): Promise<ComponentPackageResult[]> {
+  getComponents(): Promise<ComponentPkg[]> {
     return this.run(`/actions/project/package?/get-components`);
   }
 
-  getSystems(): Promise<SystemPackageResult[]> {
+  getSystems(): Promise<SystemPkg[]> {
     return this.run(`/actions/project/package?/get-systems`);
+  }
+
+  installPackages(input: InstallPackagesActionInput): Promise<Package[]> {
+    return this.run(`/actions/project/package?/install-packages`, input);
+  }
+
+  searchPackages(input: SearchInput): Promise<SearchPackages> {
+    return this.run(`/actions/project/package?/search-packages`, input);
   }
 }

@@ -1,25 +1,25 @@
+import type { ComponentPkg, SystemPkg } from '$lib/client/action';
 import type { Component, Library, Scene, System } from '$lib/client/ecs';
-import type { ComponentPackage, SystemPackage } from '$lib/server/project/package';
 
 import type { Save, SaveLibrary } from '@utils/types';
 
-export const componentTransformer = (component: ComponentPackage): Component => ({
+export const componentTransformer = (component: ComponentPkg): Component => ({
   id: component.manifest.id,
   name: component.manifest.name,
   path: component.save.path,
   params: component.manifest.params,
 });
 
-export const componentsTransformer = (components: ComponentPackage[]): Component[] =>
+export const componentsTransformer = (components: ComponentPkg[]): Component[] =>
   components.map(componentTransformer);
 
-export const systemTransformer = (system: SystemPackage): System => ({
+export const systemTransformer = (system: SystemPkg): System => ({
   id: system.manifest.id,
   name: system.manifest.name,
   path: system.save.path,
 });
 
-export const systemsTransformer = (systems: SystemPackage[]): System[] =>
+export const systemsTransformer = (systems: SystemPkg[]): System[] =>
   systems.map(systemTransformer);
 
 export const libraryTransformer = (lib: SaveLibrary): Library => ({

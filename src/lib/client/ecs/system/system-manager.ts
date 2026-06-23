@@ -1,5 +1,6 @@
 import { type Unsubscriber, get, writable } from 'svelte/store';
 
+import type { SystemPkg } from '$lib/client/action';
 import { useProject } from '$lib/client/project';
 
 import { systemTransformer, systemsTransformer } from '../transformers';
@@ -36,13 +37,8 @@ export class SystemManager {
     await dir.readdir(true);
   }
 
-  async import(names: [string, ...string[]]) {
-    const { actions, ecs, fs } = useProject();
-    await actions.package.addSystems({ systemNames: names });
-    await this.sync();
-    await ecs.components.sync();
-    const dir = await fs.getDirectory();
-    await dir.readdir(true);
+  add(system: SystemPkg) {
+    this._add(systemTransformer(system));
   }
 
   async sync() {

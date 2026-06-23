@@ -22,20 +22,19 @@ export class PackageHandler {
     this.handler = handler;
   }
 
-  async installComponent(name: string): Promise<ComponentPackage> {
-    const rc = await this.handler._api.registry.getPackage(name);
-    if (rc.type !== 'component') throw new Error(`Can only add component: ${name} is a ${rc.type}`);
-    this.handler._cli.install([name], { server: this.handler._part === 'server' || undefined });
+  async installPackages(
+    names: [string, ...string[]],
+  ): Promise<(ComponentPackage | SystemPackage)[]> {
+    if (names.length === 0) return [];
+    this.handler._cli.install(names, { server: this.handler._part === 'server' || undefined });
 
-    return this._getNewComponentPackage(rc.name, rc._file);
-  }
-
-  async installSystem(name: string): Promise<SystemPackage> {
-    const rs = await this.handler._api.registry.getPackage(name);
-    if (rs.type !== 'system') throw new Error(`Can only add system: ${name} is a ${rs.type}`);
-    this.handler._cli.install([name], { server: this.handler._part === 'server' || undefined });
-
-    return this._getNewSystemPackage(rs.name, rs._file);
+    return Promise.all(
+      names.map(async (name) => {
+        const r = await this.handler._api.registry.getPackage(name);
+        if (r.type === 'component') return this._getNewComponentPackage(r.name, r._file);
+        return this._getNewSystemPackage(r.name, r._file);
+      }),
+    );
   }
 
   /**

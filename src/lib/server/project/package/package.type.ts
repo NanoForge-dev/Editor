@@ -7,8 +7,11 @@ export enum PackageTypeEnum {
   SYSTEM = 'system',
 }
 
-export type ComponentManifest = EditorComponentManifest & { id: string };
-export type SystemManifest = EditorSystemManifest & { id: string };
+export type ComponentManifest = EditorComponentManifest & {
+  id: string;
+  type: PackageTypeEnum.COMPONENT;
+};
+export type SystemManifest = EditorSystemManifest & { id: string; type: PackageTypeEnum.SYSTEM };
 
 export interface ComponentPackage {
   manifest: ComponentManifest;
