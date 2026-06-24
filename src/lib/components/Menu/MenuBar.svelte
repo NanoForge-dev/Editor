@@ -4,10 +4,11 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import type { Snippet } from 'svelte';
-  import { ProjectLoader } from '$lib/client/project';
+  import { ProjectLoader, useProject } from '$lib/client/project';
   import { PUBLIC_DOCS_URL, PUBLIC_LANDING_URL } from '$env/static/public';
+  import ExportDialog from './export-dialog.svelte';
 
-  let fileInput: HTMLInputElement;
+  // let fileInput: HTMLInputElement;
 
   type MenuItem = { icon: string } & (
     | {
@@ -24,19 +25,37 @@
     items: MenuItem[];
   }
 
-  async function handleImportClick() {
-    fileInput.click();
-  }
+  const { actions } = useProject();
 
-  async function handleFileChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-    if (!file.name.endsWith('.zip')) return;
+  // async function handleImportClick() {
+  //   fileInput.click();
+  // }
 
-    //await importFromZip(file);
-    input.value = '';
-  }
+  // async function handleFileChange(event: Event) {
+  //   const input = event.target as HTMLInputElement;
+  //   const file = input.files?.[0];
+  //   if (!file) return;
+  //   if (!file.name.endsWith('.zip')) return;
+  //
+  //   //await importFromZip(file);
+  //   input.value = '';
+  // }
+
+  let exportOpen = $state(false);
+  let exportLoading = $state(false);
+  let exportArchiveId = $state<string | null>(null);
+
+  const handleExportClick = async () => {
+    exportArchiveId = null;
+    exportLoading = true;
+    exportOpen = true;
+    try {
+      const { id } = await actions.archive.create();
+      exportArchiveId = id;
+    } finally {
+      exportLoading = false;
+    }
+  };
 
   const nullFunction = () => {};
 
@@ -45,12 +64,7 @@
       name: 'File',
       items: [
         { name: 'Save', icon: 'i-solar-cloud-download-bold-duotone', onClick: nullFunction },
-        {
-          snippet: fileImportSnippet,
-          icon: 'i-solar-download-bold-duotone',
-          onClick: handleImportClick,
-        },
-        { name: 'Export', icon: 'i-solar-file-send-bold-duotone', onClick: nullFunction },
+        { name: 'Export', icon: 'i-solar-file-send-bold-duotone', onClick: handleExportClick },
         {
           name: 'Exit',
           icon: 'i-solar-exit-bold-duotone',
@@ -83,16 +97,16 @@
   ];
 </script>
 
-{#snippet fileImportSnippet()}
-  Import
-  <input
-    type="file"
-    accept=".zip"
-    bind:this={fileInput}
-    class="hidden"
-    on:change={handleFileChange}
-  />
-{/snippet}
+<!--{#snippet fileImportSnippet()}-->
+<!--  Import-->
+<!--  <input-->
+<!--    type="file"-->
+<!--    accept=".zip"-->
+<!--    bind:this={fileInput}-->
+<!--    class="hidden"-->
+<!--    on:change={handleFileChange}-->
+<!--  />-->
+<!--{/snippet}-->
 
 <div class="w-full flex">
   {#each elements as menu (menu.name)}
@@ -109,3 +123,5 @@
     </MenuButton>
   {/each}
 </div>
+
+<ExportDialog bind:open={exportOpen} loading={exportLoading} archiveId={exportArchiveId} />

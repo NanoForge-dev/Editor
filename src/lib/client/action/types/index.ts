@@ -1,3 +1,4 @@
+export * from './archive.type';
 export * from './fs.type';
 export * from './library.type';
 export * from './loader.type';

@@ -2,7 +2,7 @@ import type { RequestEvent } from '@sveltejs/kit';
 
 import { type Api, getApi, getNoAuthApi } from '$lib/server/api';
 import { Cli } from '$lib/server/cli';
-import { FileSystem } from '$lib/server/file-system';
+import { ArchiveSystem, FileSystem } from '$lib/server/file-system';
 import { Git } from '$lib/server/git';
 import { ProjectManager } from '$lib/server/project';
 
@@ -18,6 +18,7 @@ export class Handler<Body = any> {
   private _fsCache: FileSystem | undefined;
   private _gitCache: Git | undefined;
   private _projectCache: ProjectManager | undefined;
+  private _archiveCache: ArchiveSystem | undefined;
 
   constructor(context: Context, event: RequestEvent, body: Body) {
     this._context = context;
@@ -36,6 +37,7 @@ export class Handler<Body = any> {
     this._cliCache = undefined;
     this._fsCache = undefined;
     this._gitCache = undefined;
+    this._archiveCache = undefined;
   }
 
   get event(): RequestEvent {
@@ -70,5 +72,10 @@ export class Handler<Body = any> {
   get project(): ProjectManager {
     if (!this._projectCache) this._projectCache = new ProjectManager(this, this._context);
     return this._projectCache;
+  }
+
+  get archive(): ArchiveSystem {
+    if (!this._archiveCache) this._archiveCache = new ArchiveSystem(this, this._context);
+    return this._archiveCache;
   }
 }

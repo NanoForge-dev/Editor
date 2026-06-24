@@ -25,7 +25,7 @@ export function directoryContentToFileEntries(
 }
 
 export class ProjectDirectory {
-  private path: string;
+  public path: string;
   private readonly projectPath: string;
 
   constructor(dirPath: string, projectPath: string) {
