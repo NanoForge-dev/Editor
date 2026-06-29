@@ -33,4 +33,8 @@ export class ProjectRepository extends BaseRepository {
   getGatewayProjects(): Promise<GatewayProjectResult[]> {
     return this.run(`/actions/project?/get-gateway-projects`);
   }
+
+  syncGatewayProject(): Promise<GatewayProjectResult[]> {
+    return this.run(`/actions/project?/sync-gateway-project`);
+  }
 }

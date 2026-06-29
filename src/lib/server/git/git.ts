@@ -4,50 +4,43 @@ import { resolve } from 'path';
 
 import { env } from '$env/dynamic/private';
 
+import type { Context } from '@utils-server/request-handler';
 import { generateKey } from '@utils-server/string';
 
 export class Git {
   private readonly _rootPath: string;
+  private readonly _token: string | null;
+  private readonly _path: string;
 
-  constructor() {
+  constructor(context: Context) {
     this._rootPath = resolve(env.FS_ROOT ?? '');
+    this._token = context.project.gateway?.token ?? null;
+    this._path = context.project.path;
   }
 
-  async clone(url: string, options?: { sshKey?: string }): Promise<string> {
+  async clone(url: string): Promise<string> {
     const path = await this.resolvePath(url);
     if (existsSync(path)) return path;
-    await this.runCommand('clone', [url, path], { ...options });
+    if (this._token)
+      url = url.replace('https://github.com/', `https://oauth2:${this._token}@github.com/`);
+    await this.runCommand('clone', [url, path]);
     return path;
   }
 
-  private async runCommand(
-    command: string,
-    params: string[],
-    options?: { path?: string; sshKey?: string },
-  ) {
-    let sshPath: string | undefined;
-    if (options?.sshKey) {
-      sshPath = await this.createSshKeyFile(options.sshKey);
-    }
+  async push() {
+    await this.runCommand('add', ['--all'], { path: this._path });
+    const res = await this.runCommand('status', [], { path: this._path });
+    if (res.stdout.includes('nothing to commit')) return;
+    await this.runCommand('commit', ['-m', `nanoforged at ${new Date().toISOString()}`], {
+      path: this._path,
+    });
+    await this.runCommand('push', ['-u', 'origin', 'main'], { path: this._path });
+  }
 
+  private runCommand(command: string, params: string[], options?: { path?: string }) {
     const cwd = resolve(this._rootPath, options?.path ?? '');
-    const sshEnv = sshPath ? { GIT_SSH_COMMAND: `ssh -i ${sshPath}` } : {};
 
-    try {
-      await $`git ${command} ${params}`.cwd(cwd).env({ ...process.env, ...sshEnv });
-    } finally {
-      if (sshPath) await this.deleteSshKeyFile(sshPath);
-    }
-  }
-
-  private async createSshKeyFile(sshKey: string): Promise<string> {
-    const path = `/tmp/nanoforge/${generateKey()}`;
-    await Bun.file(path).write(sshKey);
-    return path;
-  }
-
-  private async deleteSshKeyFile(path: string): Promise<void> {
-    await Bun.file(path).delete();
+    return $`git ${command} ${params}`.cwd(cwd).env({ ...process.env });
   }
 
   private async resolvePath(url: string) {

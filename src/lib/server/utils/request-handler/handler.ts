@@ -65,7 +65,7 @@ export class Handler<Body = any> {
   }
 
   get git(): Git {
-    if (!this._gitCache) this._gitCache = new Git();
+    if (!this._gitCache) this._gitCache = new Git(this._context);
     return this._gitCache;
   }
 

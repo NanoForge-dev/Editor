@@ -6,6 +6,6 @@ export interface ApiProject {
   gatewayProjectRegistryUrl: string;
   gatewayProjectRegistryMetadata: {
     dir: string | null;
-    sshKey: string;
   };
+  token: string;
 }

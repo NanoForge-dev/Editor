@@ -16,3 +16,11 @@ export const getGatewayProjectsAction = useActionHandler(
   },
   { onlineOnly: true, projectOptional: true },
 );
+
+export const syncGatewayProjectAction = useActionHandler(
+  async ({ git }) => {
+    console.log('Syncing gateway project');
+    return await git.push();
+  },
+  { onlineOnly: true },
+);

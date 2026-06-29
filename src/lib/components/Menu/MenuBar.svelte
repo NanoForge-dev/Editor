@@ -6,7 +6,10 @@
   import type { Snippet } from 'svelte';
   import { ProjectLoader, useProject } from '$lib/client/project';
   import { PUBLIC_DOCS_URL, PUBLIC_LANDING_URL } from '$env/static/public';
+  import { getConfig } from '$lib/client/config';
   import ExportDialog from './export-dialog.svelte';
+
+  const { actions } = useProject();
 
   // let fileInput: HTMLInputElement;
 
@@ -24,8 +27,6 @@
     name: string;
     items: MenuItem[];
   }
-
-  const { actions } = useProject();
 
   // async function handleImportClick() {
   //   fileInput.click();
@@ -57,13 +58,17 @@
     }
   };
 
+  const handleSave = async () => {
+    if (getConfig().mode === 'online') await actions.project.syncGatewayProject();
+  };
+
   const nullFunction = () => {};
 
   const elements: Menu[] = [
     {
       name: 'File',
       items: [
-        { name: 'Save', icon: 'i-solar-cloud-download-bold-duotone', onClick: nullFunction },
+        { name: 'Save', icon: 'i-solar-cloud-download-bold-duotone', onClick: handleSave },
         { name: 'Export', icon: 'i-solar-file-send-bold-duotone', onClick: handleExportClick },
         {
           name: 'Exit',
