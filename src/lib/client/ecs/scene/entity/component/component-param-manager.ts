@@ -1,6 +1,6 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
-import type { ComponentParam } from '../../../component/component.type';
+import type { ComponentParam } from '../../../asset/asset.type';
 import { resetListeners, resetSubscriptions } from '../../../utils';
 import { resolveStore } from '../../../utils';
 import type { EntityComponentHandle } from './component-handle';

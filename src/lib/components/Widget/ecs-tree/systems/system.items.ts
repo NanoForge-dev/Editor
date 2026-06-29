@@ -8,4 +8,7 @@ export const SYSTEM_ITEMS: PackageItems = {
   addTooltip: 'Add to active scene',
   disableAddTooltipNotSelected: 'No active scene',
   disableAddTooltipAlreadyAdded: 'The active scene already had this system',
+  canAdd: true,
+  canDelete: true,
+  canImport: true,
 };

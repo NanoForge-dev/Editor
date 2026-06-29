@@ -35,17 +35,20 @@ export class ProjectDirectory {
     this._checkPathIsInsideProject();
   }
 
-  read(recursive: boolean = false): DirectoryContent {
+  read(recursive: boolean = false, createIfNotExist: boolean = false): DirectoryContent {
+    if (createIfNotExist) {
+      if (!fs.existsSync(this.path)) this.create();
+    }
     this._checkPathExists();
     this._checkPathIsDir();
     this._checkPathIsReadable();
     return this._readDirContent(this.path, recursive);
   }
 
-  create(): void {
+  create(path: string = this.path): void {
     this._checkPathNotExists();
 
-    fs.mkdirSync(this.path, { recursive: true });
+    fs.mkdirSync(path, { recursive: true });
   }
 
   delete(recursive: boolean = false): void {

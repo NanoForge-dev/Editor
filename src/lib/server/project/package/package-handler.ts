@@ -1,92 +1,48 @@
 import { join } from 'path';
 
-import { FileSystemError } from '$lib/server/file-system/file-system-error';
 import type { DirectoryContent } from '$lib/server/file-system/project-directory';
 import type { ProjectHandler } from '$lib/server/project';
 
-import { formatFrom } from '@utils/format';
-
-import { resolveManifest } from './manifest-resolver';
-import {
-  type ComponentManifest,
-  type ComponentPackage,
-  PackageTypeEnum,
-  type SystemManifest,
-  type SystemPackage,
+import { ManifestHandler } from './manifest/manifest-handler';
+import { PACKAGES_PATH } from './package.const';
+import { PackageTypeEnum } from './package.enum';
+import type {
+  AssetPackage,
+  ComponentPackage,
+  CreatablePackage,
+  PackageType,
+  SystemPackage,
 } from './package.type';
 
 export class PackageHandler {
   private readonly handler: ProjectHandler;
+  private readonly manifestHandler: ManifestHandler;
 
   constructor(handler: ProjectHandler) {
     this.handler = handler;
+    this.manifestHandler = new ManifestHandler(handler);
   }
 
-  async installPackages(
-    names: [string, ...string[]],
-  ): Promise<(ComponentPackage | SystemPackage)[]> {
+  async installPackages(names: [string, ...string[]]): Promise<PackageType[]> {
     if (names.length === 0) return [];
     this.handler._cli.install(names, { server: this.handler._part === 'server' || undefined });
 
     return Promise.all(
       names.map(async (name) => {
         const r = await this.handler._api.registry.getPackage(name);
-        if (r.type === 'component') return this._getNewComponentPackage(r.name, r._file);
-        return this._getNewSystemPackage(r.name, r._file);
+        return this._resolvesPackage(r.type, r._file);
       }),
     );
   }
 
-  /**
-   * Create a new component in the project
-   * @beta function to be reworked
-   *
-   * @param {string} name - Name of the component
-   */
   createComponent(name: string): ComponentPackage {
     this._createPackage(PackageTypeEnum.COMPONENT, name);
-    return this._getNewComponentPackage(
-      formatFrom.all(name).toPascal() + 'Component',
-      formatFrom.all(name).toKebab() + '.component',
-    );
+    return this.manifestHandler.resolveFromName(PackageTypeEnum.COMPONENT, name);
   }
 
-  /**
-   * Create a new system in the project and update the save file
-   * @beta function to be reworked
-   *
-   * @param {string} name - Name of the system
-   */
   createSystem(name: string): SystemPackage {
     this._createPackage(PackageTypeEnum.SYSTEM, name);
-    return this._getNewSystemPackage(
-      formatFrom.all(name).toCamel() + 'System',
-      formatFrom.all(name).toKebab() + '.system',
-    );
-  }
-
-  /**
-   * Get the manifest of the component
-   * @beta function to be reworked
-   *
-   * @param {string} path - Path from `/<client|server>`
-   *
-   * @returns Manifest of the component
-   */
-  getComponentManifest(path: string): ComponentManifest {
-    return this._getPackageManifest(PackageTypeEnum.COMPONENT, path);
-  }
-
-  /**
-   * Get the manifest of the system
-   * @beta function to be reworked
-   *
-   * @param {string} path - Path from `/<client|server>`
-   *
-   * @returns Manifest of the system
-   */
-  getSystemManifest(path: string): SystemManifest {
-    return this._getPackageManifest(PackageTypeEnum.SYSTEM, path);
+    return this.manifestHandler.resolveFromName(PackageTypeEnum.SYSTEM, name);
   }
 
   async getComponents(): Promise<ComponentPackage[]> {
@@ -97,32 +53,27 @@ export class PackageHandler {
     return this._resolvesPackages(PackageTypeEnum.SYSTEM);
   }
 
-  private _resolvesPackages<T extends PackageTypeEnum>(
-    type: T,
-  ): (T extends PackageTypeEnum.COMPONENT ? ComponentPackage : SystemPackage)[] {
-    const basePath = type === PackageTypeEnum.COMPONENT ? './components' : './systems';
+  async getAssets(): Promise<AssetPackage[]> {
+    return this._resolvesPackages(PackageTypeEnum.ASSET);
+  }
+
+  private _resolvesPackages<T extends PackageTypeEnum>(type: T): PackageType<T>[] {
+    const basePath = PACKAGES_PATH[type];
     const dir = this.handler.fs.getDirectory(basePath);
-    const content = dir.read(true);
+    const content = dir.read(true, true);
     const paths = this._resolvesPackageFilesPathFromContent(content);
-    return paths.map((path) => this._resolvesPackage<T>(type, join(basePath, path)));
+    return paths.map((path) => this._resolvesPackage<T>(type, path, basePath));
   }
 
   private _resolvesPackage<T extends PackageTypeEnum>(
     type: T,
-    path: string,
-  ): T extends PackageTypeEnum.COMPONENT ? ComponentPackage : SystemPackage {
-    const manifest = this._getPackageManifest(type, path);
-    const res: any = {
-      manifest,
-      save: {
-        name: manifest.id,
-        path,
-      },
-    };
-    if (type === PackageTypeEnum.COMPONENT) {
-      res.save.params = manifest.params.map(({ name }: { name: string }) => name);
-    }
-    return res;
+    filename: string,
+    basePath: string = PACKAGES_PATH[type],
+  ): PackageType<T> {
+    const path = join(basePath, filename);
+
+    if (type === PackageTypeEnum.ASSET) return { path } as PackageType<T>;
+    return this.manifestHandler.resolveFromPath(type, path) as PackageType<T>;
   }
 
   private _resolvesPackageFilesPathFromContent(
@@ -138,59 +89,10 @@ export class PackageHandler {
     return [...files, ...directories.flat()];
   }
 
-  private _getNewComponentPackage(name: string, fileName: string): ComponentPackage {
-    const path = `./components/${fileName}`;
-
-    const manifest = this._findPackageManifest((p) => this.getComponentManifest(p), path);
-
-    return {
-      manifest,
-      save: {
-        name,
-        path,
-        paramsNames: manifest.params.map(({ name }) => name),
-      },
-    };
-  }
-
-  private _getNewSystemPackage(name: string, fileName: string): SystemPackage {
-    const path = `./systems/${fileName}`;
-    return {
-      manifest: this._findPackageManifest((p) => this.getSystemManifest(p), path),
-      save: { name, path },
-    };
-  }
-
-  private _findPackageManifest<T>(manifestGetter: (path: string) => T, path: string): T {
-    const manifest = ['', '.ts', '.js'].reduce((result: T | undefined, p) => {
-      if (result) return result;
-
-      try {
-        return manifestGetter(path + p);
-      } catch (e) {
-        if (!(e instanceof FileSystemError)) throw e;
-      }
-    }, undefined);
-
-    if (!manifest) {
-      throw new FileSystemError("Can't find package manifest");
-    }
-    return manifest;
-  }
-
-  private _createPackage(type: PackageTypeEnum, name: string): void {
+  private _createPackage(type: CreatablePackage, name: string): void {
     this.handler._cli.create(type, {
       name,
       server: this.handler._part === 'server' || undefined,
     });
-  }
-
-  private _getPackageManifest(type: PackageTypeEnum, path: string): any {
-    const content = this.handler._rootFs.getFile(this._resolvePartPath(path)).read();
-    return resolveManifest(type, content);
-  }
-
-  private _resolvePartPath(path: string): string {
-    return join(this.handler._part, path);
   }
 }

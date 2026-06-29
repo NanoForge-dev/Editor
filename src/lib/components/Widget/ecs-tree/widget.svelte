@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
   import ScenesTab from './scenes/scenes-tab.svelte';
+  import AssetsTab from './assets/assets-tab.svelte';
   import ComponentsTab from './components/components-tab.svelte';
   import LibrariesTab from './libraries/libraries-tab.svelte';
   import SystemsTab from './systems/systems-tab.svelte';
@@ -20,6 +21,10 @@
   setContext('ecsQuery', query);
 </script>
 
+<!-- Load icons -->
+<div
+  class="hidden i-ic-baseline-landscape i-ic-baseline-token i-ic-round-library-books i-icomoon-free-steam"
+></div>
 <Tabs
   bind:value={selectedTab}
   class="h-full w-full gap-0 bg-neutral-900 text-sm select-none overflow-hidden"
@@ -31,6 +36,7 @@
     <TabsTrigger value="scenes" class="px-2 py-1 mx-2 my-1">Scenes</TabsTrigger>
     <TabsTrigger value="components" class="px-2 py-1 mx-2 my-1">Components</TabsTrigger>
     <TabsTrigger value="systems" class="px-2 py-1 mx-2 my-1">Systems</TabsTrigger>
+    <TabsTrigger value="assets" class="px-2 py-1 mx-2 my-1">Assets</TabsTrigger>
     <TabsTrigger value="libraries" class="px-2 py-1 mx-2 my-1">Libraries</TabsTrigger>
   </TabsList>
   <TabsContent value="scenes" class="flex-1 min-h-0">
@@ -44,5 +50,8 @@
   </TabsContent>
   <TabsContent value="libraries" class="flex-1 min-h-0">
     <LibrariesTab manager={ecs.libraries} />
+  </TabsContent>
+  <TabsContent value="assets" class="flex-1 min-h-0">
+    <AssetsTab manager={ecs.assets} />
   </TabsContent>
 </Tabs>

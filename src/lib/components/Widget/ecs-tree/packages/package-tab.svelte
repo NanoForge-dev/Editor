@@ -7,6 +7,7 @@
   } from '$lib/components/ui/dropdown-menu';
   import PackageRow from './package-row.svelte';
   import DialogCreatePackage from './dialog-create-package.svelte';
+  import DialogCreateAsset from '../assets/dialog-create-asset.svelte';
   import { Button } from '$lib/components/ui/button';
   import { getMarketplaceContext } from '$lib/components/marketplace';
   import {
@@ -17,13 +18,22 @@
   } from '$lib/components/ui/input-group';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { capitalize } from '@utils/string';
-  import type { ComponentManager, SystemManager, LibraryManager } from '$lib/client/ecs';
+  import {
+    type ComponentManager,
+    type SystemManager,
+    type LibraryManager,
+    type AssetManager,
+  } from '$lib/client/ecs';
   import type { Writable } from 'svelte/store';
   import type { Package } from '../types';
   import { formatFrom } from '@utils/format';
   import { getContext } from 'svelte';
 
   type Props =
+    | {
+        type: 'asset';
+        manager: AssetManager;
+      }
     | {
         type: 'component';
         manager: ComponentManager;
@@ -68,9 +78,14 @@
   let createOpen = $state(false);
 
   const handleCreate = async (name: string) => {
-    if (!('create' in manager))
+    if (!('create' in manager) || type === 'asset')
       throw new Error(`Cannot create in library - use the "Import Library" button instead.`);
     await manager.create(name);
+  };
+
+  const handleImportAsset = async (files: File[]) => {
+    if (type !== 'asset') return;
+    await manager.createMany(files);
   };
 
   const validate = (raw: string, suffix: string = nameCapitalized) => {
@@ -82,12 +97,16 @@
   };
 </script>
 
-<DialogCreatePackage
-  name={nameCapitalized}
-  bind:open={createOpen}
-  onConfirm={handleCreate}
-  {validate}
-/>
+{#if type === 'asset'}
+  <DialogCreateAsset bind:open={createOpen} onConfirm={handleImportAsset} />
+{:else}
+  <DialogCreatePackage
+    name={nameCapitalized}
+    bind:open={createOpen}
+    onConfirm={handleCreate}
+    {validate}
+  />
+{/if}
 
 <div class="flex flex-col flex-1 min-h-0">
   <div class="flex items-center gap-1.5 px-2 py-1.5 border-b border-border shrink-0">
@@ -122,7 +141,12 @@
         {/snippet}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {#if type !== 'library'}
+        {#if type === 'asset'}
+          <DropdownMenuItem onclick={() => (createOpen = true)}>
+            <span class="i-ic-baseline-note-add mr-2 text-sm"></span>
+            Upload
+          </DropdownMenuItem>
+        {:else if type !== 'library'}
           <DropdownMenuItem onclick={() => (createOpen = true)}>
             <span class="i-ic-baseline-note-add mr-2 text-sm"></span>
             Create
