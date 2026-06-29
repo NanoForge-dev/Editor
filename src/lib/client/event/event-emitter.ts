@@ -9,6 +9,11 @@ export class EventEmitter<
   } = {};
 
   public eventQueue: QueuedEvent<EventsMap>[] = [];
+  private readonly _dequeueOnEmit: boolean;
+
+  constructor(dequeueOnEmit = false) {
+    this._dequeueOnEmit = dequeueOnEmit;
+  }
 
   runEvents(): void {
     this.eventQueue.forEach((e) => {
@@ -23,6 +28,7 @@ export class EventEmitter<
       event,
       args,
     });
+    if (this._dequeueOnEmit) this.runEvents();
   }
   addListener<K extends keyof EventsMap>(
     event: K,

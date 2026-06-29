@@ -1,6 +1,5 @@
 <script lang="ts">
   import DialogComponentSelector from '$lib/components/Widget/entity-inspector/dialog-component-selector.svelte';
-  import { CoreEvents } from '$lib/client/event';
   import { useProject } from '$lib/client/project';
 
   import ComponentList from './component-list.svelte';
@@ -9,16 +8,10 @@
 
   let openComponentSelector: boolean = $state(false);
 
-  const { event, save, ecs } = useProject();
+  const { save, ecs } = useProject();
 
   const activeScene = $derived(ecs.scenes.active);
   const entity = $derived($activeScene.entities.selected);
-
-  $effect(() => {
-    $entity?.manager.store.subscribe(() => {
-      event.emit(CoreEvents.HOT_RELOAD);
-    });
-  });
 
   const handleSelect = (component: Component) => {
     if (!$entity) throw new Error("Can't create component: no entity selected");
