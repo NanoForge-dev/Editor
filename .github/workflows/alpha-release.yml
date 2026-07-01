@@ -9,7 +9,6 @@ on:
         default: false
 
 env:
-  PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
   PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
   PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
   PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
@@ -29,6 +28,9 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
+        env:
+          NODE_ENV: development
+          PUBLIC_MODE: OFFLINE
 
       - name: Release alpha
         uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
