@@ -77,7 +77,10 @@ export class SaveHandler {
         components: components.map((component) => ({
           name: component.id,
           path: component.path,
-          paramsNames: component.params.map((p) => p.name),
+          paramsNames: component.params.map((p) => {
+            if (p.type === 'asset') return `__RESERVED_ASSET_${p.name}`;
+            return p.name;
+          }),
         })),
       });
       void this.forceSyncToServer();

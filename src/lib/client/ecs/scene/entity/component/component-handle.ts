@@ -1,6 +1,6 @@
 import { type Readable, get } from 'svelte/store';
 
-import type { Component } from '../../../asset/asset.type';
+import type { Component } from '../../../component/component.type';
 import type { EntityComponentManager } from './component-manager';
 import { ComponentParamManager } from './component-param-manager';
 

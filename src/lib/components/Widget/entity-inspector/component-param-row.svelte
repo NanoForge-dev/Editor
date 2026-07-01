@@ -4,6 +4,7 @@
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
   import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
   import { untrack } from 'svelte';
+  import { useProject } from '$lib/client/project';
 
   interface Props {
     handle: ComponentParamHandle;
@@ -11,8 +12,11 @@
 
   const { handle }: Props = $props();
 
+  const { ecs } = useProject();
+
   const param = $derived(handle.store);
   const defaultValue = $derived(handle.value);
+  const assets = $derived(ecs.assets.store);
 
   let value = $state<any>($defaultValue);
 
@@ -46,6 +50,7 @@
             {/if}
           {:else}
             {#if Object.keys($param.enum).length === 0}
+              <SelectItem value="">None</SelectItem>
               {#each Object.entries($param.enum) as [displayOpt, realOpt] (displayOpt)}
                 <SelectItem value={realOpt}>{displayOpt}</SelectItem>
               {/each}
@@ -62,5 +67,19 @@
     <Input type="number" bind:value onchange={handleChange} />
   {:else if $param.type === 'boolean'}
     <TristateSwitch bind:value onChange={handleChange} />
+  {:else if $param.type === 'asset'}
+    <Select type="single" bind:value onValueChange={handleChange}>
+      <SelectTrigger class="w-full overflow-y-hidden">{value}</SelectTrigger>
+      <SelectContent>
+        {#if $assets.length !== 0}
+          <SelectItem value="">None</SelectItem>
+          {#each $assets as asset (asset.id)}
+            <SelectItem value={asset.path}>{asset.id}</SelectItem>
+          {/each}
+        {:else}
+          <div class="px-4 py-2 text-muted-foreground italic">No options</div>
+        {/if}
+      </SelectContent>
+    </Select>
   {/if}
 </div>

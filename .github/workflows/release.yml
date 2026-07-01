@@ -115,7 +115,7 @@ jobs:
           fetch-tags: true
           path: docs-dist
           repository: nanoforge-dev/docs
-          token: ${{ secrets.ACTIONS_KEY }}
+          token: ${{ secrets.TOKEN }}
 
       - name: Prepare
         uses: ./.github/actions/prepare

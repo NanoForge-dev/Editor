@@ -54,7 +54,10 @@ export class PackageHandler {
   }
 
   async getAssets(): Promise<AssetPackage[]> {
-    return this._resolvesPackages(PackageTypeEnum.ASSET);
+    return this._resolvesPackages(PackageTypeEnum.ASSET).map((asset) => ({
+      ...asset,
+      path: asset.path.replace(new RegExp(`^${PACKAGES_PATH.asset}/`), ''),
+    }));
   }
 
   private _resolvesPackages<T extends PackageTypeEnum>(type: T): PackageType<T>[] {

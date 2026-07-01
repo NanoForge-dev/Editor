@@ -43,8 +43,8 @@ catalogs:
       version: 0.55.1
   core:
     '@nanoforge-dev/ecs-lib':
-      specifier: ^1.3.1
-      version: 1.3.1
+      specifier: 1.3.2-alpha.add-assets-handling.0
+      version: 1.3.2-alpha.add-assets-handling.0
     '@sveltejs/kit':
       specifier: ^2.65.0
       version: 2.65.0
@@ -273,7 +273,7 @@ importers:
         version: 2.1.4
       '@nanoforge-dev/ecs-lib':
         specifier: catalog:core
-        version: 1.3.1
+        version: 1.3.2-alpha.add-assets-handling.0
       '@nanoforge-dev/utils-eslint-config':
         specifier: catalog:lint
         version: 1.0.2(@types/eslint@9.6.1)(eslint@10.5.0(jiti@2.7.0))(prettier@3.8.4)(typescript@6.0.3)
@@ -760,8 +760,8 @@ packages:
     resolution: {integrity: sha512-Nl+kzkdYiiw9hml9O9CsQd6S3VcOr8L9hLzamqXti8+xgYUqblsPJMq+w0vThOA/LinenX0QuuxYrVTkNZflvw==}
     engines: {node: '25'}
 
-  '@nanoforge-dev/ecs-lib@1.3.1':
-    resolution: {integrity: sha512-js4VQOri4S6w1Fh1Lk2O5ruxciP/QZCPppOx6YnF/VqgjYgn1GgHfqcxiBE9NxJT4SDi5O8KS4kd65Pj/0oc0A==}
+  '@nanoforge-dev/ecs-lib@1.3.2-alpha.add-assets-handling.0':
+    resolution: {integrity: sha512-to+vzpJxdWy8pkQITRu9RJ7fsxKWEFNlSRC1oIBl2RPa7GWSABKNarYXpmPalLxDqVAnZDa4y8hFdKH2UeoymQ==}
     engines: {node: '25'}
 
   '@nanoforge-dev/utils-eslint-config@1.0.2':
@@ -2347,6 +2347,7 @@ packages:
   git-raw-commits@5.0.1:
     resolution: {integrity: sha512-Y+csSm2GD/PCSh6Isd/WiMjNAydu0VBiG9J7EdQsNA5P9uXvLayqjmTsNlK5Gs9IhblFZqOU0yid5Il5JPoLiQ==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   glob-parent@6.0.2:
@@ -3996,7 +3997,7 @@ snapshots:
 
   '@nanoforge-dev/common@1.3.1': {}
 
-  '@nanoforge-dev/ecs-lib@1.3.1':
+  '@nanoforge-dev/ecs-lib@1.3.2-alpha.add-assets-handling.0':
     dependencies:
       '@nanoforge-dev/common': 1.3.1
 
