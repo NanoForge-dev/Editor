@@ -13,11 +13,6 @@ env:
   IMAGE_NAME: ${{ github.event.repository.name }}
   CONFIG_FILE: kubernetes/nanoforge/editor-override.yaml
 
-  PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
-  PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
-  PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
-  PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
-
 permissions:
   contents: write
   packages: write
@@ -36,8 +31,10 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
         env:
-          PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
+          PUBLIC_MODE: OFFLINE
           PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
+          PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
+          PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
 
       - name: Release packages
         uses: ./node_modules/@nanoforge-dev/actions/actions/release-packages
@@ -59,6 +56,11 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
+        env:
+          PUBLIC_MODE: OFFLINE
+          PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
+          PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
+          PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
 
       - name: Release beta
         uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
@@ -95,6 +97,11 @@ jobs:
             PUBLIC_PM_URL
             PUBLIC_DOCS_URL
             PUBLIC_LANDING_URL
+        env:
+          PUBLIC_MODE: ONLINE
+          PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
+          PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
+          PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
 
   publish-docs:
     name: Publish docs
