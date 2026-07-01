@@ -42,7 +42,7 @@ export class AssetManager {
 
   async create(file: File): Promise<void> {
     const { fs } = useProject();
-    const assetDir = await fs.getDirectory('assets');
+    const assetDir = await fs.getDirectory('static');
     const assetFile = await assetDir.getFile(file.name);
     const stream = await assetFile.createWritable();
     await file.stream().pipeTo(stream);

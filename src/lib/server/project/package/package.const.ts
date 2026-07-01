@@ -5,7 +5,7 @@ import { PackageTypeEnum } from './package.enum';
 export const PACKAGES_PATH: Record<PackageTypeEnum, string> = {
   [PackageTypeEnum.COMPONENT]: 'components',
   [PackageTypeEnum.SYSTEM]: 'systems',
-  [PackageTypeEnum.ASSET]: 'assets',
+  [PackageTypeEnum.ASSET]: 'static',
 };
 
 export const PACKAGES_NAME_FORMATTER: Record<PackageTypeEnum, (n: string) => string> = {
