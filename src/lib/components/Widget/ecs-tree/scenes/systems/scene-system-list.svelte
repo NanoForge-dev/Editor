@@ -158,7 +158,7 @@
           <SceneSystemRow {handle} />
           <span
             class={[
-              'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100 duration-150 self-end',
+              'text-xs text-muted-foreground/50 i-ic-baseline-drag-indicator group-hover:opacity-100 duration-150 self-center',
               isSelf ? 'opacity-100' : 'opacity-0',
             ]}
           >
