@@ -121,7 +121,7 @@
     "vitest-browser-svelte": "catalog:test",
     "zod": "catalog:libs-front"
   },
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@11.9.0",
   "engines": {
     "node": "25"
   },
