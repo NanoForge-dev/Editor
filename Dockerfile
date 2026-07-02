@@ -39,7 +39,7 @@ COPY --from=prod /app/dist /app/dist
 RUN mkdir /app/${FS_ROOT} /app/${ARCHIVE_ROOT}
 
 RUN apt update
-RUN apt install git
+RUN apt install git -y
 
 RUN bun install -g @nanoforge-dev/cli
 
