@@ -26,7 +26,7 @@ runs:
   using: composite
   steps:
     - name: Fetch all history for all tags
-      run: git fetch --prune --unshallow
+      run: git fetch --prune
       shell: bash
 
     - name: Determine latest tag
