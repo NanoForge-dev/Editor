@@ -97,9 +97,13 @@ jobs:
             PUBLIC_PM_URL
             PUBLIC_DOCS_URL
             PUBLIC_LANDING_URL
+            FS_ROOT
+            ARCHIVE_ROOT
         env:
           NODE_ENV: production
           PUBLIC_MODE: ONLINE
+          FS_ROOT: projects
+          ARCHIVE_ROOT: archives
 
   publish-docs:
     name: Publish docs
@@ -124,6 +128,8 @@ jobs:
 
       - name: Prepare
         uses: ./.github/actions/prepare
+        env:
+          PUBLIC_MODE: OFFLINE
 
       - name: Publish docs
         uses: ./node_modules/@nanoforge-dev/actions/actions/synchronize-docs

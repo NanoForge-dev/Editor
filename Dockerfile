@@ -30,8 +30,16 @@ RUN pnpm run build
 
 FROM oven/bun:1.3 AS final
 
+ARG FS_ROOT
+ARG ARCHIVE_ROOT
+
 WORKDIR /app
 COPY --from=prod /app/dist /app/dist
+
+RUN mkdir /app/${FS_ROOT} /app/${ARCHIVE_ROOT}
+
+RUN apt update
+RUN apt install git
 
 RUN bun install -g @nanoforge-dev/cli
 
