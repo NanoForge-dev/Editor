@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+# [0.1.2](https://github.com/NanoForge-dev/Editor/compare/0.1.1...0.1.2) - (2026-07-02)
+
+## Bug Fixes
+
+- **docker:** Create fs dirs in dockerfile ([63643b2](https://github.com/NanoForge-dev/Editor/commit/63643b2065081a1dd1dc21aab378b8bc8164e7c1)) by @MartinFillon
+
 # [0.1.1](https://github.com/NanoForge-dev/Editor/compare/0.1.0...0.1.1) - (2026-07-02)
 
 ## Bug Fixes
