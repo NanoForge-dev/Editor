@@ -5,8 +5,8 @@ image:
   tag: latest
 imagePullSecret: 'nanoforge-docker-token'
 routes:
-  - port: 4173
-    host: 'Host(`editor.nanoforge.eu`)'
+  - port: 3000
+    match: 'Host(`editor.nanoforge.eu`)'
 config:
   - name: api_url
     value: 'https://api.nanoforge.eu'
@@ -14,3 +14,19 @@ config:
     value: 'production'
   - name: nf_cli_path
     value: 'nf'
+  - name: public_pm_url
+    value: 'https://projects.nanoforge.eu'
+  - name: public_docs_url
+    value: 'https://docs.nanoforge.eu'
+  - name: public_landing_url
+    value: 'https://nanoforge.eu'
+  - name: fs_root
+    value: projects
+  - name: archive_root
+    value: archives
+env:
+  - name: API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: editor-key
+        key: api-key
