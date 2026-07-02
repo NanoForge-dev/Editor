@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+# [0.1.1](https://github.com/NanoForge-dev/Editor/compare/0.1.0...0.1.1) - (2026-07-02)
+
+## Bug Fixes
+
+- Docker push ci (#181) ([0e06aaa](https://github.com/NanoForge-dev/Editor/commit/0e06aaa7c988fab735460ce454554c0b089b55c8)) by @Exeloo
+
 # [0.1.0](https://github.com/NanoForge-dev/Editor/compare/0.0.1...0.1.0) - (2026-07-02)
 
 ## Bug Fixes
