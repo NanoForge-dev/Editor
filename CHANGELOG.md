@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+# [0.1.3](https://github.com/NanoForge-dev/Editor/compare/0.1.2...0.1.3) - (2026-07-02)
+
+## Bug Fixes
+
+- **build:** Missing -y ([04db6d5](https://github.com/NanoForge-dev/Editor/commit/04db6d529f59f7a9f536c4fc8a46107a9453cb8f)) by @MartinFillon
+
 # [0.1.2](https://github.com/NanoForge-dev/Editor/compare/0.1.1...0.1.2) - (2026-07-02)
 
 ## Bug Fixes
