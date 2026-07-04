@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { exampleLogs } from '../../demo/logs';
-
   type LogLevel = 'info' | 'warning' | 'error';
 
   interface LogEntry {
@@ -13,7 +11,7 @@
 
   let search = '';
 
-  let logs: LogEntry[] = exampleLogs as LogEntry[];
+  let logs: LogEntry[] = [] as LogEntry[];
 
   $: filteredLogs = logs.filter(
     (log) =>
