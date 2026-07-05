@@ -55,7 +55,9 @@
     {/each}
 
     {#if filteredLogs.length === 0}
-      <div class="py-2 italic text-neutral-600">No logs matching your search</div>
+      <div class="py-2 italic text-neutral-600">
+        {search !== '' ? 'No logs matching your search' : 'No logs available'}
+      </div>
     {/if}
   </div>
 </div>
