@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { exampleLogs } from '../../demo/logs';
-
   type LogLevel = 'info' | 'warning' | 'error';
 
   interface LogEntry {
@@ -13,7 +11,7 @@
 
   let search = '';
 
-  let logs: LogEntry[] = exampleLogs as LogEntry[];
+  let logs: LogEntry[] = [] as LogEntry[];
 
   $: filteredLogs = logs.filter(
     (log) =>
@@ -57,7 +55,9 @@
     {/each}
 
     {#if filteredLogs.length === 0}
-      <div class="py-2 italic text-neutral-600">No logs matching your search</div>
+      <div class="py-2 italic text-neutral-600">
+        {search !== '' ? 'No logs matching your search' : 'No logs available'}
+      </div>
     {/if}
   </div>
 </div>
