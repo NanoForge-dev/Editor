@@ -16,6 +16,7 @@ export class EventEmitter<
   }
 
   runEvents(): void {
+    if (!this.eventQueue.length) return;
     this.eventQueue.forEach((e) => {
       this._executeEvent(e);
     });

@@ -12,6 +12,9 @@
   let loadingPromises: Promise<unknown>[] = $state([]);
 
   async function playGameFromServer() {
+    if (gameState === GameState.PLAY || gameState === GameState.PAUSE) {
+      event.emit(CoreEvents.STOP_GAME);
+    }
     gameState = GameState.RELOAD_FROM_SERVER;
     await loader.build();
     await loader.start(container);
@@ -19,6 +22,9 @@
   }
 
   async function playGameFromSave() {
+    if (gameState === GameState.PLAY || gameState === GameState.PAUSE) {
+      event.emit(CoreEvents.STOP_GAME);
+    }
     gameState = GameState.RELOAD_FROM_SAVE;
     await loader.start(container);
     gameState = GameState.PLAY;
@@ -31,7 +37,7 @@
 
   async function pauseGame() {
     gameState = GameState.PAUSE;
-    event.emit(CoreEvents.PAUSE_GAME, 10);
+    event.emit(CoreEvents.PAUSE_GAME);
   }
 
   async function stopGame() {
