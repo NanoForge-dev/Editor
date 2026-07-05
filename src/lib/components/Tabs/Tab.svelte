@@ -21,6 +21,12 @@
 
 <button
   onclick={onSelect}
+  onauxclick={(e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      onClose();
+    }
+  }}
   class="flex gap-2 items-center justify-center w-56 px-3 py-2 cursor-pointer {selected
     ? 'bg-neutral-800'
     : 'hover:bg-neutral-800'} rounded-lg"
