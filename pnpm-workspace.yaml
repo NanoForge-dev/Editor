@@ -79,7 +79,3 @@ catalogs:
     playwright: ^1.61.1
     vitest: ^4.1.9
     vitest-browser-svelte: ^2.2.0
-
-minimumReleaseAgeExclude:
-  - '@nanoforge-dev/common@1.4.0'
-  - '@nanoforge-dev/ecs-lib@1.4.0'

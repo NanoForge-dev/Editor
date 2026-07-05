@@ -68,6 +68,9 @@ export const createProjectAction = useActionHandler(
       git: body.createGitRepository,
       gitRemote: body.gitRemote,
       lint: false,
+      initFunctions: true,
+      strict: false,
+      skipInstall: false,
     });
 
     return await loadProject({ path: join(body.projectPath ?? '', body.projectName) }, handler);
