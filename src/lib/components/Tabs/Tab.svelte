@@ -54,7 +54,7 @@
         onClose();
       }}
       onkeydown={(e) => e.key === 'Enter' && onClose()}
-      class="i-solar:close-circle-line-duotone"
+      class="i-ic:baseline-close text-neutral-400 hover:text-white text-md"
       aria-label="Close tab"
     >
     </span>
