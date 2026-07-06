@@ -2,7 +2,14 @@
   import type { ComponentParamHandle } from '$lib/client/ecs';
   import { Input } from '$lib/components/ui/input';
   import { TristateSwitch } from '$lib/components/ui/tristate-switch';
-  import { Select, SelectContent, SelectItem, SelectTrigger } from '$lib/components/ui/select';
+  import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectSeparator,
+    SelectTrigger,
+  } from '$lib/components/ui/select';
+
   import { untrack } from 'svelte';
   import { useProject } from '$lib/client/project';
 
@@ -28,7 +35,7 @@
   });
 
   const handleChange = () => {
-    handle.value.set(value);
+    handle.value.set(value === '' ? undefined : value);
   };
 </script>
 
@@ -40,6 +47,10 @@
       <Select type="single" bind:value onValueChange={handleChange}>
         <SelectTrigger class="w-full">{value}</SelectTrigger>
         <SelectContent>
+          {#if $param.optional === true}
+            <SelectItem value="">Not set</SelectItem>
+            <SelectSeparator />
+          {/if}
           {#if Array.isArray($param.enum)}
             {#if !!$param.enum.length}
               {#each $param.enum as opt (opt)}
@@ -49,8 +60,7 @@
               <div class="px-4 py-2 text-muted-foreground italic">No options</div>
             {/if}
           {:else}
-            {#if Object.keys($param.enum).length === 0}
-              <SelectItem value="">None</SelectItem>
+            {#if Object.keys($param.enum).length !== 0}
               {#each Object.entries($param.enum) as [displayOpt, realOpt] (displayOpt)}
                 <SelectItem value={realOpt}>{displayOpt}</SelectItem>
               {/each}
@@ -71,8 +81,11 @@
     <Select type="single" bind:value onValueChange={handleChange}>
       <SelectTrigger class="w-full overflow-y-hidden">{value}</SelectTrigger>
       <SelectContent>
-        {#if $assets.length !== 0}
-          <SelectItem value="">None</SelectItem>
+        {#if $param.optional === true}
+          <SelectItem value="">Not set</SelectItem>
+          <SelectSeparator />
+        {/if}
+        {#if !!$assets.length}
           {#each $assets as asset (asset.id)}
             <SelectItem value={asset.path}>{asset.id}</SelectItem>
           {/each}
