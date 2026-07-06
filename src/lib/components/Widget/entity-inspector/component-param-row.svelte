@@ -81,8 +81,11 @@
     <Select type="single" bind:value onValueChange={handleChange}>
       <SelectTrigger class="w-full overflow-y-hidden">{value}</SelectTrigger>
       <SelectContent>
-        {#if $assets.length !== 0}
-          <SelectItem value="">None</SelectItem>
+        {#if $param.optional === true}
+          <SelectItem value="">Not set</SelectItem>
+          <SelectSeparator />
+        {/if}
+        {#if !!$assets.length}
           {#each $assets as asset (asset.id)}
             <SelectItem value={asset.path}>{asset.id}</SelectItem>
           {/each}
