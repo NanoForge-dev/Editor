@@ -7,28 +7,28 @@ import type { ComponentParamManager } from './component-param-manager';
 const _storage = writable<Record<string, Writable<ComponentParam>>>({});
 const _valueStorage = writable<Record<string, Writable<any | undefined>>>({});
 
-const _listener = writable<Unsubscriber[] | null>();
+const _listeners = writable<Record<string, Unsubscriber[] | null>>({});
 
 export class ComponentParamHandle {
   public readonly manager: ComponentParamManager;
   public readonly id: string;
+  private readonly fullId: string;
   private readonly _store: Writable<ComponentParam>;
   private readonly _valueStore: Writable<any | undefined>;
 
   static reset() {
     _storage.set({});
     _valueStorage.set({});
-    resetListeners(_listener);
+    resetListeners(_listeners);
   }
 
   constructor(manager: ComponentParamManager, param: ComponentParam, value: any | undefined) {
     this.manager = manager;
     this.id = param.name;
+    this.fullId = `${this.manager.component.manager.entity.manager.scene.id}/${this.manager.component.manager.entity.id}/${this.manager.component.id}/${this.id}`;
 
-    const storageResolvable = `${this.manager.component.manager.entity.manager.scene.id}/${this.manager.component.manager.entity.id}/${this.manager.component.id}/${this.id}`;
-
-    this._store = resolveStore(_storage, storageResolvable, param);
-    this._valueStore = resolveStore(_valueStorage, storageResolvable, value);
+    this._store = resolveStore(_storage, this.fullId, param);
+    this._valueStore = resolveStore(_valueStorage, this.fullId, value);
 
     this._listen();
   }
@@ -46,12 +46,13 @@ export class ComponentParamHandle {
   }
 
   private _listen() {
-    if (get(_listener)) return;
+    const listeners = get(_listeners);
+    if (listeners[this.fullId]) return;
     const unsub = this.manager.component.store.subscribe((component) => {
       const newParam = component.params.find((param) => param.name === this.id);
       if (!newParam) return;
       this._store.set(newParam);
     });
-    _listener.set([unsub]);
+    _listeners.set({ ...listeners, [this.fullId]: [unsub] });
   }
 }

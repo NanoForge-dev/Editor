@@ -1,6 +1,6 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
-import { resetListeners, resolveStore } from '../../utils';
+import { resetListener, resolveStore } from '../../utils';
 import type { SceneHandle } from '../scene-handle';
 import { SceneSystemHandle } from './system-handle';
 
@@ -14,7 +14,7 @@ export class SceneSystemManager {
 
   static reset() {
     _storage.set({});
-    resetListeners(_listener);
+    resetListener(_listener);
   }
 
   constructor(scene: SceneHandle, systems: string[]) {

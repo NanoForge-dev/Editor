@@ -15,7 +15,7 @@ export const resetSubscriptions = (store: Writable<Record<string, Unsubscriber |
   store.set({});
 };
 
-export const resetListeners = (store: Writable<Unsubscriber[] | null>) => {
+export const resetListener = (store: Writable<Unsubscriber[] | null>) => {
   const listeners = get(store);
   listeners?.forEach((sub) => {
     try {
@@ -25,6 +25,20 @@ export const resetListeners = (store: Writable<Unsubscriber[] | null>) => {
     }
   });
   store.set(null);
+};
+
+export const resetListeners = (store: Writable<Record<string, Unsubscriber[] | null>>) => {
+  const listeners = get(store);
+  Object.values(listeners).forEach((sub) => {
+    sub?.forEach((unsub) => {
+      try {
+        unsub();
+      } catch {
+        /* empty */
+      }
+    });
+  });
+  store.set({});
 };
 
 export const resolveStore = <T>(

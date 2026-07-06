@@ -1,7 +1,7 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
 import type { ComponentParam } from '../../../component/component.type';
-import { resetListeners, resetSubscriptions } from '../../../utils';
+import { resetListener, resetSubscriptions } from '../../../utils';
 import { resolveStore } from '../../../utils';
 import type { EntityComponentHandle } from './component-handle';
 import { ComponentParamHandle } from './component-param-handle';
@@ -24,7 +24,7 @@ export class ComponentParamManager {
     _storage.set({});
     _valueStorage.set({});
     resetSubscriptions(_subscriptions);
-    resetListeners(_listener);
+    resetListener(_listener);
   }
 
   constructor(component: EntityComponentHandle, params: Record<string, string>) {

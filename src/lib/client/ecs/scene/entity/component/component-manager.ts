@@ -1,6 +1,6 @@
 import { type Unsubscriber, type Writable, get, writable } from 'svelte/store';
 
-import { resetListeners, resetSubscriptions } from '../../../utils';
+import { resetListener, resetSubscriptions } from '../../../utils';
 import { resolveStore } from '../../../utils';
 import type { SceneEntityHandle } from '../entity-handle';
 import { EntityComponentHandle } from './component-handle';
@@ -20,7 +20,7 @@ export class EntityComponentManager {
   static reset() {
     _storage.set({});
     resetSubscriptions(_subscriptions);
-    resetListeners(_listener);
+    resetListener(_listener);
   }
 
   constructor(entity: SceneEntityHandle, components: Record<string, Record<string, string>>) {
