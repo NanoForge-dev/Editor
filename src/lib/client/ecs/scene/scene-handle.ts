@@ -8,7 +8,7 @@ import { SceneSystemManager } from './system/system-manager';
 
 const _storage = writable<Record<string, Writable<Scene>>>({});
 
-const _listener = writable<Unsubscriber[] | null>();
+const _listeners = writable<Record<string, Unsubscriber[] | null>>({});
 
 export class SceneHandle {
   public readonly manager: SceneManager;
@@ -19,7 +19,7 @@ export class SceneHandle {
 
   static reset() {
     _storage.set({});
-    resetListeners(_listener);
+    resetListeners(_listeners);
   }
 
   constructor(manager: SceneManager, scene: Scene) {
@@ -67,7 +67,8 @@ export class SceneHandle {
   }
 
   private _listen() {
-    if (get(_listener)) return;
+    const listeners = get(_listeners);
+    if (listeners[this.id]) return;
     const unsub = [
       this._entities.store.subscribe((entities) => {
         const scene = get(this._store);
@@ -80,6 +81,6 @@ export class SceneHandle {
         this._store.set(scene);
       }),
     ];
-    _listener.set(unsub);
+    _listeners.set({ ...listeners, [this.id]: unsub });
   }
 }

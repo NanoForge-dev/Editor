@@ -7,24 +7,26 @@ import type { Entity } from './entity.type';
 
 const _storage = writable<Record<string, Writable<Entity>>>({});
 
-const _listener = writable<Unsubscriber[] | null>();
+const _listeners = writable<Record<string, Unsubscriber[] | null>>({});
 
 export class SceneEntityHandle {
   public readonly manager: SceneEntityManager;
   public readonly id: string;
+  private readonly fullId: string;
   private readonly _store: Writable<Entity>;
   private readonly _components: EntityComponentManager;
 
   static reset() {
     _storage.set({});
-    resetListeners(_listener);
+    resetListeners(_listeners);
   }
 
   constructor(manager: SceneEntityManager, entity: Entity) {
     this.manager = manager;
     this.id = entity.id;
+    this.fullId = `${manager.scene.id}/${entity.id}`;
 
-    this._store = resolveStore(_storage, `${this.manager.scene.id}/${this.id}`, entity);
+    this._store = resolveStore(_storage, this.fullId, entity);
 
     this._components = new EntityComponentManager(this, entity.components);
 
@@ -56,12 +58,13 @@ export class SceneEntityHandle {
   }
 
   private _listen() {
-    if (get(_listener)) return;
+    const listeners = get(_listeners);
+    if (listeners[this.fullId]) return;
     const unsub = this._components.store.subscribe((components) => {
       const entity = get(this._store);
       entity.components = components;
       this._store.set(entity);
     });
-    _listener.set([unsub]);
+    _listeners.set({ ...listeners, [this.fullId]: [unsub] });
   }
 }
