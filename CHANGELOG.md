@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+# [0.1.4](https://github.com/NanoForge-dev/Editor/compare/0.1.3...0.1.4) - (2026-07-07)
+
+## Bug Fixes
+
+- **front:** Default values not handled because of boolean check (#190) ([08e4ebf](https://github.com/NanoForge-dev/Editor/commit/08e4ebf56ab55e7f9e7c03a4cc8b851c6c0b0c93)) by @Tchips46
+- Change listeners to sub elements (#189) ([87bddfb](https://github.com/NanoForge-dev/Editor/commit/87bddfb601d0a170cf891d265b25ffd2faa114f2)) by @Exeloo
+- Delete demo logs (#185) ([8ae7d5f](https://github.com/NanoForge-dev/Editor/commit/8ae7d5f04bb9dc8ac5092862a135b02ccbcf8229)) by @bill-h4rper
+- Add default params to new action (#187) ([b7c1a73](https://github.com/NanoForge-dev/Editor/commit/b7c1a730d06ec1558cf3217c82e91e11dbcee6aa)) by @Exeloo
+
+## Features
+
+- Implements core events (#188) ([94d336b](https://github.com/NanoForge-dev/Editor/commit/94d336b0d212039c53adebb7c3525cfde0cfacf0)) by @Tchips46
+- Add tab close shortcut (#186) ([c5bb79d](https://github.com/NanoForge-dev/Editor/commit/c5bb79dde28d167d115f2c946956cb6d4b346d34)) by @bill-h4rper
+
 # [0.1.3](https://github.com/NanoForge-dev/Editor/compare/0.1.2...0.1.3) - (2026-07-02)
 
 ## Bug Fixes
