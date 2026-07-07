@@ -47,7 +47,7 @@ export class EntityComponentManager {
     components[component] = {
       ...Object.fromEntries(
         manifest.params
-          .filter((param) => param.default)
+          .filter((param) => param.default !== undefined)
           .map((param) => [param.name, param.default as string]),
       ),
     };
