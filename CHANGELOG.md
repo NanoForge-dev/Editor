@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+# [0.1.5](https://github.com/NanoForge-dev/Editor/compare/0.1.4...0.1.5) - (2026-07-08)
+
+## Features
+
+- Docs editor (#192) ([12b42bd](https://github.com/NanoForge-dev/Editor/commit/12b42bdc3201771d4f9709b2008b4afcb861c997)) by @bill-h4rper
+
 # [0.1.4](https://github.com/NanoForge-dev/Editor/compare/0.1.3...0.1.4) - (2026-07-07)
 
 ## Bug Fixes
