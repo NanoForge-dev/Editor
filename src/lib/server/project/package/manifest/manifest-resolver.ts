@@ -1,4 +1,4 @@
-import ts, { type Expression, type ObjectLiteralElementLike, SyntaxKind } from 'typescript';
+import ts, { type Expression, type ObjectLiteralElementLike } from 'typescript';
 
 import { PackageTypeEnum } from '../package.enum';
 import type { ManifestPackage } from '../package.type';
@@ -47,18 +47,19 @@ const parseProperty = (prop: ObjectLiteralElementLike): any => {
 const parseElement = (value: Expression): any => {
   if (ts.isStringLiteral(value)) return value.text;
   if (ts.isNumericLiteral(value)) return Number(value.text);
-
-  if (value.kind === SyntaxKind.TrueKeyword) return true;
-  if (value.kind === SyntaxKind.FalseKeyword) return false;
-  if (value.kind === SyntaxKind.NullKeyword) return null;
-  if (value.kind === SyntaxKind.UndefinedKeyword) return undefined;
+  if (ts.isLiteralTypeLiteral(value)) {
+    const txt = value.getText();
+    if (txt === 'true') return true;
+    if (txt === 'false') return false;
+    if (txt === 'null') return null;
+    if (txt === 'undefined') return undefined;
+  }
   if (ts.isArrayLiteralExpression(value)) return value.elements.map((el) => parseElement(el));
   if (ts.isObjectLiteralExpression(value))
-    return value.properties.reduce<Record<string, any>>((acc, prop) => {
-      Object.assign(acc, parseProperty(prop));
-      return acc;
+    return value.properties.reduce((acc, prop) => {
+      return { ...acc, ...parseProperty(prop) };
     }, {});
-  throw new Error(`Unknown element type: ${ts.SyntaxKind[value.kind]}`);
+  throw new Error('Unknown element type');
 };
 
 const getManifestFromNode = (source: ts.VariableDeclaration | null): any | null => {
