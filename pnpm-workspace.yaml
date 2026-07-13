@@ -78,4 +78,4 @@ catalogs:
     '@vitest/coverage-v8': ^4.1.9
     playwright: ^1.61.1
     vitest: ^4.1.9
-    vitest-browser-svelte: ^2.2.0
+    vitest-browser-svelte: ^3.0.0
