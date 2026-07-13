@@ -5,7 +5,7 @@ catalogs:
   build:
     '@tsconfig/svelte': ^5.0.8
     'svelte-adapter-bun': ^1.0.1
-    typescript: ^6.0.3
+    typescript: ^7.0.2
   ci:
     '@commitlint/cli': ^21.2.0
     '@commitlint/config-conventional': ^21.2.0
