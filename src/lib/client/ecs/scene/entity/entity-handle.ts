@@ -17,8 +17,8 @@ export class SceneEntityHandle {
   private readonly _components: EntityComponentManager;
 
   static reset() {
-    _storage.set({});
     resetListeners(_listeners);
+    _storage.set({});
   }
 
   constructor(manager: SceneEntityManager, entity: Entity) {

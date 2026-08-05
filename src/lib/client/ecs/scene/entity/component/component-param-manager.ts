@@ -21,10 +21,10 @@ export class ComponentParamManager {
   private readonly _storageResolvable: string;
 
   static reset() {
-    _storage.set({});
-    _valueStorage.set({});
     resetSubscriptions(_subscriptions);
     resetListener(_listener);
+    _storage.set({});
+    _valueStorage.set({});
   }
 
   constructor(component: EntityComponentHandle, params: Record<string, string>) {

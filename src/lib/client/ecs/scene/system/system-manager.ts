@@ -13,8 +13,8 @@ export class SceneSystemManager {
   private readonly _store: Writable<string[]>;
 
   static reset() {
-    _storage.set({});
     resetListener(_listener);
+    _storage.set({});
   }
 
   constructor(scene: SceneHandle, systems: string[]) {

@@ -13,8 +13,8 @@ const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
 
 export class SystemManager {
   static reset() {
-    _storage.set([]);
     resetSubscriptions(_subscriptions);
+    _storage.set([]);
   }
 
   constructor(systems: System[]) {
