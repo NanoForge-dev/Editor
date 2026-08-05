@@ -16,8 +16,11 @@ const initialState: TabsState = {
   selectedTabId: 'tab-main',
 };
 
-function createTabsStore() {
-  const { subscribe, update, set } = persistedWritable<TabsState>('editor.tabs', initialState);
+function createTabsStore(projectId: string) {
+  const { subscribe, update, set } = persistedWritable<TabsState>(
+    `editor.tabs.${projectId}`,
+    initialState,
+  );
 
   async function openTab(tab: Omit<TabInstance, 'id'> & { id?: string }) {
     const existing = await findExistingTab(tab);
@@ -124,4 +127,8 @@ function createTabsStore() {
   };
 }
 
-export const tabsStore = createTabsStore();
+export const updateTabsStore = (projectId: string) => {
+  tabsStore = createTabsStore(projectId);
+};
+
+export let tabsStore = createTabsStore('default');

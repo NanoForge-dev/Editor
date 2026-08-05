@@ -6,12 +6,14 @@ import {
   type CreateProjectActionInput,
   noProjectActions,
 } from '$lib/client/action';
-import { getConfig } from '$lib/client/config/config';
+import { getConfig } from '$lib/client/config';
 import { Project, ProjectCache, type ProjectDataCache } from '$lib/client/project';
-import { PLErrors, PLException, runPLSafe } from '$lib/client/project/project-loader/exceptions';
 import { SfsTreeCache } from '$lib/client/sync-file-system';
 
 import { FileSystemManager } from '@utils-client/file-system';
+
+import { PLErrors, PLException, runPLSafe } from './exceptions';
+import { initTabs } from './init-functions';
 
 type ProjectCacheResolvable = ActionProject;
 
@@ -112,7 +114,14 @@ export class ProjectLoader {
       name: infos.name,
       lastOpened: Date.now(),
     });
+
+    await this.initFunctions(project);
+
     return project;
+  }
+
+  static async initFunctions(project: Project): Promise<void> {
+    initTabs(project);
   }
 
   static unload() {
@@ -139,3 +148,5 @@ export const useProject = () => {
 };
 
 export const getProject = () => get(projectStore);
+
+export const getProjectStore = () => projectStore;
