@@ -18,8 +18,8 @@ export class SceneHandle {
   private readonly _systems: SceneSystemManager;
 
   static reset() {
-    _storage.set({});
     resetListeners(_listeners);
+    _storage.set({});
   }
 
   constructor(manager: SceneManager, scene: Scene) {

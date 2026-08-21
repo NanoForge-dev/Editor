@@ -34,6 +34,13 @@ export class ECSHandler {
   private _libraryManager: LibraryManager | undefined;
 
   static reset() {
+    // * Child must be reset before parents
+    ComponentParamHandle.reset();
+    ComponentParamManager.reset();
+    EntityComponentManager.reset();
+    SceneSystemManager.reset();
+    SceneEntityHandle.reset();
+    SceneEntityManager.reset();
     AssetHandle.reset();
     AssetManager.reset();
     ComponentHandle.reset();
@@ -44,12 +51,6 @@ export class ECSHandler {
     LibraryHandle.reset();
     SceneHandle.reset();
     SceneManager.reset();
-    SceneSystemManager.reset();
-    SceneEntityHandle.reset();
-    SceneEntityManager.reset();
-    EntityComponentManager.reset();
-    ComponentParamHandle.reset();
-    ComponentParamManager.reset();
   }
 
   constructor(project: Project) {

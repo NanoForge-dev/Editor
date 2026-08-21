@@ -17,9 +17,9 @@ export class ComponentParamHandle {
   private readonly _valueStore: Writable<any | undefined>;
 
   static reset() {
+    resetListeners(_listeners);
     _storage.set({});
     _valueStorage.set({});
-    resetListeners(_listeners);
   }
 
   constructor(manager: ComponentParamManager, param: ComponentParam, value: any | undefined) {

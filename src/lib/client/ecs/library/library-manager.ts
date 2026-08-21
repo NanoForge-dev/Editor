@@ -9,8 +9,8 @@ const _subscriptions = writable<Record<string, Unsubscriber | null>>({});
 
 export class LibraryManager {
   static reset() {
-    _storage.set([]);
     resetSubscriptions(_subscriptions);
+    _storage.set([]);
   }
 
   constructor(libraries: Library[]) {

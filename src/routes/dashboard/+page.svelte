@@ -16,6 +16,9 @@
   import { runSafe } from '@utils-client/error';
   import { FullPageProjectSpinner } from '$lib/components/project-loader';
   import { MarketplaceDialog, setMarketplaceContext } from '$lib/components/marketplace';
+  import { getProjectStore } from '$lib/client/project/project-loader/project-loader';
+
+  const projectStore = getProjectStore();
 
   let marketplaceOpen = $state(false);
   setMarketplaceContext({ open: () => (marketplaceOpen = true) });
@@ -74,7 +77,7 @@
   });
 </script>
 
-{#if loaded}
+{#if loaded && $projectStore}
   <MarketplaceDialog bind:open={marketplaceOpen} />
   <div class="h-screen flex flex-col gap-1 bg-neutral-900">
     <header class="h-16 flex">

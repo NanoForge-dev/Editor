@@ -18,9 +18,9 @@ export class EntityComponentManager {
   private readonly _storageResolvable: string;
 
   static reset() {
-    _storage.set({});
     resetSubscriptions(_subscriptions);
     resetListener(_listener);
+    _storage.set({});
   }
 
   constructor(entity: SceneEntityHandle, components: Record<string, Record<string, string>>) {

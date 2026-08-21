@@ -16,11 +16,11 @@ export class SceneManager {
   public readonly ecs: ECSHandler;
 
   static reset() {
+    resetSubscriptions(_subscriptions);
     _storage.set([]);
     _rootScenesStorage.set([]);
     _activeSceneStorage.set(undefined as any);
     _defaultSceneStorage.set(undefined as any);
-    resetSubscriptions(_subscriptions);
   }
 
   constructor(ecs: ECSHandler, scenes: Scene[], rootScenes: string[], defaultSceneId: string) {

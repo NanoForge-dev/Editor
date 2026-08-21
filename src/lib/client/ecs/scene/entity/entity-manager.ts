@@ -17,8 +17,8 @@ export class SceneEntityManager {
   private readonly _store: Writable<Entity[]>;
 
   static reset() {
-    _storage.set({});
     resetSubscriptions(_subscriptions);
+    _storage.set({});
   }
 
   constructor(scene: SceneHandle, entities: Entity[]) {

@@ -22,6 +22,7 @@ export class Project {
   static reset(): void {
     InfoHandler.reset();
     EventHandler.reset();
+    ECSHandler.reset();
   }
 
   constructor(public id: string) {
