@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ESNext", "esnext.disposable", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

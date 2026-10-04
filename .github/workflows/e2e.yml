@@ -1,0 +1,36 @@
+name: E2E
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'tooling/**'
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Install browsers
+        run: pnpm --filter @nanoforge-dev/editor exec playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        run: pnpm --filter @nanoforge-dev/editor test:e2e
+
+      - name: Upload traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: apps/editor/test-results

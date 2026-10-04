@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-example-plugin",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - Example editor plugin (fixture for end-to-end checks and the plugin authoring guide)",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor",
+    "plugin"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "tooling/example-plugin"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "build": "vite build",
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src"
+  },
+  "devDependencies": {
+    "@nanoforge-dev/editor-sdk": "workspace:*",
+    "@nanoforge-dev/editor-vite-plugin": "workspace:*",
+    "svelte": "catalog:core",
+    "vite": "catalog:core"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

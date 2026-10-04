@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-code",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - Code service: TypeScript analysis and AST transforms in a web worker, documents, diagnostics",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker.ts",
+    "./engine": "./src/engine/index.ts",
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "packages/code"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:unit": "vitest run --config ../../vitest.config.ts"
+  },
+  "dependencies": {
+    "@nanoforge-dev/editor-history": "workspace:*",
+    "@nanoforge-dev/editor-kernel": "workspace:*",
+    "@nanoforge-dev/editor-meta": "workspace:*",
+    "@nanoforge-dev/editor-project": "workspace:*",
+    "@nanoforge-dev/editor-protocol": "workspace:*",
+    "@nanoforge-dev/editor-rpc": "workspace:*",
+    "ts-morph": "catalog:code",
+    "zod": "catalog:libs"
+  },
+  "devDependencies": {
+    "@nanoforge-dev/editor-server-core": "workspace:*",
+    "@types/node": "catalog:core",
+    "typescript": "catalog:build",
+    "vitest": "catalog:test"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

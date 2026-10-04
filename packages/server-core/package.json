@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-server-core",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - Editor server services: sessions, fs, cli, git, api client, plugin server entries",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts",
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "packages/server-core"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:unit": "vitest run --config ../../vitest.config.ts",
+    "test:contract": "vitest run --config ../../vitest.config.ts test/contract"
+  },
+  "dependencies": {
+    "@nanoforge-dev/config": "catalog:config",
+    "@nanoforge-dev/editor-kernel": "workspace:*",
+    "@nanoforge-dev/editor-protocol": "workspace:*",
+    "@nanoforge-dev/editor-rpc": "workspace:*",
+    "@nanoforge-dev/registry": "workspace:*",
+    "chokidar": "catalog:server",
+    "fflate": "catalog:libs",
+    "ignore": "catalog:libs",
+    "prettier": "catalog:server",
+    "semver": "catalog:libs",
+    "typescript": "catalog:build",
+    "unrun": "catalog:build",
+    "yaml": "catalog:server",
+    "zod": "catalog:libs"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:core",
+    "@types/node": "catalog:core",
+    "@types/semver": "catalog:libs",
+    "typescript": "catalog:build",
+    "vitest": "catalog:test"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

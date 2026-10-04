@@ -28,5 +28,11 @@ jobs:
       - name: Run linter
         run: pnpm lint
 
+      - name: Run type checks
+        run: pnpm typecheck
+
+      - name: Install browsers for component tests
+        run: pnpm --filter @nanoforge-dev/editor-ui exec playwright install --with-deps chromium
+
       - name: Run tests
         run: pnpm test:unit

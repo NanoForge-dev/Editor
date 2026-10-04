@@ -1,0 +1,86 @@
+apps:editor:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\neditor\\n"
+
+packages:code:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\ncode\\n"
+
+packages:history:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nhistory\\n"
+
+packages:kernel:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nkernel\\n"
+
+packages:layout:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nlayout\\n"
+
+packages:meta:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nmeta\\n"
+
+packages:project:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nproject\\n"
+
+packages:protocol:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nprotocol\\n"
+
+packages:registry:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nregistry\\n"
+
+packages:rpc:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nrpc\\n"
+
+packages:runtime:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nruntime\\n"
+
+packages:sdk:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nsdk\\n"
+
+packages:server-core:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nserver-core\\n"
+
+packages:settings:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nsettings\\n"
+
+packages:ui:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nui\\n"
+
+plugins:code-editor:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\ncode-editor\\n"
+
+plugins:command-palette:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\ncommand-palette\\n"
+
+plugins:console:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nconsole\\n"
+
+plugins:ecs:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\necs\\n"
+
+plugins:file-manager:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nfile-manager\\n"
+
+plugins:git:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\ngit\\n"
+
+plugins:history-panel:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nhistory-panel\\n"
+
+plugins:inspectors:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\ninspectors\\n"
+
+plugins:packages:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\npackages\\n"
+
+plugins:scene:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nscene\\n"
+
+plugins:settings-ui:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nsettings-ui\\n"
+
+plugins:viewport:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nviewport\\n"
+
+tooling:example-plugin:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nexample-plugin\\n"
+
+tooling:vite-plugin:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nvite-plugin\\n"

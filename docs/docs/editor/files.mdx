@@ -1,0 +1,46 @@
+---
+title: 'Files'
+icon: 'folder-tree'
+description: 'Browse and organize the project files'
+---
+
+The **Files** panel shows the project's folders as a tree and, below it, the selected folder as a grid with thumbnails of images. The buttons at the top switch between the tree alone and the tree with the grid.
+
+## Open
+
+Double-click a file, or select it and press `Enter`. Code and text files open in the [code editor](code-editor). Images, sounds and videos open in a preview. _Open with_ in the right-click menu lists other editors when plugins provide some.
+
+## Create
+
+The **+** button, or right-click a folder and **New**: a file, a folder, or a template. Plugins add templates: the ECS plugin adds _Component_ and _System_, which create the file with its documentation tags.
+
+## Organize
+
+| To           | Do                                                                |
+| ------------ | ----------------------------------------------------------------- |
+| Rename       | `F2`, or right-click › Rename                                     |
+| Move         | Drag the file onto a folder, or cut and paste                     |
+| Copy         | `Ctrl+C` then `Ctrl+V`; `Ctrl+D` duplicates in place              |
+| Delete       | `Delete`. A folder or several files ask first.                    |
+| Import       | Drop files from your computer onto a folder, or the import button |
+| Download     | Right-click › Download. A folder downloads as a `.zip`.           |
+| Show on disk | Right-click › Reveal in file manager (local editors)              |
+
+Every one of these can be undone with `Ctrl+Z` while the Files panel has focus. A deleted file goes to the editor's trash and comes back on undo.
+
+## Search
+
+The box at the top filters by name. Letters only need to be in order, and the matches stay in their folders.
+
+## Hidden files
+
+- The panel hides `node_modules`, `dist`, and files starting with a dot (except `.env`). The eye button shows them; _Settings › Editor › Files_ changes the list.
+- A `.nfignore` file at the project root (same syntax as `.gitignore`) hides files from the **whole editor**: this panel, the file pickers and the code analysis. Builds and the game still see them.
+
+## Packages
+
+When the project has installed packages, they show in a separate **Packages** section with a lock: they are read-only. To change a component of a package, copy it into your app from the [Components](components) panel. Packages are installed from [File › Packages…](plugins-and-packages).
+
+## Marks
+
+In a Git repository, changed files carry a mark after their name and a color: modified, added, untracked. See [Git](git).

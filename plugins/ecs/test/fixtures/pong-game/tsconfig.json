@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@pong-game/shared/*": ["libs/shared/src/*"]
+    }
+  },
+  "include": ["apps/*/src/**/*.ts", "libs/*/src/**/*.ts"]
+}

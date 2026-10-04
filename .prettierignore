@@ -1,21 +1,26 @@
 .idea/
 .vscode/
+.turbo/
 
-.svelte-kit/
-dist/
+**/.svelte-kit/
+**/dist/
+**/build/
 node_modules/
 
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
-CHANGELOG.md
+apps/
+packages/
+plugins/
+tooling/
 
-coverage/
-test-results/
+**/CHANGELOG.md
 
-project.inlang/cache/
-project.inlang/.gitignore
-project.inlang/.meta.json
-project.inlang/README.md
+**/coverage/
+**/test-results/
 
-src/lib/paraglide/
+**/test/fixtures/
+
+# Written by the editor in a project it opens (the example).
+**/.nanoforge/

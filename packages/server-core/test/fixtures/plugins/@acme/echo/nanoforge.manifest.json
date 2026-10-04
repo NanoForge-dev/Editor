@@ -1,0 +1,7 @@
+{
+  "type": "plugin",
+  "name": "@acme/echo",
+  "version": "1.0.0",
+  "engines": { "editor": "*" },
+  "entry": { "client": "index.js", "server": "server.js" }
+}

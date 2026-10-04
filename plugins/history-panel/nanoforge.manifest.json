@@ -1,0 +1,22 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/history-panel",
+  "version": "0.1.0",
+  "displayName": "History",
+  "description": "Every change you can undo: jump to a step, previews, search.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onWidget:history-panel.history"],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "history-panel.history",
+        "title": "History",
+        "icon": "history",
+        "defaultSlot": "rightTop",
+        "order": 100
+      }
+    ]
+  }
+}

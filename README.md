@@ -18,6 +18,19 @@
 
 This repository contains the Editor of NanoForge. Check [releases][github-releases] to see versions of the Editor. Nanoforge is a powerful game engine for web browser.
 
+## Repository layout
+
+The editor is a pnpm + turbo monorepo (rewrite in progress, see [`docs/rewrite-plan.md`](docs/rewrite-plan.md)):
+
+| Path          | Content                                                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/editor` | The SvelteKit shell and Bun server published as `@nanoforge-dev/editor`                                                           |
+| `packages/*`  | Core editor packages (`kernel`, `sdk`, `rpc`, `history`, `settings`, `layout`, `ui`, `project`, `code`, `runtime`, `server-core`) |
+| `plugins/*`   | Built-in editor plugins (`nanoforge.manifest.json`, type `plugin`)                                                                |
+| `tooling/*`   | Build tooling for plugins                                                                                                         |
+
+Common commands: `pnpm dev`, `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test`.
+
 ## Usage
 
 To use Nanoforge Editor, please refer to the [CLI documentation][cli-source] !

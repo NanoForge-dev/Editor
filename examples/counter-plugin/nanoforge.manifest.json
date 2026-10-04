@@ -1,0 +1,49 @@
+{
+  "type": "plugin",
+  "name": "@acme/counter",
+  "version": "0.1.0",
+  "displayName": "Counter",
+  "description": "Counts, to show how an editor plugin is made.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "entry": {
+    "client": "index.js"
+  },
+  "activation": ["onWidget:counter.panel", "onCommand:counter.add"],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "counter.panel",
+        "title": "Counter",
+        "icon": "plus",
+        "defaultSlot": "rightBottom",
+        "order": 900
+      }
+    ],
+    "commands": [
+      {
+        "id": "counter.add",
+        "title": "Add to the counter",
+        "category": "Counter"
+      }
+    ],
+    "menus": [
+      {
+        "menu": "edit",
+        "command": "counter.add",
+        "group": "counter"
+      }
+    ],
+    "settings": [
+      {
+        "key": "step",
+        "type": "number",
+        "default": 1,
+        "title": "Step",
+        "description": "How much each click adds.",
+        "category": "Counter"
+      }
+    ]
+  }
+}

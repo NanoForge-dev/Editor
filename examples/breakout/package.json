@@ -1,0 +1,21 @@
+{
+  "name": "breakout",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A breakout made of scenes: menu, levels, pause and end screens",
+  "scripts": {
+    "start": "nf start",
+    "build": "nf build"
+  },
+  "devDependencies": {
+    "@nanoforge-dev/asset": "*",
+    "@nanoforge-dev/common": "*",
+    "@nanoforge-dev/core": "*",
+    "@nanoforge-dev/env": "*",
+    "@nanoforge-dev/cli": "^2.3.0",
+    "@nanoforge-dev/config": "^2.3.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.9.0 || ^6.0.0"
+  }
+}

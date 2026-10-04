@@ -1,0 +1,60 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/scene",
+  "version": "0.1.0",
+  "displayName": "Scenes",
+  "description": "The scenes of each app: their tree, their entities and systems (through the ECS widgets), the scene vars, and the loaded scenes while playing.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "dependencies": ["@nanoforge/ecs"],
+  "engineLibs": {
+    "required": {
+      "@nanoforge-dev/scene": "*"
+    }
+  },
+  "entry": {
+    "client": "index.js",
+    "worker": "worker.js"
+  },
+  "activation": [
+    "onWidget:scene.scenes",
+    "onWidget:scene.vars",
+    "onWidget:ecs.hierarchy",
+    "onWidget:ecs.inspector",
+    "onWidget:ecs.systems",
+    "onWidget:viewport.scene"
+  ],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "scene.scenes",
+        "title": "Scenes",
+        "icon": "layers",
+        "defaultSlot": "leftTop",
+        "order": 190
+      },
+      {
+        "id": "scene.vars",
+        "title": "Vars",
+        "icon": "variable",
+        "defaultSlot": "rightBottom",
+        "order": 200
+      }
+    ],
+    "commands": [
+      {
+        "id": "scene.newScene",
+        "title": "New scene…",
+        "category": "Scenes"
+      },
+      {
+        "id": "scene.edit",
+        "title": "Edit scene",
+        "category": "Scenes",
+        "palette": false
+      }
+    ]
+  }
+}

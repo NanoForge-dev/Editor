@@ -3,3 +3,177 @@ documentation:
       - any-glob-to-any-file:
           - docs/*
           - docs/**/*
+
+apps:editor:
+  - changed-files:
+      - any-glob-to-any-file:
+          - apps/editor/*
+          - apps/editor/**/*
+
+packages:code:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/code/*
+          - packages/code/**/*
+
+packages:history:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/history/*
+          - packages/history/**/*
+
+packages:kernel:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/kernel/*
+          - packages/kernel/**/*
+
+packages:layout:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/layout/*
+          - packages/layout/**/*
+
+packages:meta:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/meta/*
+          - packages/meta/**/*
+
+packages:project:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/project/*
+          - packages/project/**/*
+
+packages:protocol:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/protocol/*
+          - packages/protocol/**/*
+
+packages:registry:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/registry/*
+          - packages/registry/**/*
+
+packages:rpc:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/rpc/*
+          - packages/rpc/**/*
+
+packages:runtime:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/runtime/*
+          - packages/runtime/**/*
+
+packages:sdk:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/sdk/*
+          - packages/sdk/**/*
+
+packages:server-core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/server-core/*
+          - packages/server-core/**/*
+
+packages:settings:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/settings/*
+          - packages/settings/**/*
+
+packages:ui:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/ui/*
+          - packages/ui/**/*
+
+plugins:code-editor:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/code-editor/*
+          - plugins/code-editor/**/*
+
+plugins:command-palette:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/command-palette/*
+          - plugins/command-palette/**/*
+
+plugins:console:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/console/*
+          - plugins/console/**/*
+
+plugins:ecs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/ecs/*
+          - plugins/ecs/**/*
+
+plugins:file-manager:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/file-manager/*
+          - plugins/file-manager/**/*
+
+plugins:git:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/git/*
+          - plugins/git/**/*
+
+plugins:history-panel:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/history-panel/*
+          - plugins/history-panel/**/*
+
+plugins:inspectors:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/inspectors/*
+          - plugins/inspectors/**/*
+
+plugins:packages:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/packages/*
+          - plugins/packages/**/*
+
+plugins:scene:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/scene/*
+          - plugins/scene/**/*
+
+plugins:settings-ui:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/settings-ui/*
+          - plugins/settings-ui/**/*
+
+plugins:viewport:
+  - changed-files:
+      - any-glob-to-any-file:
+          - plugins/viewport/*
+          - plugins/viewport/**/*
+
+tooling:example-plugin:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tooling/example-plugin/*
+          - tooling/example-plugin/**/*
+
+tooling:vite-plugin:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tooling/vite-plugin/*
+          - tooling/vite-plugin/**/*

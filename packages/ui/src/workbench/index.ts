@@ -1,0 +1,12 @@
+export * from './extension-point';
+export * from './keybinding';
+export * from './action';
+export * from './layout';
+export * from './notification';
+export * from './widget';
+export * from './service';
+export * from './workbench-context';
+export * from './menu';
+export * from './prompt';
+export * from './setup';
+export { default as Workbench } from './workbench.svelte';

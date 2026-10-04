@@ -1,0 +1,97 @@
+---
+title: 'Engine libraries'
+icon: 'cpu'
+description: 'Plugins that depend on an engine library, and talking to the running game'
+---
+
+A NanoForge game is made of apps (a client, a server), and each app uses **engine libraries**: `@nanoforge-dev/ecs`, `@nanoforge-dev/graphics-2d`, `@nanoforge-dev/network`… A plugin for the ECS means nothing in an app without it.
+
+## Say what the plugin needs
+
+```json
+"engineLibs": {
+  "required": { "@nanoforge-dev/ecs": "*" },
+  "optional": { "@nanoforge-dev/graphics-2d": "^1.0.0" }
+}
+```
+
+- `required`: an app must have these libraries (in these version ranges) for the plugin to apply to it.
+- `optional`: libraries the plugin can use when they are there.
+
+The plugin is still loaded in a project where no app has them: it decides what to show.
+
+## Apps the plugin applies to
+
+```ts
+import { observe } from '@nanoforge-dev/editor-sdk';
+
+context.subscriptions.add(
+  observe(context.eligibleApps, (apps) => {
+    // the project's apps that have every required library; changes when the project does
+  }),
+);
+```
+
+Each app has its `id`, `name`, `type` (`client`, `server`, or `lib` for a shared library) and `engineLibs` (name to installed version). `missingEngineLibs(manifest, app)` lists what an app lacks, and `isEligible(manifest, app)` answers yes or no.
+
+### In `when` clauses
+
+| Key                             | True when                                     |
+| ------------------------------- | --------------------------------------------- |
+| `engineLib:<name>`              | the active app has that library               |
+| `plugin.<plugin name>.eligible` | the active app has what that plugin requires  |
+| `activeApp`                     | (a value) the id of the app the user works on |
+
+```json
+{ "id": "ecs.addEntity", "title": "Add entity", "when": "engineLib:@nanoforge-dev/ecs" }
+```
+
+## The running game
+
+`RuntimeServiceToken` is the game the editor plays.
+
+```ts
+import { RuntimeServiceToken, isPlaying } from '@nanoforge-dev/editor-sdk';
+
+const runtime = context.services.get(RuntimeServiceToken);
+runtime.session.subscribe(({ state }) => {
+  if (isPlaying(state)) {
+    /* building, starting, running, paused */
+  }
+});
+```
+
+Commands: `runtime.play`, `runtime.pause`, `runtime.resume`, `runtime.step`, `runtime.restart`, `runtime.stop`. The session also says which apps play, in which mode, and whether the game can be paused (`controllable`). Context keys: `runtime.active`, `runtime.state`, `runtime.controllable`.
+
+### Asking the engine for data
+
+The engine sends nothing unless asked. A plugin asks for **features**, and gets **events** while the game runs.
+
+```ts
+const request = runtime.useFeatures({ frameStats: { intervalMs: 250 } });
+const events = runtime.onEvent(({ source, app, event, args }) => {
+  // source: 'client' or 'server'; app: the app's id
+  if (event === 'frame-stats') {
+    /* args[0]: the stats of that window */
+  }
+});
+// later
+request.dispose();
+events.dispose();
+```
+
+| Feature                                    | Events                           | Carries                                                          |
+| ------------------------------------------ | -------------------------------- | ---------------------------------------------------------------- |
+| `frameStats: { intervalMs }`               | `frame-stats`                    | Tick time and time per library, per window.                      |
+| `logs: { values: true }`                   | lines through `runtime.onLog`    | Console lines with the logged values and where they were logged. |
+| `networkTrace: { maxPerSecond, maxBytes }` | `network-trace`, `network-stats` | Packets, and totals every second.                                |
+| `ecsWorld: { intervalMs }`                 | `ecs-world`                      | Entities and components of the live world.                       |
+| `ecsSystemStats: { intervalMs }`           | `ecs-system-stats`               | Time per ECS system.                                             |
+
+- Requests of every plugin are merged; the most demanding one wins. **Dispose your request when your panel is hidden**: ask in an effect on `instance.visible`, not when the plugin starts.
+- An older engine ignores features it does not know: handle the absence of events.
+- The game only runs in a local editor. A hosted editor never builds or runs project code.
+
+### Game output
+
+Everything the game prints goes to the editor's logger, under the sources `game:client` and `game:server`. A plugin's own `context.logger` lines show under _Plugins_.

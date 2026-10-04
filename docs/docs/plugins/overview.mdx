@@ -1,0 +1,64 @@
+---
+title: 'Plugins overview'
+icon: 'plug'
+description: 'What an editor plugin is, where it lives and how the editor loads it'
+---
+
+Almost everything in the NanoForge editor is a plugin: the file manager, the code editor, the Game and Scene screens, the ECS panels, the console, Git. Your own plugins use the same API as these.
+
+A plugin is a folder with:
+
+- `nanoforge.manifest.json`: its name, what it adds to the editor, and when to load it;
+- a **client entry** (`index.js`): code that runs in the editor's page;
+- optionally a **worker entry** (code analysis and code generation) and a **server entry** (code that runs in the editor's server);
+- its styles and assets.
+
+## Where plugins live
+
+The editor looks in four places. When the same plugin is in several, the later one in this table is used.
+
+| Source    | Folder                                             | Loaded                            |
+| --------- | -------------------------------------------------- | --------------------------------- |
+| Built in  | shipped with the editor                            | always                            |
+| Installed | `~/.nanoforge/editor/plugins/@scope/name`          | in every project                  |
+| Project   | `<project>/.nanoforge/plugins/@scope/name`         | while that project is open        |
+| Dev       | the folders listed in `DEV_PLUGINS` (their `dist`) | always, and reloaded when rebuilt |
+
+_Settings › Plugins_ lists every plugin with its source and state, lets you turn one off, and installs plugins from the marketplace.
+
+<Note>A project plugin's server entry only runs in a local editor, never in a hosted one.</Note>
+
+## How a plugin is loaded
+
+1. The editor reads every manifest. Everything a manifest declares in `contributes` (commands, menus, panels, settings, shortcuts) is in place **before any plugin code runs**.
+2. A plugin's code is fetched and `activate` is called when one of its **activation events** happens: a panel of the plugin is shown, one of its commands runs, or at startup.
+3. When the plugin is turned off or replaced, everything it added through `context.subscriptions` is removed.
+
+So a plugin that only shows a panel costs nothing until the panel is opened.
+
+## What a plugin can import
+
+Only the SDK:
+
+- `@nanoforge-dev/editor-sdk`: services, commands, settings, history, code, runtime;
+- `@nanoforge-dev/editor-sdk/ui`: panels, menus, the status bar, and the editor's own components;
+- `@nanoforge-dev/editor-sdk/worker`: types for worker entries.
+
+The editor provides these modules, and Svelte, at run time: they are not bundled into your plugin, so your panels use the editor's own components and theme. Plugins are written in **Svelte 5 with runes**.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Create your first plugin" icon="rocket" href="./create-your-first-plugin">
+    `nf create plugin`, run it in the editor, change it.
+  </Card>
+  <Card title="Manifest reference" icon="file-code" href="./manifest">
+    Every field of `nanoforge.manifest.json`.
+  </Card>
+  <Card title="SDK" icon="code" href="./sdk">
+    The activation context and the editor's services.
+  </Card>
+  <Card title="Extension points" icon="blocks" href="./extension-points">
+    Every place a plugin can add something.
+  </Card>
+</CardGroup>

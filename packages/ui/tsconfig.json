@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["@vitest/browser-playwright"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "test/**/*.ts", "test/**/*.svelte"]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/settings-ui",
+  "version": "0.1.0",
+  "displayName": "Settings",
+  "description": "The settings dialog: categories, search, scopes, plugins, import and export.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onStartup"],
+  "contributes": {
+    "commands": [{ "id": "settings.open", "title": "Settings…", "category": "File" }],
+    "keybindings": [
+      { "key": "Mod+Alt+S", "command": "settings.open" },
+      { "key": "Mod+,", "command": "settings.open" }
+    ],
+    "menus": [{ "menu": "file", "command": "settings.open", "group": "z-settings" }]
+  }
+}

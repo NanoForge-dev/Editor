@@ -1,0 +1,127 @@
+---
+title: 'Settings'
+icon: 'sliders-horizontal'
+description: 'Declare settings, read them, and choose where they are saved'
+---
+
+A plugin's settings show in the Settings dialog with the others, are searchable, and are saved in the scope the user chooses.
+
+## Declare in the manifest
+
+```json
+"settings": [
+  {
+    "key": "step",
+    "type": "number",
+    "integer": true,
+    "minimum": 1,
+    "default": 1,
+    "title": "Step",
+    "description": "How much each click adds.",
+    "category": "Counter"
+  }
+]
+```
+
+The key is prefixed with the plugin's name: this one is `@acme/counter.step`.
+
+| Field                  | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `key`                  | **Required.** Letters, digits and dots.                                                    |
+| `type`                 | **Required.** See the types below.                                                         |
+| `default`              | **Required.** Must fit the type.                                                           |
+| `title`, `description` | Shown in the dialog. The search looks in both.                                             |
+| `category`             | Where it is listed: `Counter`, or `Editor/Game view` for a sub-category.                   |
+| `order`, `tags`        | Order in the category; extra search words.                                                 |
+| `scopes`               | The scopes it can be saved in. Default: all.                                               |
+| `sync`                 | `false`: never saved to the account.                                                       |
+| `mergeStrategy`        | How scopes combine: `replace` (default), `deep` (objects merged), `union` (arrays joined). |
+| `deprecated`           | A message; the setting leaves the dialog.                                                  |
+| `renamedFrom`          | Former keys, whose saved values are still read.                                            |
+
+### Types
+
+| `type`    | Options                              | Editor                |
+| --------- | ------------------------------------ | --------------------- |
+| `string`  | `enum` (a list), `pattern` (a regex) | a text box, or a list |
+| `number`  | `integer`, `minimum`, `maximum`      | a number box          |
+| `boolean` |                                      | a switch              |
+| `array`   | `items` (a type)                     | edited as JSON        |
+| `record`  | `values` (a type)                    | edited as JSON        |
+
+## Scopes
+
+A setting's value is the one of the highest scope that has it.
+
+| Scope          | Saved                                         | For                              |
+| -------------- | --------------------------------------------- | -------------------------------- |
+| default        | in the definition                             |                                  |
+| `account`      | with the user's account                       | preferences that follow the user |
+| `machine`      | in this browser                               | what depends on the machine      |
+| `project`      | `.nanoforge/editor/settings.json`, committed  | what the whole team shares       |
+| `projectLocal` | `.nanoforge/editor/local.json`, not committed | this user on this project        |
+
+A project file cannot force a setting that does not allow the `project` scope: such values are ignored.
+
+## Read and follow
+
+```ts
+import { SettingsServiceToken, observe } from '@nanoforge-dev/editor-sdk';
+
+const settings = context.services.get(SettingsServiceToken);
+
+const step = settings.get('@acme/counter.step'); // the value now
+context.subscriptions.add(
+  observe(settings.observe('@acme/counter.step'), (value) => {
+    // called now and each time the value changes, whatever scope changed
+  }),
+);
+```
+
+`settings.inspect(key)` gives the value in each scope.
+
+## Write
+
+```ts
+await settings.set('@acme/counter.step', 5, 'machine');
+await settings.reset('@acme/counter.step', 'machine');
+```
+
+Writing validates the value, and fails for a scope the setting does not allow.
+
+## Declare in code
+
+For a setting whose type the manifest vocabulary cannot express, define it with a zod schema and register it:
+
+```ts
+import { z } from 'zod';
+
+import { SettingsRegistryToken, defineSetting } from '@nanoforge-dev/editor-sdk';
+
+const palette = defineSetting({
+  key: '@acme/counter.palette',
+  schema: z.array(z.string().regex(/^#[0-9a-f]{6}$/)).max(8),
+  default: [],
+  title: 'Palette',
+  category: 'Counter',
+  scopes: ['account', 'machine'],
+});
+context.subscriptions.add(context.services.get(SettingsRegistryToken).register(palette));
+```
+
+## A page of your own
+
+When a list of rows is not the right editor (the keyboard shortcuts page, for example), contribute a page to `SETTINGS_PAGES`. The page gets the dialog's pending changes: what it sets is saved when the user presses **Apply** or **OK**, like every other setting.
+
+```ts
+import { SETTINGS_PAGES } from '@nanoforge-dev/editor-sdk/ui';
+
+context.contribute(SETTINGS_PAGES, {
+  id: 'counter',
+  title: 'Counter',
+  settings: ['@acme/counter.palette'], // they leave the category list
+  component: PalettePage, // gets { services, page }
+});
+```
+
+In the page, `page.value(key)` reads a setting with its pending change, `page.set(key, value, scope)` changes it, and `page.revision` is an observable bumped on every change.

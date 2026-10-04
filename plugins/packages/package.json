@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-plugin-packages",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - Built-in Packages dialog: browse the registry, install and update the project's packages",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor",
+    "plugin"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "plugins/packages"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test:unit": "vitest run --config ../../vitest.config.ts",
+    "format": "prettier --write . && eslint --fix --format=pretty src"
+  },
+  "devDependencies": {
+    "@nanoforge-dev/editor-sdk": "workspace:*",
+    "@nanoforge-dev/editor-vite-plugin": "workspace:*",
+    "@sveltejs/vite-plugin-svelte": "catalog:core",
+    "svelte": "catalog:core",
+    "svelte-check": "catalog:core",
+    "typescript": "catalog:build",
+    "vite": "catalog:core",
+    "vitest": "catalog:test"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.{ts,svelte}": [
+      "eslint --fix"
+    ]
+  }
+}

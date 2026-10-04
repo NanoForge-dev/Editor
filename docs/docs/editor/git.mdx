@@ -1,0 +1,63 @@
+---
+title: 'Git'
+icon: 'git-branch'
+description: 'Commit, push, branches and history, from the editor'
+---
+
+In a local editor, the **VCS** menu and two panels work with the project's Git repository, using the `git` installed on your machine and the credentials it already has.
+
+A project that is not a repository yet: _VCS › Initialize repository_.
+
+## Commit
+
+The **Commit** panel on the left lists what changed since the last commit, as files with their folder beside the name:
+
+- **Changes**: files Git knows that you modified, added or deleted;
+- **Unversioned files**: files Git does not know yet.
+
+1. **Check** the files to commit. A group's checkbox checks all its files.
+2. Write a message.
+3. **Commit**, or **Commit and Push…**
+
+**Amend** replaces the last commit instead of adding one.
+
+| To                         | Do                                                                  |
+| -------------------------- | ------------------------------------------------------------------- |
+| See what changed in a file | Double-click it: the diff opens in the code editor.                 |
+| Undo your changes to files | Select them, then **Rollback**. It asks first: it cannot be undone. |
+| Start tracking a new file  | Right-click › Add to VCS                                            |
+| Ignore a file              | Right-click › Add to .gitignore                                     |
+| Put changes aside          | The **Stash** tab: Stash Changes, then Apply, Pop or Drop           |
+
+Checking a file only chooses what is committed. Selecting rows (click, `Ctrl`+click, `Shift`+click, or a click on a group to select all its files) is what Rollback and the other actions act on.
+
+## Update and push
+
+- _VCS › Update project_ pulls the changes of the remote branch.
+- _VCS › Push…_ shows the commits that would be sent, then pushes them.
+- _VCS › Fetch_ reads the remote without changing your files.
+
+The status bar shows the branch and what is ahead and behind (`main ↑1 ↓2`).
+
+## Branches and history
+
+The **Git** panel at the bottom has three parts:
+
+- **Branches**: the current one, local ones, and remote ones. Double-click a branch to check it out. Right-click for _New Branch from…_, _Update_, _Push…_, _Delete_.
+- **Commits** of the selected branch, with a filter by text, author and date.
+- **Changed files** of the selected commit, and its details. Double-click a file to compare.
+
+_VCS › New branch…_ creates a branch from the current commit and switches to it.
+
+## Marks in the Files panel
+
+Changed files are colored and carry a mark in the **Files** panel, and folders that hold changes carry a dot.
+
+## Conflicts
+
+After an update that conflicts, the files show under **Merge Conflicts**. Open one, fix it in the code editor, then **Mark resolved**.
+
+<Note>
+  Git works on the project's own repository only, and in local editors. Hosted projects are saved to
+  their repository by the platform.
+</Note>
