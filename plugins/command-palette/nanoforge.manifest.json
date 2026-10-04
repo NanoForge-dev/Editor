@@ -1,0 +1,62 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/command-palette",
+  "version": "0.1.0",
+  "displayName": "Command palette",
+  "description": "Run commands, open files, go to lines and symbols from one box, and edit the keyboard shortcuts.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onStartup"],
+  "contributes": {
+    "commands": [
+      { "id": "palette.show", "title": "Command palette…", "category": "View" },
+      { "id": "palette.files", "title": "Go to file…", "category": "Go" },
+      { "id": "palette.line", "title": "Go to line…", "category": "Go" },
+      { "id": "palette.symbols", "title": "Go to symbol in file…", "category": "Go" },
+      { "id": "keymap.open", "title": "Keyboard shortcuts…", "category": "File" }
+    ],
+    "keybindings": [
+      { "key": "Mod+Shift+P", "command": "palette.show" },
+      { "key": "Mod+P", "command": "palette.files" },
+      { "key": "Mod+G", "command": "palette.line" },
+      { "key": "Mod+Shift+O", "command": "palette.symbols" }
+    ],
+    "menus": [
+      { "menu": "view", "command": "palette.show", "group": "a-palette", "order": 0 },
+      { "menu": "view", "command": "palette.files", "group": "a-palette", "order": 1 },
+      { "menu": "file", "command": "keymap.open", "group": "z-settings", "order": 1 }
+    ],
+    "keymapPresets": [
+      {
+        "id": "vscode",
+        "title": "VS Code",
+        "description": "Shortcuts close to Visual Studio Code's.",
+        "bindings": [
+          { "key": "Mod+J", "command": "console.show" },
+          { "key": "Mod+`", "command": "console.show" },
+          { "key": "Mod+Shift+M", "command": "console.showProblems" },
+          { "key": "Mod+B", "command": "workbench.toggleSlot", "args": ["leftTop"] },
+          { "key": "Mod+K Mod+S", "command": "keymap.open" }
+        ]
+      },
+      {
+        "id": "godot",
+        "title": "Godot",
+        "description": "Shortcuts close to the Godot editor's.",
+        "bindings": [
+          { "key": "F8", "command": "runtime.stop", "when": "runtime.active" },
+          {
+            "key": "F7",
+            "command": "runtime.pause",
+            "when": "runtime.state == 'running' && runtime.controllable"
+          },
+          { "key": "F7", "command": "runtime.resume", "when": "runtime.state == 'paused'" },
+          { "key": "Mod+F1", "command": "workbench.openWidget", "args": ["viewport.scene"] },
+          { "key": "Mod+F2", "command": "workbench.openWidget", "args": ["viewport.game"] },
+          { "key": "Mod+F3", "command": "workbench.openWidget", "args": ["code-editor.script"] }
+        ]
+      }
+    ]
+  }
+}

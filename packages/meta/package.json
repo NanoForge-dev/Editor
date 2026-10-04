@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-meta",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - Item metadata: TSDoc and TypeScript extraction, owner extensions, meta schemas (ADR 0003)",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./pure": "./src/pure.ts",
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "packages/meta"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:unit": "vitest run --config ../../vitest.config.ts"
+  },
+  "dependencies": {
+    "ts-morph": "catalog:code",
+    "zod": "catalog:libs"
+  },
+  "devDependencies": {
+    "typescript": "catalog:build",
+    "vitest": "catalog:test"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

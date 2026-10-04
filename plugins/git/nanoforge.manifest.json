@@ -1,0 +1,66 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/git",
+  "version": "0.1.0",
+  "displayName": "Git",
+  "description": "The VCS menu, the Commit panel and the Git log of the project's repository (local editors).",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onStartup"],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "git.changes",
+        "title": "Commit",
+        "icon": "check",
+        "defaultSlot": "leftTop",
+        "order": 300
+      },
+      {
+        "id": "git.log",
+        "title": "Git",
+        "icon": "git-branch",
+        "defaultSlot": "bottom",
+        "order": 115
+      }
+    ],
+    "commands": [
+      {
+        "id": "git.init",
+        "title": "Initialize repository",
+        "category": "VCS",
+        "when": "!git.repository"
+      },
+      { "id": "git.commit", "title": "Commit…", "category": "VCS", "when": "git.repository" },
+      { "id": "git.pull", "title": "Update project", "category": "VCS", "when": "git.repository" },
+      { "id": "git.push", "title": "Push…", "category": "VCS", "when": "git.repository" },
+      { "id": "git.fetch", "title": "Fetch", "category": "VCS", "when": "git.repository" },
+      {
+        "id": "git.newBranch",
+        "title": "New branch…",
+        "category": "VCS",
+        "when": "git.repository"
+      },
+      {
+        "id": "git.stash",
+        "title": "Stash changes…",
+        "category": "VCS",
+        "when": "git.repository"
+      },
+      { "id": "git.showLog", "title": "Show Git log", "category": "VCS" },
+      { "id": "git.refresh", "title": "Refresh the repository state", "category": "VCS" }
+    ],
+    "menus": [
+      { "menu": "vcs", "command": "git.init", "group": "a-init", "when": "!git.repository" },
+      { "menu": "vcs", "command": "git.commit", "group": "b-commit", "order": 0 },
+      { "menu": "vcs", "command": "git.pull", "group": "b-commit", "order": 1 },
+      { "menu": "vcs", "command": "git.push", "group": "b-commit", "order": 2 },
+      { "menu": "vcs", "command": "git.fetch", "group": "b-commit", "order": 3 },
+      { "menu": "vcs", "command": "git.newBranch", "group": "c-branch", "order": 0 },
+      { "menu": "vcs", "command": "git.stash", "group": "c-branch", "order": 1 },
+      { "menu": "vcs", "command": "git.showLog", "group": "d-log", "order": 0 },
+      { "menu": "vcs", "command": "git.refresh", "group": "d-log", "order": 1 }
+    ]
+  }
+}

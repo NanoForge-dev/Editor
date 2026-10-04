@@ -1,0 +1,190 @@
+---
+title: 'Manifest reference'
+icon: 'file-code'
+description: 'Every field of a plugin nanoforge.manifest.json'
+---
+
+`nanoforge.manifest.json` sits at the root of the plugin's source folder. The build copies it into `dist/` and adds the `build` field. The JSON schema is `packages/kernel/schemas/plugin.schema.json` in the editor repository (`$schema` gives completion in most editors).
+
+## Identity
+
+| Field                                   | Required | Description                                                                 |
+| --------------------------------------- | -------- | --------------------------------------------------------------------------- |
+| `type`                                  | yes      | `"plugin"`.                                                                 |
+| `name`                                  | yes      | `@scope/name`, lowercase letters, digits and `-`. The name in the registry. |
+| `version`                               | yes      | Semver.                                                                     |
+| `displayName`                           |          | The name shown in the editor.                                               |
+| `description`                           |          | One sentence, shown in _Settings › Plugins_ and the marketplace.            |
+| `icon`, `tags`, `license`, `repository` |          | Shown by the registry.                                                      |
+
+## Compatibility
+
+| Field                  | Description                                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `engines.editor`       | **Required.** Semver range of editor versions the plugin runs on. Outside it, the plugin is listed as "needs another editor version" and not loaded. |
+| `dependencies`         | Other plugins it needs: `["@scope/name"]` or `{ "@scope/name": "^1.0.0" }`. They activate first. A missing one stops the plugin.                     |
+| `optionalDependencies` | Plugins it uses when they are there.                                                                                                                 |
+| `engineLibs.required`  | Engine libraries an app must have for the plugin to apply to it: `{ "@nanoforge-dev/ecs": "*" }`. See [engine libraries](./engine-libs).             |
+| `engineLibs.optional`  | Engine libraries it can use.                                                                                                                         |
+| `build`                | Written by the build: the versions of Svelte and of the SDK it was compiled against. The editor refuses a plugin built for an incompatible runtime.  |
+
+## Entries
+
+Paths relative to the built folder.
+
+| Field          | Runs in             | Used for                                                                                                |
+| -------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `entry.client` | the editor's page   | Panels, commands, everything visible.                                                                   |
+| `entry.worker` | the code worker     | Reading and transforming the game's code. See [code and code generation](./code-and-codegen).           |
+| `entry.server` | the editor's server | Code that needs the machine: files outside the project, processes. See [the SDK](./sdk#server-entries). |
+
+## Activation
+
+`activation` lists the events that load the plugin's code. Default: `["onStartup"]`.
+
+| Event                                                                        | Fires when                                                                                           |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `onStartup`                                                                  | the editor starts                                                                                    |
+| `onWidget:<id>`                                                              | a panel or screen with that id is first shown                                                        |
+| `onCommand:<id>`                                                             | that command runs                                                                                    |
+| `onScreen:<id>`, `onProjectType:<type>`, `onLanguage:<id>`, `onUri:<scheme>` | accepted by the schema, but the editor does not fire them yet. A screen is a widget: use `onWidget`. |
+
+Prefer `onWidget` and `onCommand`: a plugin loaded at startup delays the others.
+
+## Contributions
+
+Everything under `contributes` is applied when the manifest is read, before the plugin's code loads.
+
+### `commands`
+
+```json
+{
+  "id": "counter.add",
+  "title": "Add to the counter",
+  "category": "Counter",
+  "when": "runtime.active",
+  "palette": true
+}
+```
+
+| Field      | Description                                                                            |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `id`       | **Required.** Prefix it with your plugin's short name.                                 |
+| `title`    | **Required.** Sentence case, says what it does. A trailing `…` when it opens a dialog. |
+| `category` | Shown before the title in the palette: `Counter: Add to the counter`.                  |
+| `icon`     | An icon name.                                                                          |
+| `when`     | A [when clause](#when-clauses): the command is offered only while it is true.          |
+| `palette`  | `false` hides it from the command palette (a command that needs arguments).            |
+
+The code registers the handler with `context.registerCommand(id, handler)`.
+
+### `widgets`
+
+Panels (docks) and screens.
+
+| Field            | Default | Description                                                                            |
+| ---------------- | ------- | -------------------------------------------------------------------------------------- |
+| `id`             |         | **Required.**                                                                          |
+| `title`          |         | **Required.** The tab's name.                                                          |
+| `icon`           |         | An icon name (`folder-tree`): a dock shows only the icon in its stripe.                |
+| `kind`           | `dock`  | `dock`: a panel in a dock or a floating window. `screen`: a main screen in the center. |
+| `defaultSlot`    |         | `leftTop`, `leftBottom`, `rightTop`, `rightBottom`, `bottom` or `bottomRight`.         |
+| `order`          | `0`     | Order among the tabs of the slot, or among screens.                                    |
+| `openByDefault`  | `true`  | Whether the default layout shows it.                                                   |
+| `singleton`      | `true`  | One instance at a time.                                                                |
+| `when`           |         | Offered in menus only while true.                                                      |
+| `historyContext` |         | The history that undo and redo act on while the widget has focus.                      |
+
+The code gives the widget its view with the `WIDGET_VIEWS` extension point. See [widgets and styles](./widgets-and-styles).
+
+### `menus`
+
+```json
+{ "menu": "edit", "command": "counter.add", "group": "counter", "order": 0 }
+```
+
+| Field              | Description                                                                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `menu`             | **Required.** A menu of the menu bar (`file`, `edit`, `view`, `run`, `help`, `vcs`, or one a plugin added with `MENU_BAR`), a submenu id, or a context menu id. |
+| `command`          | The command to run. The entry shows the command's title and shortcut.                                                                                           |
+| `submenu`, `title` | Instead of a command: opens the submenu with that id.                                                                                                           |
+| `group`            | Entries are separated by group (default `main`), then sorted by `order`.                                                                                        |
+| `when`             | Shown only while true.                                                                                                                                          |
+| `args`             | Arguments passed to the command.                                                                                                                                |
+
+### `keybindings`
+
+```json
+{ "key": "Mod+Alt+K", "command": "counter.add", "when": "!textInputFocus" }
+```
+
+- Write `Mod` for Ctrl (Cmd on macOS). Two strokes separated by a space make a chord: `Mod+K Mod+S`.
+- These are **defaults**: users change them in _Settings › Keyboard shortcuts_.
+- Don't bind a single stroke that starts an existing chord, and don't give a default shortcut to an action that publishes or deletes.
+
+### `keymapPresets`
+
+A named set of shortcuts users can choose in _Settings › Keyboard shortcuts_.
+
+```json
+{ "id": "hello", "title": "Hello keys", "bindings": [{ "key": "F9", "command": "hello.twice" }] }
+```
+
+A binding with `"remove": true` cancels a default shortcut.
+
+### `settings`
+
+```json
+{ "key": "step", "type": "number", "default": 1, "title": "Step", "category": "Counter" }
+```
+
+The key is prefixed with the plugin's name: `@acme/counter.step`. See [settings](./settings) for types and scopes.
+
+### `themes`
+
+A color theme: `id`, `label`, `kind` (`dark` or `light`) and `colors`, a value for every color token. See [widgets and styles](./widgets-and-styles#theme-tokens).
+
+### `documentEditors`
+
+Opens files matching a glob with one of your widgets instead of the code editor.
+
+```json
+{
+  "pattern": "**/*.scene.json",
+  "widget": "scenes.editor",
+  "command": "scenes.open",
+  "title": "Scene editor",
+  "priority": 10
+}
+```
+
+### `itemOwner`
+
+For plugins that describe items of the game's code (components, systems…): `schema` (the version of the data it writes) and `tags` (the TSDoc tags it owns). See [code and code generation](./code-and-codegen#item-owners).
+
+## When clauses
+
+A `when` is an expression over **context keys**.
+
+```text
+runtime.active && !textInputFocus
+fileExtname == .ts || fileExtname == .js
+!(fileReadOnly) && fileSelectionCount == 1
+codeEditor.activeFile =~ /\.component\.ts$/
+```
+
+Operators: `!`, `&&`, `||`, `==`, `!=`, `=~` (regular expression), `in`, and parentheses. A bare word on the right of `==` is a string.
+
+| Key                                                             | Value                                                    |
+| --------------------------------------------------------------- | -------------------------------------------------------- |
+| `textInputFocus`                                                | true while a text field has focus                        |
+| `focusedWidget`                                                 | id of the focused widget                                 |
+| `historyContext`                                                | id of the history undo would act on                      |
+| `activeApp`                                                     | id of the app the user works on                          |
+| `engineLib:<name>`                                              | true when the active app has that engine library         |
+| `runtime.active`, `runtime.state`, `runtime.controllable`       | the game is playing, its state, whether it can be paused |
+| `codeEditor.activeFile`                                         | path of the file in the focused code editor              |
+| `git.repository`                                                | the project is a Git repository                          |
+| `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount` | in file context menus                                    |
+
+A plugin sets its own keys with `context.contextKeys.set(key, value)`.

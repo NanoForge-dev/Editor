@@ -1,0 +1,103 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/ecs",
+  "version": "0.1.0",
+  "displayName": "ECS",
+  "description": "Entities, components and systems of each app: hierarchy, inspector, browser, and the live world while playing.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "engineLibs": {
+    "required": {
+      "@nanoforge-dev/ecs": "*"
+    },
+    "optional": {
+      "@nanoforge-dev/graphics-2d": "*"
+    }
+  },
+  "entry": {
+    "client": "index.js",
+    "worker": "worker.js"
+  },
+  "activation": [
+    "onWidget:ecs.hierarchy",
+    "onWidget:ecs.inspector",
+    "onWidget:ecs.browser",
+    "onWidget:ecs.systems",
+    "onCommand:ecs.addEntity",
+    "onCommand:ecs.removeEntity",
+    "onWidget:code-editor.script",
+    "onWidget:viewport.scene"
+  ],
+  "contributes": {
+    "itemOwner": {
+      "schema": 1,
+      "tags": ["component", "system", "query", "uses"]
+    },
+    "widgets": [
+      {
+        "id": "ecs.hierarchy",
+        "title": "Hierarchy",
+        "icon": "list-tree",
+        "defaultSlot": "leftTop",
+        "order": 200
+      },
+      {
+        "id": "ecs.inspector",
+        "title": "Inspector",
+        "icon": "sliders-horizontal",
+        "defaultSlot": "rightTop",
+        "order": 150
+      },
+      {
+        "id": "ecs.browser",
+        "title": "Components",
+        "icon": "blocks",
+        "defaultSlot": "leftBottom",
+        "order": 200
+      },
+      {
+        "id": "ecs.systems",
+        "title": "Systems",
+        "icon": "settings",
+        "defaultSlot": "leftBottom",
+        "order": 210
+      }
+    ],
+    "commands": [
+      {
+        "id": "ecs.addEntity",
+        "title": "Add entity",
+        "category": "ECS"
+      },
+      {
+        "id": "ecs.removeEntity",
+        "title": "Remove selected entity",
+        "category": "ECS"
+      }
+    ],
+    "settings": [
+      {
+        "key": "autoApply",
+        "type": "boolean",
+        "default": false,
+        "title": "Apply live edits to code",
+        "description": "Write every change made while playing to the code as it happens.",
+        "category": "Editor/ECS",
+        "order": 0
+      },
+      {
+        "key": "liveRateMs",
+        "type": "number",
+        "minimum": 16,
+        "maximum": 2000,
+        "default": 100,
+        "title": "Live world refresh (ms)",
+        "description": "How often the running game sends its world while playing.",
+        "category": "Editor/ECS",
+        "order": 1
+      }
+    ]
+  }
+}

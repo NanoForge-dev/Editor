@@ -1,0 +1,87 @@
+---
+title: 'Scenes'
+icon: 'layers'
+description: 'Split a game into scenes: the scene tree, their entities and systems, and the scene vars'
+---
+
+A game with scenes uses the engine's scene module (`@nanoforge-dev/scene`): a menu, levels, a pause screen… Each scene makes its own entities and systems when it is loaded, and they go away when it is unloaded. The editor's **Scenes** and **Vars** panels show up for any app that depends on `@nanoforge-dev/scene`.
+
+A scene is a class extending `EcsScene` (from `@nanoforge-dev/ecs/scene`). Its `setup` is written like an app's `main.ts`:
+
+```ts
+/**
+ * First level: the bricks.
+ * @scene
+ * @side client
+ * @vars bricksLeft
+ */
+export class Level1 extends EcsScene {
+  static override parent = Run;
+
+  override setup(registry: Registry, ctx: Context) {
+    const wall = registry.spawnEntity();
+    registry.addComponent(wall, new Position(40, 90));
+    registry.addSystem(levelFlow);
+  }
+}
+```
+
+The app's `main.ts` gives `SceneLibrary` the scene to start with, and every scene by id:
+
+```ts
+app.use(new SceneLibrary({ initial: Menu, scenes: { Menu, Run, Level1, Pause } }));
+```
+
+## The scene tree
+
+The **Scenes** panel lists the app's scenes as a tree: a scene sits under its parent (`static parent`). Loading a scene loads its parents first; the initial scene has a flag.
+
+Its first row is **main.ts**, the app itself: what `main` creates is in the game whatever scene is loaded.
+
+| To                   | Do                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create a scene       | **New scene** (the + button), or _New scene under …_ on a scene. A file is created in the app's scenes folder and opens in the code editor. |
+| Rename               | `F2`, or _Rename_. Every use of the class follows, and its file when it is named after it.                                                  |
+| Change its parent    | Drag it onto another scene, next to one, or _Move to the root_.                                                                             |
+| Start the game on it | _Set as initial scene_.                                                                                                                     |
+| Delete               | _Delete_. Its children lose their parent. Code that still uses the class must be changed.                                                   |
+
+Each of these is one step you can undo (`Ctrl+Z` in the panel).
+
+## Edit a scene
+
+Select a scene in the Scenes panel: the **Hierarchy**, the **Inspector**, the **Systems** panel and the **Scene** screen now edit that scene's `setup`. Select **main.ts** (the default) to edit the app's `main`. Everything in [Entities](entities), [Components](components) and [Systems](systems) works the same way.
+
+The entities and systems of `main.ts` and of the scene's parents are shown too, greyed and read-only: they are in the game whenever this scene is. Right-click one to open it in code, or _Edit this scene_ to switch to it.
+
+A scene whose `setup` comes from a base class, or that spawns entities in a loop, is shown read-only.
+
+## Scene vars
+
+The **Vars** panel lists the vars that scenes and systems share (`ctx.scenes.vars`), as declared in the app's `scene-vars.ts`:
+
+```ts
+declare module '@nanoforge-dev/scene' {
+  interface SceneVars {
+    /** Balls left in the current game. @default 3 */
+    lives: number;
+  }
+}
+```
+
+- Each var shows its type, its default, its description, the scenes that make it (`init`, its possible owners), and its uses: click it to list them, and click a use to open it.
+- **Add var** asks for its name, type, default and description; the file is created with the first var.
+- _Rename_ changes the declaration and every `vars.get("…")`, `vars.set("…")`… of that var. _Change type_, _Change default_ and _Change description_ edit the declaration; _Remove_ removes it.
+- A var used in code but not declared is listed under _Used but not declared_, with **Declare**.
+
+A var belongs to the scene that made it, and goes away when that scene is unloaded, unless it is persistent.
+
+## While the game plays
+
+- **Scenes**: the loaded scenes are marked, and the current one says so. Right-click a scene: _Load scene_ (the editor asks for its params), _Load under the current scene_ for a scene without a parent (a pause menu), _Unload scene_.
+- **Vars**: each var shows its value in the running game and the scene it belongs to. _Set live value…_ changes it in the game. Vars that only the running game has are listed too.
+- **Hierarchy**: the running game's entities are grouped under the scene that spawned them. _Apply to code_ writes a change into that scene's file.
+
+These change the running game only, never the code.
+
+The example project `examples/breakout` (in the editor repository) is a game made of scenes.

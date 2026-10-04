@@ -1,0 +1,84 @@
+---
+title: 'Extension points'
+icon: 'blocks'
+description: 'Every place where a plugin can add something to the editor'
+---
+
+An **extension point** is a typed list the editor reads. A plugin adds a value with `context.contribute(POINT, value)` and keeps the returned disposable in `context.subscriptions`.
+
+```ts
+import { STATUS_BAR_ITEMS } from '@nanoforge-dev/editor-sdk/ui';
+
+context.subscriptions.add(
+  context.contribute(STATUS_BAR_ITEMS, {
+    id: 'counter.total',
+    alignment: 'right',
+    text: derived([count], (value) => `Count: ${value}`),
+    command: 'counter.add',
+  }),
+);
+```
+
+Several points can also be filled from the [manifest](./manifest#contributions), without code: widgets, menus, keybindings, keymap presets, settings, themes and document editors.
+
+## Workbench
+
+From `@nanoforge-dev/editor-sdk/ui`.
+
+| Point              | A value is                                                                                                                  | Manifest key    |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `WIDGETS`          | A panel or a screen: `id`, `title`, `icon`, `kind`, `defaultSlot`, `order`…                                                 | `widgets`       |
+| `WIDGET_VIEWS`     | The view of a widget: `{ id, component }` (a Svelte component) or `{ id, mount(element, instance) }` for another framework. |                 |
+| `MENU_BAR`         | A menu of the menu bar: `{ id, title, order }`.                                                                             |                 |
+| `MENU_ITEMS`       | An entry of a menu, a submenu or a context menu.                                                                            | `menus`         |
+| `KEYBINDINGS`      | A default shortcut: `{ key, command, when, args }`.                                                                         | `keybindings`   |
+| `KEYMAP_PRESETS`   | A named set of shortcuts.                                                                                                   | `keymapPresets` |
+| `TOOLBAR_ITEMS`    | A button of the top bar: `{ id, icon, title, command, when, toggled }`.                                                     |                 |
+| `STATUS_BAR_ITEMS` | An item of the status bar: `{ id, alignment, text, tooltip, command, when }`. `text` is an observable.                      |                 |
+| `SETTINGS_PAGES`   | A page of the Settings dialog with its own editor. It names the settings it edits, which then leave the category list.      |                 |
+| `THEMES`           | A color theme.                                                                                                              | `themes`        |
+
+## Files
+
+| Point              | A value is                                                                                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FILE_TEMPLATES`   | A "New…" entry of the Files panel: `{ id, title, category, defaultName, create({ folder, name }) }` returning the files to write.                                                               |
+| `FILE_ACTIONS`     | An entry of the context menu of files: `{ id, title, command, group, when }`. The command gets the selected paths. `when` sees `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount`. |
+| `FILE_ICONS`       | The icon of files matching a glob: `{ pattern, icon, priority }`.                                                                                                                               |
+| `FILE_DECORATIONS` | Marks on files (a badge and a tone), as Git does: `{ id, changes, decorate(path, kind) }`.                                                                                                      |
+
+## Code
+
+| Point                     | A value is                                                                                             | From      |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | --------- |
+| `DOCUMENT_EDITORS`        | Opens files matching a glob with a widget (manifest key `documentEditors`).                            | SDK       |
+| `JSON_SCHEMAS`            | A JSON schema for files matching globs: completion and validation in the code editor.                  | SDK       |
+| `CODEGEN_TARGETS`         | A way to read and change an app's code as a model. See [code and code generation](./code-and-codegen). | SDK       |
+| `CODE_EDITOR_SIDE_PANELS` | A panel beside the code editor for some files: `{ id, title, component, appliesTo(path) }`.            | SDK `/ui` |
+
+## Game and Scene screens
+
+| Point               | A value is                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| `VIEWPORT_TOOLS`    | A button of the Game or Scene toolbar: `{ id, screen, icon, title, command, toggled }`. |
+| `VIEWPORT_OVERLAYS` | A component drawn over the running game or the scene (gizmos, debug views).             |
+| `SCENE_EDITORS`     | The content of the Scene screen for a code generation target.                           |
+
+## Points of other plugins
+
+A plugin can define its own points with `defineExtensionPoint<T>(id)`, and others contribute to them by declaring the same id. The ECS plugin has three:
+
+| Id                 | A value is                                                                                                                                                                          |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ecs.fieldEditors` | The inspector field of a value type, or of one referenced type.                                                                                                                     |
+| `ecs.paramPresets` | A visual preset that merges several constructor parameters into one control.                                                                                                        |
+| `ecs.sources`      | What the ECS widgets edit for an app: a file and the function holding its spawns (`main`, or a method of a class), and read-only locations shown with it. The scene plugin uses it. |
+
+Declare `@nanoforge/ecs` in your manifest's `dependencies` to contribute to them.
+
+## Reading a point
+
+```ts
+const items = context.contributions(FILE_TEMPLATES); // observable of contributions
+items.subscribe((list) => console.log(list.map(({ value }) => value.id)));
+```

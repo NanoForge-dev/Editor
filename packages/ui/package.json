@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-ui",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - UI kit, theme, style injection, widget host and layout renderer",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "exports": {
+    ".": {
+      "svelte": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./fonts.css": "./src/theme/fonts.css",
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "packages/ui"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test:unit": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@fontsource/instrument-sans": "catalog:components",
+    "@fontsource/jetbrains-mono": "catalog:components",
+    "@lucide/svelte": "catalog:components",
+    "@nanoforge-dev/editor-history": "workspace:*",
+    "@nanoforge-dev/editor-kernel": "workspace:*",
+    "@nanoforge-dev/editor-layout": "workspace:*",
+    "@nanoforge-dev/editor-settings": "workspace:*",
+    "bits-ui": "catalog:components",
+    "zod": "catalog:libs"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "catalog:core",
+    "@vitest/browser-playwright": "catalog:test",
+    "playwright": "catalog:test",
+    "svelte": "catalog:core",
+    "svelte-check": "catalog:core",
+    "typescript": "catalog:build",
+    "vite": "catalog:core",
+    "vitest": "catalog:test",
+    "vitest-browser-svelte": "catalog:test"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

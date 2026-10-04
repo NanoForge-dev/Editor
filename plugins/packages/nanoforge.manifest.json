@@ -1,0 +1,15 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/packages",
+  "version": "0.1.0",
+  "displayName": "Packages",
+  "description": "The Packages dialog: browse the registry, install, update and remove the packages of the project.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onCommand:packages.open"],
+  "contributes": {
+    "commands": [{ "id": "packages.open", "title": "Packages…", "category": "File" }],
+    "menus": [{ "menu": "file", "command": "packages.open", "group": "z-settings" }]
+  }
+}

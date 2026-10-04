@@ -1,0 +1,193 @@
+---
+title: 'Create your first plugin'
+icon: 'rocket'
+description: 'Scaffold a plugin with nf create plugin, run it in the editor and change it'
+---
+
+This page builds **Counter**, a small plugin with a panel, a command, a setting and an action you can undo. The finished plugin is in the editor repository, under `examples/counter-plugin`.
+
+## 1. Create it
+
+```sh
+nf create plugin --name @acme/counter
+```
+
+The name is the plugin's name in the registry: `@scope/name`, in lowercase. The command writes a `counter` folder (`--path` chooses another one); it does not need a NanoForge project around it.
+
+```text
+counter/
+├── nanoforge.manifest.json   what the plugin adds to the editor
+├── package.json
+├── vite.config.ts            builds dist/
+├── svelte.config.js
+├── tsconfig.json
+└── src/
+    ├── index.ts              activate()
+    ├── counter.ts            the plugin's state
+    └── Panel.svelte          the panel
+```
+
+## 2. Run it in the editor
+
+```sh
+cd counter
+pnpm install
+pnpm dev                                   # rebuilds dist/ on every change
+```
+
+In another terminal, start the editor with the plugin as a **dev plugin**:
+
+```sh
+DEV_PLUGINS=/path/to/counter nf editor /path/to/a/project
+```
+
+The Counter panel is in the bottom right dock. _View › Panels › Counter_ shows it again once closed. When you save a source file, the editor reloads the plugin without reloading the page.
+
+<Warning>
+  `@nanoforge-dev/editor-sdk` and `@nanoforge-dev/editor-vite-plugin` are not published on npm yet,
+  so `pnpm install` fails on them. Until they are, point both at a checkout of the editor repository
+  in the plugin's `package.json` (`"link:/path/to/editor/packages/sdk"` and
+  `"link:/path/to/editor/tooling/vite-plugin"`): `examples/README.md` in that repository has the
+  steps.
+</Warning>
+
+## 3. The manifest
+
+`nanoforge.manifest.json` declares what the plugin adds. The editor reads it before running any code.
+
+```json
+{
+  "type": "plugin",
+  "name": "@acme/counter",
+  "version": "0.1.0",
+  "displayName": "Counter",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onWidget:counter.panel", "onCommand:counter.add"],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "counter.panel",
+        "title": "Counter",
+        "icon": "plus",
+        "defaultSlot": "rightBottom",
+        "order": 900
+      }
+    ],
+    "commands": [{ "id": "counter.add", "title": "Add to the counter", "category": "Counter" }],
+    "menus": [{ "menu": "edit", "command": "counter.add", "group": "counter" }],
+    "settings": [
+      { "key": "step", "type": "number", "default": 1, "title": "Step", "category": "Counter" }
+    ]
+  }
+}
+```
+
+- `activation`: the plugin's code loads when its panel is first shown or its command first runs.
+- `widgets`: a panel named Counter, docked bottom right by default.
+- `commands` and `menus`: a command, listed in the Edit menu and in the command palette (`Ctrl+Shift+P`).
+- `settings`: a number shown in _Settings › Counter_. Its full key is `@acme/counter.step`.
+
+## 4. The code
+
+`src/index.ts` exports the plugin. `activate` gets a **context**: the editor's services, and `subscriptions`, where you put everything the plugin adds so it is removed with the plugin.
+
+```ts
+import type { Component } from 'svelte';
+
+import { HistoryServiceToken, SettingsServiceToken, definePlugin } from '@nanoforge-dev/editor-sdk';
+import { StyleServiceToken, WIDGET_VIEWS, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
+
+import Panel from './Panel.svelte';
+import { count } from './counter';
+
+/** Undo and redo target of the panel. */
+export const HISTORY = 'counter';
+
+export default definePlugin({
+  async activate(context) {
+    const { services } = context;
+
+    // Styles are built into counter.css: inject them when the plugin starts.
+    const css = await fetch(context.resolveAsset('counter.css')).then((r) =>
+      r.ok ? r.text() : '',
+    );
+    context.subscriptions.add(services.get(StyleServiceToken).inject(context.name, css));
+
+    // The view of the widget declared in the manifest.
+    context.subscriptions.add(
+      context.contribute(WIDGET_VIEWS, {
+        id: 'counter.panel',
+        component: Panel as Component<{ instance: WidgetInstance }>,
+      }),
+    );
+
+    // A history of its own, so each addition can be undone.
+    const history = services
+      .get(HistoryServiceToken)
+      .registerContext({ id: HISTORY, label: 'Counter', owner: context.name });
+    context.subscriptions.add(history);
+
+    const settings = services.get(SettingsServiceToken);
+    context.subscriptions.add(
+      context.registerCommand('counter.add', async () => {
+        const step = Number(settings.get('@acme/counter.step')) || 1;
+        await history.stack.push({
+          label: `Add ${step}`,
+          do: () => count.set(count.get() + step),
+          undo: () => count.set(count.get() - step),
+        });
+      }),
+    );
+  },
+});
+```
+
+`src/Panel.svelte` is a Svelte 5 component. It receives the widget **instance**, and uses the editor's own `Button`.
+
+```svelte
+<script lang="ts">
+  import { EditorServices } from '@nanoforge-dev/editor-sdk';
+  import { Button, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
+
+  import { count } from './counter';
+  import { HISTORY } from './index';
+
+  const { instance }: { instance: WidgetInstance } = $props();
+  const add = () => instance.services.get(EditorServices.Commands).execute('counter.add');
+
+  // While this panel has focus, Ctrl+Z and Ctrl+Y act on the plugin's history.
+  $effect(() => {
+    instance.setHistoryContext(HISTORY);
+    return () => instance.setHistoryContext(undefined);
+  });
+</script>
+
+<section class="counter" aria-label="Counter">
+  <p role="status">{$count}</p>
+  <Button variant="primary" onclick={() => void add()}>Add</Button>
+</section>
+```
+
+`count` is an `ObservableValue` from the SDK: Svelte reads it as a store (`$count`).
+
+## 5. Try it
+
+- Click **Add** twice, then press `Ctrl+Z` with the panel focused: the counter goes back by one. The step is in the History panel too.
+- Run _Edit › Add to the counter_, or find it in the command palette.
+- Change _Settings › Counter › Step_ to 5 and add again.
+
+## 6. Install it without the dev mode
+
+```sh
+pnpm build
+```
+
+Copy `dist/` to `~/.nanoforge/editor/plugins/@acme/counter` (every project) or to `<project>/.nanoforge/plugins/@acme/counter` (one project, and it can be committed with it). Reload the editor.
+
+## Where to go next
+
+- A shortcut for the command: `contributes.keybindings` in the [manifest](./manifest).
+- A status bar item, a file template, a toolbar button: [extension points](./extension-points).
+- Reading and changing the game's code: [code and code generation](./code-and-codegen).
+- A plugin that only makes sense with an engine library: [engine libraries](./engine-libs).

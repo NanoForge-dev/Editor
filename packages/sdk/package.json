@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@nanoforge-dev/editor-sdk",
+  "version": "0.0.0",
+  "description": "NanoForge Editor - Public API for editor plugins",
+  "keywords": [
+    "nanoforge",
+    "game",
+    "editor"
+  ],
+  "homepage": "https://github.com/NanoForge-dev/Editor#readme",
+  "bugs": "https://github.com/NanoForge-dev/Editor/issues",
+  "license": "MIT",
+  "contributors": [
+    "Exelo <contact@exelo.dev>",
+    "Fexkoser <martin.fillon@epitech.eu>",
+    "Harper <timothe.jacquot@epitech.eu>",
+    "Josephine <josephine.chicouras@epitech.eu>",
+    "Leo <leo.outmizguine@epitech.eu>"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./package.json": "./package.json",
+    "./ui": "./src/ui.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "type": "module",
+  "directories": {
+    "lib": "src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanoForge-dev/Editor.git",
+    "directory": "packages/sdk"
+  },
+  "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
+  "scripts": {
+    "build": "tsdown && node ./scripts/build-types.ts",
+    "lint": "prettier --check . && eslint --format=pretty src",
+    "format": "prettier --write . && eslint --fix --format=pretty src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:unit": "vitest run --config ../../vitest.config.ts",
+    "changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'packages/sdk/*'",
+    "release": "cliff-jumper"
+  },
+  "dependencies": {
+    "@nanoforge-dev/editor-code": "workspace:*",
+    "@nanoforge-dev/editor-history": "workspace:*",
+    "@nanoforge-dev/editor-kernel": "workspace:*",
+    "@nanoforge-dev/editor-meta": "workspace:*",
+    "@nanoforge-dev/editor-project": "workspace:*",
+    "@nanoforge-dev/editor-protocol": "workspace:*",
+    "@nanoforge-dev/editor-rpc": "workspace:*",
+    "@nanoforge-dev/editor-runtime": "workspace:*",
+    "@nanoforge-dev/editor-settings": "workspace:*",
+    "@nanoforge-dev/editor-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@favware/cliff-jumper": "catalog:ci",
+    "tsdown": "catalog:build",
+    "typescript": "catalog:build",
+    "vitest": "catalog:test"
+  },
+  "packageManager": "pnpm@12.0.0",
+  "engines": {
+    "node": "26"
+  },
+  "private": true,
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/types/sdk/src/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./package.json": "./package.json",
+      "./worker": {
+        "types": "./dist/types/sdk/src/worker.d.ts",
+        "default": "./dist/worker.js"
+      }
+    }
+  },
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

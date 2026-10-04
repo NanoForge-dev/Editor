@@ -1,0 +1,190 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/viewport",
+  "version": "0.1.0",
+  "displayName": "Viewport",
+  "description": "The Game and Scene screens: resolutions, zoom, stats, screenshots, pop out.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "entry": {
+    "client": "index.js"
+  },
+  "activation": ["onStartup"],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "viewport.scene",
+        "title": "Scene",
+        "icon": "box",
+        "kind": "screen",
+        "order": 150
+      },
+      {
+        "id": "viewport.game",
+        "title": "Game",
+        "icon": "gamepad-2",
+        "kind": "screen",
+        "order": 300
+      }
+    ],
+    "commands": [
+      {
+        "id": "viewport.setResolution",
+        "title": "Set game resolution",
+        "category": "Game",
+        "palette": false
+      },
+      {
+        "id": "viewport.customResolution",
+        "title": "Custom game resolution\u2026",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.rotate",
+        "title": "Rotate the game view",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.zoomIn",
+        "title": "Zoom in the game",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.zoomOut",
+        "title": "Zoom out the game",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.resetZoom",
+        "title": "Reset the game zoom",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.togglePixelPerfect",
+        "title": "Pixel perfect",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.toggleStats",
+        "title": "Show or hide game stats",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.toggleMute",
+        "title": "Mute or unmute the game",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.toggleMaximizeOnPlay",
+        "title": "Maximize on play",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.screenshot",
+        "title": "Take a screenshot of the game",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.popOut",
+        "title": "Pop out the game",
+        "category": "Game"
+      },
+      {
+        "id": "viewport.bringBack",
+        "title": "Bring the game back",
+        "category": "Game"
+      }
+    ],
+    "menus": [
+      {
+        "menu": "run",
+        "command": "viewport.toggleMaximizeOnPlay",
+        "group": "y-viewport",
+        "order": 0
+      },
+      {
+        "menu": "run",
+        "command": "viewport.screenshot",
+        "group": "y-viewport",
+        "order": 1,
+        "when": "runtime.active"
+      },
+      {
+        "menu": "run",
+        "command": "viewport.popOut",
+        "group": "y-viewport",
+        "order": 2,
+        "when": "runtime.active"
+      }
+    ],
+    "settings": [
+      {
+        "key": "resolution",
+        "type": "string",
+        "pattern": "^(fit|1080p|720p|4:3|phone|tablet|\\d{2,5}x\\d{2,5})$",
+        "default": "fit",
+        "title": "Game resolution",
+        "description": "fit, a preset, or WIDTHxHEIGHT.",
+        "category": "Editor/Game view",
+        "order": 0
+      },
+      {
+        "key": "orientation",
+        "type": "string",
+        "enum": ["landscape", "portrait"],
+        "default": "landscape",
+        "title": "Device orientation",
+        "category": "Editor/Game view",
+        "order": 1
+      },
+      {
+        "key": "zoom",
+        "type": "number",
+        "minimum": 0.25,
+        "maximum": 4,
+        "default": 1,
+        "title": "Game zoom",
+        "category": "Editor/Game view",
+        "order": 2
+      },
+      {
+        "key": "pixelPerfect",
+        "type": "boolean",
+        "default": false,
+        "title": "Pixel perfect",
+        "description": "Integer zoom and pixelated rendering.",
+        "category": "Editor/Game view",
+        "order": 3
+      },
+      {
+        "key": "stats",
+        "type": "boolean",
+        "default": false,
+        "title": "Show game stats",
+        "category": "Editor/Game view",
+        "order": 4,
+        "scopes": ["account", "machine"]
+      },
+      {
+        "key": "muted",
+        "type": "boolean",
+        "default": false,
+        "title": "Mute the game",
+        "category": "Editor/Game view",
+        "order": 5,
+        "scopes": ["account", "machine"]
+      },
+      {
+        "key": "maximizeOnPlay",
+        "type": "boolean",
+        "default": false,
+        "title": "Maximize on play",
+        "description": "Hide the docks while playing.",
+        "category": "Editor/Game view",
+        "order": 6
+      }
+    ]
+  }
+}

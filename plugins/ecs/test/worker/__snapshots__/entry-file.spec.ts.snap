@@ -1,0 +1,146 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`entry file analyzer (pong-network client) > reads entities, components, systems 1`] = `
+[
+  {
+    "components": [
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Position",
+        "item": "app:client#Position",
+      },
+      {
+        "args": [
+          "new Rect({ fill: "rgb(58,99,39)", width: 1920, height: 1080 })",
+        ],
+        "class": "RectangleComponent",
+        "item": "app:client#RectangleComponent",
+      },
+    ],
+    "name": "terrain",
+  },
+  {
+    "components": [
+      {
+        "args": [
+          955,
+          0,
+        ],
+        "class": "Position",
+        "item": "app:client#Position",
+      },
+      {
+        "args": [
+          "new Rect({ fill: "rgb(148,204,117)", width: 10, height: 1080 })",
+        ],
+        "class": "RectangleComponent",
+        "item": "app:client#RectangleComponent",
+      },
+    ],
+    "name": "terrainLine",
+  },
+  {
+    "components": [
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Velocity",
+        "item": "app:client#Velocity",
+      },
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Position",
+        "item": "app:client#Position",
+      },
+      {
+        "args": [
+          "new Circle({
+        radius: 30,
+        fill: "red",
+      })",
+        ],
+        "class": "CircleComponent",
+        "item": "app:client#CircleComponent",
+      },
+    ],
+    "name": "ball",
+  },
+  {
+    "components": [
+      {
+        "args": [
+          "InputEnum.ArrowUp",
+          "InputEnum.ArrowDown",
+        ],
+        "class": "Controller",
+        "item": "app:client#Controller",
+      },
+    ],
+    "name": "me",
+  },
+  {
+    "components": [
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Position",
+        "item": "app:client#Position",
+      },
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Velocity",
+        "item": "app:client#Velocity",
+      },
+      {
+        "args": [
+          "new Rect({ fill: "blue", width: 30, height: 300 })",
+        ],
+        "class": "RectangleComponent",
+        "item": "app:client#RectangleComponent",
+      },
+    ],
+    "name": "paddle1",
+  },
+  {
+    "components": [
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Position",
+        "item": "app:client#Position",
+      },
+      {
+        "args": [
+          0,
+          0,
+        ],
+        "class": "Velocity",
+        "item": "app:client#Velocity",
+      },
+      {
+        "args": [
+          "new Rect({ fill: "blue", width: 30, height: 300 })",
+        ],
+        "class": "RectangleComponent",
+        "item": "app:client#RectangleComponent",
+      },
+    ],
+    "name": "paddle2",
+  },
+]
+`;

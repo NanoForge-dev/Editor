@@ -1,48 +1,47 @@
 ---
 title: 'Systems'
-icon: 'book'
-description: 'Nanoforge Editor systems'
+icon: 'cog'
+description: 'Create systems, choose which ones an app runs and in which order'
 ---
 
-Systems contain the logic of your game. They are executed while the game is running and define the behavior of your entities.
+Systems hold the logic of the game. A system is a function the engine calls at every tick, with the entities that have the components it asks for.
 
-## Navigate
+```ts
+/**
+ * Moves entities by their velocity.
+ * @system
+ */
+export const move = (registry: Registry, ctx: Context) => {
+  // …
+};
+```
 
-To access your systems, navigate to the **Systems** tabs in the left panel.
+An app runs the systems its `main.ts` adds, in that order:
 
-![System navigation](../systems-navigate.png)
+```ts
+registry.addSystem(move);
+registry.addSystem(draw);
+```
+
+## The Systems panel
+
+The **Systems** panel lists the systems the selected app runs, **in run order**, with the components each one reads.
+
+| To               | Do                                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Add a system     | **Add system**, then choose one the app can use. Its import is added.                                            |
+| Change the order | Drag a system up or down: the `addSystem` lines move.                                                            |
+| Remove           | **Remove from app** on its row (_Remove from scene_ while a [scene](scenes) is edited). The system's file stays. |
+| See its code     | _Open in code_                                                                                                   |
 
 ## Create a system
 
-In the **Systems** panel, click **+** and **Create**. Enter a name for your system, and click **Confirm**.
+In the **Components** panel, **New › New system in app**, then a name. The file is created in the app's systems folder and opens in the code editor. Add it to the app from the Systems panel, or with **Add to app** in the Components panel (**Add to scene** while a [scene](scenes) is edited).
 
-![Create system](../system-create.png) ![Create system name](../system-create-name.png)
+Systems can live in a shared library or come from a package, like [components](components#share-between-client-and-server).
 
-## Import a system
+## While the game plays
 
-In this **Systems** panel, click **+** and **Import**.
+Each running system has a switch: turn one off to see the game without it. This changes the running game only, and is reset when the game stops.
 
-![Import system](../images/system-import.png)
-
-A list of system appear, you can now choose a system, click **Install** in the top right corner, and click **Apply** when you install all systems you want.
-
-![Import system selection](../images/system-import-selection.png)
-
-## Add system to the scene
-
-There are two ways to add a system to a scene.
-
-### 1. Add to the active scene
-
-In the **Systems** tab, right-click on the system you want and select **Add to active scene**
-![Add system to active scene](../images/system-add-to-scene-1.png)
-
-### 2. Pick a system on your scene
-
-Navigate to **Scenes** tab, and select the **System** subtab. Click **+**, choose a system from the list, and click **Confirm**.
-![Add system to a scene](../images/system-add-to-scene-2.png)
-
-## Edit a system
-
-To edit a system, navigate to **Systems** tab, right-click the system you want edit, and click **Open code**. The system source file opens in the code editor.
-![Access system code](../system-access.png)
+The **Profiler** shows the time each system takes: see [Play the game](play#inspect-the-running-game).

@@ -231,3 +231,25 @@ dist
 test-results/
 
 public/assets/fonts/
+
+### Turborepo
+.turbo
+
+# Spike fixture copy (phase 1.1)
+apps/editor/static/__spike/
+
+# Temporary fixture copies of tests
+packages/server-core/test/.tmp-*
+
+# e2e workspace and reports
+apps/editor/e2e/.workspace/
+apps/editor/e2e/.workspace-*/
+apps/editor/test-results/
+apps/editor/playwright-report/
+
+# SvelteKit client build (bundled into dist/ by the build script)
+apps/editor/build/
+
+# The example editor's data (pnpm example)
+examples/.data/
+examples/node_modules
