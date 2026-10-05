@@ -128,8 +128,8 @@ catalogs:
       specifier: ^0.15.1
       version: 0.15.1
     dotenv:
-      specifier: ^17.4.2
-      version: 17.4.2
+      specifier: ^18.0.5
+      version: 18.0.5
     micromatch:
       specifier: ^4.0.8
       version: 4.0.8
@@ -221,7 +221,7 @@ importers:
         version: 0.15.1
       dotenv:
         specifier: catalog:libs-back
-        version: 17.4.2
+        version: 18.0.5
       micromatch:
         specifier: catalog:libs-back
         version: 4.0.8
@@ -767,6 +767,7 @@ packages:
   '@nanoforge-dev/ecs-lib@1.4.0':
     resolution: {integrity: sha512-CAei/D0in14J7lw64xwKSl+i1v36BGS54ieySPcHP+k5t7bnpcNG9OPenzZzhaQb2KX7m45W+BCLyOekMvmqSA==}
     engines: {node: '25'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@nanoforge-dev/utils-eslint-config@1.0.2':
     resolution: {integrity: sha512-hIsVGGpVIW3RvPZocWEf15Y5eqmIxTtLfWI66wqx+AO6PHcatUBhEi4sk1i54Qb2yGFueRBS/dSXj0kxG4Rbcw==}
@@ -2060,9 +2061,10 @@ packages:
   dompurify@3.2.7:
     resolution: {integrity: sha512-WhL/YuveyGXJaerVlMYGWhvQswa7myDG17P7Vu65EWC05o8vfeNbvNf4d/BOvH99+ZW+LlQsc1GDKMa1vNK6dw==}
 
-  dotenv@17.4.2:
-    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
+  dotenv@18.0.5:
+    resolution: {integrity: sha512-aBrGvt6KhjxbEnatqMWOMidftwsrCiCvqh1yNIGB9QyF0J+VcWkKDMsvYOEm7ZS82oiV+BT1sTOtIlAmUlTpwQ==}
     engines: {node: '>=12'}
+    hasBin: true
 
   duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
@@ -5173,7 +5175,7 @@ snapshots:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
-  dotenv@17.4.2: {}
+  dotenv@18.0.5: {}
 
   duplexer@0.1.2: {}
 
