@@ -154,6 +154,40 @@ describe('CodeService', () => {
     code.dispose();
   });
 
+  it('refuses an edit when the text changed after it was computed', async () => {
+    const { documents, code, history } = setup();
+    await code.loadWorkerPlugin('test/rename', 'memory://plugin');
+    const onDisk = readFileSync(join(workspace, 'pong', MAIN), 'utf8');
+    const document = fakeDocument(MAIN, onDisk);
+    documents.register(document);
+    const { stack } = history.registerContext({ id: 'file', label: MAIN });
+    const command = await code.edit(
+      MAIN,
+      'test.rename-first-const',
+      { name: 'renamed' },
+      { label: 'Rename' },
+    );
+    document.applyEdits([{ start: 0, end: 0, text: '// typed meanwhile\n' }], undefined);
+    await expect(stack.push(command!)).rejects.toThrow(/changed while the edit was prepared/);
+    expect(document.text()).toBe(`// typed meanwhile\n${onDisk}`);
+    code.dispose();
+  });
+
+  it('starts a new worker after a failed start', async () => {
+    const { code } = setup();
+    let starts = 0;
+    const options = (code as unknown as { _options: { createWorker: () => unknown } })._options;
+    const create = options.createWorker;
+    options.createWorker = () => {
+      if (++starts === 1) throw new Error('worker blocked');
+      return create();
+    };
+    await expect(code.engine()).rejects.toThrow('worker blocked');
+    await expect(code.symbols(MAIN)).resolves.toBeInstanceOf(Array);
+    expect(starts).toBe(2);
+    code.dispose();
+  });
+
   it('edits closed files on disk, undoes, and drops undo after an outside change', async () => {
     const { code, history } = setup();
     await code.loadWorkerPlugin('test/rename', 'memory://plugin');

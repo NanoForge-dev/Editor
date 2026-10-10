@@ -24,6 +24,7 @@ export interface EngineApi {
 /** Services the main thread offers to the worker. */
 export interface EngineHostApi {
   resolveTypes(module: string, from: string): Promise<readonly SourceText[]>;
+  typesFailed(module: string, from: string, message: string): void;
 }
 
 export interface ServeOptions {
@@ -39,6 +40,8 @@ export const serveEngine = (
   const host = wrap<EngineHostApi>(endpoint);
   const engine = new CodeEngine({
     resolveTypes: (module, from) => host.resolveTypes(module, from),
+    onTypesFailed: (module, from, message) =>
+      void host.typesFailed(module, from, message).catch(() => undefined),
   });
   const importModule = options.importModule ?? ((url: string) => import(/* @vite-ignore */ url));
   const api: EngineApi = {

@@ -120,6 +120,52 @@ describe('shared libraries', () => {
     expect(withRenamedImports('const a = 1;', '@pong/shared', '@x/y')).toBeUndefined();
   });
 
+  it('does not undo over a file edited since, and keeps the step for another try', async () => {
+    const { io, files } = project();
+    await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });
+    files.set('apps/client/src/main.ts', 'import { a } from "@pong/shared/a";\n');
+    const library = app('libs/shared', '@pong/shared', 'lib');
+    const undo = await renameLibrary(io, model(client, server, library), library, '@pong/common');
+    files.set('apps/client/src/main.ts', 'import { a } from "@pong/common/a";\n// hand edit\n');
+    await expect(undo()).rejects.toThrow(/apps\/client\/src\/main.ts changed since/);
+    expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/common');
+    files.set('apps/client/src/main.ts', 'import { a } from "@pong/common/a";\n');
+    await undo();
+    expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/shared');
+  });
+
+  it('rewrites imports through renameImports when the io reads code', async () => {
+    const { io, files } = project();
+    await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });
+    const text = '// see "@pong/shared" docs\nimport { a } from "@pong/shared/a";\n';
+    files.set('apps/client/src/main.ts', text);
+    const asked: string[] = [];
+    const reading = {
+      ...io,
+      renameImports: async (path: string, from: string, to: string) => {
+        asked.push(`${path}:${from}->${to}`);
+        files.set(path, files.get(path)!.replace(`from "${from}/a"`, `from "${to}/a"`));
+        return {
+          undo: async () => void files.set(path, text),
+          isValid: async () => true,
+        };
+      },
+    };
+    const library = app('libs/shared', '@pong/shared', 'lib');
+    const undo = await renameLibrary(
+      reading,
+      model(client, server, library),
+      library,
+      '@pong/common',
+    );
+    expect(asked).toEqual(['apps/client/src/main.ts:@pong/shared->@pong/common']);
+    expect(files.get('apps/client/src/main.ts')).toBe(
+      '// see "@pong/shared" docs\nimport { a } from "@pong/common/a";\n',
+    );
+    await undo();
+    expect(files.get('apps/client/src/main.ts')).toBe(text);
+  });
+
   it('refuses to remove a library that is imported, then removes it', async () => {
     const { io, files, snapshot } = project();
     await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });

@@ -17,7 +17,7 @@ import { implementCoreRpc } from '../rpc/implement-core-rpc';
 import type { BuildOutput } from '../runtime/build-output';
 import { RuntimeManager } from '../runtime/project-runtime';
 import { type RequestContext, authorize } from '../session/auth';
-import { serializeCookie } from '../session/cookies';
+import { parseCookies, serializeCookie } from '../session/cookies';
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -30,6 +30,10 @@ import {
   ProjectLocalSettingsStore,
 } from '../settings/account-backends';
 import type { EditorServer, EditorServerOptions } from './editor-server.type';
+import { hostAllowed, originAllowed } from './request-guard';
+
+/** A project nobody has a connected editor on is closed after this long without a request. */
+const PROJECT_IDLE_MS = 30 * 60_000;
 
 const json = (status: number, body: unknown, headers: HeadersInit = {}) =>
   new Response(JSON.stringify(body), {
@@ -44,8 +48,8 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
   if (!options.logger) store.add(logs.addSink(consoleSink));
   const logger = logs.getLogger('server');
 
-  const sessions = new SessionStore(env);
   const api = new ApiClient(env, options.fetch);
+  const sessions = new SessionStore(env, { verify: (session) => api.currentUser(session) });
   const git = new GitService(env);
   const cli = new CliService(env);
   const projects = store.add(new ProjectRegistry(env, git, api, logs.getLogger('projects')));
@@ -78,21 +82,13 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
   const services: ServerPluginServices = { projects, cli, git, api };
   const serverPlugins = store.add(new ServerPluginHost(router, services, logs));
   const staticJail = options.staticDir ? new PathJail(resolve(options.staticDir)) : undefined;
-  const pruneTimer = setInterval(() => sessions.prune(), 3600_000);
-  pruneTimer.unref?.();
-
-  /** Blocks cross-site requests: a local editor must not be driven by random web pages. */
-  const originAllowed = (request: Request): boolean => {
-    const origin = request.headers.get('origin');
-    if (!origin) return true; // non-browser clients
-    const host = request.headers.get('host') ?? new URL(request.url).host;
-    try {
-      const url = new URL(origin);
-      return url.host === host || env.allowedOrigins.includes(origin);
-    } catch {
-      return false;
-    }
-  };
+  store.add(projects.onDidClose((id) => runtime.close(id)));
+  const inUse = (id: string) => sessions.holders(id).some((session) => session.sockets > 0);
+  const sweepTimer = setInterval(() => {
+    sessions.prune();
+    projects.sweep(inUse, PROJECT_IDLE_MS);
+  }, 600_000);
+  sweepTimer.unref?.();
 
   const withCookies = (response: Response, cookies: string[]): Response => {
     for (const cookie of cookies) response.headers.append('set-cookie', cookie);
@@ -109,8 +105,9 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
   };
 
   const handleRpc = async (request: Request, path: string): Promise<Response> => {
-    const { session, setCookies } = sessions.resolve(request.headers.get('cookie'));
-    const before = session.tokens?.accessToken;
+    const cookie = request.headers.get('cookie');
+    const before = parseCookies(cookie)[ACCESS_TOKEN_COOKIE];
+    const { session, setCookies } = await sessions.resolve(cookie);
     const context: RequestContext = { session, responseCookies: [] };
     const result = await router.handle(path, await request.text(), context, request.signal);
     const response = new Response(result.body, {
@@ -125,7 +122,7 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
   };
 
   const handlePlugin = async (request: Request, pathname: string): Promise<Response> => {
-    const { session } = sessions.resolve(request.headers.get('cookie'));
+    const { session } = await sessions.resolve(request.headers.get('cookie'), { create: false });
     const resolved = await plugins.resolveFile(pathname, (projectId) => {
       try {
         projects.get(session, projectId);
@@ -135,17 +132,24 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       }
     });
     if (!resolved) return json(404, { error: 'Not found' });
-    const cache =
-      resolved.plugin.source === 'dev' ? 'no-cache' : 'public, max-age=31536000, immutable';
+    const cache = {
+      dev: 'no-cache',
+      project: 'private, no-cache',
+      installed: 'public, max-age=31536000, immutable',
+      bundled: 'public, max-age=31536000, immutable',
+    }[resolved.plugin.source];
     return (await fileResponse(resolved.file, cache)) ?? json(404, { error: 'Not found' });
   };
 
-  /** Build outputs of running games: `/runtime/<projectId>/<app>/<file>`. */
+  /**
+   * Build outputs of running games: `/runtime/<projectId>/<app>/<file>`. Local editors only, like
+   * the runtime RPC: a hosted editor never builds nor runs a project's code.
+   */
   const handleRuntime = async (request: Request, url: URL): Promise<Response> => {
     const [projectId, appSegment, ...rest] = url.pathname.slice('/runtime/'.length).split('/');
     if (!projectId || !appSegment || !rest.length || env.mode !== 'OFFLINE')
       return json(404, { error: 'Not found' });
-    const { session } = sessions.resolve(request.headers.get('cookie'));
+    const { session } = await sessions.resolve(request.headers.get('cookie'), { create: false });
     let file: string | undefined;
     let output: BuildOutput;
     try {
@@ -170,10 +174,10 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
   const handleFiles = async (request: Request, url: URL): Promise<Response> => {
     const [projectId, ...rest] = url.pathname.slice('/files/'.length).split('/');
     if (!projectId) return json(404, { error: 'Not found' });
-    const { session } = sessions.resolve(request.headers.get('cookie'));
-    const path = rest.map(decodeURIComponent).join('/');
+    const { session } = await sessions.resolve(request.headers.get('cookie'), { create: false });
     const download = url.searchParams.has('download');
     try {
+      const path = rest.map(decodeURIComponent).join('/');
       const project = projects.get(session, projectId);
       const entry = await project.fs.stat(path);
       if (!entry || (path && project.fs.isIgnored(path, entry.kind === 'directory'))) {
@@ -195,6 +199,7 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       }
       const response = await fileResponse(await project.fs.jail.resolve(path), 'no-cache');
       if (!response) return json(404, { error: 'Not found' });
+      response.headers.set('content-security-policy', 'sandbox');
       if (download) response.headers.set('content-disposition', disposition(name));
       return response;
     } catch {
@@ -204,7 +209,12 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
 
   const handleStatic = async (pathname: string): Promise<Response> => {
     if (!staticJail) return json(404, { error: 'Not found' });
-    const rel = decodeURIComponent(pathname.slice(1));
+    let rel: string;
+    try {
+      rel = decodeURIComponent(pathname.slice(1));
+    } catch {
+      return json(404, { error: 'Not found' });
+    }
     const file = await staticJail.resolve(rel).catch(() => undefined);
     const immutable = rel.startsWith('_app/immutable/');
     const asset =
@@ -239,9 +249,11 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       const { pathname } = url;
       try {
         if (pathname === '/healthz') return json(200, { ok: true, version: options.version });
+        if (!hostAllowed(env, request.headers.get('host') ?? url.host))
+          return json(421, { error: 'Unknown host' });
+        if (!originAllowed(env, request)) return json(403, { error: 'Forbidden origin' });
         if (pathname === RPC_WS_PATH) {
-          if (!originAllowed(request)) return json(403, { error: 'Forbidden origin' });
-          const { session, setCookies } = sessions.resolve(request.headers.get('cookie'));
+          const { session, setCookies } = await sessions.resolve(request.headers.get('cookie'));
           const headers = new Headers();
           for (const cookie of setCookies) headers.append('set-cookie', cookie);
           if (upgrade?.(request, { data: { session }, headers })) return undefined;
@@ -249,7 +261,6 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
         }
         if (pathname.startsWith(RPC_HTTP_PREFIX)) {
           if (request.method !== 'POST') return json(405, { error: 'Method not allowed' });
-          if (!originAllowed(request)) return json(403, { error: 'Forbidden origin' });
           return await handleRpc(request, pathname.slice(RPC_HTTP_PREFIX.length));
         }
         if (request.method !== 'GET' && request.method !== 'HEAD')
@@ -266,26 +277,29 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
 
     websocket: {
       open(socket) {
+        socket.data.session.sockets++;
         socket.data.rpc = router.createSession(
           { session: socket.data.session, responseCookies: [] },
           (message) => socket.send(message) > 0,
         );
       },
       message(socket, message) {
-        void socket.data.rpc?.receive(
-          typeof message === 'string' ? message : new TextDecoder().decode(message),
-        );
+        socket.data.rpc
+          ?.receive(typeof message === 'string' ? message : new TextDecoder().decode(message))
+          .catch((error: unknown) => logger.error('WebSocket message failed', error));
       },
       drain(socket) {
         socket.data.rpc?.drain();
       },
       close(socket) {
+        socket.data.session.sockets = Math.max(0, socket.data.session.sockets - 1);
         socket.data.rpc?.dispose();
       },
     },
 
     dispose() {
-      clearInterval(pruneTimer);
+      clearInterval(sweepTimer);
+      sessions.dispose();
       store.dispose();
     },
   };

@@ -52,7 +52,7 @@ export const installItem = async (
   if (!name.success) throw new RegistryError('INVALID', `${request.name} is not a valid name`);
   const bytes = await registry.download(request.name, request.version);
   const hash = sha256(bytes);
-  if (request.sha256 && request.sha256 !== hash) {
+  if (request.sha256 !== undefined && request.sha256 !== hash) {
     throw new RegistryError(
       'INTEGRITY',
       `${request.name}@${request.version} does not have the expected content (hash mismatch)`,

@@ -30,7 +30,11 @@ export const fileResponse = async (
 ): Promise<Response | undefined> => {
   const info = await stat(file).catch(() => undefined);
   if (!info?.isFile()) return undefined;
-  const headers = { 'content-type': contentType(file), 'cache-control': cacheControl };
+  const headers = {
+    'content-type': contentType(file),
+    'cache-control': cacheControl,
+    'x-content-type-options': 'nosniff',
+  };
   const bun = (globalThis as { Bun?: { file(path: string): Blob } }).Bun;
   const body = bun ? bun.file(file) : new Uint8Array(await readFile(file));
   return new Response(body, { headers });

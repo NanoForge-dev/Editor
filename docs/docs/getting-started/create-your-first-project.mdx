@@ -25,7 +25,7 @@ nf new                   # asks for a name, a language, and whether the game has
 nf editor my-game        # starts the editor and opens the project in your browser
 ```
 
-`nf editor` without a path opens the list of recent projects. A local editor works on the folder itself: what you change in the editor is on your disk at once, and what you change on disk shows in the editor.
+`nf editor` without a path opens the list of recent projects. The first time a folder is opened, the editor asks before opening it: opening a project runs its `nanoforge.config.ts` and its plugins. A local editor works on the folder itself: what you change in the editor is on your disk at once, and what you change on disk shows in the editor.
 
 A local editor can do what a hosted one cannot: run the game, use Git with your own credentials, and install plugins and packages.
 

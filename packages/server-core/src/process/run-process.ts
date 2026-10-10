@@ -2,12 +2,21 @@ import { spawn } from 'node:child_process';
 
 import { Emitter, type Event } from '@nanoforge-dev/editor-kernel';
 
+import { childEnv } from './child-env';
+
+/** Output kept per stream in `ProcessResult`; past it, lines are still emitted. */
+const MAX_BUFFER = 16 * 1024 * 1024;
+/** A line longer than this (binary output) is emitted in pieces. */
+const MAX_LINE = 64 * 1024;
+
 export interface ProcessOptions {
   cwd: string;
   env?: Record<string, string | undefined>;
   signal?: AbortSignal;
   /** Data written to stdin, then closed. */
   input?: string;
+  /** Characters of output kept per stream (default 16 Mi). */
+  maxBuffer?: number;
 }
 
 export interface OutputLine {
@@ -25,9 +34,14 @@ export interface ProcessResult {
   readonly exitCode: number;
   readonly stdout: string;
   readonly stderr: string;
+  /** Some output was not kept (`maxBuffer`). */
+  readonly truncated: boolean;
 }
 
-/** Spawns a process without a shell; output is split into lines and buffered. */
+/**
+ * Spawns a process without a shell, with the editor's environment filtered (`childEnv`); output
+ * is split into lines and buffered.
+ */
 export const runProcess = (
   command: string,
   args: readonly string[],
@@ -36,20 +50,30 @@ export const runProcess = (
   const onLine = new Emitter<OutputLine>();
   const child = spawn(command, args, {
     cwd: options.cwd,
-    env: { ...process.env, ...options.env },
+    env: childEnv(options.env),
     stdio: ['pipe', 'pipe', 'pipe'],
     ...(options.signal && { signal: options.signal }),
   });
+  const maxBuffer = options.maxBuffer ?? MAX_BUFFER;
   const buffers = { stdout: '', stderr: '' };
   const pending = { stdout: '', stderr: '' };
+  let truncated = false;
 
-  const collect = (stream: 'stdout' | 'stderr') => (chunk: Buffer) => {
-    const text = chunk.toString('utf8');
-    buffers[stream] += text;
+  const collect = (stream: 'stdout' | 'stderr') => (text: string) => {
+    const room = maxBuffer - buffers[stream].length;
+    if (text.length > room) truncated = true;
+    if (room > 0) buffers[stream] += text.length > room ? text.slice(0, room) : text;
     const lines = (pending[stream] + text).split(/\r?\n/);
-    pending[stream] = lines.pop() ?? '';
+    let rest = lines.pop() ?? '';
     for (const line of lines) onLine.fire({ stream, text: line });
+    while (rest.length > MAX_LINE) {
+      onLine.fire({ stream, text: rest.slice(0, MAX_LINE) });
+      rest = rest.slice(MAX_LINE);
+    }
+    pending[stream] = rest;
   };
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
   child.stdout.on('data', collect('stdout'));
   child.stderr.on('data', collect('stderr'));
   if (options.input !== undefined) child.stdin.end(options.input);
@@ -65,7 +89,12 @@ export const runProcess = (
         if (pending[stream]) onLine.fire({ stream, text: pending[stream] });
       }
       onLine.dispose();
-      resolve({ exitCode: code ?? -1, stdout: buffers.stdout, stderr: buffers.stderr });
+      resolve({
+        exitCode: code ?? -1,
+        stdout: buffers.stdout,
+        stderr: buffers.stderr,
+        truncated,
+      });
     });
   });
 

@@ -40,10 +40,14 @@ export class SettingsService implements Disposable {
     this._store.add(registry.onDidChange((keys) => this._onDidChange.fire({ keys })));
   }
 
-  /** Attaches the store of a scope (e.g. project stores when a project opens). */
+  /**
+   * Attaches the store of a scope (e.g. project stores when a project opens). The scope is
+   * checked again once the store is initialized: another store may have been attached meanwhile.
+   */
   async setStore(scope: WritableScope, store: ScopeStore): Promise<Disposable> {
     if (this._stores.has(scope)) throw new SettingsError(`A ${scope} store is already attached`);
     await store.initialize();
+    if (this._stores.has(scope)) throw new SettingsError(`A ${scope} store is already attached`);
     this._stores.set(scope, store);
     this._snapshots.set(scope, {});
     const subscription = store.values.subscribe((values) => this._storeChanged(scope, values));

@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG, WORKSPACE } from './workspace';
 
@@ -63,7 +63,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   page,
 }) => {
   test.setTimeout(150_000);
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await resetLayout(page);

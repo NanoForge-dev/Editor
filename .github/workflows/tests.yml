@@ -9,6 +9,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
   PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}

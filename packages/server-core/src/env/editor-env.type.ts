@@ -20,6 +20,8 @@ export interface EditorEnv {
   readonly cliPath: string | undefined;
   readonly gitPath: string;
   readonly allowedOrigins: readonly string[];
+  /** Host names allowed in the `Host` header besides loopback ones. */
+  readonly allowedHosts: readonly string[];
   readonly devPlugins: readonly string[];
   readonly bundledPluginsDir: string | undefined;
 }

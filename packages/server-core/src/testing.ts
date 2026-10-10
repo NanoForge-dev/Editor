@@ -6,7 +6,8 @@ import { RpcClient, type SocketLike } from '@nanoforge-dev/editor-rpc';
 
 import type { EditorServer, ServerSocket, SocketData } from './server/editor-server.type';
 
-export const TEST_ORIGIN = 'http://editor.test';
+/** A loopback name: the server only answers to those and `ALLOWED_HOSTS` (DNS rebinding). */
+export const TEST_ORIGIN = 'http://editor.localhost';
 
 class LoopbackSocket implements SocketLike {
   readyState = 0;

@@ -156,7 +156,7 @@ describe('RuntimeService', () => {
       expect(url).toMatch(new RegExp(`/runtime/${model.id}/apps%2Fclient/main\\.js\\?v=\\w+&run=`));
       expect(options.env).toEqual({ PORT: '1' });
       expect(options.files.get('/data.txt')).toMatch(
-        /^http:\/\/editor\.test\/runtime\/.+data\.txt\?v=\w+$/,
+        /^http:\/\/editor\.localhost\/runtime\/.+data\.txt\?v=\w+$/,
       );
       expect(mounts()).toHaveLength(run);
       expect(mounts()[run - 1]!.dataset.nfGame).toBe('apps/client');

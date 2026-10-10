@@ -36,3 +36,12 @@ export const showPanel = async (page: Page, name: string | RegExp): Promise<void
   if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
   await expect(tab).toHaveAttribute('aria-selected', 'true');
 };
+
+/**
+ * Opens a project by its folder, as `nf editor <folder>` does: through `/load`, confirming the
+ * prompt a folder that is not a recent project gets (a relative path always gets it).
+ */
+export const openProject = async (page: Page, path: string): Promise<void> => {
+  await page.goto(`/load?path=${encodeURIComponent(path)}`);
+  await page.getByRole('button', { name: 'Open project', exact: true }).click();
+};

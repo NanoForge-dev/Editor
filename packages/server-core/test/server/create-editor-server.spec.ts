@@ -201,6 +201,30 @@ describe('editor server', () => {
       }),
     );
     expect(forged!.status).toBe(403);
+
+    const rebound = await editor.fetch(
+      new Request('http://evil.example/rpc/session.info', {
+        method: 'POST',
+        body: 'null',
+        headers: { origin: 'http://evil.example' },
+      }),
+    );
+    expect(rebound!.status).toBe(421);
+    expect((await get('/files/x/%E0')).status).toBe(404);
+    expect((await get('/%E0')).status).toBe(404);
+  });
+
+  it('survives WebSocket frames that are not messages', async () => {
+    const { id } = await client.api(ProjectsContract).open({ path: 'pong' });
+    let rpc: { receive(raw: string): Promise<void> } | undefined;
+    await editor.fetch(new Request(`${ORIGIN}/rpc/ws`), (_request, { data }) => {
+      editor.websocket.open({ data, send: () => 1, close: () => undefined });
+      rpc = data.rpc;
+      return true;
+    });
+    for (const frame of ['null', '1', '"x"', '[]'])
+      await expect(rpc!.receive(frame)).resolves.toBeUndefined();
+    expect((await client.api(ProjectsContract).model({ id })).name).toBeTruthy();
   });
 
   it('serves project files and downloads folders as zip', async () => {
@@ -213,6 +237,8 @@ describe('editor server', () => {
     };
     const file = await fetchFile('apps/client/package.json');
     expect(file.status).toBe(200);
+    expect(file.headers.get('content-security-policy')).toBe('sandbox');
+    expect(file.headers.get('x-content-type-options')).toBe('nosniff');
     expect(await file.json()).toMatchObject({ name: expect.any(String) });
 
     const download = await fetchFile('apps/client/package.json?download');

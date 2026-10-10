@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { expandFolders, resetLayout, showPanel } from './helpers';
+import { expandFolders, openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -15,7 +15,7 @@ const main = () => readFileSync(MAIN, 'utf8');
 
 test.beforeEach(async ({ page }) => {
   original = readFileSync(MAIN, 'utf8');
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await resetLayout(page);
   await showPanel(page, 'Hierarchy');

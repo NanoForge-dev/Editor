@@ -9,6 +9,8 @@ import type { CodeDiagnostic, CodeSymbol, SourceText, TextEdit } from './engine.
 import { type MetaRequest, type MetaResponse, extractMeta } from './extract-meta';
 import { literalToValue, quoteStyle, readExportedLiteral, valueToLiteral } from './literals';
 import { joinPosix, matchesPathPattern, moduleSpecifierFor } from './module-specifier';
+import { renamePackage } from './rename-package';
+import { RENAME_PACKAGE_TRANSFORMER } from './rename-package.const';
 
 const ROOT = '/project/';
 
@@ -55,7 +57,9 @@ export class CodeEngine {
    */
   private _scopes: Map<string, Project> | undefined;
 
-  constructor(private readonly _options: CodeEngineOptions = {}) {}
+  constructor(private readonly _options: CodeEngineOptions = {}) {
+    this.registerTransformer(RENAME_PACKAGE_TRANSFORMER, renamePackage);
+  }
 
   setFiles(files: readonly SourceText[]): void {
     for (const { path, text } of files) {
@@ -370,7 +374,14 @@ export class CodeEngine {
           roots.found.push(root);
         }
         this.setFiles(files);
-      } catch {}
+      } catch (error) {
+        roots.asked.delete(dir);
+        this._options.onTypesFailed?.(
+          packageName,
+          path,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     }
   }
 }

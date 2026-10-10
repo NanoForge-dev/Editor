@@ -53,6 +53,11 @@ export const EnvSchema = z
     GIT_PATH: optionalString,
     /** Extra origins allowed to call the server (dev proxies). */
     ALLOWED_ORIGINS: list,
+    /**
+     * Host names the server answers to besides localhost (DNS rebinding guard), comma separated.
+     * A local editor reached by another name needs it; a hosted one checks it when it is set.
+     */
+    ALLOWED_HOSTS: list,
     /** Directories of local plugins under development (their `dist/` is served). */
     DEV_PLUGINS: list,
     /** Directory of the plugins bundled with the editor build. */

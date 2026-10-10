@@ -121,7 +121,14 @@ export const createEditor = async (
     }),
   );
   store.add(settingsSetup.registry.register(...Object.values(RuntimeSettings)));
-  const projectSettings = store.add(followCurrentProject(settingsSetup, projects.current));
+  const projectSettings = store.add(
+    followCurrentProject(settingsSetup, projects.current, (error, project) =>
+      logger.error(
+        `The settings of project ${project.id} could not be read: defaults apply`,
+        error,
+      ),
+    ),
+  );
   const { settings } = settingsSetup;
   services.provide(AccountSyncToken, settingsSetup.account);
 
@@ -233,7 +240,15 @@ export const createEditor = async (
   await plugins.start(listings.flatMap((listing) => toDescriptor(listing, logger) ?? []));
 
   store.add(
-    followProjectPlugins({ rpc, projects, plugins, notifications: shell.notifications, logger }),
+    followProjectPlugins({
+      rpc,
+      projects,
+      plugins,
+      notifications: shell.notifications,
+      logger,
+      settings,
+      online: session.mode === 'ONLINE',
+    }),
   );
 
   store.add(

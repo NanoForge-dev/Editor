@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME, PONG } from './workspace';
 
@@ -17,7 +17,7 @@ const level = (page: Page, name: string) =>
   page.getByRole('group', { name: 'Levels' }).getByRole('button', { name });
 
 const open = async (page: Page, project = 'pong') => {
-  await page.goto(`/load?path=${project}`);
+  await openProject(page, project);
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await resetLayout(page);

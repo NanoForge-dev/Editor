@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { Emitter, type Event } from '@nanoforge-dev/editor-kernel';
 import type { GameServerState, RuntimeEvent } from '@nanoforge-dev/editor-protocol';
 
+import { childEnv } from '../process/child-env';
+
 /**
  * Runs in the game process (Bun): receives the entry point, files and env over IPC, then
  * starts the game with an editor bridge whose `toEditor` events are sent back over IPC.
@@ -55,7 +57,10 @@ send({ type: 'ready' });
 
 const runners = new Map<string, Promise<string>>();
 
-/** Writes the runner script once per data directory (the server itself may be bundled). */
+/**
+ * Writes the runner script once per data directory (the server itself may be bundled). A failed
+ * write is forgotten, so the next start tries again.
+ */
 const ensureRunner = (dataDir: string): Promise<string> => {
   let runner = runners.get(dataDir);
   if (!runner) {
@@ -67,6 +72,9 @@ const ensureRunner = (dataDir: string): Promise<string> => {
       return path;
     })();
     runners.set(dataDir, runner);
+    runner.catch(() => {
+      if (runners.get(dataDir) === runner) runners.delete(dataDir);
+    });
   }
   return runner;
 };
@@ -122,7 +130,7 @@ export class GameServerProcess {
       cwd: this._options.cwd,
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       detached: process.platform !== 'win32',
-      env: { ...process.env, FORCE_COLOR: '0' },
+      env: childEnv({ FORCE_COLOR: '0' }),
     });
     this._child = child;
     this._setState('starting');

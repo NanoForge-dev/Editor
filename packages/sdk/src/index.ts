@@ -214,7 +214,6 @@ export {
 export {
   type CommandOrigin,
   type CommandPreview,
-  FileHistoryTracker,
   HISTORY_CONTEXT_KEY,
   type HistoryCommand,
   type HistoryContext,

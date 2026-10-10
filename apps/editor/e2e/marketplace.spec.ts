@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG, REGISTRY, WORKSPACE } from './workspace';
 
@@ -32,7 +32,7 @@ const cleanUp = () => {
 };
 
 const open = async (page: Page) => {
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await resetLayout(page);
 };

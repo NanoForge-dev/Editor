@@ -78,7 +78,11 @@ export const libraryImporters = async (io: WorkspaceIo, library: AppModel): Prom
   return importers.sort();
 };
 
-/** A text with the imports of a library pointed at its new name; undefined when it has none. */
+/**
+ * A text with the imports of a library pointed at its new name; undefined when it has none. A
+ * text search: it also rewrites look-alikes in comments and strings, so it is only used without
+ * a code worker (`WorkspaceIo.renameImports`).
+ */
 export const withRenamedImports = (text: string, from: string, to: string): string | undefined => {
   const renamed = text.replace(
     specifier(from),
@@ -126,9 +130,10 @@ export const renameLibrary = (
       });
     }
     for (const path of io.files()) {
-      if (!CODE.test(path)) continue;
-      const renamed = withRenamedImports(await io.read(path), library.name, packageName);
-      if (renamed !== undefined) await changes.write(path, renamed);
+      if (!CODE.test(path) || !specifier(library.name).test(await io.read(path))) continue;
+      await changes.renameImports(path, library.name, packageName, (text) =>
+        withRenamedImports(text, library.name, packageName),
+      );
     }
     await editJson(io, changes, packageJson(library), (json) => {
       json.name = packageName;

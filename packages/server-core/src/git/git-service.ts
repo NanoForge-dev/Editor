@@ -13,14 +13,8 @@ import { RpcError } from '@nanoforge-dev/editor-rpc';
 import type { EditorEnv } from '../env/editor-env.type';
 import { runProcess } from '../process/run-process';
 import { KeyedMutex } from '../util/keyed-mutex';
-import { redact, withToken } from './git-token';
+import { authEnv, redact, withoutCredentials } from './git-token';
 import { parseStatus } from './parse-status';
-
-export interface GitStatusEntry {
-  readonly path: string;
-  /** Two-letter porcelain code, e.g. ` M`, `??`. */
-  readonly code: string;
-}
 
 /** Git CLI wrapper; operations on the same repository are serialized. */
 export class GitService {
@@ -36,39 +30,24 @@ export class GitService {
     return existsSync(join(path, '.git'));
   }
 
-  /** Clones `url` into `path`, injecting a token for https remotes (GitHub style). */
+  /**
+   * Clones `url` into `path`. A token for an https remote goes in an authorization header
+   * passed through the environment: never in the URL, which `ps` shows and `.git/config` keeps.
+   */
   clone(url: string, path: string, token?: string): Promise<void> {
-    const remote = token ? withToken(url, token) : url;
     return this._mutex.run(path, async () => {
-      await this._git(this._env.fsRoot, ['clone', '--', remote, path]);
+      await this._git(this._env.fsRoot, ['clone', '--', url, path], true, authEnv(url, token));
     });
   }
 
-  pull(path: string): Promise<void> {
+  /** Fast-forwards a clone made by `clone`, with the same token. */
+  pull(path: string, url: string, token?: string): Promise<void> {
     return this._mutex.run(path, async () => {
-      await this._git(path, ['pull', '--ff-only']);
-    });
-  }
-
-  status(path: string): Promise<GitStatusEntry[]> {
-    return this._mutex.run(path, async () => {
-      const output = await this._git(path, ['status', '--porcelain=v1', '-z']);
-      return output
-        .split('\0')
-        .filter(Boolean)
-        .map((entry) => ({ code: entry.slice(0, 2), path: entry.slice(3) }));
-    });
-  }
-
-  /** Stages everything, commits when there are changes and pushes. Returns false when clean. */
-  commitAndPush(path: string, message: string, branch = 'main'): Promise<boolean> {
-    return this._mutex.run(path, async () => {
-      await this._git(path, ['add', '--all']);
-      const staged = await this._git(path, ['diff', '--cached', '--name-only']);
-      if (!staged.trim()) return false;
-      await this._git(path, ['commit', '-m', message]);
-      await this._git(path, ['push', '-u', 'origin', branch]);
-      return true;
+      const remote = (await this._git(path, ['remote', 'get-url', 'origin'])).trim();
+      if (remote !== url && withoutCredentials(remote) === url) {
+        await this._git(path, ['remote', 'set-url', 'origin', url]);
+      }
+      await this._git(path, ['pull', '--ff-only'], true, authEnv(url, token));
     });
   }
 
@@ -335,7 +314,7 @@ export class GitService {
     return this._mutex.run(path, async () => {
       const spec = revision === 'INDEX' ? `:${file}` : `${revision}:${file}`;
       const result = await this._exec(path, ['show', spec]);
-      return result.exitCode === 0 ? result.stdout : null;
+      return result.exitCode === 0 && !result.truncated ? result.stdout : null;
     });
   }
 
@@ -374,11 +353,18 @@ export class GitService {
   }
 
   /**
+   * Paths after `--` are literal (`levels/[id].ts` is not a glob), except for `stash`, which
+   * needs pathspec magic internally and is never given paths.
    * `network`: the command talks to a remote. It is stopped after a while (a remote that never
    * answers must not hold the repository's queue), and ssh never waits for a passphrase or a
    * host confirmation in the terminal the editor was started from.
    */
-  private async _exec(cwd: string, args: string[], network = false) {
+  private async _exec(
+    cwd: string,
+    args: string[],
+    network = false,
+    extraEnv: Record<string, string> = {},
+  ) {
     const batchSsh =
       network &&
       !process.env.GIT_SSH_COMMAND &&
@@ -389,8 +375,11 @@ export class GitService {
       env: {
         GIT_TERMINAL_PROMPT: '0',
         GIT_CEILING_DIRECTORIES: dirname(cwd),
+        ...(args[0] !== 'stash' && { GIT_LITERAL_PATHSPECS: '1' }),
+        GIT_OPTIONAL_LOCKS: '0',
         LC_ALL: 'C',
         ...(batchSsh && { GIT_SSH_COMMAND: 'ssh -o BatchMode=yes' }),
+        ...extraEnv,
       },
       ...(network && { signal: AbortSignal.timeout(this._networkTimeoutMs) }),
     }).done;
@@ -401,10 +390,15 @@ export class GitService {
     return result?.exitCode === 0 && result.stdout.trim() !== '';
   }
 
-  private async _git(cwd: string, args: string[], network = false): Promise<string> {
+  private async _git(
+    cwd: string,
+    args: string[],
+    network = false,
+    extraEnv?: Record<string, string>,
+  ): Promise<string> {
     let result;
     try {
-      result = await this._exec(cwd, args, network);
+      result = await this._exec(cwd, args, network, extraEnv);
     } catch (error) {
       if (network && (error as { name?: string }).name === 'AbortError') {
         throw new RpcError(

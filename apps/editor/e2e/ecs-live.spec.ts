@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -22,7 +22,7 @@ test('shows the live world, edits it, applies it to the code and pauses a system
   test.setTimeout(120_000);
   const original = readFileSync(MAIN, 'utf8');
   try {
-    await page.goto('/load?path=game');
+    await openProject(page, 'game');
     await page.waitForURL(/\/project\//);
     await resetLayout(page);
     await showPanel(page, 'Hierarchy');
@@ -93,7 +93,7 @@ test('moves an entity by dragging it in the Game screen, and applies it to the c
   test.setTimeout(120_000);
   const original = readFileSync(MAIN, 'utf8');
   try {
-    await page.goto('/load?path=game');
+    await openProject(page, 'game');
     await page.waitForURL(/\/project\//);
     await resetLayout(page);
     await toolbar(page, 'Play').click();
@@ -151,7 +151,7 @@ test('edits an engine enum param with a select (types from the engine packages)'
 }) => {
   const original = readFileSync(MAIN, 'utf8');
   try {
-    await page.goto('/load?path=game');
+    await openProject(page, 'game');
     await page.waitForURL(/\/project\//);
     await resetLayout(page);
     await showPanel(page, 'Hierarchy');

@@ -15,6 +15,10 @@
   /**
    * Opens a project from a link: `/load?path=<folder>` (local editors, `nf editor <folder>`) or
    * `/load?gatewayId=<project>` (hosted editors, "Open in editor" on the NanoForge website).
+   *
+   * Opening a local project runs its `nanoforge.config.ts` and its plugins, and any web page can
+   * link here: a folder that is not in the recent projects is opened only once the user says so.
+   * A hosted editor opens projects by their id only, never by path.
    */
   const editor = getEditor();
   let error = $state<ErrorDescription>();
@@ -35,6 +39,16 @@
     if (gatewayId) return { gatewayId };
     if (path) return { path };
     return undefined;
+  };
+
+  /**
+   * Whether a folder was opened here before (the link then needs no confirmation): its real path
+   * only, as recent projects keep it. A relative path always asks.
+   */
+  const known = async (path: string): Promise<boolean> => {
+    const trimmed = path.replace(/(.)\/+$/, '$1');
+    const recent = await editor.projects.recent().catch(() => []);
+    return recent.some((project) => 'path' in project.ref && project.ref.path === trimmed);
   };
 
   const describe = (reason: unknown, ref: ProjectRef): ErrorDescription => {
@@ -101,14 +115,43 @@
       return;
     }
     let disposed = false;
-    editor.projects
-      .open(ref)
-      .then(({ id }) => {
-        if (!disposed) void goto(`/project/${id}`, { replaceState: true });
-      })
-      .catch((reason: unknown) => {
-        if (!disposed) error = describe(reason, ref);
+    const open = () =>
+      editor.projects
+        .open(ref)
+        .then(({ id }) => {
+          if (!disposed) void goto(`/project/${id}`, { replaceState: true });
+        })
+        .catch((reason: unknown) => {
+          if (!disposed) error = describe(reason, ref);
+        });
+    if (!('path' in ref)) void open();
+    else if (editor.session.mode === 'ONLINE') {
+      error = {
+        title: 'Projects open by their id here',
+        hint: 'This editor is hosted: open the project from your projects on the NanoForge website.',
+        actions: [{ ...back, primary: true }],
+      };
+    } else {
+      void known(ref.path).then((trusted) => {
+        if (disposed) return;
+        if (trusted) return void open();
+        error = {
+          title: `Open ${ref.path}?`,
+          hint: 'Opening a project runs its nanoforge.config.ts and its plugins on this computer. Open it only if you trust where it comes from.',
+          actions: [
+            {
+              label: 'Open project',
+              primary: true,
+              run: () => {
+                error = undefined;
+                void open();
+              },
+            },
+            back,
+          ],
+        };
       });
+    }
     return () => {
       disposed = true;
     };

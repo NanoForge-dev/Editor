@@ -41,6 +41,7 @@ export const tokenize = (source: string): Token[] => {
       i++;
       let flags = '';
       while (/[a-z]/.test(source[i] ?? '')) flags += source[i++];
+      flags = flags.replace(/[gy]/g, '');
       try {
         tokens.push({ kind: 'regex', value: new RegExp(pattern, flags), pos: start });
       } catch (error) {

@@ -10,7 +10,7 @@ export const PackagesLock = z.object({
       ItemName,
       z.object({
         version: ItemVersion,
-        sha256: z.string(),
+        sha256: z.string().regex(/^[0-9a-f]{64}$/, 'expected a sha256 in hex'),
         dependencies: Dependencies.default({}),
       }),
     )

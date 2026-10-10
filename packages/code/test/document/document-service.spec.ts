@@ -98,4 +98,11 @@ describe('matchesGlob', () => {
     expect(matchesGlob('src/**/*.ts', 'src/a/b/main.ts')).toBe(true);
     expect(matchesGlob('src/*.ts', 'src/a/main.ts')).toBe(false);
   });
+
+  it('reads a comma outside braces as a plain character', () => {
+    expect(matchesGlob('a,b', 'a,b')).toBe(true);
+    expect(matchesGlob('a,b', 'a')).toBe(false);
+    expect(matchesGlob('a,b', 'xb')).toBe(false);
+    expect(matchesGlob('src/{a,b}.ts', 'src/b.ts')).toBe(true);
+  });
 });

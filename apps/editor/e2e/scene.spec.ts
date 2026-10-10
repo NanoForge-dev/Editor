@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { BREAKOUT } from './workspace';
 
@@ -39,7 +39,7 @@ test.describe('scenes', () => {
 
   test.beforeEach(async ({ page }) => {
     original = snapshot();
-    await page.goto('/load?path=breakout');
+    await openProject(page, 'breakout');
     await page.waitForURL(/\/project\//);
     await resetLayout(page);
   });

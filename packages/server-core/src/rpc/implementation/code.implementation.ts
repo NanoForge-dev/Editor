@@ -19,7 +19,7 @@ export const implementCodeRpc = (
       typeFiles: async ({ project, from, module }, { session }) => {
         const open = projects.get(session, project);
         const fromDir = await open.fs.jail.resolve(from.split('/').slice(0, -1).join('/'));
-        return collectTypeFiles(open.root, fromDir, module);
+        return collectTypeFiles(open.root, fromDir, module, { contained: env.mode === 'ONLINE' });
       },
       format: async ({ project, path, text }, { session }) => {
         const open = projects.get(session, project);

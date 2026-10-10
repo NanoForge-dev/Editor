@@ -3,8 +3,10 @@ import type { ExtensionRegistry } from '@nanoforge-dev/editor-kernel';
 import { DOCUMENT_EDITORS } from './document-contributions';
 import type { DocumentEditor } from './document.type';
 
+/** `{a,b}` alternatives; a `,` or `}` outside braces is a plain character. */
 const globToRegex = (glob: string): RegExp => {
   let source = '';
+  let depth = 0;
   for (let i = 0; i < glob.length; i++) {
     const char = glob[i]!;
     if (char === '*' && glob[i + 1] === '*') {
@@ -17,12 +19,16 @@ const globToRegex = (glob: string): RegExp => {
       }
     } else if (char === '*') source += '[^/]*';
     else if (char === '?') source += '[^/]';
-    else if (char === '{') source += '(?:';
-    else if (char === '}') source += ')';
-    else if (char === ',') source += '|';
-    else source += /[.+^$()|[\]\\]/.test(char) ? `\\${char}` : char;
+    else if (char === '{') {
+      depth++;
+      source += '(?:';
+    } else if (char === '}' && depth) {
+      depth--;
+      source += ')';
+    } else if (char === ',' && depth) source += '|';
+    else source += /[.+^$()|[\]\\{}]/.test(char) ? `\\${char}` : char;
   }
-  return new RegExp(`^${source}$`);
+  return new RegExp(`^${source}${')'.repeat(depth)}$`);
 };
 
 const globs = new Map<string, RegExp>();

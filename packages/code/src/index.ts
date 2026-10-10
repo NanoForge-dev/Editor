@@ -6,5 +6,6 @@ export * from './diagnostics';
 export * from './document';
 export type * from './engine';
 export * from './engine/code-file.const';
+export * from './engine/rename-package.const';
 export * from './engine/engine.type';
 export * from './engine/code.exception';

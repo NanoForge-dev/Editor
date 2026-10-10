@@ -47,6 +47,8 @@ export class AccountSyncStore implements ScopeStore {
   private _timer: ReturnType<typeof setTimeout> | undefined;
   private _attempt = 0;
   private _disposed = false;
+  /** Bumped by every local write: a pull or a push that saw an older one must not drop it. */
+  private _edits = 0;
 
   constructor(
     private readonly _remote: AccountRemote,
@@ -83,6 +85,7 @@ export class AccountSyncStore implements ScopeStore {
   }
 
   async write(patch: SettingValues): Promise<void> {
+    this._edits++;
     this._state = { ...this._state, local: applyPatch(this._state.local, patch), dirty: true };
     this._values.set(this._state.local);
     await this._persist();
@@ -139,15 +142,36 @@ export class AccountSyncStore implements ScopeStore {
   }
 
   private async _pull(): Promise<void> {
+    const edits = this._edits;
     const remote = await this._remote.get();
     if (remote.revision === this._state.base.revision) return;
-    this._state = {
-      base: remote,
-      local: { ...remote.values, ...this._localOnly(this._state.local) },
-      dirty: false,
-    };
+    if (edits !== this._edits) {
+      this._rebase(remote);
+    } else {
+      this._state = {
+        base: remote,
+        local: { ...remote.values, ...this._localOnly(this._state.local) },
+        dirty: false,
+      };
+    }
     this._values.set(this._state.local);
     await this._persist();
+  }
+
+  /**
+   * Moves local edits on top of a newer remote document (three-way merge from the last common
+   * base); keys both sides changed become conflicts. The result still has to be pushed.
+   */
+  private _rebase(remote: AccountDocument): void {
+    const local = this._synced(this._state.local);
+    const { values, conflicts } = merge3(this._state.base.values, local, remote.values);
+    this._state = {
+      base: remote,
+      local: { ...values, ...this._localOnly(this._state.local) },
+      dirty: true,
+    };
+    if (conflicts.length) this._conflicts.set([...this._conflicts.get(), ...conflicts]);
+    this._rerun = true;
   }
 
   private async _push(attempt = 0): Promise<void> {
@@ -161,14 +185,9 @@ export class AccountSyncStore implements ScopeStore {
     } catch (error) {
       if (errorCode(error) !== 'CONFLICT' || attempt >= 3) throw error;
       const remote = (error as { data?: AccountDocument }).data ?? (await this._remote.get());
-      const { values, conflicts } = merge3(this._state.base.values, sent, remote.values);
-      this._state = {
-        base: remote,
-        local: { ...values, ...this._localOnly(this._state.local) },
-        dirty: true,
-      };
+      this._rebase(remote);
+      this._rerun = false;
       this._values.set(this._state.local);
-      if (conflicts.length) this._conflicts.set([...this._conflicts.get(), ...conflicts]);
       await this._persist();
       await this._push(attempt + 1);
     }

@@ -37,6 +37,7 @@ export class RpcSession implements Disposable {
     } catch {
       return;
     }
+    if (typeof message !== 'object' || message === null) return;
     switch (message.t) {
       case 'ping':
         this._write({ t: 'pong' });

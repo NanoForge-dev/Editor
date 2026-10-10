@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { expandFolders, panelTab, resetLayout, showPanel } from './helpers';
+import { expandFolders, openProject, panelTab, resetLayout, showPanel } from './helpers';
 import { expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -10,7 +10,7 @@ const NOTES = join(PONG, 'scratch/notes.md');
 const TODO = join(PONG, 'scratch/todo.md');
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await resetLayout(page);
 });

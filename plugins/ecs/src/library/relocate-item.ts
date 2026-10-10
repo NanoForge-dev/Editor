@@ -4,6 +4,7 @@ import {
   type HistoryCommand,
   type PluginContext,
   ProjectServiceToken,
+  compositeCommand,
 } from '@nanoforge-dev/editor-sdk';
 import { NotificationServiceToken } from '@nanoforge-dev/editor-sdk/ui';
 
@@ -75,24 +76,33 @@ export const relocateItem = async (
   }
   const original = await documents.getText(from);
   const fs = project.fs;
-  const command: HistoryCommand = {
-    label: move ? `${title} to ${target.name}` : `${title} into ${target.name}`,
-    children: edits,
+  const textOf = (path: string) => documents.getText(path).catch(() => undefined);
+  let applied = false;
+  const file: HistoryCommand = {
+    label: `${move ? 'Move' : 'Copy'} ${from}`,
     do: async () => {
       if (move) await fs.rename(from, to);
       await fs.write(to, relocated.text);
-      for (const edit of edits) await edit.do();
+      applied = true;
     },
     undo: async () => {
-      for (const edit of [...edits].reverse()) await edit.undo();
       if (move) {
         await fs.write(to, original);
         await fs.rename(to, from);
       } else {
         await fs.delete(to);
       }
+      applied = false;
+    },
+    isValid: async () => {
+      if (applied) return (await textOf(to)) === relocated.text;
+      return move ? (await textOf(from)) === original : (await textOf(to)) === undefined;
     },
   };
+  const command = compositeCommand(
+    move ? `${title} to ${target.name}` : `${title} into ${target.name}`,
+    [file, ...edits],
+  );
   try {
     await refactorsHistory(context).push(command);
     return true;

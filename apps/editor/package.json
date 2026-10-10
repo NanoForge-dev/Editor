@@ -91,7 +91,6 @@
     "playwright": "catalog:test",
     "svelte": "catalog:core",
     "svelte-check": "catalog:core",
-    "typescript": "catalog:build",
     "vite": "catalog:core",
     "vitest": "catalog:test",
     "zod": "catalog:libs"

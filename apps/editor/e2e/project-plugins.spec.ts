@@ -1,7 +1,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout } from './helpers';
+import { openProject, resetLayout } from './helpers';
 import { expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -43,7 +43,7 @@ test.afterEach(() => {
 });
 
 test("loads the project's plugins and names the plugins its packages suggest", async ({ page }) => {
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await resetLayout(page);
 

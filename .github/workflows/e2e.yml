@@ -9,8 +9,18 @@ on:
     paths:
       - 'apps/**'
       - 'packages/**'
+      - 'plugins/**'
       - 'tooling/**'
+      - 'examples/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
+      - '.github/workflows/e2e.yml'
+      - '.github/actions/**'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   e2e:
@@ -22,11 +32,34 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
+      # The tests that play a game (runtime, inspectors, scene…) need a built engine with the
+      # editor library; without NANOFORGE_ENGINE they are skipped.
+      - name: Checkout engine
+        uses: actions/checkout@v7
+        with:
+          repository: NanoForge-dev/Engine
+          ref: main
+          path: engine
+
+      - name: Install emsdk
+        uses: ./engine/.github/actions/emsdk-install
+
+      - name: Install engine dependencies
+        uses: ./.github/actions/pnpm-install
+        with:
+          path: engine
+
+      - name: Build engine
+        run: pnpm run build
+        working-directory: engine
+
       - name: Install browsers
         run: pnpm --filter @nanoforge-dev/editor exec playwright install --with-deps chromium
 
       - name: Run end-to-end tests
         run: pnpm --filter @nanoforge-dev/editor test:e2e
+        env:
+          NANOFORGE_ENGINE: ${{ github.workspace }}/engine
 
       - name: Upload traces
         if: failure()

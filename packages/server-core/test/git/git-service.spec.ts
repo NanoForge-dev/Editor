@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { loadEnv } from '../../src/env/load-env';
 import { GitService } from '../../src/git/git-service';
+import { authEnv, withoutCredentials } from '../../src/git/git-token';
 import { parseStatus } from '../../src/git/parse-status';
 
 let workspace: string;
@@ -39,6 +40,45 @@ beforeAll(() => {
   git = new GitService(loadEnv({ NODE_ENV: 'test', FS_ROOT: workspace }, workspace));
 });
 afterAll(() => rmSync(workspace, { recursive: true, force: true }));
+
+describe('git environment', () => {
+  it('reads paths literally and ignores an inherited GIT_DIR', async () => {
+    const root = await repository('literal');
+    write(root, 'levels/[id].ts', 'x\n');
+    write(root, 'levels/i.ts', 'i\n');
+    write(root, 'levels/d.ts', 'd\n');
+    const previous = process.env.GIT_DIR;
+    process.env.GIT_DIR = join(workspace, 'elsewhere');
+    try {
+      await git.discard(root, ['levels/[id].ts']);
+    } finally {
+      if (previous === undefined) delete process.env.GIT_DIR;
+      else process.env.GIT_DIR = previous;
+    }
+    expect(existsSync(join(root, 'levels/[id].ts'))).toBe(false);
+    expect(existsSync(join(root, 'levels/i.ts'))).toBe(true);
+    expect(existsSync(join(root, 'levels/d.ts'))).toBe(true);
+  });
+
+  it('passes a token as an authorization header for its host only', () => {
+    expect(authEnv('https://git.test/ada/pong.git', 'secret')).toEqual({
+      GIT_CONFIG_COUNT: '1',
+      GIT_CONFIG_KEY_0: 'http.https://git.test/.extraHeader',
+      GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from('oauth2:secret').toString('base64')}`,
+    });
+    expect(authEnv('git@git.test:ada/pong.git', 'secret')).toEqual({});
+    expect(withoutCredentials('https://oauth2:secret@git.test/a.git')).toBe(
+      'https://git.test/a.git',
+    );
+  });
+
+  it('clones without saving a token in the remote', async () => {
+    const source = await repository('token-source');
+    const target = join(workspace, 'token-clone');
+    await git.clone(source, target, 'secret-token');
+    expect(readFileSync(join(target, '.git/config'), 'utf8')).not.toContain('secret-token');
+  });
+});
 
 describe('parseStatus', () => {
   it('reads the branch, the upstream counts and every kind of entry', () => {

@@ -40,8 +40,18 @@
 
   $effect(() => {
     if (!session.user) return;
-    editor.projects.recent().then((list) => (recent = list));
-    if (session.mode === 'ONLINE') projectsApi.gateways(null).then((list) => (gateways = list));
+    const failed = (reason: unknown) => {
+      error = reason instanceof Error ? reason.message : String(reason);
+    };
+    editor.projects
+      .recent()
+      .then((list) => (recent = list))
+      .catch(failed);
+    if (session.mode === 'ONLINE')
+      projectsApi
+        .gateways(null)
+        .then((list) => (gateways = list))
+        .catch(failed);
   });
 
   const run = async (label: string, task: () => Promise<string>) => {

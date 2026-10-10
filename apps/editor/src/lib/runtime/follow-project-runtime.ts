@@ -322,7 +322,8 @@ export const followProjectRuntime = (options: {
         const url = new URL(`/play/${project.id}`, location.origin);
         url.searchParams.set('app', app.id);
         const env = settings.get(RuntimeSettings.env);
-        if (Object.keys(env).length) url.hash = `env=${btoa(JSON.stringify(env))}`;
+        if (Object.keys(env).length)
+          url.hash = new URLSearchParams({ env: JSON.stringify(env) }).toString();
         window.open(url, '_blank', 'noopener');
       }),
     ],

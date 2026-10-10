@@ -59,6 +59,10 @@ export class CatalogService implements Disposable {
   private _timer: ReturnType<typeof setTimeout> | undefined;
   private _running: Promise<void> = Promise.resolve();
   private _disposed = false;
+  /** Called once nothing is scheduled nor running (`whenIdle`). */
+  private _idle: (() => void)[] = [];
+  /** Owners that did not register in time: not waited for again until the plugins change. */
+  private _late = new Set<string>();
   /** The catalog starts (and starts the code worker) when first read. */
   private _active = false;
 
@@ -84,6 +88,7 @@ export class CatalogService implements Disposable {
           const next = ownerPlugins(plugins);
           if (next === owners) return;
           owners = next;
+          this._late.clear();
           this._scheduleAll();
         }),
       );
@@ -122,18 +127,17 @@ export class CatalogService implements Disposable {
   }
 
   /** Resolves once pending extractions are done. */
-  async whenIdle(): Promise<void> {
-    while (this._timer !== undefined || this._dirty.size) {
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      await this._running;
-    }
-    await this._running;
+  whenIdle(): Promise<void> {
+    if (this._timer === undefined && !this._dirty.size) return this._running;
+    return new Promise((resolve) => this._idle.push(resolve));
   }
 
   dispose(): void {
     this._disposed = true;
     clearTimeout(this._timer);
+    this._timer = undefined;
     this._store.dispose();
+    this._settle();
   }
 
   private _activate(): void {
@@ -164,8 +168,17 @@ export class CatalogService implements Disposable {
       this._timer = undefined;
       this._running = this._running
         .then(() => this._run())
-        .catch((error: unknown) => this._options.logger?.error('Catalog update failed', error));
+        .catch((error: unknown) => this._options.logger?.error('Catalog update failed', error))
+        .finally(() => this._settle());
     }, delay);
+  }
+
+  /** Wakes `whenIdle` callers when nothing is left to do. */
+  private _settle(): void {
+    if (!this._disposed && (this._timer !== undefined || this._dirty.size)) return;
+    const waiting = this._idle;
+    this._idle = [];
+    for (const resolve of waiting) resolve();
   }
 
   private async _run(): Promise<void> {
@@ -204,20 +217,40 @@ export class CatalogService implements Disposable {
     });
   }
 
-  /** Waits (a few seconds at most) for the worker to register the owners plugins declare. */
+  /**
+   * Waits (a few seconds at most) for the worker to register the owners plugins declare, woken
+   * by each worker plugin load. Owners that never came are not waited for again until the plugin
+   * set changes.
+   */
   private async _expectedOwners(): Promise<void> {
     const plugins = this._options.plugins;
     if (!plugins) return;
-    const expected = ownerPlugins(plugins).split(',').filter(Boolean);
+    const expected = ownerPlugins(plugins)
+      .split(',')
+      .filter((name) => name && !this._late.has(name));
     const deadline = Date.now() + EXPECTED_OWNERS_TIMEOUT_MS;
-    while (Date.now() < deadline) {
+    for (;;) {
       const registered = new Set(
         (await this._options.code.itemOwners()).map((owner) => owner.name),
       );
-      if (expected.every((name) => registered.has(name))) return;
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      const missing = expected.filter((name) => !registered.has(name));
+      if (!missing.length) return;
+      const remaining = deadline - Date.now();
+      if (remaining <= 0 || this._disposed) {
+        for (const name of missing) this._late.add(name);
+        this._options.logger?.warn(`Item owners not registered in time: ${missing.join(', ')}`);
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        const timer = setTimeout(done, remaining);
+        const subscription = this._options.code.onDidChangeOwners(done);
+        function done() {
+          clearTimeout(timer);
+          subscription.dispose();
+          resolve();
+        }
+      });
     }
-    this._options.logger?.warn(`Item owners not registered in time: ${expected.join(', ')}`);
   }
 
   /** Apps, shared libraries and installed packages (walking `include`), with their files. */

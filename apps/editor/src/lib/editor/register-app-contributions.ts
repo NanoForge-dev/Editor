@@ -4,6 +4,7 @@ import {
   type Disposable,
   DisposableStore,
   derived,
+  switchObservable,
 } from '@nanoforge-dev/editor-kernel';
 import { ProjectServiceToken } from '@nanoforge-dev/editor-project';
 import type { SessionInfo } from '@nanoforge-dev/editor-protocol';
@@ -54,7 +55,13 @@ export const registerAppContributions = (services: Container, session: SessionIn
         id: 'core.project',
         alignment: 'left',
         order: 0,
-        text: derived([projects.current], (project) => project?.model.get().name ?? 'No project'),
+        text: switchObservable(
+          derived(
+            [projects.current],
+            (project) => project && derived([project.model], (model) => model.name),
+          ),
+          'No project',
+        ),
         tooltip: 'Close the project',
         command: 'project.close',
       },

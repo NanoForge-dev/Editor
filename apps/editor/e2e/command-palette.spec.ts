@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -17,7 +17,7 @@ const shortcut = (page: Page, action: string) =>
 const cursorLine = (page: Page) => page.locator('.monaco-editor .active-line-number');
 
 const open = async (page: Page) => {
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await resetLayout(page);

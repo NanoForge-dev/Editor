@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 
-import { resetLayout } from './helpers';
+import { openProject, resetLayout } from './helpers';
 import { expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -25,7 +25,7 @@ test('startup of a project: scripts loaded, code worker cold start, components l
     const context = await browser.newContext();
     const page = await context.newPage();
     const started = Date.now();
-    await page.goto(`/load?path=${project}`);
+    await openProject(page, project);
     await page.waitForURL(/\/project\//);
     await expect(page.locator('[data-nf-part="screen"]')).toBeVisible();
     add('workbench shown (ms)', Date.now() - started);

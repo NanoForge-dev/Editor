@@ -1,4 +1,8 @@
-import { DocumentServiceToken } from '@nanoforge-dev/editor-code';
+import {
+  CodeServiceToken,
+  DocumentServiceToken,
+  RENAME_PACKAGE_TRANSFORMER,
+} from '@nanoforge-dev/editor-code';
 import type { HistoryContext, HistoryService } from '@nanoforge-dev/editor-history';
 import {
   type Container,
@@ -258,6 +262,43 @@ export class WorkspaceActions implements Disposable {
     this._store.dispose();
   }
 
+  /**
+   * The project's files for an operation. With the code worker, imports are rewritten by reading
+   * the code, through the open documents (saved after each change, as a multi-file operation must).
+   */
+  private _io(project: ClientProject): WorkspaceIo {
+    const io = workspaceIo(project);
+    const code = this._options.services.tryGet(CodeServiceToken);
+    const documents = this._options.services.tryGet(DocumentServiceToken);
+    if (!code || !documents) return io;
+    const saved = async (path: string) => {
+      if (documents.get(path)) await documents.save(path);
+    };
+    return {
+      ...io,
+      renameImports: async (path, from, to) => {
+        const command = await code.edit(
+          path,
+          RENAME_PACKAGE_TRANSFORMER,
+          { from, to },
+          {
+            label: `Rename ${from}`,
+          },
+        );
+        if (!command) return undefined;
+        await command.do();
+        await saved(path);
+        return {
+          undo: async () => {
+            await command.undo();
+            await saved(path);
+          },
+          isValid: async () => (await command.isValid?.()) ?? true,
+        };
+      },
+    };
+  }
+
   private _project(): ClientProject | undefined {
     return this._options.projects.current.get();
   }
@@ -281,7 +322,7 @@ export class WorkspaceActions implements Disposable {
   ): Promise<boolean> {
     const project = this._project();
     if (!project) return false;
-    const io = workspaceIo(project);
+    const io = this._io(project);
     let undo: Undo | undefined;
     try {
       await this._stack.push({

@@ -113,8 +113,9 @@ export class HistoryService implements Disposable {
 
   /**
    * Keeps the history of the matching contexts in a store: restored when such a context is
-   * registered, saved when it changes. Only histories whose steps are all serializable are
-   * saved.
+   * registered (under the steps made meanwhile), saved when it changes and when the context
+   * goes away. Only histories whose steps are all serializable are saved; otherwise the stored
+   * history stays as it is.
    */
   persist(match: (id: string) => boolean, store: HistoryStore): Disposable {
     const entry = { match, store };
@@ -161,17 +162,19 @@ export class HistoryService implements Disposable {
   private _persistContext(context: HistoryContext, store: HistoryStore): Disposable {
     let restored = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    const write = () => {
+      timer = undefined;
+      const entries: PersistedEntry[] = [];
+      for (const entry of context.stack.state.past) {
+        const command = entry.command.serialize?.();
+        if (!command) return;
+        entries.push({ command, origin: entry.origin, time: entry.time });
+      }
+      void store.save(context.id, entries).catch(() => undefined);
+    };
     const save = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        const entries: PersistedEntry[] = [];
-        for (const entry of context.stack.state.past) {
-          const command = entry.command.serialize?.();
-          if (!command) return; // not all serializable: keep the stored history as is
-          entries.push({ command, origin: entry.origin, time: entry.time });
-        }
-        void store.save(context.id, entries).catch(() => undefined);
-      }, 300);
+      timer = setTimeout(write, 300);
     };
     void store
       .load(context.id)
@@ -183,24 +186,26 @@ export class HistoryService implements Disposable {
             entry.command.label,
           ),
         }));
-        if (
-          commands.length &&
-          commands.every((entry) => entry.command) &&
-          !context.stack.state.past.length
-        ) {
+        if (commands.length && commands.every((entry) => entry.command)) {
           await context.stack.restore(
             commands as { command: HistoryCommand; origin: CommandOrigin; time: number }[],
           );
         }
       })
       .catch(() => undefined)
-      .finally(() => (restored = true));
+      .finally(() => {
+        restored = true;
+        if (context.stack.state.past.length) save();
+      });
     const subscription = context.stack.onDidChange(() => {
       if (restored) save();
     });
     return {
       dispose: () => {
-        clearTimeout(timer);
+        if (timer !== undefined) {
+          clearTimeout(timer);
+          write();
+        }
         subscription.dispose();
       },
     };

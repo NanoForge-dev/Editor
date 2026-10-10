@@ -13,6 +13,10 @@ export const test = base.extend<{ pageErrors: string[] }>({
   pageErrors: [
     async ({ context }, use) => {
       const errors: string[] = [];
+      if (process.env.E2E_CONSOLE)
+        context.on('console', (message) =>
+          console.log(`[page ${message.type()}] ${message.text()}`),
+        );
       context.on('weberror', (webError) => {
         const { message } = webError.error();
         if (!IGNORED.has(message)) errors.push(message);

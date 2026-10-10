@@ -48,6 +48,8 @@ interface ActiveServerPlugin {
 /** Runs `entry.server` of enabled plugins inside the editor server (trusted plugins). */
 export class ServerPluginHost implements Disposable {
   private readonly _active = new Map<string, ActiveServerPlugin>();
+  /** Activations in progress: a second request for the same plugin waits for the first one. */
+  private readonly _activating = new Map<string, Promise<void>>();
 
   constructor(
     private readonly _router: RpcRouter<RequestContext>,
@@ -59,10 +61,40 @@ export class ServerPluginHost implements Disposable {
     return [...this._active.keys()];
   }
 
-  async activate(plugin: LocatedPlugin): Promise<void> {
-    const manifest = plugin.manifest;
-    const entry = manifest?.entry.server;
-    if (!manifest || !entry || this._active.has(manifest.name)) return;
+  activate(plugin: LocatedPlugin): Promise<void> {
+    const name = plugin.manifest?.name;
+    if (!name || !plugin.manifest?.entry.server || this._active.has(name)) return Promise.resolve();
+    let activating = this._activating.get(name);
+    if (!activating) {
+      activating = this._activate(plugin).finally(() => this._activating.delete(name));
+      this._activating.set(name, activating);
+    }
+    return activating;
+  }
+
+  async deactivate(name: string): Promise<void> {
+    await this._activating.get(name);
+    const plugin = this._active.get(name);
+    if (!plugin) return;
+    this._active.delete(name);
+    try {
+      await plugin.module.deactivate?.();
+    } finally {
+      plugin.store.dispose();
+    }
+  }
+
+  dispose(): void {
+    for (const name of [...this._active.keys()]) {
+      this.deactivate(name).catch((error: unknown) =>
+        this._logs.getLogger(`${name}(server)`).error('Server entry failed to deactivate', error),
+      );
+    }
+  }
+
+  private async _activate(plugin: LocatedPlugin): Promise<void> {
+    const manifest = plugin.manifest!;
+    const entry = manifest.entry.server!;
     const logger = this._logs.getLogger(`${manifest.name}(server)`);
     const store = new DisposableStore();
     const namespace = pluginNamespace(manifest.name);
@@ -96,20 +128,5 @@ export class ServerPluginHost implements Disposable {
       store.dispose();
       logger.error('Server entry failed to activate', error);
     }
-  }
-
-  async deactivate(name: string): Promise<void> {
-    const plugin = this._active.get(name);
-    if (!plugin) return;
-    this._active.delete(name);
-    try {
-      await plugin.module.deactivate?.();
-    } finally {
-      plugin.store.dispose();
-    }
-  }
-
-  dispose(): void {
-    for (const name of [...this._active.keys()]) void this.deactivate(name);
   }
 }

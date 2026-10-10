@@ -2,6 +2,8 @@ import type { CommandOrigin, HistoryCommand } from '@nanoforge-dev/editor-histor
 import {
   type Disposable,
   DisposableStore,
+  Emitter,
+  type Event,
   type Logger,
   createToken,
 } from '@nanoforge-dev/editor-kernel';
@@ -10,7 +12,7 @@ import { CodeContract } from '@nanoforge-dev/editor-protocol';
 import type { RpcClient } from '@nanoforge-dev/editor-rpc';
 
 import type { DiagnosticsService } from '../diagnostics/diagnostics-service';
-import type { DocumentService } from '../document/document-service';
+import { type DocumentService, fingerprint } from '../document/document-service';
 import { CODE_FILE } from '../engine/code-file.const';
 import type { CodeDiagnostic, CodeSymbol, TextEdit } from '../engine/engine.type';
 import type { MetaRequest, MetaResponse } from '../engine/extract-meta';
@@ -68,12 +70,26 @@ export class CodeService implements Disposable {
   private _projectChecks = 0;
   private _projectCheckRun = 0;
   private _projectCheckTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly _onDidChangeOwners = new Emitter<void>();
+
+  /** A worker plugin was loaded or unloaded (item owners may have changed). */
+  readonly onDidChangeOwners: Event<void> = this._onDidChangeOwners.event;
 
   constructor(private readonly _options: CodeServiceOptions) {}
 
-  /** The engine, started (and the project mirrored) on first call. */
+  /**
+   * The engine, started (and the project mirrored) on first call. A start that fails, or a
+   * worker that crashes, is forgotten: the next call starts a new worker.
+   */
   engine(): Promise<Remote<EngineApi>> {
-    this._engine ??= this._start();
+    if (!this._engine) {
+      const started = new DisposableStore();
+      const engine = this._start(started);
+      this._engine = engine;
+      engine.catch(() => {
+        if (this._engine === engine) this._stop(started);
+      });
+    }
     return this._engine;
   }
 
@@ -97,8 +113,15 @@ export class CodeService implements Disposable {
     op: unknown,
     options: { label: string; origin?: CommandOrigin; mergeKey?: string },
   ): Promise<HistoryCommand | undefined> {
-    const edits = await this.transform(path, transformerId, op);
-    return edits.length ? this._options.documents.editCommand(path, edits, options) : undefined;
+    const engine = await this.engine();
+    const text = await this._options.documents.getText(path);
+    await engine.setFiles([{ path, text }]);
+    const edits = await engine.transform(path, transformerId, op);
+    if (!edits.length) return undefined;
+    return this._options.documents.editCommand(path, edits, {
+      ...options,
+      basedOn: fingerprint(text),
+    });
   }
 
   /** Checks files now and publishes TypeScript problems. */
@@ -190,12 +213,20 @@ export class CodeService implements Disposable {
   /** Loads a plugin's worker entry (`entry.worker`); reloading replaces its registrations. */
   async loadWorkerPlugin(owner: string, url: string): Promise<void> {
     this._plugins.set(owner, url);
-    if (this._engine) await (await this._engine).loadPlugin(owner, url);
+    try {
+      if (this._engine) await (await this._engine).loadPlugin(owner, url);
+    } finally {
+      this._onDidChangeOwners.fire();
+    }
   }
 
   async unloadWorkerPlugin(owner: string): Promise<void> {
     this._plugins.delete(owner);
-    if (this._engine) (await this._engine).unloadPlugin(owner);
+    try {
+      if (this._engine) await (await this._engine).unloadPlugin(owner);
+    } finally {
+      this._onDidChangeOwners.fire();
+    }
   }
 
   dispose(): void {
@@ -203,6 +234,7 @@ export class CodeService implements Disposable {
     clearTimeout(this._projectCheckTimer);
     this._projectCheckRun++;
     this._store.dispose();
+    this._onDidChangeOwners.dispose();
     this._endpoint?.terminate?.();
   }
 
@@ -213,19 +245,38 @@ export class CodeService implements Disposable {
     return engine;
   }
 
-  private async _start(): Promise<Remote<EngineApi>> {
+  /** Stops a worker that failed, and what was set up for it. */
+  private _stop(started: DisposableStore): void {
+    this._engine = undefined;
+    this._store.delete(started);
+    started.dispose();
+    this._endpoint?.terminate?.();
+    this._endpoint = undefined;
+  }
+
+  private async _start(started: DisposableStore): Promise<Remote<EngineApi>> {
     mark('nf:code:created');
     const endpoint = this._options.createWorker();
     this._endpoint = endpoint;
+    this._store.add(started);
+    const onError = () => {
+      if (this._endpoint === endpoint) this._stop(started);
+    };
+    endpoint.addEventListener('error', onError);
+    started.add({ dispose: () => endpoint.removeEventListener('error', onError) });
     const host: EngineHostApi = {
       resolveTypes: (module, from) =>
         this._options.rpc
           .api(CodeContract)
           .typeFiles({ project: this._options.projectId, from, module }),
+      typesFailed: (module, from, message) =>
+        this._options.logger?.warn(
+          `The types of ${module} (imported by ${from}) could not be read: ${message}`,
+        ),
     };
-    this._store.add({ dispose: expose(host, endpoint) });
+    started.add({ dispose: expose(host, endpoint) });
     const engine = wrap<EngineApi>(endpoint);
-    this._store.add({ dispose: () => engine.dispose() });
+    started.add({ dispose: () => engine.dispose() });
 
     const syncTsconfig = async () =>
       engine.setTsconfig(
@@ -235,7 +286,7 @@ export class CodeService implements Disposable {
       );
     await syncTsconfig();
     mark('nf:code:ready', 'nf:code:created');
-    this._store.add(
+    started.add(
       this._options.fs.onDidChange((changes) => {
         if (changes.some((change) => change.path === TSCONFIG))
           void syncTsconfig().catch((error: unknown) =>
@@ -257,7 +308,7 @@ export class CodeService implements Disposable {
       await engine.setFiles(batch);
     }
     mark('nf:code:mirrored', 'nf:code:created');
-    this._store.add(
+    started.add(
       this._options.fs.onDidChange((changes) => {
         void (async () => {
           const deleted = changes
@@ -288,7 +339,7 @@ export class CodeService implements Disposable {
         );
       }),
     );
-    this._store.add(
+    started.add(
       this._options.documents.onDidChange(({ uri }) => {
         if (!isCodeFile(uri)) return;
         void this._options.documents
@@ -307,6 +358,7 @@ export class CodeService implements Disposable {
           this._options.logger?.error(`Worker plugin ${owner} failed`, error),
         );
     }
+    if (this._plugins.size) this._onDidChangeOwners.fire();
     return engine;
   }
 

@@ -43,6 +43,23 @@ describe('ProjectFileSystem', () => {
     ]);
   });
 
+  it('never reaches a .git folder', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, '.git/hooks'), { recursive: true });
+    writeFileSync(join(root, '.git/config'), '[core]\n');
+    expect((await fs.list('')).map((entry) => entry.path)).toEqual(['src']);
+    await expect(fs.read('.git/config')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.write('.git/hooks/post-checkout', 'x')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(fs.write('libs/x/.GIT/config', 'x')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(fs.rename('src', '.git/src')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.copy('.git', 'leak')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(existsSync(join(root, '.git/hooks/post-checkout'))).toBe(false);
+  });
+
   it('writes atomically with optimistic concurrency', async () => {
     const { root, fs } = project();
     const { hash } = await fs.read('src/main.ts');
@@ -156,5 +173,24 @@ describe('ProjectWatcher', () => {
       { type: 'changed', kind: 'file', path: 'src/main.ts' },
       { type: 'created', kind: 'file', path: 'src/new.ts' },
     ]);
+  });
+
+  it('never follows a link that leaves the project', async () => {
+    const { root, fs } = project();
+    const outside = mkdtempSync(join(tmpdir(), 'nf-outside-'));
+    roots.push(outside);
+    writeFileSync(join(outside, 'secret.txt'), 'x');
+    symlinkSync(outside, join(root, 'link'));
+    const watcher = new ProjectWatcher(fs.jail);
+    const batches: FileChange[][] = [];
+    const subscription = watcher.onDidChange((changes) => batches.push(changes));
+    await watcher.ready;
+    writeFileSync(join(outside, 'later.txt'), 'x');
+    writeFileSync(join(root, 'src/new.ts'), 'x');
+    const start = Date.now();
+    while (!batches.length && Date.now() - start < 1000) await new Promise((r) => setTimeout(r, 5));
+    await new Promise((r) => setTimeout(r, 150));
+    subscription.dispose();
+    expect(batches.flat().map((change) => change.path)).toEqual(['src/new.ts']);
   });
 });

@@ -18,13 +18,16 @@ Nothing is asked for **per-user project settings** of hosted editors (`local.jso
 
 All with the `Api-Key` header. "Bearer" means `Authorization: Bearer <accessToken>` of the signed-in user.
 
-| Call                              | Auth   | The editor reads                                                                                                             |
-| --------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `POST /auth/refresh-token`        | none   | body `{ refreshToken }` → `{ accessToken, refreshToken, tokenExpiresAt }`; `401` signs the user out                          |
-| `GET /projects`                   | Bearer | an array of projects: `id`, `code`, `name`, `description`, `gatewayProjectRegistryUrl`, `gatewayProjectRegistryMetadata.dir` |
-| `GET /editor/projects/:projectId` | Bearer | the same fields plus `token` (to clone and push the project's git repository)                                                |
+| Call                              | Auth   | The editor reads                                                                                                                               |
+| --------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /users/me`                   | Bearer | `id`, `username`, `email`, `firstName`, `lastName`: who the cookie's access token belongs to (the editor trusts no token it did not ask about) |
+| `POST /auth/refresh-token`        | none   | body `{ refreshToken }` → `{ accessToken, refreshToken, tokenExpiresAt }`; `401` signs the user out                                            |
+| `GET /projects`                   | Bearer | an array of projects: `id`, `code`, `name`, `description`, `gatewayProjectRegistryUrl`, `gatewayProjectRegistryMetadata.dir`                   |
+| `GET /editor/projects/:projectId` | Bearer | the same fields plus `token` (to clone and push the project's git repository)                                                                  |
 
-A `401` on any authenticated call makes the editor refresh the token pair once and retry.
+A `401` on any authenticated call makes the editor refresh the token pair once and retry (one refresh at a time per session: a rotated refresh token is spent by the first).
+
+In the API, `@Get('me')` must be declared before `@Get(':id')` in the users controller, or `GET /users/me` is read as the user of id `me`.
 
 Sign-in itself is not the editor's: the projects website sets the cookies the hosted editor reads.
 

@@ -510,12 +510,6 @@ importers:
         specifier: workspace:*
         version: link:../kernel
     devDependencies:
-      '@nanoforge-dev/editor-project':
-        specifier: workspace:*
-        version: link:../project
-      '@nanoforge-dev/editor-server-core':
-        specifier: workspace:*
-        version: link:../server-core
       typescript:
         specifier: catalog:build
         version: 6.0.3

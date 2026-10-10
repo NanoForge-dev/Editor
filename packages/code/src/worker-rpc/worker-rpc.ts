@@ -5,8 +5,18 @@
 export interface MessageEndpoint {
   postMessage(message: unknown): void;
   addEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  addEventListener(type: 'error' | 'messageerror', listener: (event: Event) => void): void;
   removeEventListener(type: 'message', listener: (event: MessageEvent) => void): void;
+  removeEventListener(type: 'error' | 'messageerror', listener: (event: Event) => void): void;
   start?(): void;
+}
+
+/** A worker failed (crashed, or sent what could not be read): its calls will never answer. */
+export class WorkerFailedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkerFailedError';
+  }
 }
 
 type AnyFunction = (...args: never[]) => unknown;
@@ -61,21 +71,42 @@ export const expose = (api: object, endpoint: MessageEndpoint): (() => void) => 
   return () => endpoint.removeEventListener('message', listener);
 };
 
-/** Calls the API exposed on the other side of the endpoint. */
+/**
+ * Calls the API exposed on the other side of the endpoint. When the endpoint reports an error
+ * (the worker crashed) every pending call fails with a `WorkerFailedError`, as does a call that
+ * gets no answer within `timeoutMs` (default 2 minutes).
+ */
 export const wrap = <T extends object>(
   endpoint: MessageEndpoint,
+  options: { timeoutMs?: number } = {},
 ): Remote<T> & { dispose(): void } => {
   let nextId = 1;
   const pending = new Map<
     number,
-    { resolve: (value: unknown) => void; reject: (error: Error) => void }
+    {
+      resolve: (value: unknown) => void;
+      reject: (error: Error) => void;
+      timer: ReturnType<typeof setTimeout>;
+    }
   >();
+  const failAll = (error: Error) => {
+    for (const call of pending.values()) {
+      clearTimeout(call.timer);
+      call.reject(error);
+    }
+    pending.clear();
+  };
+  const onError = (event: Event) => {
+    const detail = (event as ErrorEvent).message;
+    failAll(new WorkerFailedError(`The code worker failed${detail ? `: ${detail}` : ''}`));
+  };
   const listener = (event: MessageEvent) => {
     const message = event.data as Response;
     if (message?.rpc !== 'result') return;
     const call = pending.get(message.id);
     if (!call) return;
     pending.delete(message.id);
+    clearTimeout(call.timer);
     if (message.error) {
       call.reject(Object.assign(new Error(message.error.message), message.error));
     } else {
@@ -83,21 +114,29 @@ export const wrap = <T extends object>(
     }
   };
   endpoint.addEventListener('message', listener);
+  endpoint.addEventListener('error', onError);
+  endpoint.addEventListener('messageerror', onError);
   endpoint.start?.();
+  const timeoutMs = options.timeoutMs ?? 120_000;
   return new Proxy({} as Remote<T> & { dispose(): void }, {
     get: (_target, property) => {
       if (property === 'dispose') {
         return () => {
           endpoint.removeEventListener('message', listener);
-          for (const call of pending.values()) call.reject(new Error('Worker connection closed'));
-          pending.clear();
+          endpoint.removeEventListener('error', onError);
+          endpoint.removeEventListener('messageerror', onError);
+          failAll(new Error('Worker connection closed'));
         };
       }
       if (typeof property !== 'string' || property === 'then') return undefined;
       return (...args: unknown[]) =>
         new Promise((resolve, reject) => {
           const id = nextId++;
-          pending.set(id, { resolve, reject });
+          const timer = setTimeout(() => {
+            pending.delete(id);
+            reject(new WorkerFailedError(`The code worker did not answer ${property} in time`));
+          }, timeoutMs);
+          pending.set(id, { resolve, reject, timer });
           endpoint.postMessage({ rpc: 'call', id, method: property, args } satisfies Request);
         });
     },

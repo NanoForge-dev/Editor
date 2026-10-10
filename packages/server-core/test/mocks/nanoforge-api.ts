@@ -1,6 +1,6 @@
 /**
  * In-memory NanoForge API implementing what the editor calls (docs/api/README.md): the settings
- * sync contract, token refresh and the project endpoints. Used as `fetch` by the ApiClient in
+ * sync contract, token refresh, the current user and the project endpoints. Used as `fetch` by the ApiClient in
  * tests, and as the default target of the contract tests (`test/contract`), which can run
  * against a staging API instead.
  */
@@ -82,6 +82,8 @@ export const createMockApi = (options: MockApiOptions = {}) => {
         return json(200, { revision: next.revision });
       }
     }
+    if (url.pathname === '/users/me' && method === 'GET')
+      return json(200, { id: 'user-1', username: 'ada', email: 'ada@nanoforge.test' });
     if (url.pathname === '/projects' && method === 'GET') return json(200, [PROJECT]);
     if (url.pathname === `/editor/projects/${PROJECT.id}` && method === 'GET')
       return json(200, PROJECT);

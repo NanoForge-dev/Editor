@@ -9,6 +9,7 @@ import {
   CODE_FILE,
   CodeEngine,
   CodeError,
+  RENAME_PACKAGE_TRANSFORMER,
   type TransformContext,
   literalToValue,
   valueToLiteral,
@@ -46,6 +47,35 @@ const renameConst = ({ file, edit }: TransformContext, op: unknown) => {
 };
 
 describe('CodeEngine', () => {
+  it('renames the imports of a package, not its look-alikes in comments and strings', () => {
+    const engine = new CodeEngine();
+    const text = [
+      '// from "@pong/shared"',
+      'import { a } from "@pong/shared/a";',
+      "export * from '@pong/shared';",
+      'const lazy = import("@pong/shared/b");',
+      'const label = "@pong/shared";',
+      'import tools from "@pong/shared-tools";',
+      '',
+    ].join('\n');
+    engine.setFiles([{ path: 'src/main.ts', text }]);
+    const edits = engine.transform('src/main.ts', RENAME_PACKAGE_TRANSFORMER, {
+      from: '@pong/shared',
+      to: '@pong/common',
+    });
+    expect(applyTextEdits(text, edits).text).toBe(
+      [
+        '// from "@pong/shared"',
+        'import { a } from "@pong/common/a";',
+        "export * from '@pong/common';",
+        'const lazy = import("@pong/common/b");',
+        'const label = "@pong/shared";',
+        'import tools from "@pong/shared-tools";',
+        '',
+      ].join('\n'),
+    );
+  });
+
   it('keeps every pong-network file byte-identical and a no-op transform yields no edit', () => {
     const engine = new CodeEngine();
     const files = pong();

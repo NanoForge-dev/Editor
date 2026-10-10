@@ -63,6 +63,8 @@ npx playwright test [spec…] --reporter=line
 - `E2E_EXTRA_PLUGINS=<built plugin folder>` adds a dev plugin to the e2e editor.
 - SDK public API snapshot: after adding SDK exports, run `cd packages/sdk && npx vitest run -u`, and check that the diff shows only what you added.
 - E2E specs import `test` and `expect` from `./test` (`e2e/test.ts`), not from `@playwright/test`: its fixture fails a test when a page throws an uncaught error. Known noise goes in its `IGNORED` list.
+- E2E specs open projects with `openProject(page, path)` (`e2e/helpers.ts`): `/load?path=` asks before opening a folder that is not an exact recent path, and a relative path always asks.
+- The editor server answers only to loopback host names and `ALLOWED_HOSTS` (DNS rebinding guard): a dev server reached by another name needs it.
 - To debug a failed e2e test, read `test-results/<test>/error-context.md`. For a screenshot, unzip `trace.zip` and open the last frame in `screencast/`.
 - The CLI repo needs `pnpm --filter @nanoforge-dev/config build` before `pnpm build`.
 
@@ -271,6 +273,7 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 | 11    | Done: console + problems, command palette + keyboard shortcuts, inspectors, git (after IntelliJ's windows, VCS menu), marketplace (plugins in Settings, Packages dialog, on a folder registry); last full e2e run 60/60      |
 | 12    | Done: `docs/api/` hand-off (registry after npm's routes, settings sync, account plugin list as a settings key), contract tests (stand-ins and `CONTRACT_*` targets), `API_FEATURES` flags; last full e2e run 60/60           |
 | 13    | Done: plugin guide and `nf create plugin`, user docs, performance pass (compiler out of the page bundle), `CHANGELOG-v2.md`. Not released: versions unchanged, nothing tagged or published                                   |
+| 14    | Planned: hosted editor parity (sandboxed runtime, dependencies, networked games, push from a hosted editor). Until then the runtime stays off in ONLINE                                                                      |
 
 ### Open design questions (ask the user)
 

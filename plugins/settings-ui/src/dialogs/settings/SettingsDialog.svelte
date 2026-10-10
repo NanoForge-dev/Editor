@@ -96,7 +96,10 @@
   const categories = categoryTree(
     host
       ? definitions.filter(
-          (definition) => definition !== pluginsDisabled && definition.key !== 'plugins.account',
+          (definition) =>
+            definition !== pluginsDisabled &&
+            definition.key !== 'plugins.account' &&
+            definition.key !== 'plugins.trustedProjects',
         )
       : definitions,
   );

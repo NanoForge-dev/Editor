@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { HistoryCommand } from '../../src';
+import { type HistoryCommand, compositeCommand } from '../../src';
 import { cell, setup } from '../fixtures/history';
 
 describe('HistoryStack', () => {
@@ -139,5 +139,38 @@ describe('HistoryStack', () => {
     expect(state.value).toBe(1);
     expect(stack.state.past).toHaveLength(0);
     expect(invalidated).toHaveBeenCalledWith({ contextId: 'scene', reason: 'invalid-command' });
+  });
+
+  it('undoes a merged step entirely, the last change first', async () => {
+    const { stack } = setup();
+    const text = { value: '' };
+    const insert = (chars: string): HistoryCommand => ({
+      label: 'type',
+      mergeKey: 'typing',
+      do: () => void (text.value += chars),
+      undo: () => void (text.value = text.value.slice(0, -chars.length)),
+    });
+    await stack.push(insert('ab'));
+    await stack.push(insert('cd'));
+    expect(stack.state.past).toHaveLength(1);
+    await stack.undo();
+    expect(text.value).toBe('');
+    await stack.redo();
+    expect(text.value).toBe('abcd');
+  });
+
+  it('reverts the parts of a group already applied when one fails', async () => {
+    const { stack } = setup();
+    const { state, set } = cell(0);
+    const failing: HistoryCommand = {
+      label: 'fail',
+      do: () => Promise.reject(new Error('disk full')),
+      undo: () => undefined,
+    };
+    await expect(stack.push(compositeCommand('move', [set(1), failing]))).rejects.toThrow(
+      'disk full',
+    );
+    expect(state.value).toBe(0);
+    expect(stack.state.past).toHaveLength(0);
   });
 });

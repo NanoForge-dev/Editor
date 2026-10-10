@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { openProject } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -75,7 +76,7 @@ test('offers to add the editor library to a game that does not register it', asy
   );
   expect(readFileSync(files[0]!, 'utf8')).not.toContain('EditorLibrary');
   try {
-    await page.goto('/load?path=game');
+    await openProject(page, 'game');
     await page.waitForURL(/\/project\//);
     await toolbar(page, 'Play').click();
     const warning = page

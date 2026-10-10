@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { openProject } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -18,7 +19,7 @@ const editorText = (page: Page) =>
     .then((text) => text.replace(/\u00a0/g, ' '));
 
 const openScratch = async (page: Page, name: string) => {
-  await page.goto('/load?path=game');
+  await openProject(page, 'game');
   await page.waitForURL(/\/project\//);
   for (const folder of ['apps', 'client', 'src', 'scratch']) {
     await page.getByRole('treeitem', { name: folder, exact: true }).click();

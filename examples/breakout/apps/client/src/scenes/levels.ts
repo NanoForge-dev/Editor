@@ -780,7 +780,7 @@ export class Level3 extends Level {
       ),
     );
     const brick23 = registry.spawnEntity();
-    registry.addComponent(brick23, new Position(793, 232));
+    registry.addComponent(brick23, new Position(793, 237));
     registry.addComponent(brick23, new Box(141, 26));
     registry.addComponent(brick23, new Brick(2, 20));
     registry.addComponent(

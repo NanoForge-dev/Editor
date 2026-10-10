@@ -3,13 +3,32 @@ import { join } from 'node:path';
 
 const IGNORED = new Set(['node_modules', '.git', '.nanoforge', 'dist']);
 
-const segmentRegex = (segment: string) =>
-  new RegExp(
-    `^${segment
-      .split('*')
-      .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
-      .join('[^/]*')}$`,
-  );
+/**
+ * Whether `name` matches a segment pattern where `*` is any run of characters. Linear in time
+ * (the patterns come from the project's config: a regex of `a*a*a*b` backtracks).
+ */
+export const matchSegment = (pattern: string, name: string): boolean => {
+  let p = 0;
+  let n = 0;
+  let star = -1;
+  let resume = 0;
+  while (n < name.length) {
+    if (p < pattern.length && pattern[p] !== '*' && pattern[p] === name[n]) {
+      p++;
+      n++;
+    } else if (p < pattern.length && pattern[p] === '*') {
+      star = p++;
+      resume = n;
+    } else if (star >= 0) {
+      p = star + 1;
+      n = ++resume;
+    } else {
+      return false;
+    }
+  }
+  while (pattern[p] === '*') p++;
+  return p === pattern.length;
+};
 
 /**
  * Expands workspace `packages` patterns (`apps/*`, `packages/**`, `libs/shared`) into
@@ -37,9 +56,8 @@ export const expandDirectoryGlobs = async (
         await walk(join(relative, segment), rest);
       return;
     }
-    const regex = segmentRegex(segment);
     for (const child of await children(root, relative)) {
-      if (regex.test(child)) await walk(join(relative, child), rest);
+      if (matchSegment(segment, child)) await walk(join(relative, child), rest);
     }
   };
   for (const pattern of patterns) {

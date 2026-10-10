@@ -47,7 +47,6 @@ describe('public API', () => {
         "EditorServices",
         "Emitter",
         "Events",
-        "FileHistoryTracker",
         "GitContract",
         "HISTORY_CONTEXT_KEY",
         "HistoryServiceToken",

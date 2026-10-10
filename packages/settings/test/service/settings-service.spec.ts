@@ -21,6 +21,24 @@ const setup = async () => {
 };
 
 describe('SettingsService', () => {
+  it('refuses a store that finishes initializing after another one was attached', async () => {
+    const registry = new SettingsRegistry();
+    registry.register(fontSize);
+    const service = new SettingsService(registry);
+    const slow = new MemoryScopeStore({ 'editor.fontSize': 11 });
+    let release!: () => void;
+    const initialize = slow.initialize.bind(slow);
+    slow.initialize = async () => {
+      await new Promise<void>((resolve) => (release = resolve));
+      await initialize();
+    };
+    const first = service.setStore('project', slow);
+    await service.setStore('project', new MemoryScopeStore({ 'editor.fontSize': 12 }));
+    release();
+    await expect(first).rejects.toThrow(/already attached/);
+    expect(service.get(fontSize)).toBe(12);
+  });
+
   it('applies scope precedence', async () => {
     const { service } = await setup();
     expect(service.get(fontSize)).toBe(13);

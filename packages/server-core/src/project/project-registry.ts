@@ -1,10 +1,13 @@
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 import {
   type Disposable,
   DisposableStore,
+  Emitter,
+  type Event,
   type Logger,
   type Observable,
   ObservableValue,
@@ -15,6 +18,7 @@ import { RpcError } from '@nanoforge-dev/editor-rpc';
 import type { ApiClient } from '../api/api-client';
 import type { EditorEnv } from '../env/editor-env.type';
 import { NFIGNORE_FILE, ProjectFileSystem } from '../fs/fs-service';
+import { PathJail } from '../fs/path-jail';
 import { ProjectWatcher } from '../fs/watcher';
 import type { GitService } from '../git/git-service';
 import type { Session } from '../session/session-store';
@@ -24,6 +28,7 @@ import { type ConfigLoader, executingConfigLoader, staticConfigLoader } from './
 import { discoverProject } from './discovery';
 
 const MAX_RECENT = 20;
+const GATEWAY_ID = /^[\w-]{1,60}$/;
 const CONFIG_CHANGE = /(^|\/)(nanoforge\.config\.[mc]?[jt]s|package\.json)$/;
 
 /** An opened project: its files, watcher and live model. */
@@ -103,8 +108,15 @@ interface RecentStore {
  */
 export class ProjectRegistry implements Disposable {
   private readonly _projects = new Map<string, OpenProject>();
+  /** When each open project was last asked for. */
+  private readonly _lastUsed = new Map<string, number>();
   private readonly _opening = new KeyedMutex();
+  private readonly _recentLock = new KeyedMutex();
   private readonly _loader: ConfigLoader;
+  private readonly _onDidClose = new Emitter<string>();
+
+  /** A project was closed (nobody uses it anymore): its runtime can stop too. */
+  readonly onDidClose: Event<string> = this._onDidClose.event;
 
   constructor(
     private readonly _env: EditorEnv,
@@ -121,6 +133,7 @@ export class ProjectRegistry implements Disposable {
         ? await this._openLocal(ref.path)
         : await this._openGateway(session, ref.gatewayId);
     session.projects.add(project.id);
+    this._lastUsed.set(project.id, Date.now());
     if (session.user) await this._remember(session.user, project);
     return project;
   }
@@ -130,7 +143,33 @@ export class ProjectRegistry implements Disposable {
     const project = this._projects.get(id);
     const allowed = session.mode === 'OFFLINE' || session.projects.has(id);
     if (!project || !allowed) throw new RpcError('NOT_FOUND', `Project ${id} is not open`);
+    this._lastUsed.set(id, Date.now());
     return project;
+  }
+
+  /** Ids of the open projects. */
+  get openIds(): string[] {
+    return [...this._projects.keys()];
+  }
+
+  /**
+   * Closes the projects nobody uses: no `inUse` (a connected editor holds it) and not asked for
+   * during `idleMs`. Each one keeps a watcher, so a hosted server must not keep them all.
+   */
+  sweep(inUse: (id: string) => boolean, idleMs: number, now = Date.now()): void {
+    for (const id of this.openIds) {
+      if (!inUse(id) && now - (this._lastUsed.get(id) ?? 0) > idleMs) this.close(id);
+    }
+  }
+
+  close(id: string): void {
+    const project = this._projects.get(id);
+    if (!project) return;
+    this._projects.delete(id);
+    this._lastUsed.delete(id);
+    project.dispose();
+    this._logger.info(`Closed project ${project.name} (${id})`);
+    this._onDidClose.fire(id);
   }
 
   async recent(user: User): Promise<RecentProject[]> {
@@ -141,15 +180,16 @@ export class ProjectRegistry implements Disposable {
     }));
   }
 
-  async forget(user: User, id: string): Promise<void> {
-    const store = await this._readRecent();
-    store[user.id] = (store[user.id] ?? []).filter((entry) => entry.id !== id);
-    await this._writeRecent(store);
+  forget(user: User, id: string): Promise<void> {
+    return this._updateRecent((store) => {
+      store[user.id] = (store[user.id] ?? []).filter((entry) => entry.id !== id);
+    });
   }
 
   dispose(): void {
     for (const project of this._projects.values()) project.dispose();
     this._projects.clear();
+    this._onDidClose.dispose();
   }
 
   private async _openLocal(path: string): Promise<OpenProject> {
@@ -171,18 +211,22 @@ export class ProjectRegistry implements Disposable {
     if (this._env.mode !== 'ONLINE') {
       throw new RpcError('FORBIDDEN', 'Gateway projects need an online editor');
     }
+    if (!GATEWAY_ID.test(gatewayId)) {
+      throw new RpcError('BAD_REQUEST', `Not a project id: ${gatewayId.slice(0, 80)}`);
+    }
     const gateway = await this._api.gatewayProject(session, gatewayId);
-    const id = `gw-${gatewayId.replace(/[^\w-]/g, '').slice(0, 60)}`;
+    const id = `gw-${gatewayId}`;
     return this._opening.run(id, async () => {
       const root = join(this._env.fsRoot, id);
+      const url = gateway.gatewayProjectRegistryUrl;
       if (!this._git.isRepository(root)) {
         await mkdir(dirname(root), { recursive: true });
-        await this._git.clone(gateway.gatewayProjectRegistryUrl, root, gateway.token);
+        await this._git.clone(url, root, gateway.token);
       } else if (!this._projects.has(id)) {
-        await this._git.pull(root);
+        await this._git.pull(root, url, gateway.token);
       }
       const subdir = gateway.gatewayProjectRegistryMetadata.dir;
-      const projectRoot = subdir ? join(root, subdir) : root;
+      const projectRoot = subdir ? await new PathJail(root).resolve(subdir) : root;
       return this._getOrCreate(id, projectRoot, { gatewayId }, gateway.name);
     });
   }
@@ -204,8 +248,7 @@ export class ProjectRegistry implements Disposable {
     });
   }
 
-  private async _remember(user: User, project: OpenProject): Promise<void> {
-    const store = await this._readRecent();
+  private _remember(user: User, project: OpenProject): Promise<void> {
     const entry = {
       id: project.id,
       name: project.name,
@@ -213,11 +256,21 @@ export class ProjectRegistry implements Disposable {
       ref: project.ref,
       openedAt: new Date().toISOString(),
     };
-    store[user.id] = [
-      entry,
-      ...(store[user.id] ?? []).filter((item) => item.id !== project.id),
-    ].slice(0, MAX_RECENT);
-    await this._writeRecent(store);
+    return this._updateRecent((store) => {
+      store[user.id] = [
+        entry,
+        ...(store[user.id] ?? []).filter((item) => item.id !== project.id),
+      ].slice(0, MAX_RECENT);
+    });
+  }
+
+  /** Read, change and write the recent projects one at a time: two opens never lose a list. */
+  private _updateRecent(change: (store: RecentStore) => void): Promise<void> {
+    return this._recentLock.run('recent', async () => {
+      const store = await this._readRecent();
+      change(store);
+      await this._writeRecent(store);
+    });
   }
 
   private get _recentFile(): string {
@@ -236,6 +289,13 @@ export class ProjectRegistry implements Disposable {
 
   private async _writeRecent(store: RecentStore): Promise<void> {
     await mkdir(this._env.dataDir, { recursive: true });
-    await writeFile(this._recentFile, `${JSON.stringify(store, null, 2)}\n`);
+    const temp = `${this._recentFile}.${randomBytes(4).toString('hex')}.tmp`;
+    try {
+      await writeFile(temp, `${JSON.stringify(store, null, 2)}\n`);
+      await rename(temp, this._recentFile);
+    } catch (error) {
+      await rm(temp, { force: true });
+      throw error;
+    }
   }
 }

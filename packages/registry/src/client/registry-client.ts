@@ -1,5 +1,6 @@
 import semver from 'semver';
 
+import { MAX_ARCHIVE_BYTES } from '../archive/archive';
 import { type RegistryItem, SearchQuery, type SearchResult } from '../item/item.schema';
 import { RegistryError } from '../registry/registry.exception';
 import type { Registry } from '../registry/registry.type';
@@ -12,6 +13,8 @@ export interface RegistryClientOptions {
   readonly fetch?: typeof fetch;
   /** Headers of every request (reading needs none; a registry key to publish). */
   readonly headers?: () => Record<string, string>;
+  /** How long a request may take (default 60 s). */
+  readonly timeoutMs?: number;
 }
 
 /** The registry over HTTP (the contract of `docs/api/registry.md`). */
@@ -38,8 +41,13 @@ export class RegistryClient implements Registry {
   async download(name: string, version: string): Promise<Uint8Array> {
     const found = (await this._packument(name)).versions[version];
     if (!found) throw new RegistryError('NOT_FOUND', `${name}@${version} was not found`);
-    const response = await this._request(found.dist.file, `${name}@${version}`);
-    return new Uint8Array(await response.arrayBuffer());
+    const subject = `${name}@${version}`;
+    const response = await this._request(found.dist.file, subject);
+    const limit = Math.min(found.dist.size ?? MAX_ARCHIVE_BYTES, MAX_ARCHIVE_BYTES);
+    const bytes = await readLimited(response, limit, subject);
+    if (found.dist.size !== undefined && bytes.length !== found.dist.size)
+      throw new RegistryError('INTEGRITY', `${subject} does not have the size the registry says`);
+    return bytes;
   }
 
   private async _packument(name: string): Promise<Packument> {
@@ -47,13 +55,24 @@ export class RegistryClient implements Registry {
     return this._parse(Packument, await this._json(response));
   }
 
+  /**
+   * A request to the registry, or to where it keeps an archive (`dist.file` may be anywhere):
+   * http(s) only, and the registry's headers only go to the registry's own origin.
+   */
   private async _request(path: string, subject?: string): Promise<Response> {
+    const base = new URL(this._options.baseUrl);
+    const url = new URL(path, base);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:')
+      throw new RegistryError(
+        'INVALID',
+        `The registry gave an address that is not http(s): ${url.protocol}`,
+      );
     let response: Response;
     try {
-      response = await (this._options.fetch ?? fetch)(
-        new URL(path, this._options.baseUrl).toString(),
-        { headers: this._options.headers?.() ?? {} },
-      );
+      response = await (this._options.fetch ?? fetch)(url.toString(), {
+        headers: url.origin === base.origin ? (this._options.headers?.() ?? {}) : {},
+        signal: AbortSignal.timeout(this._options.timeoutMs ?? 60_000),
+      });
     } catch (error) {
       throw new RegistryError(
         'UNAVAILABLE',
@@ -91,3 +110,43 @@ export class RegistryClient implements Registry {
     return parsed.data as T;
   }
 }
+
+/** The body of a response, stopped as soon as it passes `limit` bytes. */
+const readLimited = async (
+  response: Response,
+  limit: number,
+  subject: string,
+): Promise<Uint8Array> => {
+  const declared = Number(response.headers.get('content-length') ?? NaN);
+  const tooLarge = () => new RegistryError('INVALID', `${subject} is larger than allowed`);
+  if (declared > limit) throw tooLarge();
+  if (!response.body) return new Uint8Array(await response.arrayBuffer());
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    let chunk;
+    try {
+      chunk = await reader.read();
+    } catch (error) {
+      throw new RegistryError(
+        'UNAVAILABLE',
+        `The download of ${subject} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    if (chunk.done) break;
+    total += chunk.value.length;
+    if (total > limit) {
+      await reader.cancel().catch(() => undefined);
+      throw tooLarge();
+    }
+    chunks.push(chunk.value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return bytes;
+};

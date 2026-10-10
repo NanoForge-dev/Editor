@@ -101,4 +101,15 @@ export const CoreSettings = {
     category: 'Editor/Plugins',
     scopes: ['account'],
   }),
+  pluginsTrustedProjects: defineSetting({
+    key: 'plugins.trustedProjects',
+    schema: z.array(z.string()),
+    default: [],
+    title: 'Projects allowed to run their plugins',
+    description:
+      'On a hosted editor, the plugins a project keeps in .nanoforge/plugins run only in the projects listed here (by id). Anyone who can change the project can change its plugins.',
+    category: 'Editor/Plugins',
+    scopes: ['account'],
+    mergeStrategy: 'union',
+  }),
 } as const;

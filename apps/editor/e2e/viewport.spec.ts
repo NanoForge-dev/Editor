@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { openProject } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -14,7 +15,7 @@ const screenTab = (page: Page, name: string) =>
   page.getByRole('tablist', { name: 'Main screens' }).getByRole('tab', { name });
 
 const openGame = async (page: Page) => {
-  await page.goto('/load?path=game');
+  await openProject(page, 'game');
   await page.waitForURL(/\/project\//);
   await screenTab(page, 'Project').click();
   await expect(screenTab(page, 'Project')).toHaveAttribute('aria-selected', 'true');
@@ -32,7 +33,7 @@ const stop = async (page: Page) => {
 };
 
 test('shows the scene editor contributed for the project (the ECS 2D scene)', async ({ page }) => {
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await screenTab(page, 'Scene').click();
   await expect(page.getByRole('application', { name: '2D scene' })).toBeVisible();

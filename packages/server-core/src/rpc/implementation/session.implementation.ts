@@ -23,10 +23,6 @@ export const implementSessionRpc = (
           ...(env.registryDir || env.registryUrl ? (['registry'] as const) : []),
         ],
       }),
-      logout: (_input, context) => {
-        context.responseCookies.push(...deps.sessions.logout(context.session));
-        return null;
-      },
     },
   });
 };

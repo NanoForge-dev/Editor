@@ -1,12 +1,12 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
 const open = async (page: Page, project: string) => {
-  await page.goto(`/load?path=${project}`);
+  await openProject(page, project);
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await resetLayout(page);

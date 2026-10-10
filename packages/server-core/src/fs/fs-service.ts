@@ -44,7 +44,19 @@ const mapError = (error: unknown, path: string): never => {
   }
 };
 
+/**
+ * A repository's own folder is never reached through the file API: writing hooks or config there
+ * runs code on the next git command, and its config may hold credentials.
+ */
+const isGitPath = (path: string) =>
+  path.split(/[\\/]/).some((part) => part.toLowerCase() === '.git');
+
+const assertAccessible = (path: string) => {
+  if (isGitPath(path)) throw new RpcError('FORBIDDEN', `${path} is inside a .git folder`);
+};
+
 const assertWritable = (path: string) => {
+  assertAccessible(path);
   if (path === PACKAGES_DIR || path.startsWith(`${PACKAGES_DIR}/`)) {
     throw new RpcError(
       'FORBIDDEN',
@@ -85,6 +97,7 @@ export class ProjectFileSystem {
   }
 
   async stat(path: string): Promise<FileEntry | null> {
+    assertAccessible(path);
     const absolute = await this.jail.resolve(path);
     try {
       const info = await stat(absolute);
@@ -101,6 +114,7 @@ export class ProjectFileSystem {
   }
 
   async list(path: string, recursive = false): Promise<FileEntry[]> {
+    assertAccessible(path);
     const absolute = await this.jail.resolve(path);
     await this.refreshIgnore();
     const entries: FileEntry[] = [];
@@ -112,7 +126,7 @@ export class ProjectFileSystem {
         return mapError(error, rel);
       }
       for (const entry of names.sort((a, b) => a.name.localeCompare(b.name))) {
-        if (entry.isSymbolicLink()) continue; // never follow links while listing
+        if (entry.isSymbolicLink() || isGitPath(entry.name)) continue;
         const childRel = rel ? `${rel}/${entry.name}` : entry.name;
         const info = await stat(join(dir, entry.name)).catch(() => undefined);
         if (!info) continue;
@@ -129,6 +143,7 @@ export class ProjectFileSystem {
   }
 
   async read(path: string): Promise<FileContent> {
+    assertAccessible(path);
     const absolute = await this.jail.resolve(path);
     try {
       const info = await stat(absolute);
@@ -209,6 +224,7 @@ export class ProjectFileSystem {
   }
 
   async copy(from: string, to: string, overwrite = false): Promise<FileEntry> {
+    assertAccessible(from);
     assertWritable(to);
     const source = await this.jail.resolve(from);
     const target = await this.jail.resolve(to);
@@ -266,4 +282,4 @@ export class ProjectFileSystem {
 }
 
 /** Heavy folders a recursive listing does not descend into. */
-const SKIPPED_IN_RECURSIVE_LIST = new Set(['node_modules', '.git']);
+const SKIPPED_IN_RECURSIVE_LIST = new Set(['node_modules']);

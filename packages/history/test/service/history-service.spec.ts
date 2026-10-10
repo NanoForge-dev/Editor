@@ -74,4 +74,42 @@ describe('history panel support', () => {
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(saved.has('layout')).toBe(false);
   });
+
+  it('restores under an edit made while loading, and saves pending steps on dispose', async () => {
+    const saved = new Map<string, unknown>();
+    let release!: () => void;
+    const loading = new Promise<void>((resolve) => (release = resolve));
+    const values = { current: 0 };
+    const command = (value: number, previous: number): HistoryCommand => ({
+      label: `set ${value}`,
+      do: () => void (values.current = value),
+      undo: () => void (values.current = previous),
+      serialize: () => ({ type: 'set', label: `set ${value}`, data: { value, previous } }),
+    });
+    saved.set('file:a.ts', [
+      { command: command(1, 0).serialize!(), origin: { kind: 'local', id: 'local' }, time: 1 },
+    ]);
+    const store = {
+      load: async (id: string) => {
+        await loading;
+        return saved.get(id) as never;
+      },
+      save: async (id: string, entries: unknown) => void saved.set(id, entries),
+    };
+    const service = new HistoryService();
+    service.registerDeserializer('set', (data) => {
+      const { value, previous } = data as { value: number; previous: number };
+      return command(value, previous);
+    });
+    service.persist((id) => id.startsWith('file:'), store);
+    const context = service.registerContext({ id: 'file:a.ts', label: 'a.ts' });
+    values.current = 1;
+    await context.stack.push(command(2, 1));
+    release();
+    await vi.waitFor(() => expect(context.stack.state.past).toHaveLength(2));
+    await context.stack.push(command(3, 2));
+    context.dispose();
+    expect(saved.get('file:a.ts')).toHaveLength(3);
+    await service.undo('file:a.ts');
+  });
 });

@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { openProject } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -11,7 +12,7 @@ const files = (page: Page) => page.getByRole('tree', { name: 'Project files' });
 const row = (page: Page, name: string) => files(page).getByRole('treeitem', { name, exact: true });
 
 const open = async (page: Page) => {
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await expect(row(page, 'apps')).toBeVisible();
 };

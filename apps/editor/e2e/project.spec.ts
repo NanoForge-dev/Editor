@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -27,7 +27,7 @@ const dependencies = (file: string) =>
 
 test.beforeEach(async ({ page }) => {
   saved = FILES.map((file) => (existsSync(file) ? read(file) : undefined));
-  await page.goto('/load?path=pong');
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await resetLayout(page);
   await page.getByRole('tab', { name: 'Project', exact: true }).click();

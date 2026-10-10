@@ -1,3 +1,4 @@
+import semver from 'semver';
 import { z } from 'zod';
 
 /** `@scope/name`: the name of everything in the registry. */
@@ -9,9 +10,10 @@ export type ItemName = z.output<typeof ItemName>;
 export const ItemType = z.enum(['plugin', 'package']);
 export type ItemType = z.output<typeof ItemType>;
 
+/** A version semver reads as is (no `v`, no leading zero, no empty pre-release part). */
 export const ItemVersion = z
   .string()
-  .regex(/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/, 'expected a version like 1.2.3');
+  .refine((version) => semver.valid(version) === version, 'expected a version like 1.2.3');
 
 /** Other registry items an item needs, with version ranges. */
 export const Dependencies = z.record(ItemName, z.string());

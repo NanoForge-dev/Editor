@@ -1,7 +1,7 @@
 import { watch } from 'chokidar';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import {
   Emitter,
@@ -107,7 +107,10 @@ export class PluginSources {
    */
   async suggestions(projectRoot: string): Promise<PluginSuggestion[]> {
     const byName = new Map<string, PluginSuggestion>();
+    const visited = new Set<string>();
     const visit = async (dir: string, depth: number) => {
+      if (visited.has(dir)) return;
+      visited.add(dir);
       let manifest;
       try {
         const raw: unknown = JSON.parse(await readFile(join(dir, MANIFEST_FILE), 'utf8'));
@@ -124,12 +127,15 @@ export class PluginSources {
         byName.set(name, entry);
       }
       if (depth >= MAX_INCLUDE_DEPTH) return;
-      for (const include of manifest.include) await visit(join(dir, include), depth + 1);
+      for (const include of new Set(manifest.include)) {
+        const target = resolve(dir, include);
+        if (target !== dir) await visit(target, depth + 1);
+      }
     };
     const root = join(projectRoot, PACKAGES_DIR);
     for (const scope of await directories(root)) {
       for (const name of await directories(join(root, scope)))
-        await visit(join(root, scope, name), 0);
+        await visit(resolve(root, scope, name), 0);
     }
     return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
   }

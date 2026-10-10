@@ -42,8 +42,6 @@
     "@nanoforge-dev/editor-kernel": "workspace:*"
   },
   "devDependencies": {
-    "@nanoforge-dev/editor-project": "workspace:*",
-    "@nanoforge-dev/editor-server-core": "workspace:*",
     "typescript": "catalog:build",
     "vitest": "catalog:test"
   },

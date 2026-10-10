@@ -1,4 +1,4 @@
-import { expandFolders, panelTab, resetLayout } from './helpers';
+import { expandFolders, openProject, panelTab, resetLayout } from './helpers';
 import { type Locator, type Page, expect, test } from './test';
 
 const openPong = async (page: Page) => {
@@ -169,10 +169,13 @@ test('explains a project that cannot be opened and offers a way out', async ({ p
 
 test('opens a project from a link (nf editor <folder>)', async ({ page }) => {
   await page.goto('/load?path=pong');
+  await expect(page.getByRole('heading', { name: 'Open pong?' })).toBeVisible();
+  await expect(page).toHaveURL(/\/load\?/);
+  await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
 
-  await page.goto('/load?path=missing-folder');
+  await openProject(page, 'missing-folder');
   await expect(page.getByText('No project folder at missing-folder')).toBeVisible();
   await page.getByRole('button', { name: 'Back to projects' }).click();
   await expect(page.getByLabel('Project folder')).toBeVisible();

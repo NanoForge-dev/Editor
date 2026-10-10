@@ -36,6 +36,7 @@ export const loadEnv = (
     cliPath: env.NF_CLI_PATH,
     gitPath: env.GIT_PATH ?? 'git',
     allowedOrigins: env.ALLOWED_ORIGINS,
+    allowedHosts: env.ALLOWED_HOSTS.map((host) => host.toLowerCase()),
     devPlugins: env.DEV_PLUGINS.map(absolute),
     bundledPluginsDir: env.BUNDLED_PLUGINS_DIR && absolute(env.BUNDLED_PLUGINS_DIR),
   };

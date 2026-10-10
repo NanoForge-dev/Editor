@@ -126,12 +126,15 @@ export class ProjectPackages {
     });
   }
 
-  /** Installs what the lock lists and `nf_modules` lacks (a fresh clone). */
+  /**
+   * Installs what the lock lists and `nf_modules` lacks or has in another version (a fresh
+   * clone, a teammate's bump).
+   */
   restore(): Promise<InstalledPackage[]> {
     return this._queue(async () => {
       const lock = await this._readLock();
       for (const [name, entry] of Object.entries(lock)) {
-        if (existsSync(join(this._folder(name), MANIFEST_FILE))) continue;
+        if ((await this._installedVersion(name)) === entry.version) continue;
         await installItem(this._registry, {
           name,
           version: entry.version,
@@ -143,6 +146,19 @@ export class ProjectPackages {
       await this._syncProjectFiles(lock);
       return this.list();
     });
+  }
+
+  /** The version of the installed copy of a package, from its manifest; undefined if none. */
+  private async _installedVersion(name: string): Promise<string | undefined> {
+    const text = await readFile(join(this._folder(name), MANIFEST_FILE), 'utf8').catch(
+      () => undefined,
+    );
+    try {
+      const version = (JSON.parse(text ?? 'null') as { version?: unknown } | null)?.version;
+      return typeof version === 'string' ? version : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private _folder(name: string): string {
@@ -301,7 +317,13 @@ export class ProjectPackages {
   private async _readLock(): Promise<Lock> {
     const text = await readFile(join(this.root, LOCK_FILE), 'utf8').catch(() => undefined);
     if (text === undefined) return {};
-    const parsed = PackagesLock.safeParse(JSON.parse(text) as unknown);
+    let json: unknown;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new RegistryError('INVALID', `${LOCK_FILE} is not valid JSON`);
+    }
+    const parsed = PackagesLock.safeParse(json);
     if (!parsed.success) throw new RegistryError('INVALID', `${LOCK_FILE} is not valid`);
     return parsed.data.packages;
   }

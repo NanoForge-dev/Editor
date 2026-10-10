@@ -31,6 +31,8 @@ export interface BuildableProject {
 // eslint-disable-next-line no-control-regex -- terminal color codes
 export const ANSI = /\x1b\[[0-9;]*[A-Za-z]/g;
 const REBUILD_DELAY_MS = 150;
+/** A build that runs longer is stopped: it must not hold the build queue forever. */
+const BUILD_TIMEOUT_MS = 10 * 60_000;
 
 /** Apps the editor can build and run: clients and servers with an output directory. */
 export const runnableApps = (model: ProjectModel): AppModel[] =>
@@ -80,6 +82,8 @@ export class BuildOrchestrator implements Disposable {
   private _watch: Disposable | undefined;
   private _timer: ReturnType<typeof setTimeout> | undefined;
   private _disposed = false;
+  /** Stops the build in progress when the orchestrator is disposed. */
+  private readonly _abort = new AbortController();
 
   readonly onEvent: Event<RuntimeEvent> = this._onEvent.event;
 
@@ -87,6 +91,7 @@ export class BuildOrchestrator implements Disposable {
     private readonly _project: BuildableProject,
     private readonly _cli: CliService,
     private readonly _logger: Logger,
+    private readonly _buildTimeoutMs = BUILD_TIMEOUT_MS,
   ) {}
 
   get apps(): AppModel[] {
@@ -150,6 +155,7 @@ export class BuildOrchestrator implements Disposable {
 
   dispose(): void {
     this._disposed = true;
+    this._abort.abort();
     clearTimeout(this._timer);
     this._watch?.dispose();
     this._onEvent.dispose();
@@ -187,6 +193,7 @@ export class BuildOrchestrator implements Disposable {
     const run = this._cli.run(['build', '--editor', '--directory', app.root || '.'], {
       cwd: this._project.root,
       env: { FORCE_COLOR: '0', NO_COLOR: '1' },
+      signal: AbortSignal.any([this._abort.signal, AbortSignal.timeout(this._buildTimeoutMs)]),
       silent: true,
     });
     const listener = run.onLine(({ stream, text }) =>
@@ -206,7 +213,10 @@ export class BuildOrchestrator implements Disposable {
       output = `${result.stdout}\n${result.stderr}`;
     } catch (error) {
       exitCode = -1;
-      output = `error: ${error instanceof Error ? error.message : String(error)}`;
+      const timedOut = (error as { name?: string }).name === 'AbortError' && !this._disposed;
+      output = timedOut
+        ? `error: The build of ${app.name} took more than ${Math.round(this._buildTimeoutMs / 60_000)} minutes and was stopped`
+        : `error: ${error instanceof Error ? error.message : String(error)}`;
     } finally {
       listener.dispose();
     }

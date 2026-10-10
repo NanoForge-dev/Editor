@@ -21,6 +21,19 @@ export interface WorkspaceIo {
   remove(path: string): Promise<() => Promise<void>>;
   /** Copies a file or a folder with everything in it. */
   copy(from: string, to: string): Promise<void>;
+  /**
+   * Points a code file's imports of package `from` at `to`, reading the code (not a text search:
+   * comments and strings stay as they are), through the open document if any. Resolves with the
+   * edit made, or undefined when the file has none. Without it, imports are rewritten as text.
+   */
+  renameImports?(path: string, from: string, to: string): Promise<ImportsEdit | undefined>;
+}
+
+/** An edit of a file's imports, as `renameImports` made it. */
+export interface ImportsEdit {
+  undo(): Promise<void>;
+  /** False when the file changed since: undoing would lose that change. */
+  isValid(): Promise<boolean>;
 }
 
 export type Undo = () => Promise<void>;

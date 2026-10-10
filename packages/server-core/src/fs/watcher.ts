@@ -1,4 +1,6 @@
 import { watch } from 'chokidar';
+import { lstatSync, realpathSync } from 'node:fs';
+import { isAbsolute, relative } from 'node:path';
 
 import { Emitter, type Event } from '@nanoforge-dev/editor-kernel';
 import type { FileChange } from '@nanoforge-dev/editor-protocol';
@@ -12,6 +14,12 @@ export const DEFAULT_IGNORED_SEGMENTS = [
   'coverage',
   '.svelte-kit',
 ];
+
+/**
+ * Temporary names (`<name>.nf-<hex>`): atomic write files, and the folder a package reinstall
+ * moves aside (`writeFolder`), with everything in it.
+ */
+const TEMP_SEGMENT = /\.nf-[0-9a-f]{8}$/;
 
 export interface WatcherOptions {
   /** Project-relative directories to ignore besides the defaults (build outputs…). */
@@ -34,6 +42,7 @@ export class ProjectWatcher {
   private _pending = new Map<string, FileChange>();
   private _timer: ReturnType<typeof setTimeout> | undefined;
   private _ready: Promise<void> = Promise.resolve();
+  private _realRoot: string | undefined;
 
   /** Starts watching on the first listener and stops with the last one. */
   readonly onDidChange: Event<FileChange[]> = this._onDidChange.event;
@@ -58,13 +67,30 @@ export class ProjectWatcher {
     if (!rel || rel.startsWith('..')) return false;
     const segments = rel.split('/');
     if (segments.some((segment) => DEFAULT_IGNORED_SEGMENTS.includes(segment))) return true;
+    if (this._leavesProject(absolute)) return true;
     if (rel === '.nanoforge/editor/trash' || rel.startsWith('.nanoforge/editor/trash/'))
       return true;
-    if (/\.nf-[0-9a-f]{8}$/.test(rel)) return true; // atomic write temp files
+    if (segments.some((segment) => TEMP_SEGMENT.test(segment))) return true;
     return (this._options.ignoredPaths?.() ?? []).some(
       (path) => rel === path || rel.startsWith(`${path}/`),
     );
   };
+
+  /**
+   * A link that leads outside of the project (a committed `link -> /`): never watched, or the
+   * watcher would crawl the host and stream outside file names to the client. Links are still
+   * followed otherwise (`followSymlinks: false` makes chokidar miss files in new folders).
+   */
+  private _leavesProject(absolute: string): boolean {
+    try {
+      if (!lstatSync(absolute).isSymbolicLink()) return false;
+      this._realRoot ??= realpathSync(this._jail.root);
+      const rel = relative(this._realRoot, realpathSync(absolute));
+      return rel.startsWith('..') || isAbsolute(rel);
+    } catch {
+      return false;
+    }
+  }
 
   private _start(): void {
     const watcher = watch(this._jail.root, {

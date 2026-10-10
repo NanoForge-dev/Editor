@@ -90,8 +90,13 @@ export const setupSettings = async (options: SettingsSetupOptions): Promise<Sett
           );
     attached.add(projectStore);
     attached.add(localStore);
-    attached.add(await settings.setStore('project', projectStore));
-    attached.add(await settings.setStore('projectLocal', localStore));
+    try {
+      attached.add(await settings.setStore('project', projectStore));
+      attached.add(await settings.setStore('projectLocal', localStore));
+    } catch (error) {
+      attached.dispose();
+      throw error;
+    }
     return attached;
   };
 

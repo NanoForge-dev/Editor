@@ -4,6 +4,7 @@ import {
   type HistoryCommand,
   HistoryServiceToken,
   type PluginContext,
+  compositeCommand,
 } from '@nanoforge-dev/editor-sdk';
 import { NotificationServiceToken } from '@nanoforge-dev/editor-sdk/ui';
 
@@ -33,19 +34,12 @@ export class SceneSteps {
     const command = await code.edit(path, transformer, op, { label: 'Scenes' });
     return command ? saved(command, () => documents.save(path)) : undefined;
   }
-  /** Commands run in order, undone in reverse. */
+  /**
+   * Commands run in order, undone in reverse; valid while each of them is (an edit by hand in
+   * between drops the step instead of undoing at the wrong place).
+   */
   group(label: string, children: readonly HistoryCommand[]): HistoryCommand | undefined {
-    if (!children.length) return undefined;
-    return {
-      label,
-      children,
-      do: async () => {
-        for (const child of children) await child.do();
-      },
-      undo: async () => {
-        for (const child of [...children].reverse()) await child.undo();
-      },
-    };
+    return children.length ? compositeCommand(label, children) : undefined;
   }
   /**
    * Pushes one undo step in the Scenes history, made of steps computed and run one after the
@@ -69,6 +63,10 @@ export class SceneSteps {
       },
       undo: async () => {
         for (const step of [...done].reverse()) await step.undo();
+      },
+      isValid: async () => {
+        for (const step of done) if ((await step.isValid?.()) === false) return false;
+        return true;
       },
     };
     try {

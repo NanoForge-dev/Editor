@@ -42,4 +42,9 @@ export type Transformer = (context: TransformContext, op: unknown) => void;
 export interface CodeEngineOptions {
   /** Fetches type declarations (`node_modules/<pkg>/…`) of a bare import, once per module. */
   readonly resolveTypes?: (module: string, from: string) => Promise<readonly SourceText[]>;
+  /**
+   * The types of a module could not be fetched (its imports then show as errors in Problems).
+   * It is asked again for the next check of a file importing it.
+   */
+  readonly onTypesFailed?: (module: string, from: string, message: string) => void;
 }

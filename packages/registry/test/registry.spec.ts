@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   DirectoryRegistry,
+  ItemVersion,
   LOCK_FILE,
   PACKAGES_FILE,
   ProjectPackages,
@@ -265,6 +266,57 @@ describe('installItem', () => {
     expect(existsSync(join(workspace, 'refused'))).toBe(false);
     expect(existsSync(join(workspace, 'outside.txt'))).toBe(false);
   });
+
+  it('refuses archives that claim to unpack to too much, before unpacking them', async () => {
+    const target = join(workspace, 'bomb/@acme/shapes');
+    const request = { name: '@acme/shapes', version: '1.0.0', type: 'package', target } as const;
+    const zip = zipSync({
+      'nanoforge.manifest.json': new Uint8Array(16),
+      'big.bin': new Uint8Array(64),
+    });
+    const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+    for (let offset = 0; offset < zip.length - 4; offset++) {
+      const signature = view.getUint32(offset, true);
+      if (signature === 0x04034b50) view.setUint32(offset + 22, 0x7fffffff, true);
+      if (signature === 0x02014b50) view.setUint32(offset + 24, 0x7fffffff, true);
+    }
+    await expect(
+      installItem(
+        {
+          search: () => registry.search(),
+          get: (name) => registry.get(name),
+          download: async () => zip,
+        },
+        request,
+      ),
+    ).rejects.toThrow(/too large/);
+    expect(existsSync(target)).toBe(false);
+  });
+
+  it('keeps the installed copy when a reinstall fails', async () => {
+    const target = join(workspace, 'kept/@acme/shapes');
+    const request = { name: '@acme/shapes', version: '1.0.0', type: 'package', target } as const;
+    await installItem(registry, request);
+    const blocked = new Uint8Array(4);
+    await expect(
+      installItem(
+        {
+          search: () => registry.search(),
+          get: (name) => registry.get(name),
+          download: async () =>
+            zipSync({
+              'nanoforge.manifest.json': new TextEncoder().encode(
+                JSON.stringify({ type: 'package', name: '@acme/shapes', version: '1.0.0' }),
+              ),
+              'index.ts': blocked,
+              'index.ts/inside.ts': blocked,
+            }),
+        },
+        request,
+      ),
+    ).rejects.toThrow();
+    expect(read(target, 'index.ts')).toBe('// 1.0.0\n');
+  });
 });
 
 describe('ProjectPackages', () => {
@@ -383,6 +435,32 @@ describe('ProjectPackages', () => {
     lock.packages['@acme/shapes']!.sha256 = 'f'.repeat(64);
     writeFileSync(join(root, LOCK_FILE), JSON.stringify(lock));
     await expect(packages.restore()).rejects.toBeInstanceOf(RegistryError);
+    lock.packages['@acme/shapes']!.sha256 = '';
+    writeFileSync(join(root, LOCK_FILE), JSON.stringify(lock));
+    await expect(packages.restore()).rejects.toMatchObject({ code: 'INVALID' });
+    writeFileSync(join(root, LOCK_FILE), '{ not json');
+    await expect(packages.restore()).rejects.toMatchObject({ code: 'INVALID' });
+  });
+
+  it('restores the version the lock says when another one is installed', async () => {
+    const root = project('restore-bump');
+    const packages = new ProjectPackages(root, registry);
+    await packages.install('@acme/shapes', '1.0.0');
+    const lock = json(root, LOCK_FILE) as unknown as {
+      packages: Record<string, { version: string; sha256: string }>;
+    };
+    const bumped = await registry.get('@acme/shapes');
+    const next = bumped.versions.find((entry) => entry.version === '1.1.0')!;
+    lock.packages['@acme/shapes'] = {
+      ...lock.packages['@acme/shapes']!,
+      version: '1.1.0',
+      sha256: next.sha256,
+    };
+    writeFileSync(join(root, LOCK_FILE), JSON.stringify(lock));
+    await packages.restore();
+    expect(json(root, 'nf_modules/@acme/shapes/nanoforge.manifest.json')).toMatchObject({
+      version: '1.1.0',
+    });
   });
 
   it('runs changes of one project one after the other', async () => {
@@ -397,6 +475,15 @@ describe('ProjectPackages', () => {
     expect(json(root, PACKAGES_FILE)).toEqual({
       packages: { '@acme/render': '^1.0.0', '@acme/shapes': '^1.0.0' },
     });
+  });
+});
+
+describe('ItemVersion', () => {
+  it('takes only versions semver reads as they are', () => {
+    for (const version of ['1.0.0', '1.2.3-beta.1', '0.0.1'])
+      expect(ItemVersion.safeParse(version).success).toBe(true);
+    for (const version of ['01.0.0', '1.0.0-..', 'v1.0.0', '1.0'])
+      expect(ItemVersion.safeParse(version).success).toBe(false);
   });
 });
 

@@ -39,6 +39,11 @@ describe('when clauses', () => {
     expect(run(source)).toBe(expected);
   });
 
+  it.each(['g', 'y', 'gy'])('gives the same answer every time with the %s flag', (flags) => {
+    const clause = parseWhen(`resourceName =~ /component/${flags}`);
+    expect([1, 2, 3].map(() => clause.evaluate((key) => ctx[key]))).toEqual([true, true, true]);
+  });
+
   it('reports read keys', () => {
     expect([...parseWhen('a && (b == x || !c) && d in e').keys]).toEqual(['a', 'b', 'c', 'd', 'e']);
   });

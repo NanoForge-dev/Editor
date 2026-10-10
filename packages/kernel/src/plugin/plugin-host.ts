@@ -32,6 +32,11 @@ interface PluginRecord {
   context?: DisposableStore;
   staticContributions: DisposableStore;
   pending?: Promise<void>;
+  /**
+   * Deactivation in progress. An activation asked meanwhile is refused: waiting for it could
+   * deadlock with a dependent that is still activating.
+   */
+  deactivating?: Promise<void>;
 }
 
 export class PluginHost implements Disposable {
@@ -220,6 +225,9 @@ export class PluginHost implements Disposable {
     if (record.status.kind !== 'ok') {
       return Promise.reject(new PluginActivationError(name, describeStatus(record.status)));
     }
+    if (record.deactivating) {
+      return Promise.reject(new PluginActivationError(name, 'it is being deactivated'));
+    }
     if (record.state === 'active') return Promise.resolve();
     if (record.state === 'failed')
       return Promise.reject(new PluginActivationError(name, record.error));
@@ -229,27 +237,17 @@ export class PluginHost implements Disposable {
     return record.pending;
   }
 
-  /** Deactivates a plugin after its active dependents. */
-  async deactivate(name: string): Promise<void> {
+  /**
+   * Deactivates a plugin after its active dependents. An activation in progress finishes first;
+   * concurrent calls share the same deactivation.
+   */
+  deactivate(name: string): Promise<void> {
     const record = this._records.get(name);
-    if (!record || (record.state !== 'active' && record.state !== 'failed')) return;
-    for (const dependent of this._dependents(name)) await this.deactivate(dependent);
-    if (record.state === 'failed') {
-      record.state = 'inactive';
-      record.error = undefined;
-      this._onDidChange.fire();
-      return;
-    }
-    record.state = 'deactivating';
-    this._onDidChange.fire();
-    try {
-      await record.module?.deactivate?.();
-    } catch (error) {
-      this._logger.error(`Plugin "${name}" failed to deactivate`, error);
-    }
-    this._cleanup(name, record);
-    record.state = 'inactive';
-    this._onDidChange.fire();
+    if (!record) return Promise.resolve();
+    record.deactivating ??= this._deactivate(name, record).finally(() => {
+      record.deactivating = undefined;
+    });
+    return record.deactivating;
   }
 
   /**
@@ -289,6 +287,28 @@ export class PluginHost implements Disposable {
     this._options.services.get(CoreServices.Commands).setActivator(undefined);
     this._store.dispose();
     this._onDidChange.dispose();
+  }
+
+  private async _deactivate(name: string, record: PluginRecord): Promise<void> {
+    await record.pending?.catch(() => undefined);
+    if (record.state !== 'active' && record.state !== 'failed') return;
+    for (const dependent of this._dependents(name)) await this.deactivate(dependent);
+    if (record.state === 'failed') {
+      record.state = 'inactive';
+      record.error = undefined;
+      this._onDidChange.fire();
+      return;
+    }
+    record.state = 'deactivating';
+    this._onDidChange.fire();
+    try {
+      await record.module?.deactivate?.();
+    } catch (error) {
+      this._logger.error(`Plugin "${name}" failed to deactivate`, error);
+    }
+    this._cleanup(name, record);
+    record.state = 'inactive';
+    this._onDidChange.fire();
   }
 
   private async _activate(name: string, record: PluginRecord): Promise<void> {
@@ -361,13 +381,15 @@ export class PluginHost implements Disposable {
     }
   }
 
-  /** Active or activating plugins depending (required or optional) on `name`. */
+  /** Active, activating or failed plugins depending (required or optional) on `name`. */
   private _dependents(name: string): string[] {
     return [...this._records]
       .filter(([, record]) => {
         const { dependencies, optionalDependencies } = record.descriptor.manifest;
         return (
-          (record.state === 'active' || record.state === 'failed') &&
+          (record.state === 'active' ||
+            record.state === 'activating' ||
+            record.state === 'failed') &&
           (name in dependencies || name in optionalDependencies)
         );
       })

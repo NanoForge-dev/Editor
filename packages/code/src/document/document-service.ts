@@ -164,16 +164,19 @@ export class DocumentService implements Disposable {
    * An undoable edit. Undo/redo check that the document still has the content the edit
    * produced; otherwise the step is dropped by the history. It carries a preview of the changed
    * lines and can be serialized (history kept across reloads, see `restoreEditCommand`).
+   * With `basedOn` (the `fingerprint` of the text the edits were computed on), the edit fails
+   * when the text changed since: offsets would land elsewhere.
    */
   editCommand(
     uri: string,
     edits: readonly TextEdit[],
-    options: { label: string; origin?: CommandOrigin; mergeKey?: string },
+    options: { label: string; origin?: CommandOrigin; mergeKey?: string; basedOn?: string },
   ): HistoryCommand {
     return this._editCommand(
       { uri, forward: [...edits], inverse: [], expected: '' },
       options,
       false,
+      options.basedOn,
     );
   }
 
@@ -208,6 +211,7 @@ export class DocumentService implements Disposable {
     state: EditState,
     options: { label: string; origin?: CommandOrigin; mergeKey?: string },
     applied: boolean,
+    basedOn?: string,
   ): HistoryCommand {
     const run = async (operations: readonly TextEdit[]) => {
       const before = await this.getText(state.uri);
@@ -224,6 +228,8 @@ export class DocumentService implements Disposable {
       ...(state.preview && { preview: state.preview }),
       do: async () => {
         if (applied) return;
+        if (basedOn !== undefined && fingerprint(await this.getText(state.uri)) !== basedOn)
+          throw new Error(`${state.uri} changed while the edit was prepared: try again`);
         const { result, before, after } = await run(state.forward);
         state.inverse = result;
         state.preview = previewOf(state.uri, before, after);

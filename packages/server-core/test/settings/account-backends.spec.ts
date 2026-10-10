@@ -16,6 +16,7 @@ const session = (tokens: Session['tokens'] = null): Session => ({
   tokens,
   projects: new Set(),
   lastSeen: 0,
+  sockets: 0,
 });
 
 describe('FileAccountBackend', () => {

@@ -50,7 +50,10 @@ export class Formatter {
     }
   }
 
-  /** The Prettier installed for the file (closest node_modules), else undefined. */
+  /**
+   * The Prettier installed for the file (closest node_modules), else undefined. Only a found one
+   * is kept: Prettier installed later is picked up by the next format.
+   */
   private _resolveProject(absolute: string): Promise<Prettier | undefined> {
     const from = dirname(absolute);
     let prettier = this._projectPrettier.get(from);
@@ -67,6 +70,10 @@ export class Formatter {
         }
       })();
       this._projectPrettier.set(from, prettier);
+      void prettier.then((found) => {
+        if (!found && this._projectPrettier.get(from) === prettier)
+          this._projectPrettier.delete(from);
+      });
     }
     return prettier;
   }

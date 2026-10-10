@@ -19,7 +19,7 @@
   const overrides = (): Record<string, string> => {
     try {
       const encoded = new URLSearchParams(location.hash.slice(1)).get('env');
-      return encoded ? (JSON.parse(atob(encoded)) as Record<string, string>) : {};
+      return encoded ? (JSON.parse(encoded) as Record<string, string>) : {};
     } catch {
       return {};
     }

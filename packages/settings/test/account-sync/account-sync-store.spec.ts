@@ -124,6 +124,48 @@ describe('AccountSyncStore', () => {
     store.dispose();
   });
 
+  it('keeps a write made while a pull is in flight', async () => {
+    const remote = new FakeRemote();
+    const store = create(remote);
+    await store.initialize();
+    remote.remoteEdit({ b: 2 });
+    let release!: () => void;
+    const get = remote.get;
+    remote.get = async () => {
+      const document = await get();
+      await new Promise<void>((resolve) => (release = resolve));
+      return document;
+    };
+    const pulling = store.sync();
+    await flush();
+    await store.write({ a: 1 });
+    release();
+    await pulling;
+    remote.get = get;
+    expect(store.values.get()).toEqual({ a: 1, b: 2 });
+    await store.sync();
+    expect(remote.document.values).toEqual({ a: 1, b: 2 });
+    store.dispose();
+  });
+
+  it('merges a 409 with what was written while the push was in flight', async () => {
+    const remote = new FakeRemote();
+    const store = create(remote);
+    await store.initialize();
+    remote.remoteEdit({ b: 2 });
+    const put = remote.put;
+    remote.put = async (base, values) => {
+      await store.write({ c: 3 });
+      return put(base, values);
+    };
+    await store.write({ a: 1 });
+    await store.sync();
+    remote.put = put;
+    await store.sync();
+    expect(remote.document.values).toEqual({ a: 1, b: 2, c: 3 });
+    store.dispose();
+  });
+
   it('works as the account scope of the settings service', async () => {
     const remote = new FakeRemote();
     const registry = new SettingsRegistry();

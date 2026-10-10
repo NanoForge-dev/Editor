@@ -8,3 +8,4 @@ export * from './engine.type';
 export * from './code.exception';
 export * from './worker-sdk';
 export * from './code-file.const';
+export * from './rename-package.const';

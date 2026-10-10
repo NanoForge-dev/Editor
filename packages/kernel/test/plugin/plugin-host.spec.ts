@@ -163,6 +163,29 @@ describe('PluginHost', () => {
     expect(live.size).toBe(0);
   });
 
+  it('refuses an activation asked while the plugin deactivates, and deactivates activating dependents', async () => {
+    let release!: () => void;
+    const slow = new Promise<void>((resolve) => (release = resolve));
+    const states: string[] = [];
+    const { host } = setup({
+      '@n/base': { activate: () => undefined, deactivate: () => slow },
+      '@n/ext': {
+        activate: () => void states.push('ext:activate'),
+        deactivate: () => void states.push('ext:deactivate'),
+      },
+    });
+    await host.start([descriptor('@n/base'), descriptor('@n/ext', { dependencies: ['@n/base'] })]);
+    const deactivation = host.deactivate('@n/base');
+    await expect(host.activate('@n/base')).rejects.toBeInstanceOf(PluginActivationError);
+    release();
+    await deactivation;
+    expect(host.plugins.get().find((plugin) => plugin.name === '@n/base')?.state).toBe('inactive');
+    expect(states).toEqual(['ext:activate', 'ext:deactivate']);
+    await host.activate('@n/base');
+    expect(host.plugins.get().find((plugin) => plugin.name === '@n/base')?.state).toBe('active');
+    host.dispose();
+  });
+
   it('hot reloads a plugin and re-activates its dependents', async () => {
     let version = 1;
     const { host, services, loads } = setup({

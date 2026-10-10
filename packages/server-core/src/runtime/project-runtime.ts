@@ -18,6 +18,7 @@ import { RpcError } from '@nanoforge-dev/editor-rpc';
 import type { EditorEnv } from '../env/editor-env.type';
 import type { CliRun, CliService } from '../process/cli-service';
 import type { OpenProject } from '../project/project-registry';
+import { KeyedMutex } from '../util/keyed-mutex';
 import { ANSI, BuildOrchestrator } from './build-orchestrator';
 import { BuildOutput } from './build-output';
 import { loadGameEnv } from './game-env';
@@ -31,6 +32,8 @@ export const outputEntry = (app: AppModel): string =>
 export class ProjectRuntime implements Disposable {
   readonly builds: BuildOrchestrator;
   private readonly _servers = new Map<string, GameServerProcess>();
+  /** Starts and stops of the same app run one at a time (two tabs, Restart during a start). */
+  private readonly _serverLocks = new KeyedMutex();
   private readonly _onEvent = new Emitter<RuntimeEvent>();
   private readonly _store = new DisposableStore();
 
@@ -75,10 +78,35 @@ export class ProjectRuntime implements Disposable {
   }
 
   /** Starts the game server of an app (restarts it when running). */
-  async startServer(appId: string, overrides: Record<string, string> = {}): Promise<void> {
+  startServer(appId: string, overrides: Record<string, string> = {}): Promise<void> {
+    return this._serverLocks.run(appId, () => this._startServer(appId, overrides));
+  }
+
+  stopServer(appId: string): Promise<void> {
+    return this._serverLocks.run(appId, () => this._stopServer(appId));
+  }
+
+  sendServer(appId: string, event: string, args: readonly unknown[]): void {
+    const server = this._servers.get(appId);
+    if (!server) throw new RpcError('NOT_FOUND', `The game server of ${appId} is not running`);
+    server.send(event, args);
+  }
+
+  servers(): { app: string; state: GameServerProcess['state'] }[] {
+    return [...this._servers].map(([app, server]) => ({ app, state: server.state }));
+  }
+
+  dispose(): void {
+    for (const server of this._servers.values()) server.kill();
+    this._servers.clear();
+    this._store.dispose();
+    this._onEvent.dispose();
+  }
+
+  private async _startServer(appId: string, overrides: Record<string, string>): Promise<void> {
     const app = this.app(appId);
     if (app.type !== 'server') throw new RpcError('BAD_REQUEST', `${app.name} is not a server`);
-    await this.stopServer(appId);
+    await this._stopServer(appId);
     const manifest = await this.manifest(appId);
     const outDir = this.builds.output(app).dir;
     const server = new GameServerProcess({
@@ -103,25 +131,8 @@ export class ProjectRuntime implements Disposable {
     this._logger.info(`Started the game server of ${app.name}`);
   }
 
-  async stopServer(appId: string): Promise<void> {
+  private async _stopServer(appId: string): Promise<void> {
     await this._servers.get(appId)?.stop();
-  }
-
-  sendServer(appId: string, event: string, args: readonly unknown[]): void {
-    const server = this._servers.get(appId);
-    if (!server) throw new RpcError('NOT_FOUND', `The game server of ${appId} is not running`);
-    server.send(event, args);
-  }
-
-  servers(): { app: string; state: GameServerProcess['state'] }[] {
-    return [...this._servers].map(([app, server]) => ({ app, state: server.state }));
-  }
-
-  dispose(): void {
-    for (const server of this._servers.values()) server.kill();
-    this._servers.clear();
-    this._store.dispose();
-    this._onEvent.dispose();
   }
 
   /** Streams a CLI run made in this project (other than builds) as a console task. */
@@ -161,6 +172,12 @@ export class RuntimeManager implements Disposable {
       this._runtimes.set(project.id, runtime);
     }
     return runtime;
+  }
+
+  /** Stops the builds and game servers of a project that was closed. */
+  close(projectId: string): void {
+    this._runtimes.get(projectId)?.dispose();
+    this._runtimes.delete(projectId);
   }
 
   dispose(): void {

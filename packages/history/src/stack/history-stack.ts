@@ -100,22 +100,28 @@ export class HistoryStack {
     });
   }
 
-  /** Replaces the stack with entries restored after a reload (already applied). */
+  /**
+   * Puts back entries restored after a reload (already applied), before the steps recorded since
+   * the reload: an edit made while the history was loading stays on top of them.
+   */
   restore(
     entries: readonly { command: HistoryCommand; origin: CommandOrigin; time: number }[],
   ): Promise<void> {
     return this._serial(async () => {
-      this._drop([...this._past, ...this._future]);
       const local = this._options.localOrigin();
-      this._past = entries.map((entry) => ({
+      const restored = entries.map((entry) => ({
         id: this._nextId++,
         command: entry.command,
         origin: entry.origin,
         undoable: sameOrigin(entry.origin, local),
         time: entry.time,
       }));
-      this._future = [];
-      this._savedAt = null;
+      if (!this._past.length) {
+        this._drop(this._future);
+        this._future = [];
+        this._savedAt = null;
+      }
+      this._past = [...restored, ...this._past];
       this._trim();
       this._changed();
     });
