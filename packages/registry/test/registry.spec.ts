@@ -35,6 +35,8 @@ const publish = (
     engines?: Record<string, string>;
     description?: string;
     files?: Record<string, string>;
+    /** More fields of the manifest. */
+    manifest?: Record<string, unknown>;
   } = {},
 ) => {
   const folder = join(registryDir, name, version);
@@ -48,6 +50,7 @@ const publish = (
       description: options.description ?? `${name} for tests`,
       ...(options.dependencies && { dependencies: options.dependencies }),
       ...(options.engines && { engines: options.engines }),
+      ...options.manifest,
     }),
   );
   for (const [path, text] of Object.entries(options.files ?? { 'index.ts': `// ${version}\n` })) {
@@ -70,7 +73,18 @@ beforeAll(() => {
   registryDir = join(workspace, 'registry');
   publish('@acme/shapes', '1.0.0');
   publish('@acme/shapes', '1.1.0', {
-    files: { 'components/circle.ts': 'export class Circle {}\n' },
+    files: {
+      'components/circle.ts': 'export class Circle {}\n',
+      'components/nanoforge.manifest.json': JSON.stringify({
+        contents: [{ kind: '@nanoforge/ecs:component', path: 'circle.ts', export: 'Circle' }],
+      }),
+      'assets/logo.png': 'png',
+    },
+    manifest: {
+      include: ['components'],
+      contents: [{ kind: 'asset', path: 'assets/' }],
+      suggestedPlugins: ['@nanoforge/ecs'],
+    },
   });
   publish('@acme/shapes', '2.0.0');
   publish('@acme/render', '1.0.0', {
@@ -132,6 +146,11 @@ describe('registries', () => {
     const shapes = await source.get('@acme/shapes');
     expect(shapes.versions.map((entry) => entry.version)).toEqual(['2.0.0', '1.1.0', '1.0.0']);
 
+    expect(shapes.versions[1]).toMatchObject({
+      kinds: { asset: 1, '@nanoforge/ecs:component': 1 },
+      suggestedPlugins: { '@nanoforge/ecs': '*' },
+    });
+
     const archive = await source.download('@acme/shapes', '1.1.0');
     expect(sha256(archive)).toBe(shapes.versions[1]!.sha256);
     await expect(source.get('@acme/none')).rejects.toMatchObject({ code: 'NOT_FOUND' });
@@ -155,7 +174,7 @@ describe('registries', () => {
       versions: {
         '1.0.0': {
           dependencies: { '@acme/shapes': '^1.0.0' },
-          dist: { file: '/registry/@acme/render/-/render-1.0.0.zip' },
+          dist: { tarball: '/registry/@acme/render/-/render-1.0.0.zip' },
         },
       },
     });
@@ -211,6 +230,122 @@ describe('registries', () => {
     const tools = await registry.get('@acme/tools');
     expect(pickVersion(tools, '*', { editor: '0.1.0' })?.version).toBe('1.0.0');
     expect(pickVersion(tools, '*', { editor: '9.1.0' })?.version).toBe('2.0.0');
+  });
+
+  it('reads the documents the NanoForge API writes', async () => {
+    const manifest = {
+      name: '@acme/kit',
+      version: '1.2.0',
+      type: 'package',
+      dependencies: ['@acme/shapes'],
+      include: ['src'],
+    };
+    const archive = zipSync({
+      'nanoforge.manifest.json': new TextEncoder().encode(JSON.stringify(manifest)),
+      'src/nanoforge.manifest.json': new TextEncoder().encode('{"contents":[]}'),
+    });
+    const tarball = 'https://api.test/registry/@acme/kit/-/kit-1.2.0.zip';
+    const version = {
+      ...manifest,
+      dependencies: { '@acme/shapes': '*' },
+      contents: [
+        {
+          kind: '@nanoforge/ecs:component',
+          path: 'src/velocity.ts',
+          export: 'Velocity',
+          manifest: 'src/nanoforge.manifest.json',
+          fileCount: 1,
+          size: 120,
+        },
+      ],
+      manifests: ['src/nanoforge.manifest.json'],
+      kinds: { '@nanoforge/ecs:component': 1 },
+      suggestedPlugins: { '@nanoforge/ecs': '^1.0.0' },
+      _id: '@acme/kit@1.2.0',
+      _npmUser: { name: 'acme' },
+      dist: {
+        tarball,
+        integrity: 'sha512-AAAA',
+        shasum: '0'.repeat(40),
+        sha256: sha256(archive),
+        size: archive.length,
+        unpackedSize: 200,
+        fileCount: 2,
+      },
+    };
+    const accepts: (string | null)[] = [];
+    const api = new RegistryClient({
+      baseUrl: 'https://api.test',
+      fetch: (async (input: string, init?: RequestInit) => {
+        const url = new URL(input);
+        accepts.push(new Headers(init?.headers).get('accept'));
+        if (url.pathname === '/registry/-/v1/search')
+          return Response.json({
+            objects: [
+              {
+                package: {
+                  name: '@acme/kit',
+                  scope: 'acme',
+                  type: 'package',
+                  version: '1.2.0',
+                  keywords: [],
+                  date: '2026-10-10T09:00:00.000Z',
+                  publisher: { username: 'acme' },
+                  kinds: version.kinds,
+                  suggestedPlugins: version.suggestedPlugins,
+                },
+                downloads: { total: 3 },
+                score: { final: 1 },
+                searchScore: 1,
+              },
+            ],
+            total: 1,
+            time: 'Sat, 10 Oct 2026 09:00:00 GMT',
+          });
+        if (url.pathname === '/registry/@acme/kit')
+          return Response.json({
+            _id: '@acme/kit',
+            name: '@acme/kit',
+            type: 'package',
+            keywords: [],
+            readme: '',
+            maintainers: [{ name: 'acme' }],
+            'dist-tags': { latest: '1.2.0' },
+            versions: { '1.2.0': version },
+            time: { created: '…', modified: '…', '1.2.0': '2026-10-10T09:00:00.000Z' },
+            downloads: { total: 3 },
+          });
+        if (url.toString() === tarball) return new Response(archive as BodyInit);
+        return Response.json({ error: 'No such route' }, { status: 404 });
+      }) as typeof fetch,
+    });
+
+    expect((await api.search()).items).toEqual([
+      expect.objectContaining({
+        name: '@acme/kit',
+        author: 'acme',
+        kinds: { '@nanoforge/ecs:component': 1 },
+      }),
+    ]);
+    const kit = await api.get('@acme/kit');
+    expect(kit).toMatchObject({ author: 'acme', kinds: { '@nanoforge/ecs:component': 1 } });
+    expect(kit.versions[0]).toMatchObject({
+      dependencies: { '@acme/shapes': '*' },
+      suggestedPlugins: { '@nanoforge/ecs': '^1.0.0' },
+    });
+
+    accepts.length = 0;
+    const target = join(workspace, 'api-kit');
+    const installed = await installItem(api, {
+      name: '@acme/kit',
+      version: '1.2.0',
+      type: 'package',
+      target,
+      sha256: kit.versions[0]!.sha256,
+    });
+    expect(installed.dependencies).toEqual({ '@acme/shapes': '*' });
+    expect(existsSync(join(target, 'src/nanoforge.manifest.json'))).toBe(true);
+    expect(accepts[0]).toContain('application/vnd.npm.install-v1+json');
   });
 });
 

@@ -14,6 +14,7 @@ import {
   SearchQuery,
   type SearchResult,
 } from '../item/item.schema';
+import { countKinds, readPackageContents } from '../manifest/package-contents';
 import { RegistryError } from '../registry/registry.exception';
 import type { Registry } from '../registry/registry.type';
 
@@ -54,6 +55,7 @@ export class DirectoryRegistry implements Registry {
         author: item.author,
         downloads: item.downloads,
         updatedAt: item.updatedAt,
+        kinds: item.kinds,
       }))
       .filter(
         (item) =>
@@ -123,19 +125,23 @@ export class DirectoryRegistry implements Registry {
         const versions: (RegistryVersion & { manifest: ItemManifest; folder: string })[] = [];
         for (const version of await folders(root)) {
           const folder = join(root, version);
-          const manifest = ItemManifest.safeParse(
-            await readFile(join(folder, MANIFEST_FILE), 'utf8')
+          const readJson = (path: string) =>
+            readFile(join(folder, path), 'utf8')
               .then((text) => JSON.parse(text) as unknown)
-              .catch(() => undefined),
-          );
+              .catch(() => undefined);
+          const raw = await readJson(MANIFEST_FILE);
+          const manifest = ItemManifest.safeParse(raw);
           if (!manifest.success || manifest.data.name !== name || manifest.data.version !== version)
             continue;
+          const { contents } = await readPackageContents(raw, readJson);
           versions.push({
             version,
             publishedAt: (await stat(join(folder, MANIFEST_FILE))).mtime.toISOString(),
             sha256: sha256(await this._archive(folder)),
             dependencies: manifest.data.dependencies ?? {},
             engines: manifest.data.engines ?? {},
+            kinds: countKinds(contents),
+            suggestedPlugins: manifest.data.suggestedPlugins ?? {},
             manifest: manifest.data,
             folder,
           });
@@ -155,6 +161,7 @@ export class DirectoryRegistry implements Registry {
             author: extra.author ?? '',
             downloads: extra.downloads ?? 0,
             updatedAt: latest.publishedAt,
+            kinds: latest.kinds,
             readme: await readFile(join(latest.folder, 'README.md'), 'utf8').catch(() => ''),
             versions: versions.map((entry) => ({
               version: entry.version,
@@ -162,6 +169,8 @@ export class DirectoryRegistry implements Registry {
               sha256: entry.sha256,
               dependencies: entry.dependencies,
               engines: entry.engines,
+              kinds: entry.kinds,
+              suggestedPlugins: entry.suggestedPlugins,
             })),
           },
           folders: new Map(versions.map((version) => [version.version, version.folder])),

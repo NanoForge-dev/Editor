@@ -29,8 +29,9 @@ export const registryContract = (target: () => RegistryTarget): void => {
     name: expect.any(String) as string,
     version: expect.stringMatching(/^\d+\.\d+\.\d+/) as string,
     type: expect.stringMatching(/^(plugin|package)$/) as string,
+    kinds: expect.any(Object) as object,
     dist: {
-      file: expect.any(String) as string,
+      tarball: expect.any(String) as string,
       sha256: expect.stringMatching(/^[0-9a-f]{64}$/) as string,
     },
   };
@@ -63,9 +64,9 @@ export const registryContract = (target: () => RegistryTarget): void => {
       const { body } = await json(`/registry/${item}`);
       const latest = (body['dist-tags'] as { latest: string }).latest;
       const { dist } = (
-        body.versions as Record<string, { dist: { file: string; sha256: string } }>
+        body.versions as Record<string, { dist: { tarball: string; sha256: string } }>
       )[latest]!;
-      const response = await fetch(new URL(dist.file, baseUrl).toString());
+      const response = await fetch(new URL(dist.tarball, baseUrl).toString());
       expect(response.status).toBe(200);
       const bytes = new Uint8Array(await response.arrayBuffer());
       expect(sha256(bytes)).toBe(dist.sha256);

@@ -58,10 +58,18 @@ the catalog as a generic item.
 `nanoforge.manifest.json`:
 
 - `type`: `package` or `plugin`. The two are separate: a package never holds a plugin.
-- `items`: source files, relative to the manifest, whose exports can be items.
-- `include`: sub-folders holding their own `package` manifest. The catalog walks `include`, it
-  never scans. An include must stay inside the package (no `..`, no absolute path), and nesting
-  stops at 4 levels.
+- `contents`: what the package holds, whatever its folder layout: `{ kind, path, export?, name?,
+description?, side?, tags? }` plus owner objects. `kind` is a core kind (`asset`, `type`, `enum`…)
+  or one owned by a plugin (`@nanoforge/ecs:component`); `path` is a file, or a folder ending with
+  `/`. The registry counts them by kind (`kinds`) and lets people search by kind.
+- `items`: source files, relative to the manifest, whose exports can be items. Kept for packages
+  written before `contents`: the code files `contents` points to are item sources too.
+- `include`: sub-manifests (amended 2026-10-11, to the registry's contract): folders (their
+  `nanoforge.manifest.json`) or `.json` files, relative to the manifest listing them. A sub-manifest
+  **only describes contents** (`contents`, `include`, owner objects), its paths relative to its
+  folder: the package's name, version, dependencies and suggested plugins are the root manifest's.
+  The catalog walks `include`, it never scans. An include stays inside the package (no `..`, no
+  absolute path), nesting stops at 4 levels and 100 sub-manifests.
 - `suggestedPlugins`: editor plugins that make the package easier to use, as `["@scope/name"]` or
   `{ "@scope/name": "^1.0.0" }`.
 - `dependencies` (our registry), `libDependencies`, `npmDependencies`, `publish` as before.
@@ -80,7 +88,7 @@ Its server entry only runs in a local editor: a hosted editor never runs project
 server.
 
 **Suggested plugins.** When a project opens, the editor collects the `suggestedPlugins` of the
-packages in `nf_modules` (following `include`) and names the ones that aren't installed in a
+packages in `nf_modules` (their root manifests) and names the ones that aren't installed in a
 notification, once per project. Installing is manual for now.
 
 An editor plugin that owns a key declares it in its manifest, so the editor can suggest it when it
@@ -109,8 +117,9 @@ The `.ts` file is the only source of truth.
 - An owner **claims** members it describes itself, which are then left out of `params` / `fields`:
   ECS claims a component's `name` field and a system's `(registry, ctx)` parameters.
 
-An export is an item when it's in a file listed in `items`, or, in the project's apps (no manifest),
-when an owner tag is on it.
+An export is an item when it's in a code file a package's `contents` points to (or one under a
+folder it points to) or lists in `items`, or, in the project's apps (no manifest), when an owner tag
+is on it.
 
 ### Elements
 

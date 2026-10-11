@@ -93,6 +93,27 @@ beforeAll(async () => {
     'nf_modules/@nanoforge/motion/velocity.ts',
     '/** Speed. @component @side shared */\nexport class Velocity { name = "Velocity"; constructor(public x = 0) {} }',
   );
+  write(
+    'nf_modules/@nanoforge/physics/nanoforge.manifest.json',
+    JSON.stringify({
+      type: 'package',
+      name: '@nanoforge/physics',
+      version: '1.0.0',
+      contents: [{ kind: 'asset', path: 'textures/' }],
+      include: ['src'],
+    }),
+  );
+  write(
+    'nf_modules/@nanoforge/physics/src/nanoforge.manifest.json',
+    JSON.stringify({
+      contents: [{ kind: '@nanoforge/ecs:component', path: 'forces/', export: 'Gravity' }],
+    }),
+  );
+  write(
+    'nf_modules/@nanoforge/physics/src/forces/gravity.ts',
+    '/** Pull. @component @side shared */\nexport class Gravity { name = "Gravity"; constructor(public g = 9.8) {} }',
+  );
+  write('nf_modules/@nanoforge/physics/textures/ground.png', 'png');
   editor = createEditorServer({
     env: loadEnv(
       { NODE_ENV: 'test', FS_ROOT: workspace, DATA_DIR: mkdtempSync(join(tmpdir(), 'nf-data-')) },
@@ -120,6 +141,7 @@ describe('CatalogService', () => {
     const refs = catalog.items.map((item) => item.ref);
     expect(refs).toContain('app:client#Position');
     expect(refs).toContain('@nanoforge/motion#Velocity');
+    expect(refs).toContain('@nanoforge/physics#Gravity');
     expect(catalog.get('@nanoforge/motion#Velocity')).toMatchObject({
       readonly: true,
       meta: { params: [{ name: 'x', type: 'number', default: 0 }] },

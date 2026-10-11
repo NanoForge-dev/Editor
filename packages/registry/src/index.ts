@@ -1,4 +1,5 @@
 export * from './item';
+export * from './manifest';
 export * from './registry';
 export * from './archive';
 export * from './client';

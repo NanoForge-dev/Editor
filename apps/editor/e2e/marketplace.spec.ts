@@ -15,7 +15,12 @@ let tsconfig: string;
 
 /** Publishes a version in the folder registry: the files of another version, with its number. */
 const publish = (name: string, from: string, version: string) => {
-  for (const file of ['nanoforge.manifest.json', 'index.js', 'components/hull.ts']) {
+  for (const file of [
+    'nanoforge.manifest.json',
+    'index.js',
+    'components/nanoforge.manifest.json',
+    'components/hull.ts',
+  ]) {
     const source = join(REGISTRY, name, from, file);
     if (!existsSync(source)) continue;
     const target = join(REGISTRY, name, version, file);
@@ -129,10 +134,16 @@ test('installs a plugin from the marketplace, updates it and uninstalls it', asy
 test('installs a package with its dependency, updates it and uninstalls it', async ({ page }) => {
   await open(page);
   let dialog = await openPackages(page);
-  await dialog.getByRole('textbox', { name: 'Search packages' }).fill('render');
-  const results = dialog.getByRole('list', { name: 'Registry packages' });
-  await expect(results.getByRole('button')).toHaveCount(1);
   const details = dialog.getByLabel('Package details');
+  const results = dialog.getByRole('list', { name: 'Registry packages' });
+  await dialog.getByRole('textbox', { name: 'Search packages' }).fill('shape components');
+  await expect(results.getByRole('button')).toHaveCount(1);
+  await expect(details.getByRole('list', { name: 'Contents' })).toContainText('1 component');
+  await expect(details.getByRole('list', { name: 'Suggested plugins' })).toContainText(
+    '@nanoforge/ecs',
+  );
+  await dialog.getByRole('textbox', { name: 'Search packages' }).fill('render');
+  await expect(results.getByRole('button')).toHaveCount(1);
   await expect(details.getByRole('list', { name: 'Dependencies' })).toContainText(
     '@acme/shapes ^1.0.0',
   );

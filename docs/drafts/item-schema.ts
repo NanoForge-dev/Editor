@@ -89,9 +89,15 @@ export const PackageManifest = withOwners({
   /** Other npm dependencies of the sources. */
   npmDependencies: z.record(NpmName, z.string()).optional(),
 
-  /** Source files whose exports are candidates for items. */
+  keywords: z.array(z.string()).default([]),
+  /** What the package holds (see `PackageContent`). Code files listed are item sources. */
+  contents: z.array(z.lazy(() => PackageContent)).default([]),
+  /** Source files whose exports are candidates for items (before `contents`). */
   items: z.array(RelativePath).default([]),
-  /** Sub-folders holding their own `package` manifest (never a plugin). Max 4 levels deep. */
+  /**
+   * Sub-manifests: folders (their `nanoforge.manifest.json`) or `.json` files. They only describe
+   * contents (`SubManifest`). Max 4 levels deep, 100 in all.
+   */
   include: z.array(RelativePath).default([]),
   /** Editor plugins that make this package easier to use. The editor names the missing ones. */
   suggestedPlugins: z.union([z.array(RegistryName), z.record(RegistryName, z.string())]).optional(),
@@ -99,6 +105,27 @@ export const PackageManifest = withOwners({
   publish: z.object({ paths: z.object({ package: z.string().optional() }).optional() }).optional(),
 });
 // Owner keys on a manifest: package-level data for that plugin (none in the example).
+
+/**
+ * One thing a package holds: a file, or a folder when `path` ends with `/`. `kind` is a core kind
+ * (`asset`, `type`, `enum`, `file`…) or one owned by a plugin (`@nanoforge/ecs:component`).
+ */
+export const PackageContent = withOwners({
+  kind: z.string().regex(/^(@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*:)?[a-z][a-z0-9-]*$/),
+  path: RelativePath,
+  export: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  side: Side.optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+/** A manifest `include` lists: contents only, paths relative to its own folder. */
+export const SubManifest = withOwners({
+  $schema: z.string().optional(),
+  contents: z.array(PackageContent).default([]),
+  include: z.array(RelativePath).default([]),
+});
 
 /** Added to the `plugin` manifest: declares the plugin as an owner. */
 export const ItemOwnerContribution = z.object({
@@ -235,7 +262,8 @@ export const ECS_TAGS = {
  *  - @nanoforge/ecs: `name` (the class's `name = "X"` field), a system's `query` (each
  *    `registry.getZipper([...])`) and `uses` (each `ctx.<lib>`).
  *
- * An export becomes an item when it is in a file listed in the manifest's `items`, or, in the
+ * An export becomes an item when it is in a code file the manifest's `contents` points to (its
+ * sub-manifests' included) or lists in `items`, or, in the
  * project's apps, when an owner tag is on it. Not `@internal`.
  */
 

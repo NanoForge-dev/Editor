@@ -80,7 +80,11 @@ const registry = {
     name: '@acme/shapes',
     version: '1.0.0',
     description: 'Shape components.',
-    items: ['components/hull.ts'],
+    include: ['components'],
+    suggestedPlugins: ['@nanoforge/ecs'],
+  }),
+  '@acme/shapes/1.0.0/components/nanoforge.manifest.json': JSON.stringify({
+    contents: [{ kind: '@nanoforge/ecs:component', path: 'hull.ts', export: 'Hull' }],
   }),
   '@acme/shapes/1.0.0/components/hull.ts': [
     '/**',

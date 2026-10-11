@@ -7,6 +7,8 @@ import type { Registry } from '../registry/registry.type';
 import { fromPackument, fromSearchObject } from '../wire/packument';
 import { Packument, ROUTES, WireSearch } from '../wire/wire.schema';
 
+const ABBREVIATED = 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8';
+
 export interface RegistryClientOptions {
   /** Base URL of the API holding `/registry/…`. */
   readonly baseUrl: string;
@@ -39,10 +41,10 @@ export class RegistryClient implements Registry {
   }
 
   async download(name: string, version: string): Promise<Uint8Array> {
-    const found = (await this._packument(name)).versions[version];
+    const found = (await this._packument(name, true)).versions[version];
     if (!found) throw new RegistryError('NOT_FOUND', `${name}@${version} was not found`);
     const subject = `${name}@${version}`;
-    const response = await this._request(found.dist.file, subject);
+    const response = await this._request(found.dist.tarball, subject);
     const limit = Math.min(found.dist.size ?? MAX_ARCHIVE_BYTES, MAX_ARCHIVE_BYTES);
     const bytes = await readLimited(response, limit, subject);
     if (found.dist.size !== undefined && bytes.length !== found.dist.size)
@@ -50,16 +52,28 @@ export class RegistryClient implements Registry {
     return bytes;
   }
 
-  private async _packument(name: string): Promise<Packument> {
-    const response = await this._request(ROUTES.item(name), name);
+  /**
+   * The document of an item. `abbreviated` asks for what installing needs (npm's
+   * `application/vnd.npm.install-v1+json`): versions without their contents nor the readme.
+   */
+  private async _packument(name: string, abbreviated = false): Promise<Packument> {
+    const response = await this._request(
+      ROUTES.item(name),
+      name,
+      abbreviated ? { accept: ABBREVIATED } : {},
+    );
     return this._parse(Packument, await this._json(response));
   }
 
   /**
-   * A request to the registry, or to where it keeps an archive (`dist.file` may be anywhere):
+   * A request to the registry, or to where it keeps an archive (`dist.tarball` may be anywhere):
    * http(s) only, and the registry's headers only go to the registry's own origin.
    */
-  private async _request(path: string, subject?: string): Promise<Response> {
+  private async _request(
+    path: string,
+    subject?: string,
+    headers: Record<string, string> = {},
+  ): Promise<Response> {
     const base = new URL(this._options.baseUrl);
     const url = new URL(path, base);
     if (url.protocol !== 'https:' && url.protocol !== 'http:')
@@ -70,7 +84,10 @@ export class RegistryClient implements Registry {
     let response: Response;
     try {
       response = await (this._options.fetch ?? fetch)(url.toString(), {
-        headers: url.origin === base.origin ? (this._options.headers?.() ?? {}) : {},
+        headers: {
+          ...headers,
+          ...(url.origin === base.origin ? this._options.headers?.() : {}),
+        },
         signal: AbortSignal.timeout(this._options.timeoutMs ?? 60_000),
       });
     } catch (error) {

@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
-import { Dependencies, ItemName, ItemType, ItemVersion } from '../item/item.schema';
+import { ItemName, ItemType, ItemVersion, Kinds, ManifestDependencies } from '../item/item.schema';
 
 /**
  * What goes over HTTP: routes and documents after the npm registry's (a "packument" per item,
  * archives under `/-/`, search under `/-/v1/search`), so people and tools that know npm find
- * their way. Differences: every item has a `type`, archives are zip files, and their hash is a
- * hex sha256. The contract is `docs/api/registry.md`.
+ * their way. Differences: every item has a `type`, archives are zip files, every version says
+ * what it holds (`contents`, counted in `kinds`), and `dist` adds a hex `sha256` to npm's
+ * hashes. The contract is `docs/api/registry.md`.
  */
 export const ROUTES = {
   search: '/registry/-/v1/search',
@@ -16,20 +17,28 @@ export const ROUTES = {
     `/registry/${name}/-/${name.split('/')[1]}-${version}.zip`,
 };
 
-const Person = z.object({ name: z.string().default('') }).loose();
+/** `{ name, email?, url? }`; npm also writes `"Name <email> (url)"`. */
+const Person = z.union([
+  z.object({ name: z.string().default('') }).loose(),
+  z.string().transform((text) => ({ name: text.replace(/\s*[<(].*$/, '') })),
+]);
 
 export const WireVersion = z
   .object({
     name: ItemName,
     version: ItemVersion,
     type: ItemType,
-    dependencies: Dependencies.default({}),
+    dependencies: ManifestDependencies.default({}),
     engines: z.record(z.string(), z.string()).default({}),
+    kinds: Kinds.default({}),
+    suggestedPlugins: ManifestDependencies.default({}),
     dist: z
       .object({
         /** URL of the archive, absolute or relative to the registry's base URL. */
-        file: z.string(),
+        tarball: z.string(),
         sha256: z.string().regex(/^[0-9a-f]{64}$/),
+        /** npm's Subresource Integrity string, `sha512-<base64>`. */
+        integrity: z.string().optional(),
         size: z.number().int().nonnegative().optional(),
       })
       .loose(),
@@ -43,7 +52,8 @@ export const Packument = z
     type: ItemType,
     description: z.string().default(''),
     author: Person.optional(),
-    readme: z.string().default(''),
+    maintainers: z.array(Person).default([]),
+    readme: z.string().nullable().default(''),
     'dist-tags': z.object({ latest: ItemVersion }).loose(),
     versions: z.record(z.string(), WireVersion),
     /** ISO dates by version (npm also keeps `created` and `modified` here). */
@@ -65,6 +75,8 @@ export const WireSearch = z.object({
             description: z.string().default(''),
             date: z.string().default(''),
             author: Person.optional(),
+            publisher: z.object({ username: z.string() }).loose().optional(),
+            kinds: Kinds.default({}),
           })
           .loose(),
         downloads: z.object({ total: z.number().int().nonnegative().default(0) }).optional(),

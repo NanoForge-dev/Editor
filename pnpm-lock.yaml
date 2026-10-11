@@ -481,6 +481,9 @@ importers:
       '@nanoforge-dev/editor-rpc':
         specifier: workspace:*
         version: link:../rpc
+      '@nanoforge-dev/registry':
+        specifier: workspace:*
+        version: link:../registry
       ts-morph:
         specifier: catalog:code
         version: 28.0.0

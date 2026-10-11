@@ -20,6 +20,7 @@ import {
   sourceRefBase,
 } from '@nanoforge-dev/editor-meta/pure';
 import type { AppModel } from '@nanoforge-dev/editor-protocol';
+import { isInsidePath, readPackageContents } from '@nanoforge-dev/registry/types';
 
 import type { MetaRoot, MetaSourceFile } from '../engine/extract-meta';
 import { isCodeFile } from '../service/code-service';
@@ -74,7 +75,7 @@ export class CatalogService implements Disposable {
     this._store.add(
       project.fs.onDidChange((changes) => {
         for (const change of changes) {
-          if (change.path.endsWith(MANIFEST) && within(change.path, MODULES)) this._scheduleAll();
+          if (change.path.endsWith('.json') && within(change.path, MODULES)) this._scheduleAll();
           else if (isCodeFile(change.path) && change.type !== 'changed') this._scheduleAll();
           else if (isCodeFile(change.path)) this._schedulePath(change.path);
         }
@@ -253,7 +254,10 @@ export class CatalogService implements Disposable {
     }
   }
 
-  /** Apps, shared libraries and installed packages (walking `include`), with their files. */
+  /**
+   * Apps, shared libraries and installed packages, with their files. A package's files are its
+   * `items` and the code files its contents point to, its sub-manifests' (`include`) included.
+   */
   private async _discover(): Promise<Source[]> {
     const { project } = this._options;
     const entries = project.fs.entries;
@@ -288,25 +292,29 @@ export class CatalogService implements Disposable {
       });
     }
 
-    const visit = async (dir: string, depth: number) => {
-      const manifestPath = `${dir}/${MANIFEST}`;
-      if (!project.fs.entry(manifestPath) || depth > 4) return;
-      let manifest: {
-        type?: string;
-        name?: string;
-        version?: string;
-        items?: unknown;
-        include?: unknown;
+    const visit = async (dir: string) => {
+      /** Read even when the tree does not list it yet: files of a fresh install come in late. */
+      const readJson = async (path: string): Promise<unknown> => {
+        try {
+          return JSON.parse((await project.fs.readText(`${dir}/${path}`)).text) as unknown;
+        } catch {
+          return undefined;
+        }
       };
-      try {
-        manifest = JSON.parse((await project.fs.readText(manifestPath)).text) as typeof manifest;
-      } catch {
-        return;
+      const manifest = (await readJson(MANIFEST)) as
+        { type?: string; name?: string; version?: string; items?: unknown } | undefined;
+      if (manifest?.type !== 'package' || !manifest.name) return;
+      const files = new Set(
+        (Array.isArray(manifest.items) ? manifest.items : [])
+          .filter((item): item is string => typeof item === 'string' && isInsidePath(item))
+          .map((item) => `${dir}/${item}`),
+      );
+      for (const content of (await readPackageContents(manifest, readJson)).contents) {
+        const path = `${dir}/${content.path.replace(/\/$/, '')}`;
+        if (project.fs.entry(path)?.kind === 'directory')
+          for (const file of codeFiles(path)) files.add(file);
+        else if (isCodeFile(path)) files.add(path);
       }
-      if (manifest.type !== 'package' || !manifest.name) return;
-      const listed = Array.isArray(manifest.items)
-        ? manifest.items.filter((item): item is string => typeof item === 'string')
-        : [];
       sources.push({
         source: {
           kind: 'module',
@@ -315,14 +323,8 @@ export class CatalogService implements Disposable {
           path: dir,
         },
         root: dir,
-        files: listed
-          .filter((item) => !item.split('/').includes('..'))
-          .map((item) => ({ path: `${dir}/${item}`, listed: true })),
+        files: [...files].map((path) => ({ path, listed: true })),
       });
-      const includes = Array.isArray(manifest.include) ? manifest.include : [];
-      for (const include of includes)
-        if (typeof include === 'string' && !include.split('/').includes('..'))
-          await visit(`${dir}/${include}`, depth + 1);
     };
     const scopes = entries.filter(
       (entry) => entry.kind === 'directory' && /^nf_modules\/@[^/]+$/.test(entry.path),
@@ -334,7 +336,7 @@ export class CatalogService implements Disposable {
           entry.path.startsWith(`${scope.path}/`) &&
           !entry.path.slice(scope.path.length + 1).includes('/'),
       );
-      for (const name of names) await visit(name.path, 0);
+      for (const name of names) await visit(name.path);
     }
     return sources;
   }

@@ -6,11 +6,11 @@ The editor **server** makes every call: the API key and the user's tokens never 
 
 ## Contracts
 
-| Contract                                                                            | Status in the API                                                                 | Editor without it                                                                                        |
-| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [Settings sync](settings-sync.md)                                                   | to build                                                                          | hosted editors keep account settings on their own disk, per user                                         |
-| [Registry of plugins and packages](registry.md)                                     | to build (today's registry holds single-file components and systems, no versions) | the marketplace and the Packages dialog say the registry is not available                                |
-| Account plugin list (in [settings sync](settings-sync.md#keys-the-editor-reserves)) | no endpoint of its own: a key of the settings document                            | the list stays on the machine. It also does today for local editors, which do not sign in (see the page) |
+| Contract                                                                            | Status in the API                                                  | Editor without it                                                                                        |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| [Settings sync](settings-sync.md)                                                   | to build                                                           | hosted editors keep account settings on their own disk, per user                                         |
+| [Registry of plugins and packages](registry.md)                                     | built (registry v2: npm-style, versioned zip archives, `contents`) | the marketplace and the Packages dialog say the registry is not available                                |
+| Account plugin list (in [settings sync](settings-sync.md#keys-the-editor-reserves)) | no endpoint of its own: a key of the settings document             | the list stays on the machine. It also does today for local editors, which do not sign in (see the page) |
 
 Nothing is asked for **per-user project settings** of hosted editors (`local.json` in a local editor): they stay on the hosted editor's disk (`DATA_DIR/settings/project-local/<user>/<project>.json`). A hosted editor therefore needs a **persistent data volume**, shared by its instances if there are several.
 

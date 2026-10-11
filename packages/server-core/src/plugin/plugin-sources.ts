@@ -1,7 +1,7 @@
 import { watch } from 'chokidar';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 import {
   Emitter,
@@ -22,9 +22,6 @@ export type PluginSourceKind = PluginListing['source'];
 
 /** Where a project keeps its own plugins. */
 export const PROJECT_PLUGINS_DIR = '.nanoforge/plugins';
-
-/** How deep a package's `include` is followed (packages can include packages). */
-const MAX_INCLUDE_DEPTH = 4;
 
 /** The project whose plugins are listed: its id (for URLs) and its root folder. */
 export interface PluginProject {
@@ -102,40 +99,31 @@ export class PluginSources {
   }
 
   /**
-   * The plugins that packages in the project's `nf_modules` suggest, merged by plugin name.
-   * Reads each installed package's manifest and follows `include`, never scans.
+   * The plugins that packages in the project's `nf_modules` suggest, merged by plugin name. Only
+   * a package's own manifest suggests: its sub-manifests (`include`) only describe contents.
    */
   async suggestions(projectRoot: string): Promise<PluginSuggestion[]> {
     const byName = new Map<string, PluginSuggestion>();
-    const visited = new Set<string>();
-    const visit = async (dir: string, depth: number) => {
-      if (visited.has(dir)) return;
-      visited.add(dir);
-      let manifest;
-      try {
-        const raw: unknown = JSON.parse(await readFile(join(dir, MANIFEST_FILE), 'utf8'));
-        if ((raw as { type?: unknown } | null)?.type !== 'package') return;
-        manifest = PackageManifestSchema.parse(raw);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        this._logger.warn(`Package at ${dir} ignored: ${message}`);
-        return;
-      }
-      for (const [name, range] of Object.entries(manifest.suggestedPlugins)) {
-        const entry = byName.get(name) ?? { name, suggestedBy: [] };
-        entry.suggestedBy.push({ package: manifest.name, range });
-        byName.set(name, entry);
-      }
-      if (depth >= MAX_INCLUDE_DEPTH) return;
-      for (const include of new Set(manifest.include)) {
-        const target = resolve(dir, include);
-        if (target !== dir) await visit(target, depth + 1);
-      }
-    };
     const root = join(projectRoot, PACKAGES_DIR);
     for (const scope of await directories(root)) {
-      for (const name of await directories(join(root, scope)))
-        await visit(resolve(root, scope, name), 0);
+      for (const name of await directories(join(root, scope))) {
+        const dir = join(root, scope, name);
+        let manifest;
+        try {
+          const raw: unknown = JSON.parse(await readFile(join(dir, MANIFEST_FILE), 'utf8'));
+          if ((raw as { type?: unknown } | null)?.type !== 'package') continue;
+          manifest = PackageManifestSchema.parse(raw);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          this._logger.warn(`Package at ${dir} ignored: ${message}`);
+          continue;
+        }
+        for (const [plugin, range] of Object.entries(manifest.suggestedPlugins)) {
+          const entry = byName.get(plugin) ?? { name: plugin, suggestedBy: [] };
+          entry.suggestedBy.push({ package: manifest.name, range });
+          byName.set(plugin, entry);
+        }
+      }
     }
     return [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
   }

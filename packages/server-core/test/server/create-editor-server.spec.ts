@@ -149,20 +149,27 @@ describe('editor server', () => {
       mkdirSync(join(workspace, 'pong/nf_modules', path), { recursive: true });
       writeFileSync(
         join(workspace, 'pong/nf_modules', path, 'nanoforge.manifest.json'),
-        JSON.stringify({ type: 'package', version: '1.0.0', ...manifest }),
+        JSON.stringify(manifest),
       );
     };
-    write('@nanoforge/motion', { name: '@nanoforge/motion', suggestedPlugins: ['@nanoforge/ecs'] });
-    write('@nanoforge/render-2d', {
-      name: '@nanoforge/render-2d',
-      include: ['shapes'],
-      suggestedPlugins: { '@nanoforge/ecs': '^1.0.0' },
-    });
+    const pkg = (manifest: object) => ({ type: 'package', version: '1.0.0', ...manifest });
+    write(
+      '@nanoforge/motion',
+      pkg({ name: '@nanoforge/motion', suggestedPlugins: ['@nanoforge/ecs'] }),
+    );
+    write(
+      '@nanoforge/render-2d',
+      pkg({
+        name: '@nanoforge/render-2d',
+        include: ['shapes'],
+        suggestedPlugins: { '@nanoforge/ecs': '^1.0.0', '@nanoforge/graphics-gizmos': '*' },
+      }),
+    );
     write('@nanoforge/render-2d/shapes', {
-      name: '@nanoforge/shapes',
-      suggestedPlugins: ['@nanoforge/graphics-gizmos'],
+      contents: [{ kind: 'asset', path: 'circle.png' }],
+      suggestedPlugins: ['@nanoforge/ignored'],
     });
-    write('@evil/escape', { name: '@evil/escape', include: ['../../..'] });
+    write('@evil/bad', pkg({ name: '@evil/bad', suggestedPlugins: { '@x/y': 'not a range' } }));
     try {
       expect(await client.api(PluginsContract).suggestions({ project: id })).toEqual([
         {
@@ -174,7 +181,7 @@ describe('editor server', () => {
         },
         {
           name: '@nanoforge/graphics-gizmos',
-          suggestedBy: [{ package: '@nanoforge/shapes', range: '*' }],
+          suggestedBy: [{ package: '@nanoforge/render-2d', range: '*' }],
         },
       ]);
     } finally {

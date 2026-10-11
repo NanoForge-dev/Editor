@@ -56,6 +56,8 @@
       {@const details = packages.details}
       {@const mine = packages.installedOf(details.name)}
       {@const dependencies = Object.entries(details.versions[0]?.dependencies ?? {})}
+      {@const suggested = Object.keys(details.versions[0]?.suggestedPlugins ?? {})}
+      {@const kinds = Object.entries(details.kinds)}
       <div class="title">
         <div class="text">
           <span class="name">{details.name}</span>
@@ -78,6 +80,27 @@
         {/if}
       </div>
       {#if details.description}<p>{details.description}</p>{/if}
+      {#if kinds.length}
+        <h3>Holds</h3>
+        <ul class="plain" aria-label="Contents">
+          {#each kinds as [kind, count] (kind)}
+            {@const [owner, short] = kind.includes(':') ? kind.split(':') : ['', kind]}
+            <li>
+              <span>{count} {short}</span>
+              {#if owner}<span class="meta">{owner}</span>{/if}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      {#if suggested.length}
+        <h3>Works best with</h3>
+        <ul class="plain" aria-label="Suggested plugins">
+          {#each suggested as name (name)}
+            <li><span>{name}</span></li>
+          {/each}
+        </ul>
+        <p class="hint">Editor plugins: the editor offers the missing ones once it is installed.</p>
+      {/if}
       <h3>Depends on</h3>
       {#if dependencies.length}
         <ul class="plain" aria-label="Dependencies">

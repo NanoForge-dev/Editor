@@ -19,6 +19,16 @@ export const ItemVersion = z
 export const Dependencies = z.record(ItemName, z.string());
 export type Dependencies = z.output<typeof Dependencies>;
 
+/** Dependencies as a manifest may write them: `["@scope/name"]` (any version) or with ranges. */
+export const ManifestDependencies = z.union([
+  z.array(ItemName).transform((names) => Object.fromEntries(names.map((name) => [name, '*']))),
+  Dependencies,
+]);
+
+/** How many contents of each kind a version holds: `{ "@nanoforge/ecs:component": 3 }`. */
+export const Kinds = z.record(z.string(), z.number().int().nonnegative());
+export type Kinds = z.output<typeof Kinds>;
+
 /** What the registry says of an item in lists. */
 export const RegistrySummary = z.object({
   name: ItemName,
@@ -30,6 +40,8 @@ export const RegistrySummary = z.object({
   downloads: z.number().int().nonnegative().default(0),
   /** ISO date of the newest version. */
   updatedAt: z.string().default(''),
+  /** What the newest version holds, by kind. */
+  kinds: Kinds.default({}),
 });
 export type RegistrySummary = z.output<typeof RegistrySummary>;
 
@@ -41,6 +53,10 @@ export const RegistryVersion = z.object({
   dependencies: Dependencies.default({}),
   /** What the version needs to run, e.g. `{ "editor": ">=0.1.0" }`. */
   engines: z.record(z.string(), z.string()).default({}),
+  /** What the version holds, by kind. */
+  kinds: Kinds.default({}),
+  /** Editor plugins that make the version easier to use, with ranges. */
+  suggestedPlugins: Dependencies.default({}),
 });
 export type RegistryVersion = z.output<typeof RegistryVersion>;
 
@@ -73,8 +89,9 @@ export const ItemManifest = z
     name: ItemName,
     version: ItemVersion,
     description: z.string().optional(),
-    dependencies: Dependencies.optional(),
+    dependencies: ManifestDependencies.optional(),
     engines: z.record(z.string(), z.string()).optional(),
+    suggestedPlugins: ManifestDependencies.optional(),
   })
   .loose();
 export type ItemManifest = z.output<typeof ItemManifest>;
