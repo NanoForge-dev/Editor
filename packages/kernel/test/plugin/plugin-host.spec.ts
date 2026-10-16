@@ -130,6 +130,28 @@ describe('PluginHost', () => {
     await expect(host.activate('@n/broken')).rejects.toThrow(PluginActivationError);
   });
 
+  it('deactivates a module whose activation failed or timed out', async () => {
+    const stopped: string[] = [];
+    const { host } = setup({
+      '@n/broken': {
+        activate: () => {
+          throw new Error('boom');
+        },
+        deactivate: () => void stopped.push('broken'),
+      },
+      '@n/slow': {
+        activate: () => new Promise(() => undefined),
+        deactivate: async () => {
+          stopped.push('slow');
+          throw new Error('stuck');
+        },
+      },
+    });
+    await host.start([descriptor('@n/broken'), descriptor('@n/slow')]);
+    await expect.poll(() => [...stopped].sort()).toEqual(['broken', 'slow']);
+    host.dispose();
+  });
+
   it('does not activate unresolved plugins', async () => {
     const { host } = setup({});
     await host.start([descriptor('@n/a', { dependencies: ['@n/missing'] })]);
@@ -163,7 +185,7 @@ describe('PluginHost', () => {
     expect(live.size).toBe(0);
   });
 
-  it('refuses an activation asked while the plugin deactivates, and deactivates activating dependents', async () => {
+  it('activates again once a deactivation in progress ends, and deactivates activating dependents', async () => {
     let release!: () => void;
     const slow = new Promise<void>((resolve) => (release = resolve));
     const states: string[] = [];
@@ -176,12 +198,11 @@ describe('PluginHost', () => {
     });
     await host.start([descriptor('@n/base'), descriptor('@n/ext', { dependencies: ['@n/base'] })]);
     const deactivation = host.deactivate('@n/base');
-    await expect(host.activate('@n/base')).rejects.toBeInstanceOf(PluginActivationError);
+    const activation = host.activate('@n/base');
     release();
     await deactivation;
-    expect(host.plugins.get().find((plugin) => plugin.name === '@n/base')?.state).toBe('inactive');
     expect(states).toEqual(['ext:activate', 'ext:deactivate']);
-    await host.activate('@n/base');
+    await activation;
     expect(host.plugins.get().find((plugin) => plugin.name === '@n/base')?.state).toBe('active');
     host.dispose();
   });

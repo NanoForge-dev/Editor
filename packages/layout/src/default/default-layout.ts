@@ -36,7 +36,8 @@ export const composeDefaultLayout = (widgets: readonly WidgetPlacement[]): Layou
       activate: index === 0,
     });
   }
-  return reduce(emptyLayout(), { type: 'batch', ops }).layout;
+  const layout = reduce(emptyLayout(), { type: 'batch', ops }).layout;
+  return { ...layout, known: widgets.map((widget) => widget.id) };
 };
 
 /** Adds screens and default docks that a saved layout does not know yet (new plugins). */
@@ -57,8 +58,9 @@ export const reconcileLayout = (
   ];
   const ops: LayoutOp[] = [{ type: 'setScreens', screens: merged }];
   let next = reduce(layout, { type: 'batch', ops }).layout;
+  const seen = new Set([...known, ...layout.known]);
   for (const dock of widgets.filter(
-    (widget) => widget.kind === 'dock' && !known.has(widget.id) && widget.openByDefault !== false,
+    (widget) => widget.kind === 'dock' && !seen.has(widget.id) && widget.openByDefault !== false,
   )) {
     const slot = dock.defaultSlot ?? 'leftTop';
     next = reduce(next, {
@@ -68,5 +70,5 @@ export const reconcileLayout = (
       activate: false,
     }).layout;
   }
-  return next;
+  return { ...next, known: [...new Set([...seen, ...widgets.map((widget) => widget.id)])] };
 };

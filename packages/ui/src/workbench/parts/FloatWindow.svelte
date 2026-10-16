@@ -9,7 +9,23 @@
   const { layout, logger } = getWorkbenchContext();
 
   let preview = $state<{ x: number; y: number; width: number; height: number }>();
-  const rect = $derived(preview ?? float);
+  let innerWidth = $state(Infinity);
+  let innerHeight = $state(Infinity);
+  /** How much of a window stays on screen however it was moved or the window resized. */
+  const KEEP = { x: 80, y: 40 };
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  /**
+   * Where the window is shown: its saved place, kept within reach (a window moved off the edge,
+   * or saved on a larger screen, could otherwise only come back with Reset layout).
+   */
+  const rect = $derived.by(() => {
+    const shown = preview ?? float;
+    return {
+      ...shown,
+      x: clamp(shown.x, KEEP.x - shown.width, innerWidth - KEEP.x),
+      y: clamp(shown.y, 0, innerHeight - KEEP.y),
+    };
+  });
 
   const track = (event: PointerEvent, mode: 'move' | 'resize') => {
     if (event.button !== 0) return;
@@ -19,7 +35,7 @@
     const start = {
       x: event.clientX,
       y: event.clientY,
-      rect: { x: float.x, y: float.y, width: float.width, height: float.height },
+      rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
     };
     const move = (e: PointerEvent) => {
       const dx = e.clientX - start.x;
@@ -32,7 +48,8 @@
     const up = () => {
       target.removeEventListener('pointermove', move);
       target.removeEventListener('pointerup', up);
-      const final = preview;
+      target.removeEventListener('pointercancel', up);
+      const final = preview && rect;
       preview = undefined;
       if (final) {
         layout
@@ -45,8 +62,11 @@
     };
     target.addEventListener('pointermove', move);
     target.addEventListener('pointerup', up);
+    target.addEventListener('pointercancel', up);
   };
 </script>
+
+<svelte:window bind:innerWidth bind:innerHeight />
 
 <div
   class="float"

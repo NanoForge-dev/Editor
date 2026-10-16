@@ -6,10 +6,19 @@ import type { TypeContext } from './type-context.type';
 const exportRef = (declaration: Node, name: string, context: TypeContext) =>
   `${context.modulePath(declaration.getSourceFile())}#${name}`;
 
-const enumOf = (type: Type): { symbolName: string; declaration: Node } | undefined => {
-  const symbol = type.isUnion()
-    ? type.getUnionTypes()[0]?.getSymbol()?.getDeclarations()[0]?.getParent()?.getSymbol()
-    : (type.getSymbol() ?? type.getAliasSymbol());
+/** The parts of a type that hold a value: `undefined` and `null` only make it optional. */
+const valueParts = (type: Type): Type[] =>
+  type.isUnion()
+    ? type.getUnionTypes().filter((part) => !part.isUndefined() && !part.isNull())
+    : [type];
+
+/** The enum of a type, from its members (`Mode`, `Mode | undefined`) or the type itself. */
+const enumOf = (parts: readonly Type[]): { symbolName: string; declaration: Node } | undefined => {
+  const [first] = parts;
+  const symbol =
+    parts.length > 1
+      ? first?.getSymbol()?.getDeclarations()[0]?.getParent()?.getSymbol()
+      : (first?.getSymbol() ?? first?.getAliasSymbol());
   const declaration = symbol?.getDeclarations()[0];
   if (!symbol || !declaration || !Node.isEnumDeclaration(declaration)) return undefined;
   return { symbolName: symbol.getName(), declaration };
@@ -22,9 +31,6 @@ const enumMembers = (declaration: Node): EnumMember[] =>
         return value === undefined ? [] : [{ name: member.getName(), value }];
       })
     : [];
-
-const isStringLiteralUnion = (type: Type) =>
-  type.isUnion() && type.getUnionTypes().every((part) => part.isStringLiteral());
 
 /** A class (or interface) declared in a package or the project, as `{ type: 'ref' }`. */
 const refOf = (type: Type, context: TypeContext): string | undefined => {
@@ -47,14 +53,10 @@ export const elementOfType = (
   context: TypeContext,
   depth = 0,
 ): Element => {
-  const type = rawType.isUnion()
-    ? (() => {
-        const parts = rawType.getUnionTypes().filter((part) => !part.isUndefined());
-        return parts.length === 1 ? parts[0]! : rawType;
-      })()
-    : rawType;
+  const parts = valueParts(rawType);
+  const type = parts.length === 1 ? parts[0]! : rawType;
 
-  const enumInfo = enumOf(type);
+  const enumInfo = enumOf(parts);
   if (enumInfo) {
     const members = enumMembers(enumInfo.declaration);
     const numeric =
@@ -66,19 +68,20 @@ export const elementOfType = (
       enumMembers: members,
     };
   }
-  if (type.isBoolean() || type.isBooleanLiteral()) return { type: 'boolean', name };
+  if (
+    type.isBoolean() ||
+    type.isBooleanLiteral() ||
+    (parts.length > 1 && parts.every((part) => part.isBooleanLiteral()))
+  )
+    return { type: 'boolean', name };
   if (type.isNumber() || type.isNumberLiteral()) return { type: 'number', name };
   if (type.isString() || type.isStringLiteral() || type.isTemplateLiteral()) {
     return type.isStringLiteral()
       ? { type: 'string', name, enum: [type.getLiteralValue() as string] }
       : { type: 'string', name };
   }
-  if (isStringLiteralUnion(type)) {
-    return {
-      type: 'string',
-      name,
-      enum: type.getUnionTypes().map((part) => part.getLiteralValue() as string),
-    };
+  if (parts.length > 1 && parts.every((part) => part.isStringLiteral())) {
+    return { type: 'string', name, enum: parts.map((part) => part.getLiteralValue() as string) };
   }
   if (type.isArray() && depth < 4) {
     return {

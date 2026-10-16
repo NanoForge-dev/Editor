@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -36,6 +36,21 @@ describe('FileAccountBackend', () => {
       data: { revision, values: { 'editor.fontSize': 14 } },
     });
     expect(changes).toEqual([revision]);
+  });
+
+  it('sets aside a settings file that is not valid JSON instead of overwriting it', async () => {
+    const dataDir = mkdtempSync(join(tmpdir(), 'nf-settings-'));
+    const files = new FileAccountBackend(loadEnv({ DATA_DIR: dataDir }));
+    const user = session();
+    await files.put(user, null, { 'editor.fontSize': 14 });
+    const folder = join(dataDir, 'settings/accounts');
+    const [name] = readdirSync(folder);
+    writeFileSync(join(folder, name!), '{ "revision": "1", "values": { oops } }');
+    expect(await files.get(user)).toEqual({ revision: null, values: {} });
+    const aside = readdirSync(folder).find((file) => file.includes('.invalid-'));
+    expect(aside && readFileSync(join(folder, aside), 'utf8')).toContain('oops');
+    await files.put(user, null, { 'editor.tabSize': 4 });
+    expect(existsSync(join(folder, aside!))).toBe(true);
   });
 
   it('enforces size limits', async () => {

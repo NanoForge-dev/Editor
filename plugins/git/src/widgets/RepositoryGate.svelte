@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
 
   import type { GitStatus } from '@nanoforge-dev/editor-sdk';
-  import { EmptyState } from '@nanoforge-dev/editor-sdk/ui';
+  import { Button, EmptyState } from '@nanoforge-dev/editor-sdk/ui';
 
   import { getSession } from '../session/git-session';
 
@@ -15,11 +15,22 @@
   }
 
   const { description, actions, children }: Props = $props();
-  const git = getSession().store.state;
+  const { store } = getSession();
+  const git = store.state;
 </script>
 
 {#if $git.unavailable}
   <EmptyState icon="git-branch" title="Git is not available here" description={$git.unavailable} />
+{:else if !$git.status && $git.readError}
+  <EmptyState
+    icon="triangle-alert"
+    title="Could not read the repository"
+    description={$git.readError}
+  >
+    {#snippet actions()}
+      <Button onclick={() => void store.refresh()}>Try again</Button>
+    {/snippet}
+  </EmptyState>
 {:else if !$git.status}
   <EmptyState icon="git-branch" title="Reading the repository…" />
 {:else if !$git.status.repository}

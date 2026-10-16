@@ -33,7 +33,8 @@ export interface WorkbenchSetupOptions {
   readonly history: HistoryService;
   readonly logger: Logger;
   /** Activates plugins (`onWidget:<id>`). */
-  readonly activate: (event: string) => Promise<void>;
+  /** Activates the plugins of an event; may resolve with their failures (to explain a panel). */
+  readonly activate: (event: string) => Promise<unknown>;
 }
 
 /** The workbench of an open project: layout, widget host and their commands and menus. */

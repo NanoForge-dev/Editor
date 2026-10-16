@@ -19,19 +19,26 @@
 
   /** Startup failures, with what the user can do about them. */
   const describeStartupError = (reason: unknown): ErrorDescription =>
-    errorCode(reason) === 'UNAVAILABLE'
+    errorCode(reason) === 'TIMEOUT'
       ? {
-          title: "Can't reach the editor server",
-          hint: 'Start it with nf editor in your project folder (or check your connection), then try again.',
+          title: 'The editor server does not answer',
+          hint: 'It accepted the connection but sent nothing back. Restart it with nf editor, then try again.',
           detail: errorMessage(reason),
           actions: [retry],
         }
-      : {
-          title: 'The editor failed to start',
-          hint: 'Try again. If it keeps failing, restart the editor server.',
-          detail: errorMessage(reason),
-          actions: [retry],
-        };
+      : errorCode(reason) === 'UNAVAILABLE'
+        ? {
+            title: "Can't reach the editor server",
+            hint: 'Start it with nf editor in your project folder (or check your connection), then try again.',
+            detail: errorMessage(reason),
+            actions: [retry],
+          }
+        : {
+            title: 'The editor failed to start',
+            hint: 'Try again. If it keeps failing, restart the editor server.',
+            detail: errorMessage(reason),
+            actions: [retry],
+          };
 
   $effect(() => {
     let disposed = false;

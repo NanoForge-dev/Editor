@@ -185,3 +185,24 @@ describe('AccountSyncStore', () => {
     store.dispose();
   });
 });
+
+describe('AccountSyncStore limits', () => {
+  it('says the document is too large instead of sending it, and recovers', async () => {
+    const remote = new FakeRemote();
+    const store = new AccountSyncStore(remote, new MemoryKeyValueStore(), 'account', {
+      debounceMs: 0,
+    });
+    await store.initialize();
+    await store.write({ 'keymap.overrides': 'x'.repeat(300 * 1024) });
+    await store.sync();
+    expect(store.status.get()).toBe('error');
+    expect(store.error.get()).toMatch(/too large to sync/);
+    expect(remote.puts).toBe(0);
+
+    await store.write({ 'keymap.overrides': undefined });
+    await store.sync();
+    expect(store.status.get()).toBe('idle');
+    expect(store.error.get()).toBeUndefined();
+    store.dispose();
+  });
+});

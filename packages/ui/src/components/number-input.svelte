@@ -34,6 +34,7 @@
   const format = (n: number) => String(round(n));
 
   $effect(() => {
+    sent = undefined;
     if (!editing) text = format(value);
   });
 
@@ -42,14 +43,28 @@
     editing && text.trim() !== '' && Number.isNaN(Number(text.replace(',', '.'))),
   );
 
+  /** The number typed, or nothing while the text isn't one. */
+  const typed = () => {
+    const parsed = Number(text.replace(',', '.'));
+    return text.trim() === '' || Number.isNaN(parsed) ? undefined : round(parsed);
+  };
+
+  /** The last value committed from here, until the parent hands a value back. */
+  let sent: number | undefined;
+  const send = (next: number) => {
+    sent = next;
+    onchange?.(next, true);
+  };
+
+  /** Leaving the field commits what was typed, only when it changed the value. */
   const commit = () => {
     editing = false;
-    const parsed = Number(text.replace(',', '.'));
-    if (text.trim() === '' || Number.isNaN(parsed)) {
+    const next = typed();
+    if (next === undefined) {
       text = format(value);
       return;
     }
-    onchange?.(round(parsed), true);
+    if (next !== round(value) && next !== sent) send(next);
   };
 
   const onkeydown = (event: KeyboardEvent) => {
@@ -61,7 +76,9 @@
     } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
       const factor = event.shiftKey ? 10 : event.altKey ? 0.1 : 1;
-      onchange?.(round(value + (event.key === 'ArrowUp' ? step : -step) * factor), true);
+      const next = round((typed() ?? value) + (event.key === 'ArrowUp' ? step : -step) * factor);
+      text = format(next);
+      send(next);
     }
   };
 

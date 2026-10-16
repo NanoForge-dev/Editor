@@ -148,7 +148,12 @@ export class Container implements ServiceAccessor, Disposable {
     }
   }
 
+  /**
+   * The service, or nothing when it is not provided or the container was disposed: code that
+   * runs during teardown (a widget's `dispose` after its plugin stopped) can still ask.
+   */
   tryGet<T>(token: ServiceToken<T>): T | undefined {
+    if (this._disposed) return undefined;
     return this.has(token) ? this.get(token) : undefined;
   }
 

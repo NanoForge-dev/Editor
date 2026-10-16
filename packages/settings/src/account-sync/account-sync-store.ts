@@ -4,6 +4,7 @@ import {
   ObservableValue,
   createToken,
 } from '@nanoforge-dev/editor-kernel';
+import { SETTINGS_LIMITS } from '@nanoforge-dev/editor-protocol';
 
 import type { KeyValueStore } from '../key-value/key-value-store.type';
 import { deepEqual } from '../merge/deep-merge';
@@ -27,6 +28,19 @@ const errorCode = (error: unknown) => (error as { code?: string } | null)?.code;
 const OFFLINE_CODES = new Set(['UNAVAILABLE', 'TIMEOUT']);
 
 /**
+ * The server refuses an account document past its limits, and would refuse it again at every
+ * sync: say why before sending it.
+ */
+const checkSize = (values: Record<string, unknown>) => {
+  const keys = Object.keys(values).length;
+  const bytes = new TextEncoder().encode(JSON.stringify(values)).length;
+  if (keys > SETTINGS_LIMITS.maxKeys || bytes > SETTINGS_LIMITS.maxBytes)
+    throw new Error(
+      `Account settings are too large to sync (${keys} settings, ${Math.ceil(bytes / 1024)} KiB; at most ${SETTINGS_LIMITS.maxKeys} and ${SETTINGS_LIMITS.maxBytes / 1024} KiB). Reset large ones, such as keymap overrides, or keep them on this machine.`,
+    );
+};
+
+/**
  * Account scope: edits apply locally at once, are persisted (offline queue) and pushed to the
  * remote in the background. Concurrent edits from other devices are merged per key against the
  * last synced base; keys changed on both sides keep the local value and are reported as
@@ -35,6 +49,7 @@ const OFFLINE_CODES = new Set(['UNAVAILABLE', 'TIMEOUT']);
 export class AccountSyncStore implements ScopeStore {
   private readonly _values = new ObservableValue<SettingValues>({});
   private readonly _status = new ObservableValue<SyncStatus>('idle');
+  private readonly _error = new ObservableValue<string | undefined>(undefined);
   private readonly _conflicts = new ObservableValue<readonly MergeConflict[]>([]);
   private readonly _store = new DisposableStore();
   private _state: PersistedState = {
@@ -63,6 +78,11 @@ export class AccountSyncStore implements ScopeStore {
 
   get status(): Observable<SyncStatus> {
     return this._status.readonly();
+  }
+
+  /** Why the last sync failed (`status` is `error`), until one succeeds. */
+  get error(): Observable<string | undefined> {
+    return this._error.readonly();
   }
 
   get conflicts(): Observable<readonly MergeConflict[]> {
@@ -127,6 +147,7 @@ export class AccountSyncStore implements ScopeStore {
       if (this._state.dirty) await this._push();
       else await this._pull();
       this._attempt = 0;
+      this._error.set(undefined);
       this._status.set(
         this._conflicts.get().length ? 'conflict' : this._state.dirty ? 'pending' : 'idle',
       );
@@ -136,6 +157,7 @@ export class AccountSyncStore implements ScopeStore {
         const delays = this._options.retryDelays ?? [1000, 2000, 5000, 15_000, 60_000];
         this._schedule(delays[Math.min(this._attempt++, delays.length - 1)]!);
       } else {
+        this._error.set(error instanceof Error ? error.message : String(error));
         this._status.set('error');
       }
     }
@@ -176,6 +198,7 @@ export class AccountSyncStore implements ScopeStore {
 
   private async _push(attempt = 0): Promise<void> {
     const sent = this._synced(this._state.local);
+    checkSize(sent);
     try {
       const { revision } = await this._remote.put(this._state.base.revision, sent);
       const dirty = !deepEqual(this._synced(this._state.local), sent);

@@ -45,6 +45,22 @@ export const RegistrySummary = z.object({
 });
 export type RegistrySummary = z.output<typeof RegistrySummary>;
 
+/**
+ * One content of a published version, as the registry lists it: paths from the archive root,
+ * `manifest` naming the sub-manifest it comes from; the API adds `fileCount` and `size`.
+ */
+export const VersionContent = z
+  .object({
+    kind: z.string(),
+    path: z.string(),
+    export: z.string().optional(),
+    manifest: z.string().optional(),
+    fileCount: z.number().int().nonnegative().optional(),
+    size: z.number().int().nonnegative().optional(),
+  })
+  .loose();
+export type VersionContent = z.output<typeof VersionContent>;
+
 export const RegistryVersion = z.object({
   version: ItemVersion,
   publishedAt: z.string().default(''),
@@ -57,6 +73,10 @@ export const RegistryVersion = z.object({
   kinds: Kinds.default({}),
   /** Editor plugins that make the version easier to use, with ranges. */
   suggestedPlugins: Dependencies.default({}),
+  /** What the version holds (root manifest and sub-manifests joined). */
+  contents: z.array(VersionContent).default([]),
+  /** The sub-manifests its contents were read from. */
+  manifests: z.array(z.string()).default([]),
 });
 export type RegistryVersion = z.output<typeof RegistryVersion>;
 

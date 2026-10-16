@@ -63,6 +63,27 @@ describe('GitStore', () => {
     expect(store.state.get().busy).toBe(false);
   });
 
+  it('keeps why the repository could not be read, and reports it once', async () => {
+    const errors: string[] = [];
+    const store = new GitStore((title) => errors.push(title));
+    let broken = true;
+    const repo = api(status());
+    store.setApi({
+      ...repo.api,
+      status: async () => {
+        if (broken) throw new Error('detected dubious ownership');
+        return repo.api.status();
+      },
+    });
+    await store.refresh();
+    await store.refresh();
+    expect(store.state.get().readError).toBe('detected dubious ownership');
+    expect(errors).toEqual(['Could not read the repository']);
+    broken = false;
+    await store.refresh();
+    expect(store.state.get()).toMatchObject({ readError: undefined, status: { branch: 'main' } });
+  });
+
   it('says so in a hosted editor, and asks for more history', async () => {
     const store = new GitStore();
     store.setApi({

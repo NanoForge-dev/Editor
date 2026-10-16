@@ -19,4 +19,5 @@ export const emptyLayout = (): Layout => ({
   floats: [],
   maximized: null,
   screenOverrides: {},
+  known: [],
 });

@@ -133,7 +133,7 @@ export class DirectoryRegistry implements Registry {
           const manifest = ItemManifest.safeParse(raw);
           if (!manifest.success || manifest.data.name !== name || manifest.data.version !== version)
             continue;
-          const { contents } = await readPackageContents(raw, readJson);
+          const { contents, manifests } = await readPackageContents(raw, readJson);
           versions.push({
             version,
             publishedAt: (await stat(join(folder, MANIFEST_FILE))).mtime.toISOString(),
@@ -142,6 +142,8 @@ export class DirectoryRegistry implements Registry {
             engines: manifest.data.engines ?? {},
             kinds: countKinds(contents),
             suggestedPlugins: manifest.data.suggestedPlugins ?? {},
+            contents,
+            manifests,
             manifest: manifest.data,
             folder,
           });
@@ -171,6 +173,8 @@ export class DirectoryRegistry implements Registry {
               engines: entry.engines,
               kinds: entry.kinds,
               suggestedPlugins: entry.suggestedPlugins,
+              contents: entry.contents,
+              manifests: entry.manifests,
             })),
           },
           folders: new Map(versions.map((version) => [version.version, version.folder])),

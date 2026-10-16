@@ -32,6 +32,8 @@ export interface GitState {
   readonly busy: boolean;
   /** Why git can't be used here (a hosted editor), if so. */
   readonly unavailable: string | undefined;
+  /** Why the last read of the repository failed (git missing, a broken `.git`…), if it did. */
+  readonly readError: string | undefined;
 }
 
 const EMPTY: GitState = {
@@ -44,6 +46,7 @@ const EMPTY: GitState = {
   more: false,
   busy: false,
   unavailable: undefined,
+  readError: undefined,
 };
 
 const PAGE = 50;
@@ -156,12 +159,18 @@ export class GitStore implements Disposable {
         logBranch,
         more: log.length >= limit,
         unavailable: undefined,
+        readError: undefined,
       });
     } catch (error) {
       if (generation !== this._generation) return;
       if ((error as { code?: string }).code === 'FORBIDDEN') {
         this._patch({ ...EMPTY, unavailable: 'Git is available in local editors only.' });
-      } else this._onError('Could not read the repository', error);
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      const repeated = this._state.get().readError === message;
+      this._patch({ readError: message });
+      if (!repeated) this._onError('Could not read the repository', error);
     }
   }
 

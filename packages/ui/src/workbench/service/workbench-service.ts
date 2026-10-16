@@ -243,15 +243,29 @@ export class WorkbenchService implements Disposable {
     this._onDidFail.dispose();
   }
 
+  /** Forgets a panel's failure and activates its plugin again (the panel's Retry). */
+  retry(widgetId: string): void {
+    this._failed.delete(widgetId);
+    this._activations.delete(widgetId);
+    this._onDidFail.fire(widgetId);
+  }
+
   private _activate(widgetId: string): void {
     if (this._activations.has(widgetId)) return;
     const activation = this._options
       .activate(`onWidget:${widgetId}`)
-      .then(() => {
+      .then((failures) => {
         const registered = this._options.extensions
           .getValues(WIDGET_VIEWS)
           .some((view) => view.id === widgetId);
-        if (!registered) this._fail(widgetId, 'Its plugin did not register a view for this panel.');
+        if (registered) return;
+        const failure = Array.isArray(failures) ? failures[0] : undefined;
+        this._fail(
+          widgetId,
+          failure
+            ? `Its plugin failed to start: ${failure instanceof Error ? failure.message : String(failure)}`
+            : 'Its plugin did not register a view for this panel.',
+        );
       })
       .catch((error: unknown) =>
         this._fail(widgetId, error instanceof Error ? error.message : String(error)),

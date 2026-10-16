@@ -304,16 +304,26 @@ export class CatalogService implements Disposable {
       const manifest = (await readJson(MANIFEST)) as
         { type?: string; name?: string; version?: string; items?: unknown } | undefined;
       if (manifest?.type !== 'package' || !manifest.name) return;
-      const files = new Set(
-        (Array.isArray(manifest.items) ? manifest.items : [])
-          .filter((item): item is string => typeof item === 'string' && isInsidePath(item))
-          .map((item) => `${dir}/${item}`),
-      );
+      /**
+       * The code files a package's manifest points to: a file of `items` (the older form) or a
+       * content without `export` makes each of its exports an item; a content naming an
+       * `export` makes that export one. Assets hold no items.
+       */
+      const files = new Map<string, Set<string> | 'all'>();
+      const list = (path: string, name?: string) => {
+        const current = files.get(path);
+        if (current === 'all') return;
+        if (name === undefined) files.set(path, 'all');
+        else files.set(path, new Set([...(current ?? []), name]));
+      };
+      for (const item of Array.isArray(manifest.items) ? manifest.items : [])
+        if (typeof item === 'string' && isInsidePath(item)) list(`${dir}/${item}`);
       for (const content of (await readPackageContents(manifest, readJson)).contents) {
+        if (content.kind === 'asset') continue;
         const path = `${dir}/${content.path.replace(/\/$/, '')}`;
         if (project.fs.entry(path)?.kind === 'directory')
-          for (const file of codeFiles(path)) files.add(file);
-        else if (isCodeFile(path)) files.add(path);
+          for (const file of codeFiles(path)) list(file, content.export);
+        else if (isCodeFile(path)) list(path, content.export);
       }
       sources.push({
         source: {
@@ -323,7 +333,9 @@ export class CatalogService implements Disposable {
           path: dir,
         },
         root: dir,
-        files: [...files].map((path) => ({ path, listed: true })),
+        files: [...files].map(([path, names]) =>
+          names === 'all' ? { path, listed: true } : { path, exports: [...names].sort() },
+        ),
       });
     };
     const scopes = entries.filter(
@@ -355,7 +367,11 @@ export class CatalogService implements Disposable {
         text: await documents.getText(file.path),
       })),
     );
-    const hash = await sourceHash(texts);
+    /** What each file is extracted with counts too: a changed manifest or folder refreshes it. */
+    const hash = await sourceHash([
+      ...texts,
+      { path: '\0files', text: JSON.stringify(source.files) },
+    ]);
     const ownerTable = Object.fromEntries(
       owners.map((owner) => [owner.name, { version: owner.version, schema: owner.schema }]),
     );
@@ -384,7 +400,7 @@ export class CatalogService implements Disposable {
         metaVersion: META_VERSION,
         generator: { ...META_GENERATOR },
         source: source.source,
-        sourceHash: result.sourceHash,
+        sourceHash: hash,
         owners: result.owners,
         items,
       };

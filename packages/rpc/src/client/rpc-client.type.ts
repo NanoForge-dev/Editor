@@ -2,10 +2,16 @@ import type { z } from 'zod';
 
 import type { Contract } from '../contract/contract.type';
 
+/** Per call: cancel it (`signal`), or give up after `timeoutMs` with a `TIMEOUT` error. */
+export interface CallOptions {
+  readonly signal?: AbortSignal;
+  readonly timeoutMs?: number;
+}
+
 export type RpcApi<C extends Contract> = {
   [K in keyof C['methods']]: (
     input: z.input<C['methods'][K]['input']>,
-    options?: { signal?: AbortSignal },
+    options?: CallOptions,
   ) => Promise<z.output<C['methods'][K]['output']>>;
 };
 

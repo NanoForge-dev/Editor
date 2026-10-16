@@ -1,4 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { Emitter, type Event } from '@nanoforge-dev/editor-kernel';
@@ -34,6 +35,40 @@ export const checkLimits = (values: Values): void => {
   }
 };
 
+/** Writes a whole file or nothing: a crash mid-write leaves the previous content. */
+const writeAtomically = async (file: string, text: string): Promise<void> => {
+  await mkdir(dirname(file), { recursive: true });
+  const temp = `${file}.${randomBytes(4).toString('hex')}.tmp`;
+  try {
+    await writeFile(temp, text);
+    await rename(temp, file);
+  } catch (error) {
+    await rm(temp, { force: true });
+    throw error;
+  }
+};
+
+/**
+ * Reads a JSON settings file: missing means empty. A file that is not valid JSON (edited by
+ * hand) is set aside as `<name>.invalid-<time>.json` rather than overwritten by the next write.
+ */
+const readJson = async (file: string): Promise<unknown> => {
+  let text: string;
+  try {
+    text = await readFile(file, 'utf8');
+  } catch {
+    return undefined;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    await rename(file, file.replace(/\.json$/, `.invalid-${Date.now()}.json`)).catch(
+      () => undefined,
+    );
+    return undefined;
+  }
+};
+
 const conflict = (current: AccountSettingsDocument) =>
   new RpcError('CONFLICT', 'Settings changed on another device', current);
 
@@ -62,8 +97,7 @@ export class FileAccountBackend implements AccountSettingsBackend {
       const current = await this._read(file);
       if (current.revision !== baseRevision) throw conflict(current);
       const revision = String(Number(current.revision ?? '0') + 1);
-      await mkdir(dirname(file), { recursive: true });
-      await writeFile(file, `${JSON.stringify({ revision, values }, null, 2)}\n`);
+      await writeAtomically(file, `${JSON.stringify({ revision, values }, null, 2)}\n`);
       this._onDidChange.fire({ userId: user.id, revision });
       return { revision };
     });
@@ -74,12 +108,8 @@ export class FileAccountBackend implements AccountSettingsBackend {
   }
 
   private async _read(file: string): Promise<AccountSettingsDocument> {
-    try {
-      const document = JSON.parse(await readFile(file, 'utf8')) as AccountSettingsDocument;
-      return { revision: document.revision ?? null, values: document.values ?? {} };
-    } catch {
-      return { revision: null, values: {} };
-    }
+    const document = (await readJson(file)) as Partial<AccountSettingsDocument> | undefined;
+    return { revision: document?.revision ?? null, values: document?.values ?? {} };
   }
 }
 
@@ -135,20 +165,15 @@ export class ProjectLocalSettingsStore {
   constructor(private readonly _env: EditorEnv) {}
 
   async get(session: Session, projectId: string): Promise<Values> {
-    try {
-      return JSON.parse(await readFile(this._file(session, projectId), 'utf8')) as Values;
-    } catch {
-      return {};
-    }
+    return ((await readJson(this._file(session, projectId))) as Values | undefined) ?? {};
   }
 
   async put(session: Session, projectId: string, values: Values): Promise<void> {
     checkLimits(values);
     const file = this._file(session, projectId);
-    return this._mutex.run(file, async () => {
-      await mkdir(dirname(file), { recursive: true });
-      await writeFile(file, `${JSON.stringify(values, null, 2)}\n`);
-    });
+    return this._mutex.run(file, () =>
+      writeAtomically(file, `${JSON.stringify(values, null, 2)}\n`),
+    );
   }
 
   private _file(session: Session, projectId: string): string {

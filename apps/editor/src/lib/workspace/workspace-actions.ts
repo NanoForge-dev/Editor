@@ -148,21 +148,28 @@ export class WorkspaceActions implements Disposable {
 
   /**
    * Makes an app use a library, or stop. A library no app lists yet is given to them all: the
-   * first choice writes it down for every app that keeps it.
+   * first choice writes it down for every app that keeps it. All or nothing: a failure undoes
+   * what was already written.
    */
   setUse(app: AppModel, library: AppModel, used: boolean): Promise<boolean> {
     return this._run(
       `${used ? 'Use' : 'Stop using'} ${library.name} in ${app.name}`,
       async (io, project) => {
         const undos: Undo[] = [];
-        if (library.unclaimed && !used) {
-          for (const other of runnableApps(project.model.get()))
-            if (other.id !== app.id) undos.push(await setLibraryUse(io, other, library, true));
-        }
-        undos.push(await setLibraryUse(io, app, library, used));
-        return async () => {
-          for (const undo of undos.reverse()) await undo();
+        const undoAll = async () => {
+          for (const undo of [...undos].reverse()) await undo();
         };
+        try {
+          if (library.unclaimed && !used) {
+            for (const other of runnableApps(project.model.get()))
+              if (other.id !== app.id) undos.push(await setLibraryUse(io, other, library, true));
+          }
+          undos.push(await setLibraryUse(io, app, library, used));
+        } catch (error) {
+          await undoAll().catch(() => undefined);
+          throw error;
+        }
+        return undoAll;
       },
     );
   }

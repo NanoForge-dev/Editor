@@ -86,6 +86,28 @@ describe('HistoryStack', () => {
     expect([a.state.value, b.state.value]).toEqual([0, 0]);
   });
 
+  it('adds pushes made through the stack during a transaction to it', async () => {
+    const { stack } = setup();
+    const a = cell(0);
+    const b = cell(0);
+    const c = cell(0);
+    await stack.transaction('move', async (tx) => {
+      await tx.push(a.set(1));
+      await stack.push(b.set(1));
+      await stack.transaction('nested', async (inner) => inner.push(c.set(1)));
+    });
+    expect(stack.state.past).toHaveLength(1);
+    await expect(
+      stack.transaction('broken', async () => {
+        await stack.push(a.set(2));
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+    expect(a.state.value).toBe(1);
+    await stack.undo();
+    expect([a.state.value, b.state.value, c.state.value]).toEqual([0, 0, 0]);
+  });
+
   it('runs async operations in order', async () => {
     const { stack } = setup();
     const log: string[] = [];

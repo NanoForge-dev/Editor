@@ -23,6 +23,8 @@ export const toPackument = (item: RegistryItem): z.input<typeof Packument> => ({
         engines: version.engines,
         kinds: version.kinds,
         suggestedPlugins: version.suggestedPlugins,
+        contents: version.contents,
+        manifests: version.manifests,
         dist: { tarball: ROUTES.archive(item.name, version.version), sha256: version.sha256 },
       },
     ]),
@@ -41,6 +43,8 @@ export const fromPackument = (packument: Packument, compare: (a: string, b: stri
       engines: version.engines,
       kinds: version.kinds,
       suggestedPlugins: version.suggestedPlugins,
+      contents: version.contents ?? [],
+      manifests: version.manifests ?? [],
     }))
     .sort((a, b) => compare(a.version, b.version));
   const latest = packument['dist-tags'].latest;

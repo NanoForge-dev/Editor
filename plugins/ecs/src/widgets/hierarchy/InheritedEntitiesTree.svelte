@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+
   import { ContextMenu, type MenuEntry, Tree, type TreeNode } from '@nanoforge-dev/editor-sdk/ui';
 
   import type { EcsService } from '../../service/ecs-service';
@@ -34,9 +36,14 @@
       })),
     })),
   );
+  /** Groups expand when they first appear; one the user collapsed stays collapsed. */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, not state
+  const offered = new Set<string>();
   $effect(() => {
-    const ids = nodes.map((node) => node.id);
-    if (ids.some((id) => !expanded.has(id))) expanded = new Set([...expanded, ...ids]);
+    const fresh = nodes.map((node) => node.id).filter((id) => !offered.has(id));
+    if (!fresh.length) return;
+    for (const id of fresh) offered.add(id);
+    expanded = new Set([...untrack(() => expanded), ...fresh]);
   });
   /** The inherited location and entity line of an inherited row. */
   const inheritedOf = (id: string) => {

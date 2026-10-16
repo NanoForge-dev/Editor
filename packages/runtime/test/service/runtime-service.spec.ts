@@ -294,6 +294,16 @@ describe('RuntimeService', () => {
     service.dispose();
   });
 
+  it('crashes when the game server exits while the game starts', async () => {
+    const service = createService({
+      envOverrides: () => ({ NANOFORGE_SERVER_EXIT_BEFORE_HELLO: '1' }),
+    });
+    await service.play('server');
+    await until(service, 'crashed');
+    expect(service.session.get().error).toBe('The game server exited (code 4)');
+    service.dispose();
+  });
+
   it('crashes when the game server exits on its own', async () => {
     const service = createService({ envOverrides: () => ({ NANOFORGE_SERVER_CRASH: '1' }) });
     await service.play('server');

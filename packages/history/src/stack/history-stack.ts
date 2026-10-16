@@ -13,8 +13,9 @@ import type {
 const SAVED_AT_START = 0;
 
 /**
- * Undo/redo stack of one context. Operations are serialized; commands pushed inside a
- * transaction go through the transaction handle.
+ * Undo/redo stack of one context. Operations are serialized. Commands pushed while a transaction
+ * runs join it, whether through the transaction handle or `push` (code the transaction calls
+ * may not know it runs inside one): queueing them behind the transaction would wait for ever.
  */
 export class HistoryStack {
   private _past: HistoryEntry[] = [];
@@ -23,6 +24,8 @@ export class HistoryStack {
   private _nextId = 1;
   /** Entry id at the savepoint (0: the initial state). */
   private _savedAt: number | null = SAVED_AT_START;
+  /** The commands of the transaction running now, if any. */
+  private _transaction: HistoryCommand[] | undefined;
   private readonly _onDidChange = new Emitter<StackState>();
   private readonly _onDidInvalidate = new Emitter<InvalidationReason>();
 
@@ -44,6 +47,12 @@ export class HistoryStack {
 
   /** Executes a command and records it (merging with the previous one when allowed). */
   push(command: HistoryCommand): Promise<void> {
+    const open = this._transaction;
+    if (open) {
+      return Promise.resolve(command.do()).then(() => {
+        open.push(command);
+      });
+    }
     return this._serial(async () => {
       await command.do();
       this._add(command, true);
@@ -63,12 +72,18 @@ export class HistoryStack {
    * applied are undone in reverse order and the error is rethrown.
    */
   transaction<T>(label: string, fn: (tx: Transaction) => Promise<T>): Promise<T> {
+    if (this._transaction) return runTransaction(this._transaction, fn);
     return this._serial(async () => {
       const collected: HistoryCommand[] = [];
-      const result = await runTransaction(collected, fn);
-      if (collected.length)
-        this._add(compositeCommand(label, collected, this._options.localOrigin()), true, false);
-      return result;
+      this._transaction = collected;
+      try {
+        const result = await runTransaction(collected, fn);
+        if (collected.length)
+          this._add(compositeCommand(label, collected, this._options.localOrigin()), true, false);
+        return result;
+      } finally {
+        this._transaction = undefined;
+      }
     });
   }
 

@@ -68,7 +68,11 @@
       icon="triangle-alert"
       title="{$status.descriptor.title} is unavailable"
       description={$status.reason}
-    />
+    >
+      {#snippet actions()}
+        <Button onclick={() => workbench.retry(ref.widgetId)}>Try again</Button>
+      {/snippet}
+    </EmptyState>
   {:else}
     <EmptyState
       icon="plug"

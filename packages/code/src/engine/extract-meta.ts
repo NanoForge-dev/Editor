@@ -18,6 +18,8 @@ export interface MetaSourceFile {
   readonly folder?: 'components' | 'systems';
   /** Listed in a manifest's `items`: each export is an item. */
   readonly listed?: boolean;
+  /** The exports a manifest's `contents` name: only those are items. */
+  readonly exports?: readonly string[];
 }
 
 /** The folder of a source and the base of its item references (`app:client`, `@me/shared`). */
@@ -93,6 +95,7 @@ export const extractMeta = async (
       owners,
       ...(entry.folder && { folder: entry.folder }),
       ...(entry.listed && { listed: true }),
+      ...(entry.exports && { exports: entry.exports }),
       modulePath: (declarationFile) => defaultModulePath(declarationFile),
       refOf,
     });

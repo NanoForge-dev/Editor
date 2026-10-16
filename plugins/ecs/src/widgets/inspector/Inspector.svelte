@@ -12,11 +12,11 @@
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
   const ecs = instance.services.get(EcsServiceToken);
-  const undoTarget = ecs.appId;
+  /** Undo targets the file the Inspector edits: `main`, or the selected scene's file. */
+  const location = ecs.location;
   $effect(() => {
-    void $undoTarget;
-    const entryFile = ecs.app?.entryFile;
-    instance.setHistoryContext(entryFile ? documentHistoryId(entryFile) : undefined);
+    const path = $location?.path;
+    instance.setHistoryContext(path ? documentHistoryId(path) : undefined);
   });
   const model = ecs.model;
   const selection = ecs.selection;

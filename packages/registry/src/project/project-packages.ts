@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readFile, rm, rmdir, writeFile } from 'node:fs/promises';
+import { readFile, rename, rm, rmdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import semver from 'semver';
 
@@ -8,6 +8,7 @@ import { ItemName, MANIFEST_FILE, type RegistryItem } from '../item/item.schema'
 import { RegistryError } from '../registry/registry.exception';
 import type { Registry } from '../registry/registry.type';
 import { withPathsEntry, withoutPathsEntry } from '../tsconfig-paths';
+import { installedNames, setAside, sweepAside, writeAtomically } from './modules-folder';
 import { type Lock, PackagesList, PackagesLock } from './packages-file.schema';
 import { LOCK_FILE, MODULES_DIR, PACKAGES_FILE } from './project-packages.const';
 import type { InstalledPackage, OutdatedPackage } from './project-packages.type';
@@ -128,11 +129,16 @@ export class ProjectPackages {
 
   /**
    * Installs what the lock lists and `nf_modules` lacks or has in another version (a fresh
-   * clone, a teammate's bump).
+   * clone, a teammate's bump), and removes what the lock no longer lists (a teammate's
+   * uninstall).
    */
   restore(): Promise<InstalledPackage[]> {
     return this._queue(async () => {
       const lock = await this._readLock();
+      await sweepAside(join(this.root, MODULES_DIR));
+      for (const name of await installedNames(join(this.root, MODULES_DIR))) {
+        if (!(name in lock)) await rm(this._folder(name), { recursive: true, force: true });
+      }
       for (const [name, entry] of Object.entries(lock)) {
         if ((await this._installedVersion(name)) === entry.version) continue;
         await installItem(this._registry, {
@@ -244,39 +250,70 @@ export class ProjectPackages {
       if (settled) break;
     }
 
+    await sweepAside(join(this.root, MODULES_DIR));
     const nextLock: Lock = {};
-    for (const [name, version] of [...picks].sort(([a], [b]) => a.localeCompare(b))) {
-      const entry = (await item(name)).versions.find((candidate) => candidate.version === version)!;
-      const current = lock[name];
-      const upToDate =
-        current?.version === version &&
-        current.sha256 === entry.sha256 &&
-        existsSync(join(this._folder(name), MANIFEST_FILE));
-      if (!upToDate) {
-        await installItem(this._registry, {
-          name,
-          version,
-          type: 'package',
-          target: this._folder(name),
-          sha256: entry.sha256,
-        });
+    /** Folders replaced or removed, set aside until everything is written. */
+    const aside: { folder: string; previous: string | undefined }[] = [];
+    const listText = await readFile(join(this.root, PACKAGES_FILE), 'utf8').catch(() => undefined);
+    const lockText = await readFile(join(this.root, LOCK_FILE), 'utf8').catch(() => undefined);
+    try {
+      for (const [name, version] of [...picks].sort(([a], [b]) => a.localeCompare(b))) {
+        const entry = (await item(name)).versions.find(
+          (candidate) => candidate.version === version,
+        )!;
+        const current = lock[name];
+        if (current?.version === version && current.sha256 && current.sha256 !== entry.sha256) {
+          throw new RegistryError(
+            'INTEGRITY',
+            `${name}@${version} is not what the lock recorded (another archive under the same version): refusing to install it`,
+          );
+        }
+        const folder = this._folder(name);
+        const upToDate =
+          current?.version === version &&
+          current.sha256 === entry.sha256 &&
+          existsSync(join(folder, MANIFEST_FILE));
+        if (!upToDate) {
+          aside.push({ folder, previous: existsSync(folder) ? await setAside(folder) : undefined });
+          await installItem(this._registry, {
+            name,
+            version,
+            type: 'package',
+            target: folder,
+            sha256: entry.sha256,
+          });
+        }
+        nextLock[name] = { version, sha256: entry.sha256, dependencies: entry.dependencies };
       }
-      nextLock[name] = { version, sha256: entry.sha256, dependencies: entry.dependencies };
+      for (const name of Object.keys(lock)) {
+        const folder = this._folder(name);
+        if (!picks.has(name) && existsSync(folder))
+          aside.push({ folder, previous: await setAside(folder) });
+      }
+      await this._writeJson(PACKAGES_FILE, {
+        ...(listText === undefined ? {} : await this._readRawList()),
+        packages: sorted(wanted),
+      });
+      await this._writeJson(LOCK_FILE, { lockVersion: 1, packages: nextLock });
+    } catch (error) {
+      for (const { folder, previous } of aside.reverse()) {
+        if (picks.has(this._nameOf(folder)) || !previous)
+          await rm(folder, { recursive: true, force: true }).catch(() => undefined);
+        if (previous) await rename(previous, folder).catch(() => undefined);
+      }
+      await this._restoreText(PACKAGES_FILE, listText);
+      await this._restoreText(LOCK_FILE, lockText);
+      throw error;
+    }
+    for (const { previous } of aside) {
+      if (previous) await rm(previous, { recursive: true, force: true }).catch(() => undefined);
     }
     for (const name of Object.keys(lock)) {
-      if (!picks.has(name)) {
-        await rm(this._folder(name), { recursive: true, force: true });
+      if (!picks.has(name))
         await rmdir(dirname(this._folder(name)))
           .then(() => rmdir(join(this.root, MODULES_DIR)))
           .catch(() => undefined);
-      }
     }
-
-    await this._writeJson(PACKAGES_FILE, {
-      ...(await this._readRawList()),
-      packages: sorted(wanted),
-    });
-    await this._writeJson(LOCK_FILE, { lockVersion: 1, packages: nextLock });
     await this._syncProjectFiles(nextLock, Object.keys(lock));
   }
 
@@ -329,7 +366,22 @@ export class ProjectPackages {
   }
 
   private _writeJson(file: string, value: unknown): Promise<void> {
-    return writeFile(join(this.root, file), `${JSON.stringify(value, null, 2)}\n`);
+    return writeAtomically(join(this.root, file), `${JSON.stringify(value, null, 2)}\n`);
+  }
+
+  /** Puts back a file's previous text, or removes it when there was none. */
+  private async _restoreText(file: string, text: string | undefined): Promise<void> {
+    const path = join(this.root, file);
+    await (text === undefined ? rm(path, { force: true }) : writeFile(path, text)).catch(
+      () => undefined,
+    );
+  }
+
+  private _nameOf(folder: string): string {
+    return folder
+      .slice(join(this.root, MODULES_DIR).length + 1)
+      .split(/[\\/]/)
+      .join('/');
   }
 }
 

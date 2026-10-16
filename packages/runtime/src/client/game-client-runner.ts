@@ -24,6 +24,8 @@ export class GameClientRunner {
   private readonly _fromEditor = new QueuedEmitter();
   private _mount: HTMLDivElement | undefined;
   private _bridged = false;
+  /** `main` was called and has not returned yet: the game may not have said hello yet. */
+  private _starting = false;
   private _stopped = false;
   private _stopWaiters: (() => void)[] = [];
   private _removeErrorListeners: (() => void) | undefined;
@@ -51,16 +53,21 @@ export class GameClientRunner {
     const module = await this._options.importModule(url);
     if (typeof module.main !== 'function') throw new Error(`${manifest.entry} exports no main`);
     const toEditor = new DirectEmitter((event, args) => this._onEngineEvent(event, args));
-    await module.main({
-      container: mount,
-      files: clientFiles(manifest, origin),
-      env: target.env,
-      editor: {
-        toEditor,
-        fromEditor: this._fromEditor,
-        serializeLogValue: (value) => serializeLogValue(value),
-      },
-    });
+    this._starting = true;
+    try {
+      await module.main({
+        container: mount,
+        files: clientFiles(manifest, origin),
+        env: target.env,
+        editor: {
+          toEditor,
+          fromEditor: this._fromEditor,
+          serializeLogValue: (value) => serializeLogValue(value),
+        },
+      });
+    } finally {
+      this._starting = false;
+    }
   }
 
   send(event: string, args: readonly unknown[] = []): void {
@@ -70,10 +77,12 @@ export class GameClientRunner {
   /**
    * Asks the game to stop and waits for its `stopped` state (libraries cleared), then removes
    * its container. Returns false when the game did not stop in time (it may still be running).
+   * A game still in its `main` gets the request too: it is queued, and an engine with the editor
+   * bridge reads it at its first tick (it says hello then).
    */
   async stop(timeoutMs = 3000): Promise<boolean> {
     let clean = this._stopped;
-    if (!clean && this._bridged) {
+    if (!clean && (this._bridged || this._starting)) {
       this.send('stop');
       clean = await new Promise<boolean>((resolve) => {
         const timer = setTimeout(() => resolve(false), timeoutMs);

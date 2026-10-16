@@ -171,131 +171,133 @@
   <TopBar {layout} {brand} />
 
   <div class="body">
-    {#if !$docksHidden}
-      <ToolStripe {layout} side="left" />
-    {/if}
-    {#if leftTop || leftBottom}
-      <div
-        class="column"
-        style:width="{leftWidth}px"
-        bind:clientHeight={leftHeight}
-        data-nf-part="left"
-      >
-        {#if leftTop}
-          <div class="cell" style:flex={leftBottom ? `${splitLeft} 1 0` : '1 1 0'}>
-            <DockStack stack={layout.slots.leftTop.stack} slot="leftTop" />
-          </div>
-        {/if}
-        {#if leftTop && leftBottom}
+    <div class="layer" inert={maximized !== undefined}>
+      {#if !$docksHidden}
+        <ToolStripe {layout} side="left" />
+      {/if}
+      {#if leftTop || leftBottom}
+        <div
+          class="column"
+          style:width="{leftWidth}px"
+          bind:clientHeight={leftHeight}
+          data-nf-part="left"
+        >
+          {#if leftTop}
+            <div class="cell" style:flex={leftBottom ? `${splitLeft} 1 0` : '1 1 0'}>
+              <DockStack stack={layout.slots.leftTop.stack} slot="leftTop" />
+            </div>
+          {/if}
+          {#if leftTop && leftBottom}
+            <Splitter
+              orientation="horizontal"
+              label="Resize left panels"
+              onresize={(delta, final) => resizeSplit('left', delta, final)}
+            />
+          {/if}
+          {#if leftBottom}
+            <div class="cell" style:flex={leftTop ? `${1 - splitLeft} 1 0` : '1 1 0'}>
+              <DockStack stack={layout.slots.leftBottom.stack} slot="leftBottom" />
+            </div>
+          {/if}
+        </div>
+        <Splitter
+          orientation="vertical"
+          label="Resize left column"
+          value={leftWidth}
+          onresize={(delta, final) => resizeColumn('left', delta, final)}
+        />
+      {/if}
+
+      <div class="center">
+        <main class="screen" data-nf-drop="center" data-nf-part="screen">
+          {#if layout.screens.length === 0}
+            <EmptyState
+              icon="app-window"
+              title="No main screen"
+              description="Main screens come from plugins (code editor, viewport…)."
+            />
+          {/if}
+          {#each visitedScreens.filter( (screen) => layout.screens.includes(screen) ) as screen (screen)}
+            <WidgetHost
+              ref={{ instanceId: screen, widgetId: screen }}
+              active={layout.activeScreen === screen}
+            />
+          {/each}
+        </main>
+        {#if bottom || bottomRight}
           <Splitter
             orientation="horizontal"
-            label="Resize left panels"
-            onresize={(delta, final) => resizeSplit('left', delta, final)}
+            label="Resize bottom panel"
+            value={bottomHeight}
+            onresize={resizeBottom}
           />
-        {/if}
-        {#if leftBottom}
-          <div class="cell" style:flex={leftTop ? `${1 - splitLeft} 1 0` : '1 1 0'}>
-            <DockStack stack={layout.slots.leftBottom.stack} slot="leftBottom" />
+          <div
+            class="bottom"
+            style:height="{bottomHeight}px"
+            bind:clientWidth={bottomWidth}
+            data-nf-part="bottom"
+          >
+            {#if bottom}
+              <div class="cell" style:flex={bottomRight ? `${splitBottom} 1 0` : '1 1 0'}>
+                <DockStack stack={layout.slots.bottom.stack} slot="bottom" />
+              </div>
+            {/if}
+            {#if bottom && bottomRight}
+              <Splitter
+                orientation="vertical"
+                label="Resize bottom panels"
+                onresize={(delta, final) => resizeSplit('bottom', delta, final)}
+              />
+            {/if}
+            {#if bottomRight}
+              <div class="cell" style:flex={bottom ? `${1 - splitBottom} 1 0` : '1 1 0'}>
+                <DockStack stack={layout.slots.bottomRight.stack} slot="bottomRight" />
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
-      <Splitter
-        orientation="vertical"
-        label="Resize left column"
-        value={leftWidth}
-        onresize={(delta, final) => resizeColumn('left', delta, final)}
-      />
-    {/if}
 
-    <div class="center">
-      <main class="screen" data-nf-drop="center" data-nf-part="screen">
-        {#if layout.screens.length === 0}
-          <EmptyState
-            icon="app-window"
-            title="No main screen"
-            description="Main screens come from plugins (code editor, viewport…)."
-          />
-        {/if}
-        {#each visitedScreens.filter( (screen) => layout.screens.includes(screen) ) as screen (screen)}
-          <WidgetHost
-            ref={{ instanceId: screen, widgetId: screen }}
-            active={layout.activeScreen === screen}
-          />
-        {/each}
-      </main>
-      {#if bottom || bottomRight}
+      {#if rightTop || rightBottom}
         <Splitter
-          orientation="horizontal"
-          label="Resize bottom panel"
-          value={bottomHeight}
-          onresize={resizeBottom}
+          orientation="vertical"
+          label="Resize right column"
+          value={rightWidth}
+          onresize={(delta, final) => resizeColumn('right', delta, final)}
         />
         <div
-          class="bottom"
-          style:height="{bottomHeight}px"
-          bind:clientWidth={bottomWidth}
-          data-nf-part="bottom"
+          class="column"
+          style:width="{rightWidth}px"
+          bind:clientHeight={rightHeight}
+          data-nf-part="right"
         >
-          {#if bottom}
-            <div class="cell" style:flex={bottomRight ? `${splitBottom} 1 0` : '1 1 0'}>
-              <DockStack stack={layout.slots.bottom.stack} slot="bottom" />
+          {#if rightTop}
+            <div class="cell" style:flex={rightBottom ? `${splitRight} 1 0` : '1 1 0'}>
+              <DockStack stack={layout.slots.rightTop.stack} slot="rightTop" />
             </div>
           {/if}
-          {#if bottom && bottomRight}
+          {#if rightTop && rightBottom}
             <Splitter
-              orientation="vertical"
-              label="Resize bottom panels"
-              onresize={(delta, final) => resizeSplit('bottom', delta, final)}
+              orientation="horizontal"
+              label="Resize right panels"
+              onresize={(delta, final) => resizeSplit('right', delta, final)}
             />
           {/if}
-          {#if bottomRight}
-            <div class="cell" style:flex={bottom ? `${1 - splitBottom} 1 0` : '1 1 0'}>
-              <DockStack stack={layout.slots.bottomRight.stack} slot="bottomRight" />
+          {#if rightBottom}
+            <div class="cell" style:flex={rightTop ? `${1 - splitRight} 1 0` : '1 1 0'}>
+              <DockStack stack={layout.slots.rightBottom.stack} slot="rightBottom" />
             </div>
           {/if}
         </div>
       {/if}
+      {#if !$docksHidden}
+        <ToolStripe {layout} side="right" />
+      {/if}
+
+      {#each layout.floats as float (float.id)}
+        <div data-nf-part="float"><FloatWindow {float} /></div>
+      {/each}
     </div>
-
-    {#if rightTop || rightBottom}
-      <Splitter
-        orientation="vertical"
-        label="Resize right column"
-        value={rightWidth}
-        onresize={(delta, final) => resizeColumn('right', delta, final)}
-      />
-      <div
-        class="column"
-        style:width="{rightWidth}px"
-        bind:clientHeight={rightHeight}
-        data-nf-part="right"
-      >
-        {#if rightTop}
-          <div class="cell" style:flex={rightBottom ? `${splitRight} 1 0` : '1 1 0'}>
-            <DockStack stack={layout.slots.rightTop.stack} slot="rightTop" />
-          </div>
-        {/if}
-        {#if rightTop && rightBottom}
-          <Splitter
-            orientation="horizontal"
-            label="Resize right panels"
-            onresize={(delta, final) => resizeSplit('right', delta, final)}
-          />
-        {/if}
-        {#if rightBottom}
-          <div class="cell" style:flex={rightTop ? `${1 - splitRight} 1 0` : '1 1 0'}>
-            <DockStack stack={layout.slots.rightBottom.stack} slot="rightBottom" />
-          </div>
-        {/if}
-      </div>
-    {/if}
-    {#if !$docksHidden}
-      <ToolStripe {layout} side="right" />
-    {/if}
-
-    {#each layout.floats as float (float.id)}
-      <div data-nf-part="float"><FloatWindow {float} /></div>
-    {/each}
 
     {#if maximized}
       <div class="maximized" data-nf-part="maximized">
@@ -332,6 +334,14 @@
     display: flex;
     min-height: 0;
     overflow: hidden;
+  }
+  /** Everything but the maximized panel: inert while one is maximized (not reachable behind it). */
+  .layer {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
   }
   .column {
     display: flex;

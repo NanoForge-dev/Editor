@@ -3,6 +3,10 @@
 export const main = async ({ files, env, editor }) => {
   console.log('port=' + env.PORT + ' files=' + [...files.keys()].join(','));
   if (env.CRASH) setTimeout(() => process.exit(3), 20);
+  if (env.EXIT_BEFORE_HELLO) {
+    setTimeout(() => process.exit(4));
+    return;
+  }
   let paused = false;
   let stopped = false;
   let reported;

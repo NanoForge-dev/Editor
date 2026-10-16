@@ -490,7 +490,10 @@ export class RuntimeService implements Disposable {
       case 'server':
         if (event.app !== this._server) return;
         this._onServerStateChange.fire([event.state, event.exitCode]);
-        if (event.state === 'exited' && ['running', 'paused'].includes(this._session.get().state)) {
+        if (
+          event.state === 'exited' &&
+          ['starting', 'running', 'paused'].includes(this._session.get().state)
+        ) {
           const run = ++this._run;
           void this._teardown().then(() => {
             if (run === this._run)

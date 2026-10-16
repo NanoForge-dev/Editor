@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+
   import {
     ContextMenu,
     type DropPosition,
@@ -87,12 +89,16 @@
 
   const nodes = $derived(sceneTree($model, loadedIds, MAIN_LABEL));
 
+  /** Parent scenes expand when they first appear; one the user collapsed stays collapsed. */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, not state
+  const offered = new Set<string>();
   $effect(() => {
-    const parents = ($model?.scenes ?? [])
+    const fresh = ($model?.scenes ?? [])
       .map((scene) => scene.parent)
-      .filter((parent): parent is string => !!parent);
-    if (parents.some((parent) => !expanded.has(parent)))
-      expanded = new Set([...expanded, ...parents]);
+      .filter((parent): parent is string => !!parent && !offered.has(parent));
+    if (!fresh.length) return;
+    for (const parent of fresh) offered.add(parent);
+    expanded = new Set([...untrack(() => expanded), ...fresh]);
   });
 
   const selected = $derived(new Set([($appId && $selectedByApp.get($appId)) || MAIN_ID]));

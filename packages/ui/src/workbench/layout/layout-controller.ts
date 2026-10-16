@@ -141,12 +141,25 @@ export class LayoutController implements Disposable {
   }
 
   /** Brings a floating window to the front (cosmetic: not an undo step). */
+  /**
+   * Brings a floating window to the front. Windows are renumbered 1…n in their stacking order,
+   * so `z` stays small (it is saved; growing for ever would end above dialogs and menus).
+   */
   raise(floatId: string): void {
     const layout = this._layout.get();
     const float = layout.floats.find((candidate) => candidate.id === floatId);
     const top = Math.max(0, ...layout.floats.map((candidate) => candidate.z));
-    if (!float || float.z === top) return;
-    this._set(reduce(layout, { type: 'focusFloat', floatId, z: top + 1 }).layout);
+    if (!float || (float.z === top && top <= layout.floats.length)) return;
+    const order = [...layout.floats]
+      .sort((a, b) => a.z - b.z)
+      .filter((candidate) => candidate !== float)
+      .concat(float);
+    const ops = order.map((candidate, index) => ({
+      type: 'focusFloat' as const,
+      floatId: candidate.id,
+      z: index + 1,
+    }));
+    this._set(reduce(layout, { type: 'batch', ops }).layout);
   }
 
   /** Opens a widget (or focuses its existing singleton instance). Returns the instance id. */

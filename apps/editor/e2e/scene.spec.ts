@@ -99,6 +99,15 @@ test.describe('scenes', () => {
       .toMatch(
         /class Level1[\s\S]*registry\.addComponent\(brick1, new Velocity\([^)]*\)\);[\s\S]*class Level2/,
       );
+    await showPanel(page, 'Inspector');
+    await page
+      .getByRole('region', { name: 'Velocity', exact: true })
+      .getByRole('button')
+      .first()
+      .focus();
+    await page.keyboard.press('Control+z');
+    await expect.poll(levels).not.toMatch(/registry\.addComponent\(brick1, new Velocity/);
+    await showPanel(page, 'Components');
     await components.getByRole('button', { name: /^S pauseMenu\b/ }).click();
     await page.getByRole('button', { name: 'Add to scene' }).click();
     await expect

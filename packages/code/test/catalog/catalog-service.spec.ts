@@ -111,7 +111,7 @@ beforeAll(async () => {
   );
   write(
     'nf_modules/@nanoforge/physics/src/forces/gravity.ts',
-    '/** Pull. @component @side shared */\nexport class Gravity { name = "Gravity"; constructor(public g = 9.8) {} }',
+    '/** Pull. @component @side shared */\nexport class Gravity { name = "Gravity"; constructor(public g = 9.8) {} }\n/** @component */\nexport class Drag { name = "Drag"; }\nexport const helper = 1;',
   );
   write('nf_modules/@nanoforge/physics/textures/ground.png', 'png');
   editor = createEditorServer({
@@ -142,6 +142,8 @@ describe('CatalogService', () => {
     expect(refs).toContain('app:client#Position');
     expect(refs).toContain('@nanoforge/motion#Velocity');
     expect(refs).toContain('@nanoforge/physics#Gravity');
+    expect(refs).not.toContain('@nanoforge/physics#Drag');
+    expect(refs).not.toContain('@nanoforge/physics#helper');
     expect(catalog.get('@nanoforge/motion#Velocity')).toMatchObject({
       readonly: true,
       meta: { params: [{ name: 'x', type: 'number', default: 0 }] },

@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { toDisposable } from '@nanoforge-dev/editor-kernel';
 
-import { RpcError, RpcRouter, defineContract } from '../src';
+import { RpcClient, RpcError, RpcRouter, defineContract } from '../src';
 import { connect, flush } from './fixtures/harness';
 
 const Files = defineContract('fs', {
@@ -200,5 +200,30 @@ describe('RpcRouter.implement', () => {
     expect(implement).toThrow('RPC "plain.hi" is already implemented');
     registration.dispose();
     expect(implement).not.toThrow();
+  });
+});
+
+describe('RpcClient timeouts', () => {
+  /** A server that accepts the request and never answers. */
+  const silent = () =>
+    new RpcClient({
+      baseUrl: 'http://editor.test',
+      fetch: ((_url: unknown, init?: RequestInit) =>
+        new Promise((_resolve, reject) =>
+          init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)),
+        )) as typeof fetch,
+    });
+
+  it('gives up after timeoutMs with a TIMEOUT error', async () => {
+    await expect(silent().api(Files).version(null, { timeoutMs: 20 })).rejects.toMatchObject({
+      code: 'TIMEOUT',
+    });
+  });
+
+  it('reports a cancelled call as cancelled, not timed out', async () => {
+    const controller = new AbortController();
+    const call = silent().api(Files).version(null, { signal: controller.signal, timeoutMs: 1000 });
+    controller.abort();
+    await expect(call).rejects.toMatchObject({ code: 'CANCELLED' });
   });
 });

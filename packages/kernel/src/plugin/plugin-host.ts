@@ -73,9 +73,9 @@ export class PluginHost implements Disposable {
         },
       }),
     );
-    this._options.services
-      .get(CoreServices.Commands)
-      .setActivator((id) => this.activateByEvent(`onCommand:${id}`));
+    this._options.services.get(CoreServices.Commands).setActivator(async (id) => {
+      await this.activateByEvent(`onCommand:${id}`);
+    });
   }
 
   registerContributionHandler<T>(handler: StaticContributionHandler<T>): Disposable {
@@ -207,27 +207,36 @@ export class PluginHost implements Disposable {
   }
 
   /** Activates every inactive plugin listening to `event` (dependencies first). */
-  async activateByEvent(event: string): Promise<void> {
+  /**
+   * Activates the plugins listening to an event. Failures are logged, never thrown: resolves with
+   * them, so a caller can say why (a panel whose plugin failed).
+   */
+  async activateByEvent(event: string): Promise<unknown[]> {
     const targets = (this._resolution?.order ?? [])
       .map((descriptor) => descriptor.manifest)
       .filter((manifest) => manifest.activation.includes(event))
       .map((manifest) => manifest.name);
     const results = await Promise.allSettled(targets.map((name) => this.activate(name)));
+    const failures: unknown[] = [];
     for (const result of results) {
-      if (result.status === 'rejected') this._logger.error(String(result.reason));
+      if (result.status !== 'rejected') continue;
+      this._logger.error(String(result.reason));
+      failures.push(result.reason);
     }
+    return failures;
   }
 
-  /** Activates a plugin and its dependencies. Concurrent calls share the same activation. */
+  /**
+   * Activates a plugin and its dependencies. Concurrent calls share the same activation; one asked
+   * while the plugin deactivates (a hot reload, a project switch) runs once that is done.
+   */
   activate(name: string): Promise<void> {
     const record = this._records.get(name);
     if (!record) return Promise.reject(new Error(`Unknown plugin "${name}"`));
     if (record.status.kind !== 'ok') {
       return Promise.reject(new PluginActivationError(name, describeStatus(record.status)));
     }
-    if (record.deactivating) {
-      return Promise.reject(new PluginActivationError(name, 'it is being deactivated'));
-    }
+    if (record.deactivating) return record.deactivating.then(() => this.activate(name));
     if (record.state === 'active') return Promise.resolve();
     if (record.state === 'failed')
       return Promise.reject(new PluginActivationError(name, record.error));
@@ -273,13 +282,7 @@ export class PluginHost implements Disposable {
 
   dispose(): void {
     for (const [name, record] of this._records) {
-      if (record.state === 'active') {
-        try {
-          void record.module?.deactivate?.();
-        } catch (error) {
-          this._logger.error(`Plugin "${name}" failed to deactivate`, error);
-        }
-      }
+      if (record.state === 'active') this._deactivateModule(name, record);
       this._cleanup(name, record);
       record.staticContributions.dispose();
     }
@@ -337,6 +340,7 @@ export class PluginHost implements Disposable {
       this._logger.info(`Plugin "${name}" activated`);
       this._onDidChange.fire();
     } catch (error) {
+      if (record.module) this._deactivateModule(name, record);
       this._cleanup(name, record);
       record.state = 'failed';
       record.error = error;
@@ -344,6 +348,19 @@ export class PluginHost implements Disposable {
       this._onDidChange.fire();
       throw new PluginActivationError(name, error);
     }
+  }
+
+  /**
+   * Calls a module's `deactivate` without waiting: on dispose, and after a failed or timed-out
+   * activation (it may have done things outside its context). Errors are logged, sync or async.
+   */
+  private _deactivateModule(name: string, record: PluginRecord): void {
+    const { module } = record;
+    void Promise.resolve()
+      .then(() => module?.deactivate?.())
+      .catch((error: unknown) =>
+        this._logger.error(`Plugin "${name}" failed to deactivate`, error),
+      );
   }
 
   private _cleanup(name: string, record: PluginRecord): void {

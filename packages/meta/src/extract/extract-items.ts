@@ -37,7 +37,8 @@ import { requiresOf } from './requires';
 /**
  * Extracts the items of one file: core fields from TSDoc and TypeScript, and each owner's object.
  * An export is an item when the file is `listed`, when an owner claims it (tags or inference), or
- * when it carries tags of an owner that isn't installed (kept in `unclaimedTags`).
+ * when it carries tags of an owner that isn't installed (kept in `unclaimedTags`). When the file
+ * says which `exports` are items (a manifest's `contents`), only those are.
  */
 export const extractItems = (file: SourceFile, options: ExtractOptions): ExtractResult => {
   const diagnostics: MetaDiagnostic[] = [];
@@ -102,8 +103,9 @@ export const extractItems = (file: SourceFile, options: ExtractOptions): Extract
       unclaimed[name] = texts;
     }
 
-    const isItem =
-      options.listed || Object.keys(ownerObjects).length > 0 || Object.keys(unclaimed).length > 0;
+    const isItem = options.exports
+      ? options.exports.includes(exportName)
+      : options.listed || Object.keys(ownerObjects).length > 0 || Object.keys(unclaimed).length > 0;
     if (!isItem) continue;
 
     let side: Side = 'shared';

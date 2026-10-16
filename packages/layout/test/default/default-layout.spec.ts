@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { allWidgets, reconcileLayout } from '../../src';
+import { allWidgets, deserializeLayout, reconcileLayout, serializeLayout } from '../../src';
 import { apply, base, widgets } from '../fixtures/layout';
 
 describe('default layout', () => {
@@ -16,6 +16,15 @@ describe('default layout', () => {
       active: 'hierarchy',
     });
     expect(allWidgets(layout).map((ref) => ref.instanceId)).not.toContain('profiler');
+  });
+
+  it('keeps a closed dock closed after a reload', () => {
+    const closed = apply(base(), { type: 'remove', instanceId: 'console' });
+    const reloaded = deserializeLayout(serializeLayout(closed))!;
+    const shown = new Set(allWidgets(reloaded).map((ref) => ref.widgetId));
+    const reconciled = reconcileLayout(reloaded, widgets, shown);
+    expect(allWidgets(reconciled).map((ref) => ref.widgetId)).not.toContain('console');
+    expect(reconciled.known).toContain('console');
   });
 
   it('reconciles saved layouts with new plugins', () => {

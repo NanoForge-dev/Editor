@@ -1,5 +1,13 @@
 import { zipSync } from 'fflate';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -177,6 +185,28 @@ describe('registries', () => {
           dist: { tarball: '/registry/@acme/render/-/render-1.0.0.zip' },
         },
       },
+    });
+    const shapes = await get('/registry/@acme%2Fshapes');
+    expect(shapes.body).toMatchObject({
+      versions: {
+        '1.1.0': {
+          contents: [
+            { kind: 'asset', path: 'assets/' },
+            {
+              kind: '@nanoforge/ecs:component',
+              path: 'components/circle.ts',
+              export: 'Circle',
+              manifest: 'components/nanoforge.manifest.json',
+            },
+          ],
+          manifests: ['components/nanoforge.manifest.json'],
+        },
+      },
+    });
+    expect(
+      (await registry.get('@acme/shapes')).versions.find((v) => v.version === '1.1.0'),
+    ).toMatchObject({
+      manifests: ['components/nanoforge.manifest.json'],
     });
     const search = await get('/registry/-/v1/search?text=draws&size=5');
     expect(search.body).toMatchObject({
@@ -596,6 +626,44 @@ describe('ProjectPackages', () => {
     expect(json(root, 'nf_modules/@acme/shapes/nanoforge.manifest.json')).toMatchObject({
       version: '1.1.0',
     });
+  });
+
+  it('refuses a locked version whose archive changed in the registry', async () => {
+    const root = project('integrity');
+    const packages = new ProjectPackages(root, registry);
+    await packages.install('@acme/shapes', '1.0.0');
+    const lock = json(root, LOCK_FILE) as unknown as {
+      packages: Record<string, { sha256: string }>;
+    };
+    lock.packages['@acme/shapes']!.sha256 = 'a'.repeat(64);
+    writeFileSync(join(root, LOCK_FILE), JSON.stringify(lock));
+    await expect(packages.install('@acme/render')).rejects.toMatchObject({ code: 'INTEGRITY' });
+    expect(json(root, LOCK_FILE)).toEqual(lock);
+    expect(existsSync(join(root, 'nf_modules/@acme/render'))).toBe(false);
+  });
+
+  it('puts every package back when one of several fails to install', async () => {
+    const root = project('rollback');
+    const failing = Object.create(registry) as typeof registry;
+    failing.download = async (name: string, version: string) => {
+      if (name === '@acme/shapes') throw new RegistryError('UNAVAILABLE', 'network down');
+      return registry.download(name, version);
+    };
+    const broken = new ProjectPackages(root, failing);
+    await expect(broken.install('@acme/render')).rejects.toMatchObject({ code: 'UNAVAILABLE' });
+    expect(existsSync(join(root, 'nf_modules/@acme/render'))).toBe(false);
+    expect(existsSync(join(root, LOCK_FILE))).toBe(false);
+    expect(existsSync(join(root, PACKAGES_FILE))).toBe(false);
+  });
+
+  it('removes on restore the packages the lock no longer lists', async () => {
+    const root = project('restore-removed');
+    const packages = new ProjectPackages(root, registry);
+    await packages.install('@acme/shapes', '1.0.0');
+    writeFileSync(join(root, LOCK_FILE), JSON.stringify({ lockVersion: 1, packages: {} }));
+    mkdirSync(join(root, 'nf_modules/@acme/left.nf-old-1234'), { recursive: true });
+    await packages.restore();
+    expect(readdirSync(join(root, 'nf_modules/@acme'))).toEqual([]);
   });
 
   it('runs changes of one project one after the other', async () => {

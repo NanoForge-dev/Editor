@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { onDestroy } from 'svelte';
   import { CoreServices, type Disposable } from '@nanoforge-dev/editor-kernel';
   import {
     LayoutControllerToken,
@@ -20,6 +21,11 @@
   } from '$lib/editor/error-description';
 
   const editor = getEditor();
+  /**
+   * Leaving the project screen (the brand link, Back, another page) closes the project: its
+   * plugins, its runtime and its game stop with it.
+   */
+  onDestroy(() => editor.projects.close());
   let workbench = $state<WorkbenchContext & Disposable>();
   let error = $state<ErrorDescription>();
   let stage = $state({

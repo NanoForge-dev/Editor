@@ -59,6 +59,7 @@
   };
   const draft = new SettingsDraft(settings);
   const status = account?.status;
+  const syncError = account?.error;
   const conflicts = account?.conflicts;
   const changes = draft.changes;
 
@@ -184,9 +185,14 @@
           role="status"
           title={kept
             ? 'Account sync is not available yet: settings stay on this editor.'
-            : undefined}
+            : $status === 'error'
+              ? $syncError
+              : undefined}
           >{kept && $status === 'idle' ? 'Saved on this editor' : SYNC_STATUS[$status]}</span
         >
+        {#if $status === 'error' && $syncError}
+          <span class="sync-error">{$syncError}</span>
+        {/if}
       {/if}
       {#if editJson().length}
         <Menu items={editJson()} align="end">
@@ -274,6 +280,10 @@
 </Dialog>
 
 <style>
+  .sync-error {
+    color: var(--nf-color-text-muted);
+    font-size: var(--nf-font-size-sm);
+  }
   .settings {
     display: flex;
     flex-direction: column;

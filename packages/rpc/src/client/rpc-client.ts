@@ -19,7 +19,13 @@ import {
   type RpcErrorCode,
   type RpcErrorPayload,
 } from '../error/rpc.exception';
-import type { ConnectionState, RpcApi, RpcClientOptions, SocketLike } from './rpc-client.type';
+import type {
+  CallOptions,
+  ConnectionState,
+  RpcApi,
+  RpcClientOptions,
+  SocketLike,
+} from './rpc-client.type';
 
 interface ActiveSubscription {
   readonly message: Extract<ClientMessage, { t: 'sub' }>;
@@ -62,26 +68,35 @@ export class RpcClient implements Disposable {
   api<C extends Contract>(contract: C): RpcApi<C> {
     const api: Record<string, unknown> = {};
     for (const method of Object.keys(contract.methods)) {
-      api[method] = (input: unknown, options?: { signal?: AbortSignal }) =>
-        this.call(`${contract.namespace}.${method}`, input, options?.signal);
+      api[method] = (input: unknown, options?: CallOptions) =>
+        this.call(`${contract.namespace}.${method}`, input, options);
     }
     return api as RpcApi<C>;
   }
 
-  async call(path: string, input: unknown, signal?: AbortSignal): Promise<unknown> {
+  async call(path: string, input: unknown, options: CallOptions = {}): Promise<unknown> {
+    const { signal, timeoutMs } = options;
+    const timeout = timeoutMs === undefined ? undefined : AbortSignal.timeout(timeoutMs);
+    const combined = signal && timeout ? AbortSignal.any([signal, timeout]) : (signal ?? timeout);
     let response: Response;
+    let text: string;
     try {
       response = await this._fetch(new URL(`${RPC_HTTP_PREFIX}${path}`, this._options.baseUrl), {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...this._options.headers?.() },
         body: encode(input ?? null),
-        ...(signal && { signal }),
+        ...(combined && { signal: combined }),
       });
+      text = await response.text();
     } catch (error) {
       if (signal?.aborted) throw new RpcError('CANCELLED', 'Request cancelled');
+      if (timeout?.aborted)
+        throw new RpcError(
+          'TIMEOUT',
+          `The editor server did not answer ${path} in ${timeoutMs} ms`,
+        );
       throw new RpcError('UNAVAILABLE', `Editor server unreachable: ${String(error)}`);
     }
-    const text = await response.text();
     let payload: { result?: unknown; error?: RpcErrorPayload | string };
     try {
       payload = decode(text);

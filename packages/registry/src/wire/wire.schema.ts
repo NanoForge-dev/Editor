@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
-import { ItemName, ItemType, ItemVersion, Kinds, ManifestDependencies } from '../item/item.schema';
+import {
+  ItemName,
+  ItemType,
+  ItemVersion,
+  Kinds,
+  ManifestDependencies,
+  VersionContent,
+} from '../item/item.schema';
 
 /**
  * What goes over HTTP: routes and documents after the npm registry's (a "packument" per item,
@@ -32,6 +39,9 @@ export const WireVersion = z
     engines: z.record(z.string(), z.string()).default({}),
     kinds: Kinds.default({}),
     suggestedPlugins: ManifestDependencies.default({}),
+    /** Absent from the abbreviated document (`application/vnd.npm.install-v1+json`). */
+    contents: z.array(VersionContent).optional(),
+    manifests: z.array(z.string()).optional(),
     dist: z
       .object({
         /** URL of the archive, absolute or relative to the registry's base URL. */

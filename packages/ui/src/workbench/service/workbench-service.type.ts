@@ -32,6 +32,6 @@ export interface WorkbenchServiceOptions {
   readonly contextKeys: ContextKeyService;
   readonly settings: SettingsService;
   /** Activates plugins listening to an activation event (`onWidget:<id>`). */
-  readonly activate: (event: string) => Promise<void>;
+  readonly activate: (event: string) => Promise<unknown>;
   readonly logger?: Logger;
 }

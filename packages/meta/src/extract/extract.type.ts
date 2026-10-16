@@ -21,6 +21,11 @@ export interface ExtractOptions {
   readonly owners: readonly ItemOwner[];
   /** The file is listed in a manifest's `items`: each of its exports is an item. */
   readonly listed?: boolean;
+  /**
+   * A manifest's `contents` name these exports of the file: they are items, and its other
+   * exports are not (whatever the owners infer).
+   */
+  readonly exports?: readonly string[];
   /** The item folder of the app or library the file is in. */
   readonly folder?: 'components' | 'systems';
   /** Module of a declaration file: a package name, or the project path of a project file. */

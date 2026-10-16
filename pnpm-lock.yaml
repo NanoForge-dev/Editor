@@ -1032,6 +1032,9 @@ importers:
       vite:
         specifier: catalog:core
         version: 8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1)
+      vitest:
+        specifier: catalog:test
+        version: 4.1.11(@types/node@26.6.2)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1))
 
   plugins/git:
     devDependencies:

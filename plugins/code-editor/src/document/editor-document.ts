@@ -39,6 +39,9 @@ export class EditorDocument implements OpenDocument {
   private _hash: string | null;
   private _origin: CommandOrigin | undefined;
   private _persistTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Saves asked and not done yet; the running one is `_saving`'s tail. */
+  private _saves = 0;
+  private _saving: Promise<unknown> = Promise.resolve();
   private _restoring = false;
 
   readonly onDidChange: Event<DocumentChange> = this._onDidChange.event;
@@ -130,19 +133,21 @@ export class EditorDocument implements OpenDocument {
     }));
   }
 
-  async save(): Promise<void> {
-    if (this.readOnly) return;
-    if (this._conflict.get()) throw new Error(`${this.uri} changed on disk: resolve it first`);
-    await this._host.beforeSave(this);
-    const text = this.getText();
-    const version = this.model.getAlternativeVersionId();
-    try {
-      const { hash } = await this._host.backend.write(this.uri, text, this._hash);
-      this._markSaved(hash, version);
-    } catch (error) {
-      if (isConflict(error)) await this._detectConflict();
-      throw error;
-    }
+  /**
+   * Saves the document. Saves run one at a time: two at once (autosave on focus loss and
+   * Ctrl+S) sent the same old hash and the second got a false "changed on disk" conflict. A
+   * save asked while one runs waits for it, and is skipped when nothing changed since.
+   */
+  save(): Promise<void> {
+    const queued = this._saves > 0;
+    this._saves++;
+    const run = this._saving
+      .then(() => this._save(queued))
+      .finally(() => {
+        this._saves--;
+      });
+    this._saving = run.catch(() => undefined);
+    return run;
   }
 
   async revert(): Promise<void> {
@@ -208,6 +213,22 @@ export class EditorDocument implements OpenDocument {
     this._listener.dispose();
     this._onDidChange.dispose();
     this.model.dispose();
+  }
+
+  private async _save(queued: boolean): Promise<void> {
+    if (this.readOnly) return;
+    if (queued && this._savedVersion === this.model.getAlternativeVersionId()) return;
+    if (this._conflict.get()) throw new Error(`${this.uri} changed on disk: resolve it first`);
+    await this._host.beforeSave(this);
+    const text = this.getText();
+    const version = this.model.getAlternativeVersionId();
+    try {
+      const { hash } = await this._host.backend.write(this.uri, text, this._hash);
+      this._markSaved(hash, version);
+    } catch (error) {
+      if (isConflict(error)) await this._detectConflict();
+      throw error;
+    }
   }
 
   private _replaceAll(text: string): void {

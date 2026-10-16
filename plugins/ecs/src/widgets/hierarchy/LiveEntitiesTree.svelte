@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+
   import { ContextMenu, type MenuEntry, Tree, type TreeNode } from '@nanoforge-dev/editor-sdk/ui';
 
   import type { LiveService } from '../../live/live-service';
@@ -60,9 +62,16 @@
       ...shown.filter((entity) => !entity.scene).map(liveNode),
     ];
   });
+  /** Groups expand when they first appear; one the user collapsed stays collapsed. */
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping, not state
+  const offered = new Set<string>();
   $effect(() => {
-    const ids = nodes.filter((node) => node.children).map((node) => node.id);
-    if (ids.some((id) => !expanded.has(id))) expanded = new Set([...expanded, ...ids]);
+    const fresh = nodes
+      .filter((node) => node.children && !offered.has(node.id))
+      .map((node) => node.id);
+    if (!fresh.length) return;
+    for (const id of fresh) offered.add(id);
+    expanded = new Set([...untrack(() => expanded), ...fresh]);
   });
   const selected = $derived(
     new Set(

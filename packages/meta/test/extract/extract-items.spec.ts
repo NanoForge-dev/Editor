@@ -108,6 +108,29 @@ export class Controller {
     expect(items[0]!.params).toEqual([{ name: 'x', type: 'number' }]);
   });
 
+  it('gives optional and nullable params the editor of their type', () => {
+    const code = `export enum Mode { A = 'a', B = 'b' }
+export class Options {
+  constructor(
+    public visible?: boolean,
+    public side?: 'left' | 'right',
+    public mode?: Mode,
+    public label: string | null = null,
+    public count?: number,
+  ) {}
+}`;
+    const { items } = extract(code, 'components');
+    const params = Object.fromEntries(items[0]!.params.map((param) => [param.name, param]));
+    expect(params.visible).toMatchObject({ type: 'boolean', optional: true });
+    expect(params.side).toMatchObject({ type: 'string', enum: ['left', 'right'] });
+    expect(params.mode).toMatchObject({
+      type: 'string',
+      enumMembers: [{ name: 'A' }, { name: 'B' }],
+    });
+    expect(params.label).toMatchObject({ type: 'string' });
+    expect(params.count).toMatchObject({ type: 'number' });
+  });
+
   it('keeps tags of a missing owner as unclaimed', () => {
     const { items } = extract('/** @tilemap layer */ export class Tiles {}');
     expect(items[0]!.unclaimedTags).toEqual({ tilemap: ['layer'] });

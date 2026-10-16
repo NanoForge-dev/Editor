@@ -22,6 +22,7 @@
 
   const { stack, slot, floatId, leading }: Props = $props();
   const { workbench, layout, drag, logger } = getWorkbenchContext();
+  const current = layout.layout;
 
   let strip = $state<HTMLElement>();
   let overflowing = $state(false);
@@ -212,7 +213,7 @@
     data-contains={contains}
   >
     {#each stack.tabs as tab (tab.instanceId)}
-      {#if visited.has(tab.instanceId)}
+      {#if visited.has(tab.instanceId) && tab.instanceId !== $current.maximized}
         <WidgetHost
           ref={tab}
           active={tab.instanceId === stack.active}

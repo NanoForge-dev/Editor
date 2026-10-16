@@ -33,6 +33,37 @@ export const freeName = (
 export const isInside = (path: string, folder: string): boolean =>
   folder === '' || path === folder || path.startsWith(`${folder}/`);
 
+/** The entries of a selection that are not inside another selected entry. */
+export const selectionRoots = (paths: readonly string[]): string[] =>
+  paths.filter((path) => !paths.some((other) => other !== path && isInside(path, other)));
+
+interface Step {
+  do(): Promise<unknown>;
+  undo(): Promise<unknown>;
+}
+
+/**
+ * Runs steps in order, all or nothing: when one fails, those already done are undone (newest
+ * first) and the error is rethrown, so a failed operation leaves no half-done change behind.
+ */
+export const runSteps = async (steps: readonly Step[]): Promise<void> => {
+  const done: Step[] = [];
+  try {
+    for (const step of steps) {
+      await step.do();
+      done.push(step);
+    }
+  } catch (error) {
+    for (const step of done.reverse()) await step.undo().catch(() => undefined);
+    throw error;
+  }
+};
+
+/** Undoes steps, newest first. */
+const undoSteps = async (steps: readonly Step[]) => {
+  for (const step of [...steps].reverse()) await step.undo();
+};
+
 /**
  * File operations of the file manager, each one an undo step of its history context:
  * create, rename, move, copy, duplicate, delete (to the trash), import.
@@ -90,16 +121,14 @@ export class FileOperations {
     for (const path of paths) {
       if (this.exists(path)) throw new Error(`${path} already exists`);
     }
+    const steps = files.map((file, index) => ({
+      do: () => this._fs.write(paths[index]!, file.content, { expectedHash: null }),
+      undo: () => this._fs.delete(paths[index]!),
+    }));
     await this._push({
       label: `Create ${template.title.toLowerCase()} ${name}`,
-      do: async () => {
-        for (const [index, file] of files.entries()) {
-          await this._fs.write(paths[index]!, file.content, { expectedHash: null });
-        }
-      },
-      undo: async () => {
-        for (const path of [...paths].reverse()) await this._fs.delete(path);
-      },
+      do: () => runSteps(steps),
+      undo: () => undoSteps(steps),
     });
     return paths;
   }
@@ -117,21 +146,21 @@ export class FileOperations {
 
   /** Moves entries into a folder (entries already there, or the folder itself, are skipped). */
   async move(paths: readonly string[], folder: string): Promise<string[]> {
-    const moves = paths
+    const moves = selectionRoots(paths)
       .filter((path) => dirname(path) !== folder && !isInside(folder, path))
       .map((path) => [path, joinPath(folder, basename(path))] as const);
     for (const [, target] of moves) {
       if (this.exists(target)) throw new Error(`${target} already exists`);
     }
     if (!moves.length) return [];
+    const steps = moves.map(([from, to]) => ({
+      do: () => this._fs.rename(from, to),
+      undo: () => this._fs.rename(to, from),
+    }));
     await this._push({
       label: moves.length === 1 ? `Move ${basename(moves[0]![0])}` : `Move ${moves.length} items`,
-      do: async () => {
-        for (const [from, to] of moves) await this._fs.rename(from, to);
-      },
-      undo: async () => {
-        for (const [from, to] of [...moves].reverse()) await this._fs.rename(to, from);
-      },
+      do: () => runSteps(steps),
+      undo: () => undoSteps(steps),
     });
     return moves.map(([, to]) => to);
   }
@@ -151,15 +180,15 @@ export class FileOperations {
       return [path, target] as const;
     });
     if (!copies.length) return [];
+    const steps = copies.map(([from, to]) => ({
+      do: () => this._fs.copy(from, to),
+      undo: () => this._fs.delete(to),
+    }));
     await this._push({
       label:
         copies.length === 1 ? `Copy ${basename(copies[0]![0])}` : `Copy ${copies.length} items`,
-      do: async () => {
-        for (const [from, to] of copies) await this._fs.copy(from, to);
-      },
-      undo: async () => {
-        for (const [, to] of [...copies].reverse()) await this._fs.delete(to);
-      },
+      do: () => runSteps(steps),
+      undo: () => undoSteps(steps),
     });
     return copies.map(([, to]) => to);
   }
@@ -172,21 +201,20 @@ export class FileOperations {
 
   /** Moves entries to the project trash; undo brings them back. */
   async delete(paths: readonly string[]): Promise<void> {
-    const roots = paths.filter(
-      (path) => !paths.some((other) => other !== path && isInside(path, other)),
-    );
-    let trashed: { path: string; trashPath: string }[] = [];
+    const roots = selectionRoots(paths);
+    const steps = roots.map((path) => {
+      let trashPath = '';
+      return {
+        do: async () => {
+          ({ trashPath } = await this._fs.delete(path));
+        },
+        undo: () => this._fs.restore(trashPath, path),
+      };
+    });
     await this._push({
       label: roots.length === 1 ? `Delete ${basename(roots[0]!)}` : `Delete ${roots.length} items`,
-      do: async () => {
-        trashed = [];
-        for (const path of roots) trashed.push({ path, ...(await this._fs.delete(path)) });
-      },
-      undo: async () => {
-        for (const { path, trashPath } of [...trashed].reverse()) {
-          await this._fs.restore(trashPath, path);
-        }
-      },
+      do: () => runSteps(steps),
+      undo: () => undoSteps(steps),
     });
   }
 
@@ -206,19 +234,17 @@ export class FileOperations {
       }),
     );
     if (!entries.length) return [];
+    const steps = entries.map(({ path, content }) => ({
+      do: () => this._fs.write(path, content, { expectedHash: null }),
+      undo: () => this._fs.delete(path),
+    }));
     await this._push({
       label:
         entries.length === 1
           ? `Import ${basename(entries[0]!.path)}`
           : `Import ${entries.length} files`,
-      do: async () => {
-        for (const { path, content } of entries) {
-          await this._fs.write(path, content, { expectedHash: null });
-        }
-      },
-      undo: async () => {
-        for (const { path } of [...entries].reverse()) await this._fs.delete(path);
-      },
+      do: () => runSteps(steps),
+      undo: () => undoSteps(steps),
     });
     return entries.map((entry) => entry.path);
   }

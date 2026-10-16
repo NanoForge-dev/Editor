@@ -48,6 +48,11 @@ export interface Layout {
   readonly maximized: string | null;
   /** Per screen slot visibility, e.g. hide right docks on the code screen. */
   readonly screenOverrides: Readonly<Record<string, Partial<Record<SlotId, boolean>>>>;
+  /**
+   * Widgets this layout has already placed or offered, closed ones included: a new plugin's docks
+   * are added once, and a dock the user closed does not come back on the next load.
+   */
+  readonly known: readonly string[];
 }
 
 /** Where a widget is: a dock slot or a floating window, at a tab index. */

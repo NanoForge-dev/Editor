@@ -43,17 +43,25 @@
     };
   });
 
-  /** The entities of the client's main.ts (the app the Hierarchy shows may be another). */
+  /** The client app (an id: the live instance is a new object on every world update). */
+  const clientApp = $derived(client?.app);
+  const editedApp = ecs.appId;
+
+  /**
+   * The entities the client's code spawns where the edited location is: the selected scene's
+   * `setup` when the Hierarchy shows the client app, else the client's `main`.
+   */
   let model = $state<EntryModel>();
   $effect(() => {
     void $entryModel;
-    const app = $project?.model.get().apps.find((candidate) => candidate.id === client?.app);
+    const app = $project?.model.get().apps.find((candidate) => candidate.id === clientApp);
     if (!$active || !app) {
       model = undefined;
       return;
     }
+    const scene = $location?.scene && $editedApp === app.id ? $location : undefined;
     let current = true;
-    void ecs.analyzeApp(app).then((next) => {
+    void (scene ? ecs.analyzeLocation(scene) : ecs.analyzeApp(app)).then((next) => {
       if (current) model = next;
     });
     return () => {
@@ -72,9 +80,8 @@
         return data?.type === 'component' ? data.name : (className ?? '');
       },
     );
-    return withLivePositions(code, client.entities, $location?.scene).filter(
-      (shape) => shape.position,
-    );
+    const scene = $editedApp === clientApp ? $location?.scene : undefined;
+    return withLivePositions(code, client.entities, scene).filter((shape) => shape.position);
   });
   const selected = $derived(
     client && $liveSelection?.source === 'client'

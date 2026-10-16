@@ -7,6 +7,8 @@ import { applyPatch } from './setting-values';
 /** A scope persisted as one record of a key/value store (machine scope). */
 export class KeyValueScopeStore implements ScopeStore {
   private readonly _values = new ObservableValue<SettingValues>({});
+  /** Writes run one at a time: two at once both started from the same values, and one was lost. */
+  private _queue: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly _kv: KeyValueStore,
@@ -21,10 +23,14 @@ export class KeyValueScopeStore implements ScopeStore {
     this._values.set((await this._kv.get<SettingValues>(this._key)) ?? {});
   }
 
-  async write(patch: SettingValues): Promise<void> {
-    const next = applyPatch(this._values.get(), patch);
-    await this._kv.set(this._key, next);
-    this._values.set(next);
+  write(patch: SettingValues): Promise<void> {
+    const task = this._queue.then(async () => {
+      const next = applyPatch(this._values.get(), patch);
+      await this._kv.set(this._key, next);
+      this._values.set(next);
+    });
+    this._queue = task.catch(() => undefined);
+    return task;
   }
 
   dispose(): void {}

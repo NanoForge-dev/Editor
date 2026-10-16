@@ -54,6 +54,9 @@ import { followProjectRuntime } from '../runtime/follow-project-runtime';
 import { WorkspaceActions, WorkspaceActionsToken } from '../workspace/workspace-actions';
 import { registerAppContributions } from './register-app-contributions';
 
+/** How long startup waits for the editor server before saying it does not answer. */
+const STARTUP_TIMEOUT_MS = 20_000;
+
 export interface Editor extends Disposable {
   readonly services: Container;
   readonly rpc: RpcClient;
@@ -105,7 +108,7 @@ export const createEditor = async (
     ),
   });
 
-  const session = await rpc.api(SessionContract).info(null);
+  const session = await rpc.api(SessionContract).info(null, { timeoutMs: STARTUP_TIMEOUT_MS });
   onProgress(
     'Loading settings',
     1,
@@ -152,7 +155,7 @@ export const createEditor = async (
   );
 
   onProgress('Loading plugins', 2, TOTAL, 'Finding built-in, installed and local plugins.');
-  const listings = await rpc.api(PluginsContract).list(null);
+  const listings = await rpc.api(PluginsContract).list(null, { timeoutMs: STARTUP_TIMEOUT_MS });
   const plugins = store.add(
     new PluginHost({
       services,

@@ -25,6 +25,14 @@ describe('NumberInput', () => {
     await userEvent.keyboard('{ArrowUp}');
     expect(onchange).toHaveBeenLastCalledWith(11, true);
 
+    await expect.element(input).toHaveValue('11');
+    await userEvent.keyboard('{ArrowUp}');
+    expect(onchange).toHaveBeenLastCalledWith(12, true);
+    await expect.element(input).toHaveValue('12');
+    const calls = onchange.mock.calls.length;
+    await userEvent.keyboard('{Tab}');
+    expect(onchange.mock.calls.length).toBe(calls);
+
     const handle = screen.container.querySelector<HTMLElement>('.prefix')!;
     const rect = handle.getBoundingClientRect();
     const pointer = (type: string, x: number) =>

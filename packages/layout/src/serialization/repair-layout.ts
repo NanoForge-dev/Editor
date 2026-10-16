@@ -9,10 +9,12 @@ import { Float, Slot } from './layout.schema';
 export const repairLayout = (raw: Record<string, unknown>): Layout => {
   const base = emptyLayout();
   const seen = new Set<string>();
+  const widgetIds = new Set<string>();
   const cleanStack = (stack: TabStack): TabStack => {
     const tabs = stack.tabs.filter((tab) => {
       if (seen.has(tab.instanceId)) return false;
       seen.add(tab.instanceId);
+      widgetIds.add(tab.widgetId);
       return true;
     });
     const active = tabs.some((tab) => tab.instanceId === stack.active)
@@ -67,6 +69,8 @@ export const repairLayout = (raw: Record<string, unknown>): Layout => {
     })
     .catch(base.split)
     .parse(raw.split);
+  /** Layouts saved before `known` existed know the widgets they show. */
+  const known = z.array(z.string()).optional().catch(undefined).parse(raw.known);
   const overrides = z
     .record(z.string(), z.record(z.string(), z.boolean()))
     .catch({})
@@ -85,6 +89,7 @@ export const repairLayout = (raw: Record<string, unknown>): Layout => {
     },
     floats,
     maximized: maximized && seen.has(maximized) ? maximized : null,
+    known: known ?? [...screens, ...widgetIds],
     screenOverrides: Object.fromEntries(
       Object.entries(overrides).map(([screen, values]) => [
         screen,

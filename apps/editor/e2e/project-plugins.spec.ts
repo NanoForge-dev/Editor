@@ -110,4 +110,11 @@ test("runs a project plugin's server entry while the project is open", async ({ 
 
   await closeProject();
   await expect.poll(serverState).toBe('off');
+
+  await openProject(page, 'pong');
+  await page.waitForURL(/\/project\//);
+  await expect.poll(serverState).toBe('on');
+  await page.getByRole('link', { name: 'NanoForge' }).click();
+  await page.waitForURL((url) => url.pathname === '/');
+  await expect.poll(serverState).toBe('off');
 });

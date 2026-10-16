@@ -183,6 +183,18 @@ test('saves on focus loss, formatting on save', async ({ page }) => {
     await expect
       .poll(() => onDisk('focus'), { timeout: 10_000 })
       .toContain('export const later = 2;');
+
+    await page.locator('.monaco-editor .view-lines').first().click();
+    await typeAtEnd(page, '\nexport const both = 3;');
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('blur'));
+      window.dispatchEvent(new Event('blur'));
+    });
+    await page.keyboard.press('Control+s');
+    await expect
+      .poll(() => onDisk('focus'), { timeout: 10_000 })
+      .toContain('export const both = 3;');
+    await expect(page.getByText(/changed on disk/i)).toHaveCount(0);
   } finally {
     rmSync(settings, { force: true });
   }

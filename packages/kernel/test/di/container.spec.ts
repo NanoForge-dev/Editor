@@ -100,6 +100,8 @@ describe('Container', () => {
     root.dispose();
     expect(disposed).toHaveBeenCalledOnce();
     expect(() => child.get(Name)).toThrow(/disposed/);
+    expect(child.tryGet(Name)).toBeUndefined();
+    expect(root.tryGet(Service)).toBeUndefined();
   });
 
   it('disposes the instance when its provider is removed', () => {

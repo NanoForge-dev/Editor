@@ -92,7 +92,7 @@ The item with every version. The name may come encoded as npm clients send it (`
 ```
 
 - `dist-tags.latest`: the highest stable version, unless a publisher moved it.
-- `versions[v].contents`: every content, the sub-manifests' included, with paths from the archive root and the sub-manifest it comes from (`manifest`). `kinds` counts them.
+- `versions[v].contents`: every content, the sub-manifests' included, with paths from the archive root and the sub-manifest it comes from (`manifest`). `kinds` counts them. The folder stand-in (`serveRegistry`) serves them too, without the API's `fileCount` and `size`.
 - `versions[v].dist.tarball`: where the archive is, absolute (the client also takes it relative to the registry's base URL). `dist.sha256` is what the editor checks and keeps in the lock.
 - With `Accept: application/vnd.npm.install-v1+json`, versions keep what installing needs (dependencies, engines, suggested plugins, `kinds`, `dist`), without `contents` nor the readme. The client asks for it before a download.
 - Required by the editor: `name`, `type`, `dist-tags.latest`, `versions` with `name`, `version`, `type`, `dist.tarball`, `dist.sha256`. It ignores fields it does not know.
