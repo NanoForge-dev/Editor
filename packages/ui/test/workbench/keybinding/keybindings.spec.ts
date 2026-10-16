@@ -87,10 +87,12 @@ describe('KeybindingService', () => {
   it('uses the typed character (AZERTY friendly) and supports chords', async () => {
     const { service, ran } = setup();
     service.handle(key({ key: 'P', ctrlKey: true, shiftKey: true }));
-    expect(service.handle(key({ key: 'k', ctrlKey: true }))).toBe(true); // chord start
+    /** Chord start. */
+    expect(service.handle(key({ key: 'k', ctrlKey: true }))).toBe(true);
     service.handle(key({ key: 's', ctrlKey: true }));
     service.handle(key({ key: 'k', ctrlKey: true }));
-    service.handle(key({ key: 'x', ctrlKey: true })); // broken chord
+    /** Broken chord. */
+    service.handle(key({ key: 'x', ctrlKey: true }));
     await Promise.resolve();
     expect(ran).toEqual(['palette', 'save']);
   });

@@ -36,7 +36,8 @@ describe('JsonFileScopeStore', () => {
     const adapter = file('{"b": 1}');
     const store = new JsonFileScopeStore(adapter);
     await store.initialize();
-    adapter.external('{"b": 2, "c": 3}'); // not yet reloaded: the write hits a conflict
+    /** Not yet reloaded: the write hits a conflict. */
+    adapter.external('{"b": 2, "c": 3}');
     await store.write({ a: true });
     expect(adapter.content()).toBe('{\n  "a": true,\n  "b": 2,\n  "c": 3\n}\n');
   });

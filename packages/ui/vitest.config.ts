@@ -1,5 +1,6 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { playwright } from '@vitest/browser-playwright';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -10,6 +11,7 @@ export default defineConfig({
   plugins: [svelte({ compilerOptions: { runes: true } })],
   test: {
     passWithNoTests: true,
+    setupFiles: [fileURLToPath(new URL('../../vitest.setup.ts', import.meta.url))],
     projects: [
       {
         extends: true,

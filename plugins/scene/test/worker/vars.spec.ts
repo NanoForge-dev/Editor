@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-imports -- tests run the worker code against the real code engine */
 import { describe, expect, it } from 'vitest';
 
 import type { CodeEngine } from '@nanoforge-dev/editor-code/engine';

@@ -29,7 +29,8 @@ describe('undo routing', () => {
     expect([a.state.value, b.state.value]).toEqual([1, 0]);
 
     context.set(TEXT_INPUT_FOCUS_KEY, true);
-    expect(await commands.execute('history.undo')).toBe(false); // native undo
+    /** Native undo. */
+    expect(await commands.execute('history.undo')).toBe(false);
     context.set(TEXT_INPUT_FOCUS_KEY, false);
     context.set(HISTORY_CONTEXT_KEY, 'scene');
     await commands.execute('history.undo');

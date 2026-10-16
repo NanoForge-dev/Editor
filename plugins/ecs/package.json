@@ -32,7 +32,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "lint": "prettier --check . && eslint --format=pretty src",
+    "lint": "prettier --check . && eslint --format=pretty .",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "test:unit": "vitest run --config ../../vitest.config.ts",
     "format": "prettier --write . && eslint --fix --format=pretty src"
@@ -41,7 +41,6 @@
     "@lucide/svelte": "catalog:components",
     "@nanoforge-dev/editor-code": "workspace:*",
     "@nanoforge-dev/editor-history": "workspace:*",
-    "@nanoforge-dev/editor-meta": "workspace:*",
     "@nanoforge-dev/editor-sdk": "workspace:*",
     "@nanoforge-dev/editor-vite-plugin": "workspace:*",
     "@sveltejs/vite-plugin-svelte": "catalog:core",

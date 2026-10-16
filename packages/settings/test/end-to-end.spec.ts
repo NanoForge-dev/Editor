@@ -66,7 +66,8 @@ describe('settings end to end', () => {
     const b = await client();
     await a.settings.set(CoreSettings.historyLimit, 250, 'account');
     await a.account.sync();
-    await new Promise((resolve) => setTimeout(resolve, 20)); // change stream → b pulls
+    /** Change stream → b pulls. */
+    await new Promise((resolve) => setTimeout(resolve, 20));
     await b.account.sync();
     expect(b.settings.get(CoreSettings.historyLimit)).toBe(250);
     a.rpc.dispose();

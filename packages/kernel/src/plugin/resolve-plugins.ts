@@ -168,7 +168,8 @@ const activationOrder = (plugins: Map<string, ResolvedPlugin>): PluginDescriptor
       .filter(([, deps]) => [...deps].every((dep) => !pending.has(dep)))
       .map(([name]) => name)
       .sort();
-    if (!ready.length) break; // unreachable: cycles were removed
+    /** Unreachable: cycles were removed. */
+    if (!ready.length) break;
     for (const name of ready) {
       pending.delete(name);
       order.push(plugins.get(name)!.descriptor);

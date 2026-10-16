@@ -204,7 +204,8 @@ describe('CodeService', () => {
     await stack.redo();
 
     writeFileSync(path, `${readFileSync(path, 'utf8')}\n// hand edit\n`);
-    await new Promise((resolve) => setTimeout(resolve, 300)); // watcher → ProjectFs
+    /** Watcher → ProjectFs. */
+    await new Promise((resolve) => setTimeout(resolve, 300));
     expect(await stack.undo()).toBe(false);
     expect(stack.state.canUndo).toBe(false);
     code.dispose();
@@ -219,7 +220,8 @@ describe('CodeService', () => {
         "import { maxSpeed } from '@acme/speed';\nexport const s: string = maxSpeed;\n",
       ),
     );
-    await code.engine(); // mirror first, then the open document text is pushed on change
+    /** Mirror first, then the open document text is pushed on change. */
+    await code.engine();
     await (await code.engine()).setFiles([{ path: uri, text: await documents.getText(uri) }]);
     const watch = code.watchDiagnostics(uri);
     const start = Date.now();

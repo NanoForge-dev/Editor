@@ -5,7 +5,7 @@ The NanoForge editor, rewritten from scratch. The full plan, with status per pha
 ## Working rules
 
 - **Where to work.**
-  - This is the worktree `G-EIP-600/editor-v2`, branch `rewrite/v2`.
+  - This is the worktree `G-EIP-600/editor-v2`. Its branch changes with the work (`git branch --show-current`): start a branch of your own for new work rather than committing on the user's.
   - Never commit on the user's own branches or checkouts (`G-EIP-600/editor`, `engine`, `loader`, `cli`): use a worktree.
   - Never push or publish. That is the user's call.
 - **Phases.**
@@ -50,17 +50,18 @@ pnpm dev           # editor + built-in plugins in watch mode (hot reload)
 # E2E: against the production build. Build first, and rebuild after every change.
 cd apps/editor
 CHROME=/usr/bin/google-chrome-stable \
-NANOFORGE_ENGINE=/home/exelo/workspace/epitech/G6/G-EIP-600/engine-editor-bridge \
-NANOFORGE_CLI=/home/exelo/workspace/epitech/G6/G-EIP-600/cli-editor \
+NANOFORGE_ENGINE=/home/exelo/workspace/epitech/G6/G-EIP-600/engine \
+NANOFORGE_CLI=/home/exelo/workspace/epitech/G6/G-EIP-600/cli \
 npx playwright test [spec…] --reporter=line
 ```
 
-- **Run e2e with `E2E_WORKSPACE=.workspace-agent`** (any folder name under `e2e/`). The default `e2e/.workspace` is wiped at each run, and the user's dev server (`FS_ROOT=apps/editor`) may have its projects open. Specs take their paths from `e2e/workspace.ts`.
+- **Run e2e with `E2E_WORKSPACE=.workspace-agent`** (`.workspace` or `.workspace-<name>`: anything else is refused, since the folder is wiped). The default `e2e/.workspace` is wiped at each run, and the user's dev server (`FS_ROOT=apps/editor`) may have its projects open. Specs take their paths from `e2e/workspace.ts`.
 - Without `NANOFORGE_ENGINE`, the tests that play the game (runtime, the viewport's "while playing", some code-editor tests) are **skipped**, not failed. Check the skipped count.
 - `NANOFORGE_CLI` (a built CLI checkout) is linked into the played game as its own CLI. Without it, the console test skips its source-map check (the game's published CLI writes no source maps).
 - Contract tests (`test/contract` in `server-core` and `registry`) run in `pnpm test` against the stand-ins, and against a real API with `CONTRACT_*` variables (`docs/api/README.md`). Never run them against a real API yourself.
 - `ANALYZE=1 npx vite build` (in `apps/editor`) prints the bundle analysis; `BENCH=1 npx playwright test` runs the startup measurements of `e2e/*.bench.ts` instead of the tests (`docs/performance.md`).
 - `E2E_EXTRA_PLUGINS=<built plugin folder>` adds a dev plugin to the e2e editor.
+- Unit tests fail on an unexpected `console.error` (`vitest.setup.ts`): a test that expects one spies on it (`vi.spyOn(console, 'error').mockImplementation(() => {})`).
 - SDK public API snapshot: after adding SDK exports, run `cd packages/sdk && npx vitest run -u`, and check that the diff shows only what you added.
 - E2E specs import `test` and `expect` from `./test` (`e2e/test.ts`), not from `@playwright/test`: its fixture fails a test when a page throws an uncaught error. Known noise goes in its `IGNORED` list.
 - E2E specs open projects with `openProject(page, path)` (`e2e/helpers.ts`): `/load?path=` asks before opening a folder that is not an exact recent path, and a relative path always asks.
@@ -102,11 +103,9 @@ npx playwright test [spec…] --reporter=line
   - `scene` (the Scenes and Vars panels, for apps with `@nanoforge-dev/scene`; spec `docs/specs/scene.md`). It plugs into the ECS widgets through `ecs.sources`: they edit the selected scene's `setup` instead of `main`
 - **`tooling/`**:
   - `vite-plugin`: builds plugins;
-  - `example-plugin`: `@acme/hello`, the dev plugin loaded by the e2e tests;
-  - `spike-plugin`.
-- **`examples/pong-game`**: a game project to try the editor on. `pnpm example` (`scripts/example.mjs`) links its engine libraries from `NANOFORGE_ENGINE` (default `../engine-editor-bridge`) and starts the built editor on port 4800 with `FS_ROOT=examples`. It has a shared library (`libs/shared`, `@pong-game/shared`). The ECS scene test has its own trimmed copy (`plugins/ecs/test/fixtures/pong-game`).
-- **`examples/breakout`**: a client-only game made of scenes (`@nanoforge-dev/scene`, engine branch `feat/scene`): `NANOFORGE_ENGINE=../engine-scene pnpm example breakout`. Its entities and systems all belong to scenes (`GameScene`), so the Scene screen and Hierarchy show none: use Play and the World panel.
-- **`examples/counter-plugin`**: a standalone plugin, outside the workspace, as `nf create plugin` writes it (the CLI command is in `../cli-editor`).
+  - `example-plugin`: `@acme/hello`, the dev plugin loaded by the e2e tests.
+- **`examples/breakout`**: a client-only game made of scenes (`@nanoforge-dev/scene`, engine `modules/scene`), the default of `pnpm example` (`scripts/example.mjs`): it links the engine libraries from `NANOFORGE_ENGINE` (default `../engine`, shared with the e2e setup through `engineRoot`) and starts the built editor on port 4800 with `FS_ROOT=examples`. Its entities and systems all belong to scenes (`GameScene`), so the Scene screen and Hierarchy show none: use Play and the World panel.
+- **`examples/counter-plugin`**: a standalone plugin, outside the workspace, as `nf create plugin` writes it (the CLI command is in `../cli`).
 - **`docs/docs`**: the user documentation and the plugin authoring guide (Mintlify pages, copied to the docs site).
 
 ### Manifests: packages and plugins (ADR 0003)
@@ -160,14 +159,7 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 - The engine's `EditorBridge` (`modules/editor/src/internal/editor-bridge.ts`) buffers the game's console output until `welcome`. The runtime service checks compatibility (legacy, older or newer engine).
 - **Logs:** everything shown in the Console goes through `LoggerService`. The source name gives the group: `game:client`, `game:server`, `build:<app>`, `cli:<command>`, a plugin's name, anything else is the editor. Logged values use the `LogValue` tree, made by kernel `serializeLogValue` only: the client runner hands it to the game (`RunOptions.editor.serializeLogValue`), and the engine calls it when a line is logged. The engine has no serializer of its own.
 - **Moving entities in the Game screen** (ECS plugin, `GameMoveOverlay.svelte`): the _Move entities_ tool (`ecs.moveInGame`) draws the scene shapes of the client's live entities over the game with the `viewport` mapping, and a drag is a live edit (`live.setField`), like the Scene's. graphics-2d's old drag (`DrawableCircle2D`… emitting `move-component`) was removed from the engine (`11f4c98`, breaking).
-- **Unpushed branches in other repos:**
-
-  | Repo   | Branch                                                                                                                                     | Worktree                  |
-  | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
-  | engine | `feat/core-editor-bridge` (one commit on engine 2.0.0, rebased by the user 2026-10-02; old base in `backup/core-editor-bridge-pre-rebase`) | `../engine-editor-bridge` |
-  | loader | `feat/server-editor-ipc`                                                                                                                   | `../loader-editor`        |
-  | cli    | `feat/editor-open-project` (`nf editor [path] --port`, `nf create plugin`)                                                                 | `../cli-editor`           |
-  | engine | `feat/scene` (`modules/scene`, `@nanoforge-dev/scene`; from `feat/core-editor-bridge`)                                                     | `../engine-scene`         |
+- **Engine, loader and CLI:** the editor bridge (engine #445), the scene module (engine #447), the loader's editor IPC (loader #113) and `nf editor [path] --port` / `nf create plugin` (CLI #241, #242) are merged in their `main`. Use built checkouts of `../engine` and `../cli`.
 
 ## Conventions that matter
 
@@ -179,7 +171,7 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
   - split a file past about 300 lines (a Svelte file's `<style>` not counted); state a split component held stays owned above any `{#if}` its parts sit under;
   - dialogs are opened by an `open-<name>-dialog.ts` next to them; a code worker entry is `src/worker/index.ts`.
 
-- **Comments:** no `//` or `<!-- -->` comments in the code, only `/** */` doc comments and tool directives (`eslint-disable`, `svelte-ignore`, `@ts-expect-error`, `prettier-ignore`). An empty `catch {}` is allowed (ESLint `allowEmptyCatch`).
+- **Comments:** no `//` or `<!-- -->` comments in the code (ESLint `nanoforge/no-line-comments`), only `/** */` doc comments and tool directives (`eslint-disable`, `svelte-ignore`, `@ts-expect-error`, `prettier-ignore`). An empty `catch {}` is allowed (ESLint `allowEmptyCatch`).
 - **UI text:** sentence case, plain verbs, and a button says what it does. Accessible names are how the e2e tests find things (`getByRole`), so give every control a label.
 - **Svelte 5:**
   - Props read once (dialogs mounted once) need `// svelte-ignore state_referenced_locally`.
@@ -226,15 +218,15 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
   - `nanoforge.manifest.json` is a build input of turbo (it was not until 2026-10-01: a manifest-only change kept the old bundle).
   - After changing a plugin manifest, rebuild it: `tooling/example-plugin` is not rebuilt by the editor build filter (`pnpm --filter @nanoforge-dev/editor-example-plugin build`).
 - **Installing folders and the file watcher:** a folder that appears through a rename is missed by the server's watcher (its content never reaches the client's file list, so the catalog does not see a new package). `installItem` writes files in place, the manifest last.
-- **API features:** nothing of the NanoForge API beyond sign-in and projects is called unless listed in `API_FEATURES` (`settings`, `registry`). The real API (`../api`, read-only for us) has neither yet; its current registry is another shape (`docs/api/registry.md`).
+- **API features:** nothing of the NanoForge API beyond sign-in and projects is called unless listed in `API_FEATURES` (`settings`, `registry`). The real API (`../api`, read-only for us) has a registry (`../api/docs/registry.md`, the source of truth: align `docs/api/registry.md` and `packages/registry` with it) and no settings yet.
 - **Account plugin list:** `plugins.account` is an account setting, and a local editor's account document lives on its own machine (no sign-in): the list does not travel between machines yet. Don't describe it as cross-machine.
 - **Account plugin list in e2e:** installing a plugin _for me_ writes `plugins.account` in the account settings, which outlive tests. A test that installs one uninstalls it through the page (see `e2e/marketplace.spec.ts`), or the next tests get a sticky "not installed here" notification.
-- **The compiler stays in the worker:** main-thread code must not import `@nanoforge-dev/editor-code/engine` or the main entry of `@nanoforge-dev/editor-meta` for values (use `@nanoforge-dev/editor-meta/pure`). One such import puts ts-morph and TypeScript (7 MB) in the page chunk; `ANALYZE=1` shows the chain.
+- **The compiler stays in the worker** (ESLint enforces it): main-thread code must not import `@nanoforge-dev/editor-code/engine` or the main entry of `@nanoforge-dev/editor-meta` for values (use `@nanoforge-dev/editor-meta/pure`). One such import puts ts-morph and TypeScript (7 MB) in the page chunk; `ANALYZE=1` shows the chain.
 - **Scenes:**
   - The ECS finds a component by its class name: a component named like a class the bundle already has (graphics-2d's `Sprite`) is renamed by the bundler (`Sprite2`) and no longer matches its `name` field. Scene ids come from `SceneLibrary`'s `scenes` keys for the same reason.
   - A scene's `static parent` is read when its module is evaluated: the parent's module must not import its children (breakout's `run.ts` imports no scene).
   - Edits to a file open in the code editor change the open document, saved later: a multi-file operation saves what it changed (`DocumentService.save`), and never writes a file behind an open document (the document then can't be saved).
-  - E2E: `scene.spec.ts` runs on a breakout copy (`e2e/<workspace>/breakout`), made only when `NANOFORGE_ENGINE` has a built `modules/scene` (`../engine-scene`). It snapshots and restores the client's sources.
+  - E2E: `scene.spec.ts` runs on a breakout copy (`e2e/<workspace>/breakout`), made only when `NANOFORGE_ENGINE` has a built `modules/scene`. It snapshots and restores the client's sources.
 - **Docs follow the code:** `docs/docs` (user docs, plugin guide) cite labels, shortcuts and APIs. After changing one, grep the docs for it.
 - **Diagnostics of several apps:** each app with its own `node_modules` gets its engine types (asked per app, not once per package) and its own TypeScript program for diagnostics (`CodeEngine._checked`). One program for client and server made the client's type augmentations (`ctx.network`) apply to the server: false errors in Problems. Analyzers and transformers still use the single `project`.
 - **Manual passes find what e2e does not** (2026-10-02, by driving Chrome through screenshots): binary files opened as text, a tab lost on rename, tabs cut off in a dock, `nf new` waiting on a prompt. Their regressions are in `e2e/manual-pass.spec.ts`.

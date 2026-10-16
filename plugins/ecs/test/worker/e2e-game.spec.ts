@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-imports -- tests run the worker code against the real code engine */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';

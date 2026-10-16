@@ -88,7 +88,8 @@ describe('ProjectFs', () => {
     const project = service.current.get()!;
     const changes: FileChange[] = [];
     const subscription = project.fs.onDidChange((batch) => changes.push(...batch));
-    await new Promise((resolve) => setTimeout(resolve, 300)); // server watcher initial scan
+    /** Server watcher initial scan. */
+    await new Promise((resolve) => setTimeout(resolve, 300));
     writeFileSync(join(workspace, 'pong/apps/client/src/main.ts'), '// edited outside\n');
     const elapsed = await waitFor(() => changes.length > 0);
     subscription.dispose();

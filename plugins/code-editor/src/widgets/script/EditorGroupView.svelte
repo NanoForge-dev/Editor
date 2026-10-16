@@ -57,7 +57,7 @@
   };
 
   /** The text the active file is compared with (a previous version), if any. */
-  const comparisons = service.comparisons;
+  const comparisons = $derived(service.comparisons);
   const comparison = $derived(active ? $comparisons.get(active.uri) : undefined);
 
   /** Bumped when documents load or are released. */

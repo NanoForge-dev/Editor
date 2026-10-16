@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 
 import {
   bridgeOf,
+  engineRoot,
   linkEditorLibrary,
   linkEngineModules,
   linkNodeModules,
@@ -16,24 +17,21 @@ const examples = join(root, 'examples');
  * linked), plus engine modules it does not use (`modules`, folders of the engine's `modules`).
  */
 const GAMES = {
-  'pong-game': { apps: ['apps/client', 'apps/server'], modules: [] },
   breakout: { apps: ['apps/client'], modules: ['scene'] },
 };
-const name = process.argv[2] ?? 'pong-game';
-const options = GAMES[name];
-if (!options) {
-  console.error(`\nNo example "${name}". Examples: ${Object.keys(GAMES).join(', ')}.\n`);
-  process.exit(1);
-}
-const game = join(examples, name);
-const engine = resolve(process.env.NANOFORGE_ENGINE ?? join(root, '../engine-editor-bridge'));
-const source = join(engine, 'example/pong-network');
-const port = process.env.PORT ?? '4800';
-
+const name = process.argv[2] ?? 'breakout';
 const fail = (message) => {
   console.error(`\n${message}\n`);
   process.exit(1);
 };
+const options = GAMES[name];
+if (!options) fail(`No example "${name}". Examples: ${Object.keys(GAMES).join(', ')}.`);
+const game = join(examples, name);
+if (!existsSync(join(game, 'nanoforge.config.ts')))
+  fail(`The example "${name}" is missing: ${game} has no nanoforge.config.ts.`);
+const engine = engineRoot(root);
+const source = join(engine, 'example/pong-network');
+const port = process.env.PORT ?? '4800';
 
 const common = join(engine, 'packages/common/dist/index.js');
 const bridge = bridgeOf(engine);
@@ -48,7 +46,7 @@ if (bridge !== 'library')
 for (const module of options.modules) {
   if (!existsSync(join(engine, 'modules', module, 'dist/index.js')))
     fail(
-      `The engine at ${engine} has no built modules/${module}, which the ${name} example imports.\nUse an engine with it (the scene module is on the branch feat/scene), and run "pnpm build" in it.`,
+      `The engine at ${engine} has no built modules/${module}, which the ${name} example imports.\nUse an engine with it (engine main has it), and run "pnpm build" in it.`,
     );
 }
 const server = join(root, 'apps/editor/dist/index.js');

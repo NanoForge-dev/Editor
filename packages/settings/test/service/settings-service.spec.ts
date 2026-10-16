@@ -101,7 +101,8 @@ describe('SettingsService', () => {
     service.observe(fontSize).subscribe(run);
     await service.set(theme, 'light', 'machine');
     await service.set(fontSize, 18, 'machine');
-    await stores.project.write({ 'editor.fontSize': 18 }); // same effective value
+    /** Same effective value. */
+    await stores.project.write({ 'editor.fontSize': 18 });
     expect(run.mock.calls).toEqual([[13], [18]]);
   });
 

@@ -65,7 +65,8 @@ describe('Container', () => {
     root.provide(Name, 'world');
     root.provideFactory(Greeter, (s) => ({ greet: () => `hello ${s.get(Name)}` }));
     const child = root.createChild('c');
-    child.provide(Name, 'child'); // does not affect the root singleton
+    /** Does not affect the root singleton. */
+    child.provide(Name, 'child');
     expect(child.get(Greeter).greet()).toBe('hello world');
   });
 

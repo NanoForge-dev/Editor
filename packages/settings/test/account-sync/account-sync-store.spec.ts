@@ -96,7 +96,8 @@ describe('AccountSyncStore', () => {
     remote.goOnline();
     await flush();
     await reloaded.sync();
-    expect(remote.document.values).toEqual({ 'editor.fontSize': 18 }); // local.only never leaves
+    /** Local.only never leaves. */
+    expect(remote.document.values).toEqual({ 'editor.fontSize': 18 });
     expect(reloaded.dirty).toBe(false);
     expect(reloaded.status.get()).toBe('idle');
     reloaded.dispose();
@@ -108,8 +109,10 @@ describe('AccountSyncStore', () => {
     const store = create(remote);
     await store.initialize();
 
-    remote.remoteEdit({ b: 2, c: 2 }); // other device
-    await store.write({ a: 3, c: 3 }); // this device
+    /** Other device. */
+    remote.remoteEdit({ b: 2, c: 2 });
+    /** This device. */
+    await store.write({ a: 3, c: 3 });
     await store.sync();
 
     expect(remote.document.values).toEqual({ a: 3, b: 2, c: 3 });

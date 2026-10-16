@@ -75,7 +75,8 @@ describe('editor server', () => {
     const subscription = client.subscribe(FsContract, 'changes', { project: id }, ({ changes }) =>
       received.push(...changes.map((change) => `${change.type}:${change.path}`)),
     );
-    await new Promise((resolve) => setTimeout(resolve, 300)); // watcher initial scan
+    /** Watcher initial scan. */
+    await new Promise((resolve) => setTimeout(resolve, 300));
     const start = Date.now();
     writeFileSync(join(workspace, 'pong/apps/client/src/new.ts'), 'export {};');
     while (!received.length && Date.now() - start < 2000)

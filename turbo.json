@@ -1,6 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["tsconfig.json", "eslint.config.js", "vitest.config.ts"],
+  "globalDependencies": [
+    "tsconfig.json",
+    "eslint.config.js",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "vitest.global-setup.ts",
+    "prettier.config.js"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -25,11 +32,11 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": [],
-      "outputLogs": "errors-only"
+      "outputLogs": "new-only"
     },
     "lint": {
       "outputs": [],
-      "outputLogs": "errors-only"
+      "outputLogs": "new-only"
     },
     "format": {
       "cache": false,
@@ -37,9 +44,9 @@
     },
     "test:unit": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "test/**", "package.json", "tsconfig.json"],
+      "inputs": ["src/**", "test/**", "package.json", "tsconfig.json", "*.config.{js,ts}"],
       "outputs": [],
-      "outputLogs": "errors-only"
+      "outputLogs": "new-only"
     }
   },
   "globalPassThroughEnv": ["CHROME", "CI"]

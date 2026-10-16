@@ -276,7 +276,8 @@ export const discoverProject = async (input: DiscoveryInput): Promise<ProjectMod
 
   for (const directory of await expandDirectoryGlobs(root, rootConfig.packages)) {
     const appRoot = join(root, directory);
-    if (!findConfigFile(appRoot)) continue; // plain folders matched by a glob
+    /** Plain folders matched by a glob. */
+    if (!findConfigFile(appRoot)) continue;
     const config = await load(appRoot);
     if (!config) continue;
     if (config.type === 'workspace') {

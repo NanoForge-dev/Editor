@@ -31,7 +31,7 @@
   "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
   "scripts": {
     "build": "vite build",
-    "lint": "prettier --check . && eslint --format=pretty src",
+    "lint": "prettier --check . && eslint --format=pretty .",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "dev": "vite build --watch",
     "test:unit": "vitest run --config ../../vitest.config.ts",

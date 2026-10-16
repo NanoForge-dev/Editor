@@ -59,8 +59,10 @@ const bigTree = (): TreeNode[] =>
 describe('Tree', () => {
   it('only renders visible rows of large trees', async () => {
     const screen = render(TreeHarness, { nodes: bigTree() });
-    (screen.getByRole('tree').element() as HTMLElement).focus(); // focuses the first row
-    await userEvent.keyboard('{ArrowRight}'); // expand it
+    /** Focuses the first row. */
+    (screen.getByRole('tree').element() as HTMLElement).focus();
+    /** Expand it. */
+    await userEvent.keyboard('{ArrowRight}');
     await expect.element(screen.getByTestId('expanded')).toHaveTextContent('group-0');
     const rows = screen.container.querySelectorAll('[role="treeitem"]');
     expect(rows.length).toBeGreaterThan(5);

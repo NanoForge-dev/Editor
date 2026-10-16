@@ -23,7 +23,7 @@
     "dev": "turbo run dev --filter=@nanoforge-dev/editor --filter='./plugins/*'",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "lint": "prettier --check . && turbo run lint",
+    "lint": "prettier --check . && eslint --format=pretty scripts commitlint.config.cjs vitest.setup.ts vitest.global-setup.ts && turbo run lint",
     "format": "prettier --write . && turbo run format",
     "test": "pnpm run test:unit",
     "test:unit": "turbo run test:unit",

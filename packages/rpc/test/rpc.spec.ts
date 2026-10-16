@@ -152,7 +152,8 @@ describe('RPC streams', () => {
     await flush();
     const socket = sockets[0]!;
     socket.backpressure = true;
-    emitStatus(1); // accepted, then the socket reports back-pressure
+    /** Accepted, then the socket reports back-pressure. */
+    emitStatus(1);
     emitStatus(2);
     emitStatus(3);
     socket.backpressure = false;
@@ -171,5 +172,33 @@ describe('RPC streams', () => {
     await vi.advanceTimersByTimeAsync(2100);
     expect(sockets[0]!.readyState).toBe(3);
     vi.useRealTimers();
+  });
+});
+
+describe('RpcRouter.implement', () => {
+  const Greeter = defineContract('greeter', {
+    methods: { hi: { input: z.null(), output: z.string() } },
+    streams: { ticks: { params: z.null(), event: z.number() } },
+  });
+
+  it('registers nothing when a handler is missing', () => {
+    const router = new RpcRouter<object>();
+    expect(() => router.implement(Greeter, { methods: { hi: () => 'hi' } } as never)).toThrow(
+      'Missing stream handler for greeter.ticks',
+    );
+    expect(() =>
+      router.implement(Greeter, { methods: { hi: () => 'hi' }, streams: { ticks: () => {} } }),
+    ).not.toThrow();
+  });
+
+  it('accepts a hand-written contract without streams', () => {
+    const router = new RpcRouter<object>();
+    const contract = { namespace: 'plain', methods: { hi: Greeter.methods.hi } };
+    const implement = () =>
+      router.implement(contract as never, { methods: { hi: () => 'hi' } } as never);
+    const registration = implement();
+    expect(implement).toThrow('RPC "plain.hi" is already implemented');
+    registration.dispose();
+    expect(implement).not.toThrow();
   });
 });

@@ -30,7 +30,8 @@ export class CommandRegistry implements Disposable {
     if (this._commands.has(descriptor.id)) {
       throw new Error(`Command "${descriptor.id}" is already registered`);
     }
-    if (descriptor.when) parseWhen(descriptor.when); // fail fast on invalid clauses
+    /** Fail fast on invalid clauses. */
+    if (descriptor.when) parseWhen(descriptor.when);
     this._commands.set(descriptor.id, descriptor as unknown as CommandDescriptor);
     this._onDidRegister.fire(descriptor.id);
     return toDisposable(() => {

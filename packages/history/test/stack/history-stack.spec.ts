@@ -51,7 +51,8 @@ describe('HistoryStack', () => {
     now = 700;
     await stack.push(set(3, { mergeKey: 'x' }));
     now = 1500;
-    await stack.push(set(4, { mergeKey: 'x' })); // too late: new step
+    /** Too late: new step. */
+    await stack.push(set(4, { mergeKey: 'x' }));
     expect(stack.state.past).toHaveLength(2);
     await stack.undo();
     expect(state.value).toBe(3);

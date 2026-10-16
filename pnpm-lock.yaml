@@ -364,9 +364,6 @@ importers:
       '@nanoforge-dev/editor-kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
-      '@nanoforge-dev/editor-layout':
-        specifier: workspace:*
-        version: link:../../packages/layout
       '@nanoforge-dev/editor-plugin-code-editor':
         specifier: workspace:*
         version: link:../../plugins/code-editor
@@ -589,9 +586,6 @@ importers:
       vitest:
         specifier: catalog:test
         version: 4.1.11(@types/node@26.6.2)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1))
-      zod:
-        specifier: catalog:libs
-        version: 4.6.5
 
   packages/protocol:
     dependencies:
@@ -978,9 +972,6 @@ importers:
       '@nanoforge-dev/editor-history':
         specifier: workspace:*
         version: link:../../packages/history
-      '@nanoforge-dev/editor-meta':
-        specifier: workspace:*
-        version: link:../../packages/meta
       '@nanoforge-dev/editor-sdk':
         specifier: workspace:*
         version: link:../../packages/sdk

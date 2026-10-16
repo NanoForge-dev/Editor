@@ -4,7 +4,9 @@ import { join } from 'node:path';
 const PORT = 4790;
 const root = import.meta.dirname;
 /** Folder of `e2e/` holding the test projects (`E2E_WORKSPACE`, see `e2e/workspace.ts`). */
-const WORKSPACE = process.env.E2E_WORKSPACE ?? '.workspace';
+const WORKSPACE = process.env.E2E_WORKSPACE || '.workspace';
+if (!/^\.workspace(-[\w-]+)?$/.test(WORKSPACE))
+  throw new Error(`E2E_WORKSPACE must be ".workspace" or ".workspace-<name>", not "${WORKSPACE}".`);
 
 /**
  * End-to-end tests against the production build (`pnpm build` first). Each run starts from a

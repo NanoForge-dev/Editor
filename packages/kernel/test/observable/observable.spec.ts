@@ -58,7 +58,8 @@ describe('derived', () => {
     const run = vi.fn();
     const unsubscribe = sum.subscribe(run);
     a.set(3);
-    b.set(2); // unchanged: no notification
+    /** Unchanged: no notification. */
+    b.set(2);
     expect(run.mock.calls).toEqual([[13], [15]]);
     expect(a.subscriberCount).toBe(1);
     unsubscribe();
@@ -96,7 +97,8 @@ describe('switchObservable', () => {
     outer.set(a);
     a.set(2);
     outer.set(b);
-    a.set(3); // no longer followed
+    /** No longer followed. */
+    a.set(3);
     b.set(11);
     unsubscribe();
     b.set(12);

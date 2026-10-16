@@ -117,86 +117,86 @@
 {/snippet}
 
 {#snippet row(entry: LayoutRow)}
-  {#if entry.hidden}
-
-  {:else if entry.kind === 'param'}
-    <ParamField
-      element={entry.element}
-      arg={component.args[entry.index]}
-      label={entry.label}
-      color={entry.color}
-      preset={entry.preset}
-      {editors}
-      disabled={!component.editable}
-      onchange={(value, imports) => set(entry.index, value, imports)}
-    />
-  {:else if (entry.preset as ParamPreset).component}
-    {@const Editor = (entry.preset as ParamPreset).component!}
-    <div class="preset" role="group" aria-label={entry.label}>
-      <span class="label">{entry.label}</span>
-      <Editor
-        row={entry}
-        values={entry.slots.map((slot) => currentValue(slot.element, component.args[slot.index]))}
-        disabled={!component.editable}
-        onchange={(args) => onargs(args, fill())}
-      />
-    </div>
-  {:else if entry.preset.id === 'color'}
-    {@const [r, g, b] = entry.slots.map((slot) => numberOf(slot.index))}
-    <div class="preset" role="group" aria-label={entry.label}>
-      <span class="label">{entry.label}</span>
-      <ColorPicker
+  {#if !entry.hidden}
+    {#if entry.kind === 'param'}
+      <ParamField
+        element={entry.element}
+        arg={component.args[entry.index]}
         label={entry.label}
-        value={rgbToHex(r ?? 0, g ?? 0, b ?? 0)}
+        color={entry.color}
+        preset={entry.preset}
+        {editors}
         disabled={!component.editable}
-        onchange={(next, final) => {
-          if (!final) return;
-          const rgb = hexToRgb(next);
-          const args: Record<number, ArgValue> = {};
-          entry.slots.forEach((slot, i) => {
-            if (i < 3) args[slot.index] = { value: rgb[i] };
-          });
-          onargs(args, fill());
-        }}
+        onchange={(value, imports) => set(entry.index, value, imports)}
       />
-    </div>
-  {:else}
-    <div class="preset" role="group" aria-label={entry.label}>
-      <span class="label">{entry.label}</span>
-      <span class="inputs">
-        {#each entry.slots as slot (slot.slot)}
-          <NumberInput
-            prefix={slot.slot === 'width'
-              ? 'W'
-              : slot.slot === 'height'
-                ? 'H'
-                : slot.slot.toUpperCase()}
-            label="{entry.label} {slot.slot}"
-            value={numberOf(slot.index)}
-            disabled={!component.editable}
-            onchange={(next, final) => {
-              if (!final) return;
-              const args: Record<number, ArgValue> = { [slot.index]: { value: next } };
-              if (entry.preset.id === 'size' && ratioLocked) {
-                const other = entry.slots.find((candidate) => candidate !== slot);
-                const before = numberOf(slot.index);
-                if (other && before)
-                  args[other.index] = { value: (numberOf(other.index) * next) / before };
-              }
-              onargs(args, fill());
-            }}
-          />
-        {/each}
-        {#if entry.preset.id === 'size'}
-          <IconButton
-            icon="lock"
-            label={ratioLocked ? 'Unlock the ratio' : 'Keep the ratio'}
-            pressed={ratioLocked}
-            onclick={() => (ratioLocked = !ratioLocked)}
-          />
-        {/if}
-      </span>
-    </div>
+    {:else if (entry.preset as ParamPreset).component}
+      {@const Editor = (entry.preset as ParamPreset).component!}
+      <div class="preset" role="group" aria-label={entry.label}>
+        <span class="label">{entry.label}</span>
+        <Editor
+          row={entry}
+          values={entry.slots.map((slot) => currentValue(slot.element, component.args[slot.index]))}
+          disabled={!component.editable}
+          onchange={(args) => onargs(args, fill())}
+        />
+      </div>
+    {:else if entry.preset.id === 'color'}
+      {@const [r, g, b] = entry.slots.map((slot) => numberOf(slot.index))}
+      <div class="preset" role="group" aria-label={entry.label}>
+        <span class="label">{entry.label}</span>
+        <ColorPicker
+          label={entry.label}
+          value={rgbToHex(r ?? 0, g ?? 0, b ?? 0)}
+          disabled={!component.editable}
+          onchange={(next, final) => {
+            if (!final) return;
+            const rgb = hexToRgb(next);
+            const args: Record<number, ArgValue> = {};
+            entry.slots.forEach((slot, i) => {
+              if (i < 3) args[slot.index] = { value: rgb[i] };
+            });
+            onargs(args, fill());
+          }}
+        />
+      </div>
+    {:else}
+      <div class="preset" role="group" aria-label={entry.label}>
+        <span class="label">{entry.label}</span>
+        <span class="inputs">
+          {#each entry.slots as slot (slot.slot)}
+            <NumberInput
+              prefix={slot.slot === 'width'
+                ? 'W'
+                : slot.slot === 'height'
+                  ? 'H'
+                  : slot.slot.toUpperCase()}
+              label="{entry.label} {slot.slot}"
+              value={numberOf(slot.index)}
+              disabled={!component.editable}
+              onchange={(next, final) => {
+                if (!final) return;
+                const args: Record<number, ArgValue> = { [slot.index]: { value: next } };
+                if (entry.preset.id === 'size' && ratioLocked) {
+                  const other = entry.slots.find((candidate) => candidate !== slot);
+                  const before = numberOf(slot.index);
+                  if (other && before)
+                    args[other.index] = { value: (numberOf(other.index) * next) / before };
+                }
+                onargs(args, fill());
+              }}
+            />
+          {/each}
+          {#if entry.preset.id === 'size'}
+            <IconButton
+              icon="lock"
+              label={ratioLocked ? 'Unlock the ratio' : 'Keep the ratio'}
+              pressed={ratioLocked}
+              onclick={() => (ratioLocked = !ratioLocked)}
+            />
+          {/if}
+        </span>
+      </div>
+    {/if}
   {/if}
 {/snippet}
 

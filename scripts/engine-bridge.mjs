@@ -9,7 +9,14 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+
+/**
+ * The engine checkout the scripts link games to: `NANOFORGE_ENGINE`, or `engine` next to the
+ * editor repository (`root`).
+ */
+export const engineRoot = (root) =>
+  resolve(process.env.NANOFORGE_ENGINE ?? join(root, '../engine'));
 
 const speaks = (file) =>
   existsSync(file) && readFileSync(file, 'utf8').includes('EDITOR_PROTOCOL_VERSION');

@@ -14,13 +14,19 @@ import { dirname, join, resolve } from 'node:path';
 
 import {
   bridgeOf,
+  engineRoot,
   linkEditorLibrary,
   linkEngineModules,
   linkNodeModules,
   useEditorLibrary,
 } from '../../../scripts/engine-bridge.mjs';
 
-const root = join(import.meta.dirname, process.env.E2E_WORKSPACE ?? '.workspace');
+const name = process.env.E2E_WORKSPACE || '.workspace';
+if (!/^\.workspace(-[\w-]+)?$/.test(name))
+  throw new Error(
+    `E2E_WORKSPACE must be ".workspace" or ".workspace-<name>" (a folder of e2e/ that this run wipes), not "${name}".`,
+  );
+const root = join(import.meta.dirname, name);
 rmSync(root, { recursive: true, force: true });
 cpSync(
   join(import.meta.dirname, '../../../packages/server-core/test/fixtures/pong-network'),
@@ -137,9 +143,7 @@ const copyGame = (source, destination) => {
   }
 };
 
-const engine = resolve(
-  process.env.NANOFORGE_ENGINE ?? join(import.meta.dirname, '../../../../engine'),
-);
+const engine = engineRoot(join(import.meta.dirname, '../../..'));
 const pong = join(engine, 'example/pong-network');
 /** Engines without the editor bridge cannot be paused, stepped or stopped. */
 const bridge = bridgeOf(engine);

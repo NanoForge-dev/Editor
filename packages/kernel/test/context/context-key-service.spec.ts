@@ -35,7 +35,8 @@ describe('ContextKeyService', () => {
     global.set('playing', true);
     global.set('unrelated', 1);
     scoped.set('paused', true);
-    global.set('paused', false); // shadowed by the scope: no change
+    /** Shadowed by the scope: no change. */
+    global.set('paused', false);
     expect(run.mock.calls).toEqual([[false], [true], [false]]);
   });
 

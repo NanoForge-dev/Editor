@@ -181,7 +181,9 @@ describe('registry', () => {
     expect(existsSync(join(folder, 'nanoforge.manifest.json'))).toBe(true);
     const listed = await client.api(PluginsContract).list({ project });
     expect(listed.map((listing) => listing.source)).toEqual(['project']);
+    expect(editor.serverPlugins.active).toEqual(['@acme/greeter']);
     await registry.uninstallPlugin({ name: '@acme/greeter', scope: 'project', project });
+    expect(editor.serverPlugins.active).toEqual([]);
     expect(existsSync(folder)).toBe(false);
   });
 

@@ -17,6 +17,11 @@ export class RpcRouter<Ctx extends object> {
 
   constructor(private readonly _options: RouterOptions<Ctx> = {}) {}
 
+  /**
+   * Registers the handlers of a contract. All or nothing: when a handler is missing or a name is
+   * already taken, nothing stays registered. A contract written by hand (a plugin's server entry
+   * in plain JS) may leave out `methods` or `streams`.
+   */
   implement<C extends Contract>(contract: C, implementation: Implementation<C, Ctx>): Disposable {
     const keys: string[] = [];
     const register = <T>(map: Map<string, T>, name: string, entry: T) => {
@@ -25,24 +30,32 @@ export class RpcRouter<Ctx extends object> {
       map.set(key, entry);
       keys.push(key);
     };
-    for (const [name, definition] of Object.entries(contract.methods)) {
-      const handler = (implementation.methods as Record<string, MethodEntry<Ctx>['handler']>)[name];
-      if (!handler) throw new Error(`Missing handler for ${contract.namespace}.${name}`);
-      register(this._methods, name, { definition, handler });
-    }
-    for (const [name, definition] of Object.entries(contract.streams)) {
-      const handler = (
-        implementation.streams as Record<string, StreamEntry<Ctx>['handler']> | undefined
-      )?.[name];
-      if (!handler) throw new Error(`Missing stream handler for ${contract.namespace}.${name}`);
-      register(this._streams, name, { definition, handler });
-    }
-    return toDisposable(() => {
+    const unregister = () => {
       for (const key of keys) {
         this._methods.delete(key);
         this._streams.delete(key);
       }
-    });
+    };
+    try {
+      for (const [name, definition] of Object.entries(contract.methods ?? {})) {
+        const handler = (
+          implementation.methods as Record<string, MethodEntry<Ctx>['handler']> | undefined
+        )?.[name];
+        if (!handler) throw new Error(`Missing handler for ${contract.namespace}.${name}`);
+        register(this._methods, name, { definition, handler });
+      }
+      for (const [name, definition] of Object.entries(contract.streams ?? {})) {
+        const handler = (
+          implementation.streams as Record<string, StreamEntry<Ctx>['handler']> | undefined
+        )?.[name];
+        if (!handler) throw new Error(`Missing stream handler for ${contract.namespace}.${name}`);
+        register(this._streams, name, { definition, handler });
+      }
+    } catch (error) {
+      unregister();
+      throw error;
+    }
+    return toDisposable(unregister);
   }
 
   /** Runs `<namespace>.<method>` with an encoded input body. */

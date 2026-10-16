@@ -88,7 +88,8 @@ test('moves, resizes and floats docks, undoes, and restores the layout after rel
 
   await drag(page, panelTab(page, 'Console'), { x: 700, y: 300 });
   await expect(page.getByRole('dialog', { name: 'Floating panel' })).toBeVisible();
-  await page.waitForTimeout(900); // layout saves are debounced
+  /** Layout saves are debounced. */
+  await page.waitForTimeout(900);
   await page.reload();
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Floating panel' })).toBeVisible();
@@ -136,7 +137,8 @@ test('shows and hides panels from the tool window stripes, and docks one bottom 
   await expect(page.getByRole('region', { name: 'Console' })).toBeVisible();
 
   await resetLayout(page);
-  await page.waitForTimeout(900); // layout saves are debounced
+  /** Layout saves are debounced. */
+  await page.waitForTimeout(900);
 });
 
 test('runs a local plugin built against the shared runtime', async ({ page }) => {

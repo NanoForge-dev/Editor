@@ -236,7 +236,8 @@ export class HistoryStack {
       );
     while (this._past.length > limit || (this._past.length > 1 && size() > budget)) {
       const dropped = this._past.shift()!;
-      if (this._savedAt === dropped.id) this._savedAt = null; // savepoint no longer reachable
+      /** Savepoint no longer reachable. */
+      if (this._savedAt === dropped.id) this._savedAt = null;
       dropped.command.dispose?.();
     }
     while (this._future.length && size() > budget) this._future.shift()!.command.dispose?.();
