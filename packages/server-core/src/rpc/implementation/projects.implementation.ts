@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { type Disposable, observe } from '@nanoforge-dev/editor-kernel';
@@ -20,7 +21,12 @@ export const implementProjectsRpc = (
     methods: {
       open: async (ref, { session }) => {
         const project = await projects.open(session, ref);
-        return { id: project.id, name: project.name };
+        return { id: project.id, name: project.name, trusted: project.trusted };
+      },
+      isTrusted: ({ id }, { session }) => projects.get(session, id).trusted,
+      trust: async ({ id }, { session }) => {
+        await projects.trustProject(projects.get(session, id));
+        return null;
       },
       recent: (_input, context) => projects.recent(requireUser(context)),
       forget: async ({ id }, context) => {
@@ -31,7 +37,9 @@ export const implementProjectsRpc = (
       install: async ({ id }, { session }) => {
         if (env.mode !== 'OFFLINE')
           throw new RpcError('FORBIDDEN', 'Dependencies are installed in local editors only');
-        const { root } = projects.get(session, id);
+        const open = projects.get(session, id);
+        projects.assertTrusted(open, 'Installing dependencies');
+        const { root } = open;
         const manager = packageManagerOf(root);
         if (!manager) return { manager: null, ok: false };
         const result = await deps.cli.exec(manager, ['install'], { cwd: root }).done;
@@ -75,8 +83,9 @@ export const implementProjectsRpc = (
             output,
           });
         }
+        await projects.trust.trust(await realpath(join(env.fsRoot, name)));
         const project = await projects.open(session, { path: name });
-        return { id: project.id, name: project.name };
+        return { id: project.id, name: project.name, trusted: project.trusted };
       },
       gateways: async (_input, { session }) =>
         env.mode === 'ONLINE'

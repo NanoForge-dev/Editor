@@ -13,8 +13,22 @@ import { RpcError } from '@nanoforge-dev/editor-rpc';
 import type { EditorEnv } from '../env/editor-env.type';
 import { runProcess } from '../process/run-process';
 import { KeyedMutex } from '../util/keyed-mutex';
-import { authEnv, redact, withoutCredentials } from './git-token';
+import { authEnv, redact, withGitConfig, withoutCredentials } from './git-token';
 import { parseStatus } from './parse-status';
+
+/**
+ * Repository settings that make git run a command. A hosted editor overrides them: a tenant's
+ * repository must not run code on the server. The file API cannot reach `.git` (the first line of
+ * defence); this one holds if another way in appears. A local editor keeps them: the repository
+ * is the user's own, and its hooks (lint-staged…) must keep running.
+ */
+const HOSTED_CONFIG = [
+  ['core.fsmonitor', 'false'],
+  ['core.hooksPath', '/dev/null'],
+  ['core.sshCommand', 'ssh'],
+  ['core.askPass', ''],
+  ['credential.helper', ''],
+] as const;
 
 /** Git CLI wrapper; operations on the same repository are serialized. */
 export class GitService {
@@ -24,6 +38,11 @@ export class GitService {
     private readonly _env: EditorEnv,
     /** How long a command that talks to a remote may take before it is stopped. */
     private readonly _networkTimeoutMs = 60_000,
+    /**
+     * Whether a local repository is in a trusted folder: an untrusted one gets the hosted
+     * hardening too (its hooks and command settings never run). Trusted when not given.
+     */
+    private readonly _trusted?: (root: string) => Promise<boolean>,
   ) {}
 
   isRepository(path: string): boolean {
@@ -144,6 +163,7 @@ export class GitService {
         '-m',
         message,
         ...(amend ? ['--amend'] : []),
+        ...(amend && !all && !paths?.length && !merging ? ['--only'] : []),
         ...(paths?.length && !all && !merging ? ['--', ...paths] : []),
       ]);
     });
@@ -275,6 +295,14 @@ export class GitService {
   }
 
   /** Commits of the current branch its upstream does not have yet (every commit without one). */
+  /** The full message of `HEAD`; empty in a repository without commits. */
+  headMessage(path: string): Promise<string> {
+    return this._mutex.run(path, async () => {
+      const output = await this._git(path, ['log', '-1', '--format=%B', 'HEAD']).catch(() => '');
+      return output.trimEnd();
+    });
+  }
+
   async outgoing(path: string): Promise<GitCommit[]> {
     const { upstream, ahead } = await this.projectStatus(path);
     if (upstream) return ahead ? this.log(path, Math.min(ahead, 200), 0) : [];
@@ -365,11 +393,13 @@ export class GitService {
     network = false,
     extraEnv: Record<string, string> = {},
   ) {
+    const hosted =
+      this._env.mode === 'ONLINE' || (this._trusted ? !(await this._trusted(cwd)) : false);
     const batchSsh =
       network &&
       !process.env.GIT_SSH_COMMAND &&
       !process.env.GIT_SSH &&
-      !(await this._configured(cwd, 'core.sshCommand'));
+      (hosted || !(await this._configured(cwd, 'core.sshCommand')));
     return runProcess(this._env.gitPath, args, {
       cwd,
       env: {
@@ -379,7 +409,7 @@ export class GitService {
         GIT_OPTIONAL_LOCKS: '0',
         LC_ALL: 'C',
         ...(batchSsh && { GIT_SSH_COMMAND: 'ssh -o BatchMode=yes' }),
-        ...extraEnv,
+        ...(hosted ? withGitConfig(extraEnv, HOSTED_CONFIG) : extraEnv),
       },
       ...(network && { signal: AbortSignal.timeout(this._networkTimeoutMs) }),
     }).done;

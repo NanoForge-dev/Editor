@@ -51,8 +51,12 @@ const mapError = (error: unknown, path: string): never => {
 const isGitPath = (path: string) =>
   path.split(/[\\/]/).some((part) => part.toLowerCase() === '.git');
 
+const gitReason = (path: string) =>
+  isGitPath(path) ? `${path} is inside a .git folder` : undefined;
+
 const assertAccessible = (path: string) => {
-  if (isGitPath(path)) throw new RpcError('FORBIDDEN', `${path} is inside a .git folder`);
+  const refused = gitReason(path);
+  if (refused) throw new RpcError('FORBIDDEN', refused);
 };
 
 const assertWritable = (path: string) => {
@@ -72,7 +76,7 @@ export class ProjectFileSystem {
   private _ignore: { mtime: number; rules: Ignore } | undefined;
 
   constructor(readonly root: string) {
-    this.jail = new PathJail(root);
+    this.jail = new PathJail(root, gitReason);
   }
 
   /** Whether `.nfignore` hides a path (directories are tested with and without a trailing /). */

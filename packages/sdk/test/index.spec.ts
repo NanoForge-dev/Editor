@@ -56,6 +56,7 @@ describe('public API', () => {
         "ObservableValue",
         "PluginHostToken",
         "ProjectServiceToken",
+        "REQUIRED_PLUGINS",
         "RUNTIME_PROTOCOL_VERSION",
         "RegistryContract",
         "RpcClientToken",

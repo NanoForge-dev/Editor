@@ -28,8 +28,10 @@
   });
 
   $effect(() => {
-    if (panel.amend && !untrack(() => panel.message.trim()))
-      panel.message = untrack(() => $git.log[0]?.subject ?? '');
+    if (!panel.amend || untrack(() => panel.message.trim())) return;
+    void act.headMessage().then((message) => {
+      if (panel.amend && !panel.message.trim()) panel.message = message;
+    });
   });
 
   const merging = $derived(status.merging);

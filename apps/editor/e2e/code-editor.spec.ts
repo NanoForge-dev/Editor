@@ -58,6 +58,31 @@ test('edits, marks, saves and restores unsaved changes', async ({ page }) => {
   expect(onDisk('edit')).not.toContain('kept across reloads');
 });
 
+test('asks before closing a tab with unsaved changes from the keyboard', async ({ page }) => {
+  await openScratch(page, 'close');
+  const tab = page.getByRole('tab', { name: /close\.ts/ });
+  await typeAtEnd(page, '\nexport const unsaved = 1;');
+  await expect(tab.getByLabel('Unsaved changes')).toBeVisible();
+
+  await page.keyboard.press('Alt+w');
+  const dialog = page.getByRole('dialog', { name: 'Save changes to close.ts?' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(tab).toBeVisible();
+  await expect(tab.getByLabel('Unsaved changes')).toBeVisible();
+
+  await page.locator('.monaco-editor .view-lines').first().click();
+  await page.keyboard.press('Alt+w');
+  await page
+    .getByRole('dialog', { name: 'Save changes to close.ts?' })
+    .getByRole('button', {
+      name: "Don't save",
+    })
+    .click();
+  await expect(tab).toBeHidden();
+  expect(onDisk('close')).not.toContain('unsaved');
+});
+
 test('goes to the definition of an engine API, read-only', async ({ page }) => {
   await openScratch(page, 'definition');
   await page.keyboard.press('Control+Home');

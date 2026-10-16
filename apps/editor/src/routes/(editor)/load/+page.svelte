@@ -16,9 +16,10 @@
    * Opens a project from a link: `/load?path=<folder>` (local editors, `nf editor <folder>`) or
    * `/load?gatewayId=<project>` (hosted editors, "Open in editor" on the NanoForge website).
    *
-   * Opening a local project runs its `nanoforge.config.ts` and its plugins, and any web page can
-   * link here: a folder that is not in the recent projects is opened only once the user says so.
-   * A hosted editor opens projects by their id only, never by path.
+   * Opening a trusted local folder runs its code (`nanoforge.config.ts`, plugins, builds), and
+   * any web page can link here: a folder that is not in the recent projects asks first, to trust
+   * it or to open it in restricted mode (its code off). A hosted editor opens projects by their id
+   * only, never by path.
    */
   const editor = getEditor();
   let error = $state<ErrorDescription>();
@@ -115,11 +116,12 @@
       return;
     }
     let disposed = false;
-    const open = () =>
+    const open = (trust = false) =>
       editor.projects
         .open(ref)
-        .then(({ id }) => {
-          if (!disposed) void goto(`/project/${id}`, { replaceState: true });
+        .then(async (project) => {
+          if (trust && !project.trusted) await editor.projects.trust();
+          if (!disposed) void goto(`/project/${project.id}`, { replaceState: true });
         })
         .catch((reason: unknown) => {
           if (!disposed) error = describe(reason, ref);
@@ -137,11 +139,18 @@
         if (trusted) return void open();
         error = {
           title: `Open ${ref.path}?`,
-          hint: 'Opening a project runs its nanoforge.config.ts and its plugins on this computer. Open it only if you trust where it comes from.',
+          hint: 'Trusting a folder lets the editor run its code on this computer: its nanoforge.config.ts, its plugins, its builds and games. Trust it only if you trust where it comes from; otherwise open it in restricted mode, with its code off.',
           actions: [
             {
-              label: 'Open project',
+              label: 'Trust and open',
               primary: true,
+              run: () => {
+                error = undefined;
+                void open(true);
+              },
+            },
+            {
+              label: 'Open in restricted mode',
               run: () => {
                 error = undefined;
                 void open();

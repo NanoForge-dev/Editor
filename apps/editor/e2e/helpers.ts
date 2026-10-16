@@ -43,5 +43,5 @@ export const showPanel = async (page: Page, name: string | RegExp): Promise<void
  */
 export const openProject = async (page: Page, path: string): Promise<void> => {
   await page.goto(`/load?path=${encodeURIComponent(path)}`);
-  await page.getByRole('button', { name: 'Open project', exact: true }).click();
+  await page.getByRole('button', { name: 'Trust and open', exact: true }).click();
 };

@@ -70,6 +70,8 @@ export const GitContract = defineContract('git', {
       }),
       output: z.array(GitCommit),
     },
+    /** The full message of the current commit (`HEAD`), for Amend; empty without commits. */
+    headMessage: { input: Project, output: z.string() },
     /** Commits a push would send: those the upstream does not have (all, without one). */
     outgoing: { input: Project, output: z.array(GitCommit) },
     /** Files a commit changed. */

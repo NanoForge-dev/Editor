@@ -26,19 +26,32 @@ const realpathLenient = async (target: string): Promise<string> => {
 };
 
 /**
+ * Refuses a path by what it really points to (project-relative POSIX path, links followed):
+ * returns the reason, or nothing to accept it.
+ */
+export type PathGuard = (real: string) => string | undefined;
+
+/**
  * Resolves project-relative paths to absolute ones inside `root`, rejecting `..` escapes and
- * symlinks pointing outside of the project.
+ * symlinks pointing outside of the project. `guard` also sees where a path really leads, so a
+ * link inside the project cannot reach a folder the requested path does not name (`.git`).
  */
 export class PathJail {
   private _realRoot: string | undefined;
 
-  constructor(readonly root: string) {}
+  constructor(
+    readonly root: string,
+    private readonly _guard?: PathGuard,
+  ) {}
 
   async resolve(path: string): Promise<string> {
     const target = resolve(this.root, path);
     if (!isInside(this.root, target)) throw this._escape(path);
     this._realRoot ??= await realpath(this.root);
-    if (!isInside(this._realRoot, await realpathLenient(target))) throw this._escape(path);
+    const real = await realpathLenient(target);
+    if (!isInside(this._realRoot, real)) throw this._escape(path);
+    const refused = this._guard?.(relative(this._realRoot, real).split(sep).join('/'));
+    if (refused) throw new RpcError('FORBIDDEN', refused);
     return target;
   }
 

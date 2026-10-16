@@ -196,8 +196,15 @@ export class EditorDocument implements OpenDocument {
     }
   }
 
+  /**
+   * Releases the document. Unsaved edits still waiting for their delayed write to the unsaved
+   * store are written now: closing a project or a tab right after typing loses nothing.
+   */
   dispose(): void {
-    clearTimeout(this._persistTimer);
+    if (this._persistTimer !== undefined) {
+      clearTimeout(this._persistTimer);
+      this._persist();
+    }
     this._listener.dispose();
     this._onDidChange.dispose();
     this.model.dispose();
@@ -219,6 +226,7 @@ export class EditorDocument implements OpenDocument {
     this._dirty.set(this.model.getAlternativeVersionId() !== version);
     if (!this._dirty.get()) {
       clearTimeout(this._persistTimer);
+      this._persistTimer = undefined;
       void this._host.unsaved.delete(this.uri).catch(() => undefined);
     }
   }
@@ -231,15 +239,18 @@ export class EditorDocument implements OpenDocument {
   private _schedulePersist(): void {
     if (this.readOnly) return;
     clearTimeout(this._persistTimer);
-    this._persistTimer = setTimeout(() => {
-      const operation = this._dirty.get()
-        ? this._host.unsaved.set(this.uri, {
-            text: this.getText(),
-            baseHash: this._hash,
-            time: Date.now(),
-          })
-        : this._host.unsaved.delete(this.uri);
-      void operation.catch(() => undefined);
-    }, PERSIST_DELAY_MS);
+    this._persistTimer = setTimeout(() => this._persist(), PERSIST_DELAY_MS);
+  }
+
+  private _persist(): void {
+    this._persistTimer = undefined;
+    const operation = this._dirty.get()
+      ? this._host.unsaved.set(this.uri, {
+          text: this.getText(),
+          baseHash: this._hash,
+          time: Date.now(),
+        })
+      : this._host.unsaved.delete(this.uri);
+    void operation.catch(() => undefined);
   }
 }

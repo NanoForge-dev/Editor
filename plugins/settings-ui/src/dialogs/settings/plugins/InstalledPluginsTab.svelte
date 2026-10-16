@@ -11,10 +11,12 @@
     known: readonly KnownPlugin[];
     /** Names of the disabled plugins, with the pending changes. */
     disabled: ReadonlySet<string>;
+    /** Plugins that cannot be disabled (they show no switch). */
+    required: readonly string[];
     ontoggle: (name: string, enabled: boolean) => void;
   }
 
-  const { page, plugins, known, disabled, ontoggle }: Props = $props();
+  const { page, plugins, known, disabled, required, ontoggle }: Props = $props();
 
   const STATUS: Record<string, string> = {
     ok: 'active',
@@ -82,11 +84,15 @@
           >
         {/if}
       {/if}
-      <Switch
-        checked={enabled}
-        label={`${enabled ? 'Disable' : 'Enable'} ${label}`}
-        onchange={(checked) => ontoggle(plugin.name, checked)}
-      />
+      {#if required.includes(plugin.name)}
+        <span class="required">Required</span>
+      {:else}
+        <Switch
+          checked={enabled}
+          label={`${enabled ? 'Disable' : 'Enable'} ${label}`}
+          onchange={(checked) => ontoggle(plugin.name, checked)}
+        />
+      {/if}
     </li>
   {/each}
   {#each [...page.pending].filter(([name, change]) => change !== 'removed' && !known.some((plugin) => plugin.name === name && scopeOf(plugin.source))) as [name, change] (name)}
@@ -134,7 +140,8 @@
     font-weight: 600;
   }
   .meta,
-  .description {
+  .description,
+  .required {
     color: var(--nf-color-text-muted);
     font-size: var(--nf-font-size-sm);
   }

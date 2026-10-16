@@ -60,6 +60,27 @@ describe('ProjectFileSystem', () => {
     expect(existsSync(join(root, '.git/hooks/post-checkout'))).toBe(false);
   });
 
+  it('never reaches a .git folder through a link inside the project', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, '.git/hooks'), { recursive: true });
+    writeFileSync(join(root, '.git/config'), '[core]\n');
+    symlinkSync('.git', join(root, 'x'));
+    symlinkSync('../.git/hooks', join(root, 'src/hooks'));
+    await expect(fs.read('x/config')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.stat('x/config')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.write('x/config', '[core]\n\tfsmonitor = touch pwned\n')).rejects.toMatchObject(
+      { code: 'FORBIDDEN' },
+    );
+    await expect(fs.write('src/hooks/post-merge', 'x')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(fs.copy('src/main.ts', 'x/main.ts')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    expect(readFileSync(join(root, '.git/config'), 'utf8')).toBe('[core]\n');
+    expect(existsSync(join(root, '.git/hooks/post-merge'))).toBe(false);
+  });
+
   it('writes atomically with optimistic concurrency', async () => {
     const { root, fs } = project();
     const { hash } = await fs.read('src/main.ts');

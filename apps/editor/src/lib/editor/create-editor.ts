@@ -27,6 +27,7 @@ import { version as sdkVersion } from '@nanoforge-dev/editor-sdk/package.json';
 import {
   AccountSyncToken,
   CoreSettings,
+  REQUIRED_PLUGINS,
   type SettingsService,
   followCurrentProject,
   settingsContributionHandler,
@@ -48,6 +49,7 @@ import { registerCorePanels } from '$lib/project/register-core-panels';
 
 import { followProjectCode } from '../code/follow-project-code';
 import { followProjectPlugins, toDescriptor } from '../plugin/follow-project-plugins';
+import { followProjectTrust } from '../project/follow-project-trust';
 import { followProjectRuntime } from '../runtime/follow-project-runtime';
 import { WorkspaceActions, WorkspaceActionsToken } from '../workspace/workspace-actions';
 import { registerAppContributions } from './register-app-contributions';
@@ -156,7 +158,11 @@ export const createEditor = async (
       services,
       editorVersion: __EDITOR_VERSION__,
       runtimeVersions: { svelte: svelteVersion, sdk: sdkVersion },
-      disabled: new Set(settings.get(CoreSettings.pluginsDisabled)),
+      disabled: new Set(
+        settings
+          .get(CoreSettings.pluginsDisabled)
+          .filter((name) => !REQUIRED_PLUGINS.includes(name)),
+      ),
     }),
   );
   store.add(
@@ -248,6 +254,15 @@ export const createEditor = async (
       logger,
       settings,
       online: session.mode === 'ONLINE',
+    }),
+  );
+  store.add(
+    followProjectTrust({
+      projects,
+      notifications: shell.notifications,
+      commands: services.get(CoreServices.Commands),
+      local: session.mode === 'OFFLINE',
+      reload: () => location.reload(),
     }),
   );
 

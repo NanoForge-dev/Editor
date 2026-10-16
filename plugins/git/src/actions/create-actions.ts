@@ -48,6 +48,8 @@ export const createActions = (options: {
     input,
     focusMessage: focusMessage.readonly(),
 
+    /** The full message of the current commit, to start an Amend from (empty on failure). */
+    headMessage: () => api.headMessage(input()).catch(() => ''),
     init: () => store.run('Could not initialize the repository', () => api.init(input())),
     fetch: () => store.run('Could not fetch', () => api.fetch(input())),
     /** Pushes at once (after the Push dialog's confirmation). */

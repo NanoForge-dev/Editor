@@ -54,4 +54,26 @@ describe('bundle spawns of a scene setup', () => {
       }),
     ).toEqual([1, 0, 0, 0]);
   });
+
+  it('counts a spawn in a callback among the spawns of its method', () => {
+    const scene = [
+      'class Level1 extends EcsScene {',
+      '  setup(registry) {',
+      '    const wall = registry.spawnEntity();',
+      '    [1, 2].forEach(() => { const brick = registry.spawnEntity(); });',
+      '    const paddle = registry.spawnEntity();',
+      '  }',
+      '}',
+    ].join('\n');
+    expect(
+      analyzeBundleSpawns({} as never, {
+        bundle: scene,
+        sites: [
+          { line: 3, column: 18, enclosing: true },
+          { line: 4, column: 42, enclosing: true },
+          { line: 5, column: 20, enclosing: true },
+        ],
+      }),
+    ).toEqual([0, 1, 2]);
+  });
 });

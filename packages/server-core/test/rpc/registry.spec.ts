@@ -23,7 +23,7 @@ import { type RpcClient, defineContract } from '@nanoforge-dev/editor-rpc';
 import { loadEnv } from '../../src/env/load-env';
 import { createEditorServer } from '../../src/server/create-editor-server';
 import type { EditorServer } from '../../src/server/editor-server.type';
-import { createLoopbackClient } from '../../src/testing';
+import { createLoopbackClient, openTrustedProject } from '../../src/testing';
 
 const FIXTURES = join(import.meta.dirname, '../fixtures');
 
@@ -113,7 +113,7 @@ export const activate = (context) => {
   );
 
   ({ editor, client } = await start());
-  project = (await client.api(ProjectsContract).open({ path: 'pong' })).id;
+  project = await openTrustedProject(client, 'pong');
 });
 
 afterAll(() => {
@@ -185,6 +185,33 @@ describe('registry', () => {
     await registry.uninstallPlugin({ name: '@acme/greeter', scope: 'project', project });
     expect(editor.serverPlugins.active).toEqual([]);
     expect(existsSync(folder)).toBe(false);
+  });
+
+  it("runs only the project plugins' server entries the editor asks for", async () => {
+    const registry = client.api(RegistryContract);
+    const plugins = client.api(PluginsContract);
+    await registry.installPlugin({ name: '@acme/greeter', scope: 'user', version: '1.0.0' });
+    const installed = editor.serverPlugins.active;
+    expect(installed).toEqual(['@acme/greeter']);
+    await registry.installPlugin({ name: '@acme/greeter', scope: 'project', project });
+
+    await plugins.list({ project });
+    await plugins.runProjectServers({ project, names: [] });
+    expect(editor.serverPlugins.active).toEqual(['@acme/greeter']);
+    const greeter = defineContract('plugin.@acme/greeter', {
+      methods: { hi: { input: z.null(), output: z.string() } },
+    });
+    await expect(client.api(greeter).hi(null)).resolves.toBe('hi from 1.0.0');
+
+    await plugins.runProjectServers({ project, names: ['@acme/greeter'] });
+    expect(editor.serverPlugins.active).toEqual(['@acme/greeter']);
+    await plugins.runProjectServers({ project: null, names: [] });
+    expect(editor.serverPlugins.active).toEqual(['@acme/greeter']);
+    await expect(client.api(greeter).hi(null)).resolves.toBe('hi from 1.0.0');
+
+    await registry.uninstallPlugin({ name: '@acme/greeter', scope: 'project', project });
+    await registry.uninstallPlugin({ name: '@acme/greeter', scope: 'user' });
+    expect(editor.serverPlugins.active).toEqual([]);
   });
 
   it('installs, lists and removes the packages of a project', async () => {

@@ -12,6 +12,14 @@ export const PluginsContract = defineContract('plugins', {
       output: z.array(PluginListing),
     },
     suggestions: { input: z.object({ project: z.string() }), output: z.array(PluginSuggestion) },
+    /**
+     * Runs the server entries of these plugins of the project (the ones the editor enabled) and
+     * stops every other project plugin's; `project: null` stops them all. Local editors only.
+     */
+    runProjectServers: {
+      input: z.object({ project: z.string().nullable(), names: z.array(z.string()) }),
+      output: z.null(),
+    },
   },
   streams: {
     /** Fired when a local dev plugin was rebuilt: the client hot reloads it. */

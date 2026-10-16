@@ -26,6 +26,7 @@ import { shortHash } from '../util/hash';
 import { KeyedMutex } from '../util/keyed-mutex';
 import { type ConfigLoader, executingConfigLoader, staticConfigLoader } from './config-loader';
 import { discoverProject } from './discovery';
+import { TrustStore } from './trust-store';
 
 const MAX_RECENT = 20;
 const GATEWAY_ID = /^[\w-]{1,60}$/;
@@ -44,6 +45,11 @@ export class OpenProject implements Disposable {
     readonly root: string,
     readonly ref: ProjectRef,
     readonly location: string,
+    /**
+     * Whether its code may run: a local project the user trusted. A hosted project never is (its
+     * code runs nowhere on the server); an untrusted local one opens in restricted mode.
+     */
+    readonly trusted: boolean,
     initial: ProjectModel,
     private readonly _loader: ConfigLoader,
     private readonly _logger: Logger,
@@ -112,8 +118,9 @@ export class ProjectRegistry implements Disposable {
   private readonly _lastUsed = new Map<string, number>();
   private readonly _opening = new KeyedMutex();
   private readonly _recentLock = new KeyedMutex();
-  private readonly _loader: ConfigLoader;
   private readonly _onDidClose = new Emitter<string>();
+  /** The folders whose code a local editor may run. */
+  readonly trust: TrustStore;
 
   /** A project was closed (nobody uses it anymore): its runtime can stop too. */
   readonly onDidClose: Event<string> = this._onDidClose.event;
@@ -124,7 +131,33 @@ export class ProjectRegistry implements Disposable {
     private readonly _api: ApiClient,
     private readonly _logger: Logger,
   ) {
-    this._loader = _env.mode === 'ONLINE' ? staticConfigLoader : executingConfigLoader;
+    this.trust = new TrustStore(_env.dataDir, async () =>
+      Object.values(await this._readRecent()).flatMap((entries) =>
+        entries.flatMap((entry) => ('path' in entry.ref ? [entry.ref.path] : [])),
+      ),
+    );
+  }
+
+  /** Throws when a project's code may not run (hosted, or a local folder not trusted). */
+  assertTrusted(project: OpenProject, what: string): void {
+    if (project.trusted) return;
+    throw new RpcError(
+      'FORBIDDEN',
+      this._env.mode === 'ONLINE'
+        ? `${what} is not available in a hosted editor`
+        : `${what} needs a trusted folder: trust ${project.name} first`,
+    );
+  }
+
+  /**
+   * Trusts a local project's folder. The project closes, so it opens again with its code
+   * running (its config read by running it).
+   */
+  async trustProject(project: OpenProject): Promise<void> {
+    if (this._env.mode !== 'OFFLINE' || !('path' in project.ref))
+      throw new RpcError('FORBIDDEN', 'Only local folders can be trusted');
+    await this.trust.trust(project.ref.path);
+    this.close(project.id);
   }
 
   async open(session: Session, ref: ProjectRef): Promise<OpenProject> {
@@ -204,7 +237,8 @@ export class ProjectRegistry implements Disposable {
     const info = await stat(target).catch(() => undefined);
     if (!info?.isDirectory()) throw new RpcError('NOT_FOUND', `No project directory at ${path}`);
     const real = await realpath(target);
-    return this._getOrCreate(shortHash(real), real, { path: real }, real);
+    const trusted = await this.trust.isTrusted(real);
+    return this._getOrCreate(shortHash(real), real, { path: real }, real, trusted);
   }
 
   private async _openGateway(session: Session, gatewayId: string): Promise<OpenProject> {
@@ -227,7 +261,7 @@ export class ProjectRegistry implements Disposable {
       }
       const subdir = gateway.gatewayProjectRegistryMetadata.dir;
       const projectRoot = subdir ? await new PathJail(root).resolve(subdir) : root;
-      return this._getOrCreate(id, projectRoot, { gatewayId }, gateway.name);
+      return this._getOrCreate(id, projectRoot, { gatewayId }, gateway.name, false);
     });
   }
 
@@ -236,12 +270,23 @@ export class ProjectRegistry implements Disposable {
     root: string,
     ref: ProjectRef,
     location: string,
+    trusted: boolean,
   ): Promise<OpenProject> {
     return this._opening.run(`open:${id}`, async () => {
       const existing = this._projects.get(id);
       if (existing) return existing;
-      const model = await discoverProject({ id, root, location, loader: this._loader });
-      const project = new OpenProject(id, root, ref, location, model, this._loader, this._logger);
+      const loader = trusted ? executingConfigLoader : staticConfigLoader;
+      const model = await discoverProject({ id, root, location, loader });
+      const project = new OpenProject(
+        id,
+        root,
+        ref,
+        location,
+        trusted,
+        model,
+        loader,
+        this._logger,
+      );
       this._projects.set(id, project);
       this._logger.info(`Opened project ${model.name} (${id}) at ${root}`);
       return project;

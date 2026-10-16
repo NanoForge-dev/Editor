@@ -191,7 +191,10 @@ describe('editor server', () => {
     expect(
       (await get('/plugins/bundled/@acme/echo/1.0.0/../../../../../package.json')).status,
     ).toBe(404);
-    expect(await (await get('/project/abc')).text()).toBe('<html>editor</html>');
+    const shell = await get('/project/abc');
+    expect(await shell.text()).toBe('<html>editor</html>');
+    expect(shell.headers.get('content-security-policy')).toBe("frame-ancestors 'self'");
+    expect(shell.headers.get('x-frame-options')).toBe('SAMEORIGIN');
     expect((await get('/_app/missing.js')).status).toBe(404);
 
     const forged = await editor.fetch(

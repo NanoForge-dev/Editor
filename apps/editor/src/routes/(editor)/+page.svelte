@@ -117,7 +117,7 @@
           class="open"
           onsubmit={(event) => {
             event.preventDefault();
-            if (path.trim()) void open({ path: path.trim() });
+            if (path.trim()) void goto(`/load?path=${encodeURIComponent(path.trim())}`);
           }}
         >
           <Input

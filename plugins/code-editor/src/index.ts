@@ -134,7 +134,7 @@ export default definePlugin({
         withService((service) => {
           const layout = service.layout.get();
           const active = layout.groups[layout.focused]?.active;
-          if (active) service.close(layout.focused, active);
+          if (active) service.requestClose(layout.focused, active);
         }),
       ],
     ];

@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
-  ProjectsContract,
   RuntimeContract,
   type RuntimeEvent,
   runtimeOutputPath,
@@ -16,7 +15,7 @@ import { parseBuildOutput } from '../../src/runtime/build-orchestrator';
 import { parseDotenv, splitGameEnv } from '../../src/runtime/game-env';
 import { createEditorServer } from '../../src/server/create-editor-server';
 import type { EditorServer } from '../../src/server/editor-server.type';
-import { TEST_ORIGIN, createLoopbackClient } from '../../src/testing';
+import { TEST_ORIGIN, createLoopbackClient, openTrustedProject } from '../../src/testing';
 
 const RUNTIME_FIXTURES = join(import.meta.dirname, '../fixtures/runtime');
 const SERVER_GAME = readFileSync(join(RUNTIME_FIXTURES, 'bridge-game.js'), 'utf8');
@@ -64,7 +63,7 @@ beforeAll(async () => {
     version: '0.0.0-test',
   });
   client = createLoopbackClient(editor);
-  project = (await client.api(ProjectsContract).open({ path: 'pong' })).id;
+  project = await openTrustedProject(client, 'pong');
   client.subscribe(RuntimeContract, 'events', { project }, (event) => events.push(event));
 });
 

@@ -41,6 +41,7 @@ export interface ServerPluginModule {
 export const pluginNamespace = (name: string) => `plugin.${name}`;
 
 interface ActiveServerPlugin {
+  readonly plugin: LocatedPlugin;
   readonly module: ServerPluginModule;
   readonly store: DisposableStore;
 }
@@ -50,6 +51,8 @@ export class ServerPluginHost implements Disposable {
   private readonly _active = new Map<string, ActiveServerPlugin>();
   /** Activations in progress: a second request for the same plugin waits for the first one. */
   private readonly _activating = new Map<string, Promise<void>>();
+  /** Plugins a project's copy of the same name replaced, run again when that copy stops. */
+  private readonly _shadowed = new Map<string, LocatedPlugin>();
 
   constructor(
     private readonly _router: RpcRouter<RequestContext>,
@@ -63,25 +66,44 @@ export class ServerPluginHost implements Disposable {
 
   activate(plugin: LocatedPlugin): Promise<void> {
     const name = plugin.manifest?.name;
-    if (!name || !plugin.manifest?.entry.server || this._active.has(name)) return Promise.resolve();
+    if (
+      !name ||
+      !plugin.manifest?.entry.server ||
+      this._active.get(name)?.plugin.dir === plugin.dir
+    )
+      return Promise.resolve();
     let activating = this._activating.get(name);
     if (!activating) {
-      activating = this._activate(plugin).finally(() => this._activating.delete(name));
+      activating = this._replace(plugin).finally(() => this._activating.delete(name));
       this._activating.set(name, activating);
     }
     return activating;
   }
 
-  async deactivate(name: string): Promise<void> {
-    await this._activating.get(name);
-    const plugin = this._active.get(name);
-    if (!plugin) return;
-    this._active.delete(name);
-    try {
-      await plugin.module.deactivate?.();
-    } finally {
-      plugin.store.dispose();
+  /**
+   * Runs the server entries of exactly these project plugins (those the editor enabled for the
+   * open project) and stops every other project plugin's, those of a previous project included.
+   * A plugin a project copy had replaced runs again.
+   */
+  async syncProject(plugins: readonly LocatedPlugin[]): Promise<void> {
+    const wanted = new Set(plugins.map((plugin) => plugin.dir));
+    for (const [name, active] of [...this._active]) {
+      if (active.plugin.source === 'project' && !wanted.has(active.plugin.dir))
+        await this.deactivate(name);
     }
+    for (const plugin of plugins) await this.activate(plugin);
+  }
+
+  /**
+   * Stops a plugin's server entry; with `dir`, only when the running copy is that folder's. A
+   * plugin a stopped project copy had replaced runs again.
+   */
+  async deactivate(name: string, dir?: string): Promise<void> {
+    if (dir && this._shadowed.get(name)?.dir === dir) this._shadowed.delete(name);
+    const stopped = await this._stop(name, dir);
+    const shadowed = stopped?.source === 'project' ? this._shadowed.get(name) : undefined;
+    this._shadowed.delete(name);
+    if (shadowed) await this.activate(shadowed);
   }
 
   dispose(): void {
@@ -90,6 +112,35 @@ export class ServerPluginHost implements Disposable {
         this._logs.getLogger(`${name}(server)`).error('Server entry failed to deactivate', error),
       );
     }
+  }
+
+  /** Activates a plugin, stopping first another copy of the same name (it shadows it). */
+  private async _replace(plugin: LocatedPlugin): Promise<void> {
+    const name = plugin.manifest!.name;
+    const current = this._active.get(name);
+    if (current) {
+      if (plugin.source === 'project' && current.plugin.source !== 'project')
+        this._shadowed.set(name, current.plugin);
+      await this._stop(name, undefined, false);
+    }
+    await this._activate(plugin);
+  }
+
+  /**
+   * Stops a server entry; resolves with the plugin it was, or nothing when none ran. `wait`: let
+   * an activation in progress finish first (not from inside that activation).
+   */
+  private async _stop(name: string, dir?: string, wait = true): Promise<LocatedPlugin | undefined> {
+    if (wait) await this._activating.get(name);
+    const active = this._active.get(name);
+    if (!active || (dir && active.plugin.dir !== dir)) return undefined;
+    this._active.delete(name);
+    try {
+      await active.module.deactivate?.();
+    } finally {
+      active.store.dispose();
+    }
+    return active.plugin;
   }
 
   private async _activate(plugin: LocatedPlugin): Promise<void> {
@@ -122,7 +173,7 @@ export class ServerPluginHost implements Disposable {
         },
       };
       await module.activate?.(context);
-      this._active.set(manifest.name, { module, store });
+      this._active.set(manifest.name, { plugin, module, store });
       logger.info('Server entry activated');
     } catch (error) {
       store.dispose();

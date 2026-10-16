@@ -113,3 +113,9 @@ export const CoreSettings = {
     mergeStrategy: 'union',
   }),
 } as const;
+
+/**
+ * Plugins that `plugins.disabled` cannot turn off: the Settings plugin holds the switches that
+ * turn plugins back on.
+ */
+export const REQUIRED_PLUGINS: readonly string[] = ['@nanoforge/settings-ui'];

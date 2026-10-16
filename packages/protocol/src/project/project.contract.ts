@@ -4,14 +4,24 @@ import { defineContract } from '@nanoforge-dev/editor-rpc';
 
 import { ProjectId, ProjectModel, ProjectRef, RecentProject } from './project.schema';
 
+/** An opened project. `trusted`: its code may run; otherwise it is open in restricted mode. */
+const OpenedProject = z.object({ id: ProjectId, name: z.string(), trusted: z.boolean() });
+
 export const ProjectsContract = defineContract('projects', {
   methods: {
     open: {
       input: ProjectRef,
-      output: z.object({ id: ProjectId, name: z.string() }),
+      output: OpenedProject,
     },
     recent: { input: z.null(), output: z.array(RecentProject) },
     forget: { input: z.object({ id: ProjectId }), output: z.null() },
+    /**
+     * Trusts a local project's folder: its code may run (config, plugins, builds, games…). The
+     * project closes on the server: open it again.
+     */
+    trust: { input: z.object({ id: ProjectId }), output: z.null() },
+    /** Whether an open project's code may run (see `trust`). */
+    isTrusted: { input: z.object({ id: ProjectId }), output: z.boolean() },
     model: { input: z.object({ id: ProjectId }), output: ProjectModel },
     /**
      * Local editors: installs the project's dependencies with its package manager, found from
@@ -33,7 +43,7 @@ export const ProjectsContract = defineContract('projects', {
         /** Installs the dependencies and runs the project's scripts. */
         packageManager: z.enum(['npm', 'pnpm', 'yarn', 'bun']).default('npm'),
       }),
-      output: z.object({ id: ProjectId, name: z.string() }),
+      output: OpenedProject,
     },
     /** Online editors: projects of the signed-in account. */
     gateways: {

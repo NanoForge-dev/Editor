@@ -64,7 +64,7 @@ npx playwright test [spec…] --reporter=line
 - Unit tests fail on an unexpected `console.error` (`vitest.setup.ts`): a test that expects one spies on it (`vi.spyOn(console, 'error').mockImplementation(() => {})`).
 - SDK public API snapshot: after adding SDK exports, run `cd packages/sdk && npx vitest run -u`, and check that the diff shows only what you added.
 - E2E specs import `test` and `expect` from `./test` (`e2e/test.ts`), not from `@playwright/test`: its fixture fails a test when a page throws an uncaught error. Known noise goes in its `IGNORED` list.
-- E2E specs open projects with `openProject(page, path)` (`e2e/helpers.ts`): `/load?path=` asks before opening a folder that is not an exact recent path, and a relative path always asks.
+- E2E specs open projects with `openProject(page, path)` (`e2e/helpers.ts`): `/load?path=` asks before opening a folder that is not an exact recent path (a relative path always asks), and the helper answers **Trust and open**. Server and runtime unit tests open projects with `openTrustedProject` (`@nanoforge-dev/editor-server-core/testing`): a fresh data folder trusts nothing.
 - The editor server answers only to loopback host names and `ALLOWED_HOSTS` (DNS rebinding guard): a dev server reached by another name needs it.
 - To debug a failed e2e test, read `test-results/<test>/error-context.md`. For a screenshot, unzip `trace.zip` and open the last frame in `screencast/`.
 - The CLI repo needs `pnpm --filter @nanoforge-dev/config build` before `pnpm build`.
@@ -145,6 +145,14 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
   3. its name is accepted as a commit scope automatically.
 - **Plugins only import the SDK** (ESLint enforces it). If a plugin needs something from core, export it from the SDK: add a token in the owning package, provide it in `apps/editor/src/lib/editor/create-editor.ts`, re-export it, and update the snapshot.
 - **Dialogs from a plugin:** mount a Svelte component with `mount`/`unmount` from a command (see `plugins/settings-ui/src/index.ts`).
+
+### Folder trust (local editors)
+
+- A local project's code runs only in a **trusted folder** (`TrustStore`, `DATA_DIR/trusted-folders.json`, by real path; seeded with the recent projects when first created). Trusted: `nanoforge.config.ts` is executed, project plugins load and their server entries run, builds, games, dependency installs, the project's Prettier and its git hooks run.
+- An untrusted folder opens in **restricted mode**: the config is read statically (as in a hosted editor), project plugins stay out, Play explains why, git runs with the hosted hardening, formatting uses the bundled Prettier. A sticky notification and `project.trust` offer **Trust this folder** (`projects.trust`, then the project reopens).
+- Server gates go through `ProjectRegistry.assertTrusted(project, what)`; `OpenProject.trusted` and `ClientProject.trusted` carry the state. A new code path that runs project code needs the gate.
+- `plugins.list` never runs anything: the client calls `plugins.runProjectServers` with the project plugins that loaded.
+- The editor shell is served with `frame-ancestors 'self'` / `X-Frame-Options: SAMEORIGIN`, so another site cannot frame it and get a click on **Trust and open**.
 
 ### Engine bridge (protocol v1)
 

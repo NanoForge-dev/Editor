@@ -74,7 +74,7 @@ export const followProjectRuntime = (options: {
         runtime = undefined;
         current.clear();
         setKeys('idle', false);
-        if (!project) return;
+        if (!project?.trusted) return;
         const scope = new DisposableStore();
         const service = scope.add(
           new RuntimeService({
@@ -247,6 +247,15 @@ export const followProjectRuntime = (options: {
     (run: (runtime: RuntimeService, ...args: unknown[]) => unknown) =>
     (_services: unknown, ...args: unknown[]) => {
       if (!runtime) {
+        const project = options.projects.current.get();
+        if (options.enabled && project && !project.trusted) {
+          options.notifications.notify('warning', 'Trust this folder to play its games', {
+            detail:
+              "Playing runs the project's code: a folder opens in restricted mode until you trust it.",
+            actions: [{ title: 'Trust this folder', run: () => commands.execute('project.trust') }],
+          });
+          return;
+        }
         options.notifications.notify('info', 'Games can only be run from a local editor');
         return;
       }

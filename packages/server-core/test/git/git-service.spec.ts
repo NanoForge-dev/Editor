@@ -1,5 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -77,6 +85,41 @@ describe('git environment', () => {
     const target = join(workspace, 'token-clone');
     await git.clone(source, target, 'secret-token');
     expect(readFileSync(join(target, '.git/config'), 'utf8')).not.toContain('secret-token');
+  });
+});
+
+describe('repository settings that run commands', () => {
+  /** A repository whose config and hooks would each leave a mark when git runs them. */
+  const armed = async (name: string) => {
+    const root = await repository(name);
+    const marks = join(workspace, `${name}-marks`);
+    mkdirSync(marks);
+    raw(root, 'config', 'core.fsmonitor', `touch "${join(marks, 'fsmonitor')}"; false`);
+    write(root, '.git/hooks/pre-commit', `#!/bin/sh\ntouch "${join(marks, 'hook')}"\n`);
+    chmodSync(join(root, '.git/hooks/pre-commit'), 0o755);
+    write(root, 'a.txt', 'changed\n');
+    return { root, marks };
+  };
+
+  it('are ignored by a hosted editor', async () => {
+    const hosted = new GitService(
+      loadEnv(
+        { NODE_ENV: 'test', PUBLIC_MODE: 'ONLINE', API_KEY: 'k', FS_ROOT: workspace },
+        workspace,
+      ),
+    );
+    const { root, marks } = await armed('hosted-hooks');
+    await hosted.projectStatus(root);
+    await hosted.commit(root, 'hosted commit', { all: true });
+    expect(existsSync(join(marks, 'fsmonitor'))).toBe(false);
+    expect(existsSync(join(marks, 'hook'))).toBe(false);
+  });
+
+  it("still run in a local editor, where the repository is the user's own", async () => {
+    const { root, marks } = await armed('local-hooks');
+    raw(root, 'config', '--unset', 'core.fsmonitor');
+    await git.commit(root, 'local commit', { all: true });
+    expect(existsSync(join(marks, 'hook'))).toBe(true);
   });
 });
 
@@ -215,6 +258,19 @@ describe('GitService on a project folder', () => {
       'first commit',
     ]);
     await expect(git.commit(root, 'nothing')).rejects.toThrow(/nothing to commit/);
+  });
+
+  it('amends only the message when no file is checked, keeping the index', async () => {
+    const root = await repository('amend');
+    raw(root, 'commit', '--quiet', '--amend', '-m', 'first commit\n\nWith a body.');
+    expect(await git.headMessage(root)).toBe('first commit\n\nWith a body.');
+    write(root, 'staged.txt', 'staged\n');
+    await git.stage(root, ['staged.txt']);
+
+    await git.commit(root, 'first commit, reworded', { amend: true });
+    expect(raw(root, 'log', '-1', '--format=%s').trim()).toBe('first commit, reworded');
+    expect(raw(root, 'show', '--name-only', '--format=', 'HEAD')).not.toContain('staged.txt');
+    expect(await files(root)).toEqual(['A- staged.txt']);
   });
 
   it('creates, switches and deletes branches', async () => {

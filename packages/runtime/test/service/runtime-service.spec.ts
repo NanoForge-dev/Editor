@@ -7,7 +7,11 @@ import { LoggerService } from '@nanoforge-dev/editor-kernel';
 import { type ProjectModel, ProjectsContract } from '@nanoforge-dev/editor-protocol';
 import type { RpcClient } from '@nanoforge-dev/editor-rpc';
 import { type EditorServer, createEditorServer, loadEnv } from '@nanoforge-dev/editor-server-core';
-import { TEST_ORIGIN, createLoopbackClient } from '@nanoforge-dev/editor-server-core/testing';
+import {
+  TEST_ORIGIN,
+  createLoopbackClient,
+  openTrustedProject,
+} from '@nanoforge-dev/editor-server-core/testing';
 
 import type { GameClientModule } from '../../src/client/game-client-runner.type';
 import { RuntimeService } from '../../src/service/runtime-service';
@@ -117,7 +121,7 @@ beforeAll(async () => {
     version: '0.0.0-test',
   });
   client = createLoopbackClient(editor);
-  const { id } = await client.api(ProjectsContract).open({ path: 'pong' });
+  const id = await openTrustedProject(client, 'pong');
   model = await client.api(ProjectsContract).model({ id });
 });
 

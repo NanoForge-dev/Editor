@@ -13,7 +13,9 @@ export const implementCodeRpc = (
   deps: CoreRpcDependencies,
 ): Disposable => {
   const { env, projects } = deps;
-  const formatter = new Formatter(env.mode === 'OFFLINE' ? 'project' : 'static');
+  /** The project's own Prettier runs its code: only in a trusted folder. */
+  const projectFormatter = new Formatter('project');
+  const staticFormatter = new Formatter('static');
   return router.implement(CodeContract, {
     methods: {
       typeFiles: async ({ project, from, module }, { session }) => {
@@ -23,6 +25,7 @@ export const implementCodeRpc = (
       },
       format: async ({ project, path, text }, { session }) => {
         const open = projects.get(session, project);
+        const formatter = open.trusted ? projectFormatter : staticFormatter;
         return formatter.format(open.root, await open.fs.jail.resolve(path), text);
       },
     },

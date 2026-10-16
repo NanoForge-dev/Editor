@@ -118,12 +118,12 @@ export const implementRegistryRpc = (
             target,
             sha256: version.sha256,
           });
-          await deps.deactivateServerPlugin?.(input.name);
+          await deps.deactivateServerPlugin?.(input.name, target);
           const project = input.project ? projects.get(session, input.project) : undefined;
           const located = (await deps.plugins.list(project)).find(
             (plugin) => plugin.dir === target && plugin.manifest?.entry.server,
           );
-          if (located) await deps.activateServerPlugin?.(located);
+          if (located && (!project || project.trusted)) await deps.activateServerPlugin?.(located);
           return { version: version.version };
         }),
       uninstallPlugin: async (input, { session }) => {
@@ -131,7 +131,7 @@ export const implementRegistryRpc = (
         if (!existsSync(join(target, 'nanoforge.manifest.json')))
           throw new RpcError('NOT_FOUND', `${input.name} is not installed there`);
         await rm(target, { recursive: true, force: true });
-        await deps.deactivateServerPlugin?.(input.name);
+        await deps.deactivateServerPlugin?.(input.name, target);
         return null;
       },
       packages: ({ project }, { session }) =>

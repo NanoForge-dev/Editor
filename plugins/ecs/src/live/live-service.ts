@@ -39,6 +39,8 @@ export class LiveService implements Disposable {
   private readonly _bundles = new Map<string, Promise<string | undefined>>();
   private readonly _siteIndex = new Map<string, number>();
   private _generation = 0;
+  /** "Apply to code" runs one at a time: two writes to one file at once refuse each other. */
+  private _applying: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly _context: PluginContext,
@@ -142,22 +144,42 @@ export class LiveService implements Disposable {
 
   /**
    * Writes an entity's changes made while playing to the code (one undo step per component):
-   * into `main`, or into the `setup` of the scene that spawned it.
+   * into `main`, or into the `setup` of the scene that spawned it. A change stays pending until
+   * it is written: when a write fails, when its component is not in the code, or when it
+   * changed again meanwhile. Resolves with whether nothing is left pending for the entity.
    */
-  async applyToCode(appId: string, key: string): Promise<void> {
+  applyToCode(appId: string, key: string): Promise<boolean> {
+    const run = this._applying.then(() => this._applyToCode(appId, key));
+    this._applying = run.catch(() => undefined);
+    return run;
+  }
+
+  /** Applies every change made while playing. */
+  async applyAll(): Promise<void> {
+    for (const [app, entities] of this._pending.get())
+      for (const entity of entities.keys()) await this.applyToCode(app, entity);
+  }
+
+  dispose(): void {
+    this._store.dispose();
+  }
+
+  private async _applyToCode(appId: string, key: string): Promise<boolean> {
     const app = this._app(appId);
     const changes = this._pending.get().get(appId)?.get(key);
-    if (!app || !changes) return;
+    if (!changes) return true;
+    if (!app) return false;
     const { scene, name: entityName } = parseKey(key);
     const location: EcsLocation | undefined = scene
       ? this._ecs.sceneLocation(app, scene)
       : undefined;
-    if (scene && !location) return;
+    if (scene && !location) return false;
     const model = location
       ? await this._ecs.analyzeLocation(location)
       : await this._ecs.analyzeApp(app);
     const entity = model?.entities.find((candidate) => candidate.name === entityName);
-    if (!entity) return;
+    if (!entity) return false;
+    const applied = new Map<string, Record<string, unknown>>();
     for (const [componentName, fields] of changes) {
       const index = entity.components.findIndex((use) => {
         const item = this._ecs.item(use.item);
@@ -180,21 +202,12 @@ export class LiveService implements Disposable {
             : { code: 'undefined' },
       );
       const op: EntryOp = { kind: 'setArgs', entity: entityName, index, args, fill };
-      await this._ecs.applyTo(app, op, `Apply live ${componentName} of ${entityName}`, location);
+      const label = `Apply live ${componentName} of ${entityName}`;
+      if (await this._ecs.applyTo(app, op, label, location)) applied.set(componentName, fields);
     }
-    const pending = clonePending(this._pending.get());
-    pending.get(appId)?.delete(key);
+    const pending = withoutApplied(this._pending.get(), appId, key, applied);
     this._pending.set(pending);
-  }
-
-  /** Applies every change made while playing. */
-  async applyAll(): Promise<void> {
-    for (const [app, entities] of this._pending.get())
-      for (const entity of entities.keys()) await this.applyToCode(app, entity);
-  }
-
-  dispose(): void {
-    this._store.dispose();
+    return !pending.get(appId)?.get(key)?.size;
   }
 
   private _send(event: string, args: readonly unknown[], source: LiveSource): void {
@@ -356,6 +369,26 @@ export const spawnSites = (
     })),
     ...(model?.codeOnly ?? []).map((entry) => ({ line: entry.line, start: entry.start })),
   ].sort((a, b) => a.start - b.start);
+
+/**
+ * `pending` without the components of an entity that were written to the code, unless they
+ * changed again since (`setField` replaces a component's fields object on every change).
+ */
+export const withoutApplied = (
+  pending: Pending,
+  app: string,
+  key: string,
+  applied: ReadonlyMap<string, Record<string, unknown>>,
+): Pending => {
+  const next = clonePending(pending);
+  const components = next.get(app)?.get(key);
+  if (!components) return next;
+  for (const [component, fields] of applied) {
+    if (components.get(component) === fields) components.delete(component);
+  }
+  if (!components.size) next.get(app)!.delete(key);
+  return next;
+};
 
 export const clonePending = (pending: Pending): Pending =>
   new Map(

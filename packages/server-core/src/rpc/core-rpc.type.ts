@@ -19,8 +19,10 @@ export interface CoreRpcDependencies {
   readonly plugins: PluginSources;
   /** Runs a project plugin's server entry (local editors only). */
   readonly activateServerPlugin?: (plugin: LocatedPlugin) => Promise<void>;
-  /** Stops a plugin's server entry (it was uninstalled, or is being replaced). */
-  readonly deactivateServerPlugin?: (name: string) => Promise<void>;
+  /** Stops a plugin's server entry (it was uninstalled, or is being replaced); `dir`: that copy only. */
+  readonly deactivateServerPlugin?: (name: string, dir?: string) => Promise<void>;
+  /** Runs exactly these project plugins' server entries, stopping the others (local editors). */
+  readonly syncProjectServerPlugins?: (plugins: readonly LocatedPlugin[]) => Promise<void>;
   readonly accountSettings: AccountSettingsBackend;
   readonly cli: CliService;
   readonly api: ApiClient;

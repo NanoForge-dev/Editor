@@ -43,16 +43,23 @@ const mainBody = (file: ts.SourceFile): ts.Node | undefined => {
   return found;
 };
 
-/** The body of the innermost function or method holding a position. */
+/**
+ * The body a position's spawns are counted in: the innermost method holding it (a scene's
+ * `setup`), even from a callback inside it (`bricks.forEach(() => registry.spawnEntity())`),
+ * as the source side counts every spawn of the method. Outside of any method, the innermost
+ * function.
+ */
 const enclosingBody = (file: ts.SourceFile, offset: number): ts.Node | undefined => {
-  let found: ts.Node | undefined;
+  let method: ts.Node | undefined;
+  let fn: ts.Node | undefined;
   const visit = (node: ts.Node) => {
     if (offset < node.getStart(file) || offset > node.getEnd()) return;
-    if (ts.isFunctionLike(node) && 'body' in node && node.body) found = node.body as ts.Node;
+    if (ts.isMethodDeclaration(node) && node.body) method = node.body;
+    else if (ts.isFunctionLike(node) && 'body' in node && node.body) fn = node.body as ts.Node;
     ts.forEachChild(node, visit);
   };
   visit(file);
-  return found;
+  return method ?? fn;
 };
 
 /**

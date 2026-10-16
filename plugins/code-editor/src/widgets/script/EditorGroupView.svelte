@@ -30,8 +30,9 @@
   const viewStates = new Map<string, MonacoEditor.ICodeEditorViewState | null>();
   let shown: string | undefined;
   let comparing = $state(false);
-  /** Tab waiting for a decision before closing (unsaved changes). */
-  let closing = $state<string>();
+  const closingRequest = $derived(service.closing);
+  /** Tab of this group waiting for a decision before closing (unsaved changes). */
+  const closing = $derived($closingRequest?.group === index ? $closingRequest.path : undefined);
   /** Bumped when a document's dirty or conflict state changes (tab markers, banner). */
   let revision = $state(0);
 
@@ -183,19 +184,8 @@
     service.activate(index, path);
   };
 
-  const requestClose = (path: string) => {
-    if (service.document(path)?.dirty.get()) closing = path;
-    else service.close(index, path);
-  };
-
-  const closeAfter = async (decision: 'save' | 'discard') => {
-    const path = closing;
-    closing = undefined;
-    if (!path) return;
-    if (decision === 'save') await service.save(path);
-    else await service.revert(path);
-    if (!service.document(path)?.dirty.get()) service.close(index, path);
-  };
+  const requestClose = (path: string) => service.requestClose(index, path);
+  const closeAfter = (decision: 'save' | 'discard') => service.finishClose(decision);
 </script>
 
 <section
@@ -295,10 +285,10 @@
   open={closing !== undefined}
   title={`Save changes to ${closing ? basename(closing) : ''}?`}
   description="Your changes will be lost if you don't save them."
-  onclose={() => (closing = undefined)}
+  onclose={() => service.finishClose('cancel')}
 >
   {#snippet footer()}
-    <Button onclick={() => (closing = undefined)}>Cancel</Button>
+    <Button onclick={() => service.finishClose('cancel')}>Cancel</Button>
     <Button variant="danger" onclick={() => closeAfter('discard')}>Don't save</Button>
     <Button variant="primary" onclick={() => closeAfter('save')}>Save</Button>
   {/snippet}

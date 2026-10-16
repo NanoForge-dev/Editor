@@ -5,6 +5,7 @@ const openPong = async (page: Page) => {
   await page.goto('/');
   await page.getByLabel('Project folder').fill('pong');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await page.getByRole('button', { name: 'Trust and open', exact: true }).click();
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await resetLayout(page);

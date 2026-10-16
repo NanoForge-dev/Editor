@@ -61,7 +61,8 @@ export interface WorkspaceActionsOptions {
 /**
  * What the Project screen does to the workspace: add, rename and remove apps and shared
  * libraries, and choose which apps use a library. Each action is one step of the Project
- * history; failures are reported, never thrown.
+ * history; failures are reported, never thrown. The history belongs to the open project: it is
+ * cleared when another project opens, so an undo never reaches the previous one.
  */
 export class WorkspaceActions implements Disposable {
   private readonly _store = new DisposableStore();
@@ -81,6 +82,14 @@ export class WorkspaceActions implements Disposable {
     this._store.add(
       context.stack.onDidChange(({ canUndo, canRedo }) => this._hasSteps.set(canUndo || canRedo)),
     );
+    let projectId = _options.projects.current.get()?.id;
+    this._store.add({
+      dispose: _options.projects.current.subscribe((project) => {
+        if (project?.id === projectId) return;
+        projectId = project?.id;
+        void this._stack.clear();
+      }),
+    });
     const commands = _options.services.get(CoreServices.Commands);
     const open = (request: WorkspaceRequest) => async () => {
       await commands.execute('workbench.openWidget', 'core.project');

@@ -15,6 +15,10 @@ const list = z
       .filter(Boolean),
   );
 
+/** `localhost`, `127.x.x.x` or `::1`. */
+const isLoopback = (host: string) =>
+  host === 'localhost' || /^127(\.\d{1,3}){3}$/.test(host) || ['::1', '[::1]'].includes(host);
+
 /**
  * What the NanoForge API offers the editor, beyond sign-in and projects. A feature that is not
  * listed in `API_FEATURES` is not called: the editor keeps to itself for it.
@@ -62,6 +66,14 @@ export const EnvSchema = z
     DEV_PLUGINS: list,
     /** Directory of the plugins bundled with the editor build. */
     BUNDLED_PLUGINS_DIR: optionalString,
+    /**
+     * Lets a local (OFFLINE) editor listen on a non-loopback `HOST`. It has no sign-in and runs
+     * project code: only set it behind something that restricts who can connect.
+     */
+    ALLOW_REMOTE_OFFLINE: z
+      .string()
+      .optional()
+      .transform((value) => value === '1' || value === 'true'),
   })
   .superRefine((env, context) => {
     for (const feature of env.API_FEATURES) {
@@ -72,6 +84,18 @@ export const EnvSchema = z
           message: `unknown feature "${feature}" (known: ${API_FEATURES.join(', ')})`,
         });
       }
+    }
+    if (
+      env.PUBLIC_MODE === 'OFFLINE' &&
+      env.HOST &&
+      !isLoopback(env.HOST) &&
+      !env.ALLOW_REMOTE_OFFLINE
+    ) {
+      context.addIssue({
+        code: 'custom',
+        path: ['HOST'],
+        message: `a local (OFFLINE) editor has no sign-in and runs project code: it only listens on a loopback address, not "${env.HOST}". Set PUBLIC_MODE=ONLINE for a hosted editor, or ALLOW_REMOTE_OFFLINE=1 behind something that restricts who can connect`,
+      });
     }
     if (env.PUBLIC_MODE === 'ONLINE' && !env.API_KEY) {
       context.addIssue({ code: 'custom', path: ['API_KEY'], message: 'required in ONLINE mode' });

@@ -4,10 +4,12 @@
   import {
     type PluginHost,
     ProjectServiceToken,
+    REQUIRED_PLUGINS,
     RpcClientToken,
     type ServiceAccessor,
     type SettingDefinition,
     SettingsServiceToken,
+    type WritableScope,
   } from '@nanoforge-dev/editor-sdk';
   import { Button, Tabs } from '@nanoforge-dev/editor-sdk/ui';
 
@@ -54,12 +56,30 @@
     return draft.changes.get().has(definition.key);
   });
 
+  /** The disabled list of one scope only: the shown list merges every scope. */
+  const listIn = (scope: WritableScope) =>
+    (draft.scopeValue(definition, scope) as string[] | undefined) ?? [];
+  /**
+   * Disabling adds the plugin to the target scope's list. Enabling removes it from every scope
+   * that lists it: writing the merged list into one scope would leave it disabled by another, and
+   * copy personal entries into a project's committed settings.
+   */
   const toggle = (name: string, enabled: boolean) => {
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a plain copy, not state
-    const next = new Set(disabled);
-    if (enabled) next.delete(name);
-    else next.add(name);
-    draft.set(definition, [...next].sort());
+    if (!enabled) {
+      const scope = draft.scopeOf(definition);
+      const list = listIn(scope);
+      if (!list.includes(name)) draft.setIn(definition, [...list, name].sort(), scope);
+      return;
+    }
+    for (const scope of definition.scopes) {
+      const list = listIn(scope);
+      if (list.includes(name))
+        draft.setIn(
+          definition,
+          list.filter((entry) => entry !== name),
+          scope,
+        );
+    }
   };
 
   let tab = $state<'marketplace' | 'installed'>('installed');
@@ -116,7 +136,14 @@
   {#if tab === 'marketplace'}
     <MarketplaceTab {page} />
   {:else}
-    <InstalledPluginsTab {page} plugins={$plugins} {known} {disabled} ontoggle={toggle} />
+    <InstalledPluginsTab
+      {page}
+      plugins={$plugins}
+      {known}
+      {disabled}
+      required={REQUIRED_PLUGINS}
+      ontoggle={toggle}
+    />
   {/if}
 </section>
 

@@ -36,6 +36,9 @@ export class CodeEditorService implements Disposable {
   readonly types: TypeLibraries;
   private readonly _layout = new ObservableValue<EditorLayout>(EMPTY);
   private readonly _comparisons = new ObservableValue<ReadonlyMap<string, Comparison>>(new Map());
+  private readonly _closing = new ObservableValue<{ group: number; path: string } | undefined>(
+    undefined,
+  );
   private readonly _documents = new Map<string, EditorDocument>();
   private readonly _loading = new Map<string, Promise<EditorDocument>>();
   private readonly _onReveal = new Emitter<Reveal>();
@@ -163,6 +166,27 @@ export class CodeEditorService implements Disposable {
     if (layout.focused !== group && group < layout.groups.length) {
       this._layout.set({ ...layout, focused: group });
     }
+  }
+
+  /** The tab waiting for "Save changes?" before it closes (it has unsaved changes). */
+  get closing(): Observable<{ group: number; path: string } | undefined> {
+    return this._closing.readonly();
+  }
+
+  /** Closes a tab, after asking (`closing`) when its file has unsaved changes. */
+  requestClose(group: number, path: string): void {
+    if (this.document(path)?.dirty.get()) this._closing.set({ group, path });
+    else this.close(group, path);
+  }
+
+  /** Answers the "Save changes?" question of `closing`: the tab closes once nothing is lost. */
+  async finishClose(decision: 'save' | 'discard' | 'cancel'): Promise<void> {
+    const pending = this._closing.get();
+    this._closing.set(undefined);
+    if (!pending || decision === 'cancel') return;
+    if (decision === 'save') await this.save(pending.path);
+    else await this.revert(pending.path);
+    if (!this.document(pending.path)?.dirty.get()) this.close(pending.group, pending.path);
   }
 
   /** Closes a tab. The document is released when no group shows it anymore. */

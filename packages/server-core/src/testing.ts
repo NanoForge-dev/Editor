@@ -2,6 +2,7 @@
  * Test helpers: an RpcClient connected in memory to an editor server (no network, no Bun).
  * Used by server-core tests and by client packages' integration tests.
  */
+import { ProjectsContract } from '@nanoforge-dev/editor-protocol';
 import { RpcClient, type SocketLike } from '@nanoforge-dev/editor-rpc';
 
 import type { EditorServer, ServerSocket, SocketData } from './server/editor-server.type';
@@ -83,4 +84,16 @@ export const createLoopbackClient = (editor: EditorServer): RpcClient => {
     },
     createSocket: (url) => new LoopbackSocket(editor, url, () => cookie),
   });
+};
+
+/**
+ * Opens a local project in a trusted folder (its code may run: builds, games, plugins), as a
+ * user who chose "Trust and open". Resolves with its id.
+ */
+export const openTrustedProject = async (client: RpcClient, path: string): Promise<string> => {
+  const projects = client.api(ProjectsContract);
+  const opened = await projects.open({ path });
+  if (opened.trusted) return opened.id;
+  await projects.trust({ id: opened.id });
+  return (await projects.open({ path })).id;
 };

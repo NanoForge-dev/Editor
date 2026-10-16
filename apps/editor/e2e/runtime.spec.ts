@@ -20,6 +20,7 @@ test('plays pong-network server and client, pauses, resumes and stops, three tim
   await page.goto('/');
   await page.getByLabel('Project folder').fill('game');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await page.getByRole('button', { name: 'Trust and open', exact: true }).click();
   await page.waitForURL(/\/project\//);
   const output = page.getByRole('log', { name: 'Console' });
   await page.getByRole('button', { name: /^Editor/ }).click();

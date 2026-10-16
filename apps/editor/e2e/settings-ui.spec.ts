@@ -89,6 +89,11 @@ test('disables a plugin', async ({ page }) => {
   await dialog(page).getByRole('treeitem', { name: 'Plugins' }).click();
   const plugins = dialog(page).getByRole('region', { name: 'Plugins' });
   await expect(plugins.getByText('@acme/hello', { exact: false })).toBeVisible();
+  const settingsPlugin = plugins
+    .getByRole('listitem')
+    .filter({ hasText: '@nanoforge/settings-ui' });
+  await expect(settingsPlugin.getByText('Required', { exact: true })).toBeVisible();
+  await expect(settingsPlugin.getByRole('switch')).toHaveCount(0);
   await plugins.getByRole('switch', { name: 'Disable Hello' }).click();
   await plugins.getByRole('button', { name: 'Apply and reload' }).click();
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();

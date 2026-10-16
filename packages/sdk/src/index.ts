@@ -231,6 +231,7 @@ export {
 
 export {
   CoreSettings,
+  REQUIRED_PLUGINS,
   type MergeStrategy,
   type SettingDefinition,
   type SettingInspection,

@@ -39,7 +39,16 @@ export class ClientProject implements Disposable, EngineLibProvider {
   /** Apps as the kernel sees them (engine lib gating). */
   readonly apps: Observable<readonly AppInfo[]>;
 
-  constructor(initial: ProjectModel, rpc: RpcClient, caches: CacheFactory) {
+  constructor(
+    initial: ProjectModel,
+    rpc: RpcClient,
+    caches: CacheFactory,
+    /**
+     * Whether its code may run here. An untrusted local folder is open in restricted mode: its
+     * config is read without running it, and its plugins, builds and games don't run.
+     */
+    readonly trusted: boolean,
+  ) {
     this._model = new ObservableValue(initial);
     this.fs = this._store.add(
       new ProjectFs(initial.id, rpc, caches.contents(initial.id), caches.tree(initial.id)),

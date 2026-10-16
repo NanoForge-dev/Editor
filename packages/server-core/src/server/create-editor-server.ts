@@ -50,9 +50,11 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
 
   const api = new ApiClient(env, options.fetch);
   const sessions = new SessionStore(env, { verify: (session) => api.currentUser(session) });
-  const git = new GitService(env);
+  const git = new GitService(env, undefined, (root) => projects.trust.isTrusted(root));
   const cli = new CliService(env);
-  const projects = store.add(new ProjectRegistry(env, git, api, logs.getLogger('projects')));
+  const projects: ProjectRegistry = store.add(
+    new ProjectRegistry(env, git, api, logs.getLogger('projects')),
+  );
   const plugins = new PluginSources(env, logs.getLogger('plugins'));
   const runtime = store.add(new RuntimeManager(cli, env, logs.getLogger('runtime')));
   const router = new RpcRouter<RequestContext>({
@@ -67,7 +69,8 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       projects,
       plugins,
       activateServerPlugin: (plugin) => serverPlugins.activate(plugin),
-      deactivateServerPlugin: (name) => serverPlugins.deactivate(name),
+      deactivateServerPlugin: (name, dir) => serverPlugins.deactivate(name, dir),
+      syncProjectServerPlugins: (located) => serverPlugins.syncProject(located),
       cli,
       api,
       accountSettings:
@@ -207,6 +210,16 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
     }
   };
 
+  /**
+   * Only the editor's own pages may frame it: another site framing a local editor could get a
+   * click on "Trust and open" (or any other button) without the user seeing what it does.
+   */
+  const notFramed = (response: Response | undefined) => {
+    response?.headers.set('content-security-policy', "frame-ancestors 'self'");
+    response?.headers.set('x-frame-options', 'SAMEORIGIN');
+    return response;
+  };
+
   const handleStatic = async (pathname: string): Promise<Response> => {
     if (!staticJail) return json(404, { error: 'Not found' });
     let rel: string;
@@ -220,10 +233,10 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
     const asset =
       file &&
       (await fileResponse(file, immutable ? 'public, max-age=31536000, immutable' : 'no-cache'));
-    if (asset) return asset;
+    if (asset) return notFramed(asset)!;
     if (/\.[a-z0-9]+$/i.test(rel)) return json(404, { error: 'Not found' });
     return (
-      (await fileResponse(join(staticJail.root, 'index.html'), 'no-cache')) ??
+      notFramed(await fileResponse(join(staticJail.root, 'index.html'), 'no-cache')) ??
       json(404, { error: 'Not found' })
     );
   };

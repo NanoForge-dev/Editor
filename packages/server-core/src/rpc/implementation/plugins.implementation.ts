@@ -1,6 +1,6 @@
 import type { Disposable } from '@nanoforge-dev/editor-kernel';
 import { PluginsContract } from '@nanoforge-dev/editor-protocol';
-import type { RpcRouter } from '@nanoforge-dev/editor-rpc';
+import { RpcError, type RpcRouter } from '@nanoforge-dev/editor-rpc';
 
 import type { RequestContext } from '../../session/auth';
 import type { CoreRpcDependencies } from '../core-rpc.type';
@@ -15,14 +15,27 @@ export const implementPluginsRpc = (
     methods: {
       list: async (input, { session }) => {
         const project = input?.project ? projects.get(session, input.project) : undefined;
-        const located = await deps.plugins.list(project);
-        if (deps.env.mode === 'OFFLINE') {
-          for (const plugin of located) {
-            if (plugin.source === 'project' && plugin.manifest?.entry.server)
-              await deps.activateServerPlugin?.(plugin);
-          }
-        }
-        return located.map((plugin) => plugin.listing);
+        return (await deps.plugins.list(project)).map((plugin) => plugin.listing);
+      },
+      runProjectServers: async ({ project: id, names }, { session }) => {
+        if (deps.env.mode !== 'OFFLINE')
+          throw new RpcError(
+            'FORBIDDEN',
+            "A hosted editor never runs a project plugin's server entry",
+          );
+        const project = id ? projects.get(session, id) : undefined;
+        if (project && names.length)
+          projects.assertTrusted(project, "Running the project's plugins");
+        const located = project ? await deps.plugins.list(project) : [];
+        await deps.syncProjectServerPlugins?.(
+          located.filter(
+            (plugin) =>
+              plugin.source === 'project' &&
+              plugin.manifest?.entry.server &&
+              names.includes(plugin.manifest.name),
+          ),
+        );
+        return null;
       },
       suggestions: ({ project }, { session }) =>
         deps.plugins.suggestions(projects.get(session, project).root),

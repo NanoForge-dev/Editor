@@ -41,6 +41,7 @@ export const implementGitRpc = (
       deleteBranch: nothing((root, { name, force }) => git.deleteBranch(root, name, force)),
       log: ({ project, limit, skip, branch }, { session }) =>
         git.log(repo(session, project), limit, skip, branch),
+      headMessage: ({ project }, { session }) => git.headMessage(repo(session, project)),
       outgoing: ({ project }, { session }) => git.outgoing(repo(session, project)),
       commitFiles: ({ project, hash }, { session }) =>
         git.commitFiles(repo(session, project), hash),

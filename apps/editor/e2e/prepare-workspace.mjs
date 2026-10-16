@@ -173,7 +173,7 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
   );
   const scratch = join(game, 'apps/client/src/scratch');
   mkdirSync(scratch, { recursive: true });
-  for (const name of ['edit', 'definition', 'format', 'conflict', 'autosave', 'focus']) {
+  for (const name of ['edit', 'definition', 'format', 'conflict', 'autosave', 'focus', 'close']) {
     writeFileSync(
       join(scratch, `${name}.ts`),
       'import { NanoforgeFactory } from "@nanoforge-dev/core";\n\nexport const factory = NanoforgeFactory;\n',

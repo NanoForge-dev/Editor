@@ -33,7 +33,8 @@ export const toDescriptor = (
 };
 
 /**
- * The open project's own plugins (`.nanoforge/plugins`) join the plugin set while it is open.
+ * The open project's own plugins (`.nanoforge/plugins`) join the plugin set while it is open; in
+ * a local editor, the server entries of those that load run while it is open.
  * Plugins that its packages suggest and that aren't installed are named in a notification, once
  * per project.
  *
@@ -59,11 +60,17 @@ export const followProjectPlugins = (options: {
   let queue = Promise.resolve();
 
   const trusted = (project: string) =>
-    !options.online || settings.get(CoreSettings.pluginsTrustedProjects).includes(project);
+    options.online
+      ? settings.get(CoreSettings.pluginsTrustedProjects).includes(project)
+      : options.projects.current.get()?.trusted !== false;
 
-  /** Keeps a hosted project's own plugins out until allowed, and offers to allow them. */
+  /**
+   * Keeps a hosted project's own plugins out until allowed, and offers to allow them. A local
+   * folder that is not trusted keeps them out too (restricted mode says so).
+   */
   const allowed = (project: string | undefined, listings: readonly PluginListing[]) => {
     if (!project || trusted(project)) return listings;
+    if (!options.online) return listings.filter((listing) => listing.source !== 'project');
     const own = listings.filter((listing) => listing.source === 'project');
     if (own.length && !offered.has(project)) {
       offered.add(project);
@@ -114,6 +121,19 @@ export const followProjectPlugins = (options: {
     });
   };
 
+  /**
+   * Runs the server entries of the project plugins that loaded (allowed, not disabled, not
+   * failed), and stops the others: listing a project never runs its code.
+   */
+  const runServers = (project: string | null) =>
+    api.runProjectServers({
+      project,
+      names: plugins.plugins
+        .get()
+        .filter((plugin) => plugin.descriptor.source === 'project' && plugin.status.kind === 'ok')
+        .map((plugin) => plugin.name),
+    });
+
   function follow(project: string | undefined) {
     if (project === listedFor) return;
     listedFor = project;
@@ -124,6 +144,7 @@ export const followProjectPlugins = (options: {
         await plugins.update(
           allowed(project, listings).flatMap((listing) => toDescriptor(listing, logger) ?? []),
         );
+        if (!options.online) await runServers(project ?? null);
         if (project) await suggest(project);
       })
       .catch((error: unknown) => logger.error('Could not load the project plugins', error));

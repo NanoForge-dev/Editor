@@ -18,10 +18,15 @@ export const implementRuntimeRpc = (
     }
     return deps.runtime.get(project);
   };
+  /** The runtime of a project whose code may run: building and playing run it. */
+  const runnable = (project: OpenProject, what: string) => {
+    projects.assertTrusted(project, what);
+    return runtimeOf(project);
+  };
   return router.implement(RuntimeContract, {
     methods: {
       build: ({ project, apps }, { session }) =>
-        runtimeOf(projects.get(session, project)).builds.build(apps),
+        runnable(projects.get(session, project), 'Building').builds.build(apps),
       status: ({ project }, { session }) => {
         const runtime = runtimeOf(projects.get(session, project));
         return {
@@ -34,7 +39,7 @@ export const implementRuntimeRpc = (
       env: ({ project, app, overrides }, { session }) =>
         runtimeOf(projects.get(session, project)).env(app, overrides),
       startServer: async ({ project, app, overrides }, { session }) => {
-        await runtimeOf(projects.get(session, project)).startServer(app, overrides);
+        await runnable(projects.get(session, project), 'Playing').startServer(app, overrides);
         return null;
       },
       stopServer: async ({ project, app }, { session }) => {
@@ -48,9 +53,10 @@ export const implementRuntimeRpc = (
     },
     streams: {
       events: ({ project }, { session }, sink) => {
-        const runtime = runtimeOf(projects.get(session, project));
+        const open = projects.get(session, project);
+        const runtime = runtimeOf(open);
         const subscription = new DisposableStore();
-        subscription.add(runtime.builds.watch());
+        if (open.trusted) subscription.add(runtime.builds.watch());
         subscription.add(runtime.onEvent((event) => sink.emit(event)));
         return subscription;
       },

@@ -14,6 +14,24 @@ export const authEnv = (url: string, token: string | undefined): Record<string, 
   };
 };
 
+/** Adds settings to the `GIT_CONFIG_*` ones of `env`, after those it already holds. */
+export const withGitConfig = (
+  env: Record<string, string>,
+  entries: readonly (readonly [key: string, value: string])[],
+): Record<string, string> => {
+  if (!entries.length) return env;
+  const count = Number(env.GIT_CONFIG_COUNT ?? 0);
+  const result: Record<string, string> = {
+    ...env,
+    GIT_CONFIG_COUNT: String(count + entries.length),
+  };
+  entries.forEach(([key, value], index) => {
+    result[`GIT_CONFIG_KEY_${count + index}`] = key;
+    result[`GIT_CONFIG_VALUE_${count + index}`] = value;
+  });
+  return result;
+};
+
 /** `url` without the user and password older clones kept in their remote. */
 export const withoutCredentials = (url: string): string => {
   try {
