@@ -134,12 +134,12 @@ export class PluginSources {
    */
   async resolveFile(
     urlPath: string,
-    canAccess: (projectId: string) => boolean = () => false,
+    canAccess: (projectId: string) => boolean | Promise<boolean> = () => false,
   ): Promise<{ file: string; plugin: LocatedPlugin } | undefined> {
     let located: Map<string, LocatedPlugin>;
     if (urlPath.startsWith(PROJECT_URL_PREFIX)) {
       const projectId = urlPath.slice(PROJECT_URL_PREFIX.length).split('/')[0] ?? '';
-      if (!canAccess(projectId)) return undefined;
+      if (!(await canAccess(projectId))) return undefined;
       located = this._projectLocated.get(projectId) ?? new Map();
     } else {
       if (!this._located.size) await this.list();
@@ -147,8 +147,8 @@ export class PluginSources {
     }
     for (const [baseUrl, plugin] of located) {
       if (!urlPath.startsWith(baseUrl)) continue;
-      const rel = decodeURIComponent(urlPath.slice(baseUrl.length));
       try {
+        const rel = decodeURIComponent(urlPath.slice(baseUrl.length));
         const file = await new PathJail(plugin.dir).resolve(rel);
         return existsSync(file) ? { file, plugin } : undefined;
       } catch {

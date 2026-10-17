@@ -279,14 +279,20 @@ export class WorkspaceActions implements Disposable {
   }
 
   /**
-   * The project's files for an operation. With the code worker, imports are rewritten by reading
-   * the code, through the open documents (saved after each change, as a multi-file operation must).
+   * The project's files for an operation. Searches see the open documents' unsaved edits. With the
+   * code worker, imports are rewritten by reading the code, through the open documents (saved
+   * after each change, as a multi-file operation must).
    */
   private _io(project: ClientProject): WorkspaceIo {
-    const io = workspaceIo(project);
+    const plain = workspaceIo(project);
     const code = this._options.services.tryGet(CodeServiceToken);
     const documents = this._options.services.tryGet(DocumentServiceToken);
-    if (!code || !documents) return io;
+    if (!documents) return plain;
+    const io: WorkspaceIo = {
+      ...plain,
+      readEdited: async (path) => documents.get(path)?.getText() ?? plain.read(path),
+    };
+    if (!code) return io;
     const saved = async (path: string) => {
       if (documents.get(path)) await documents.save(path);
     };

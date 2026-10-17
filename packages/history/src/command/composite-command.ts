@@ -1,7 +1,49 @@
 import type { CommandOrigin, HistoryCommand } from './history-command.type';
+import { InvalidCommandError } from './invalid-command.exception';
 
 export const sameOrigin = (a: CommandOrigin | undefined, b: CommandOrigin | undefined): boolean =>
   a?.kind === b?.kind && a?.id === b?.id;
+
+const redoOf = (command: HistoryCommand) => (command.redo ?? command.do).call(command);
+
+/**
+ * Runs `step` on a command once it is still valid. A command is valid in the state it left, so
+ * the commands of a group are checked one by one as their turn comes: two of them editing the
+ * same file each expect the text the other left.
+ */
+const checked =
+  (step: (command: HistoryCommand) => Promise<void> | void) =>
+  async (command: HistoryCommand): Promise<void> => {
+    if ((await command.isValid?.()) === false) throw new InvalidCommandError(command.label);
+    await step(command);
+  };
+
+/**
+ * Undo and redo of commands run in `order`: each is checked when its turn comes, and only the
+ * one that runs first is checked beforehand (`isValid`). One that changed since stops the run:
+ * those already run are reverted and an `InvalidCommandError` goes on.
+ */
+const sequence = (order: readonly HistoryCommand[]) => {
+  let undone = false;
+  return {
+    undo: async () => {
+      await runAll(
+        [...order].reverse(),
+        checked((command) => command.undo()),
+        redoOf,
+      );
+      undone = true;
+    },
+    redo: async () => {
+      await runAll(order, checked(redoOf));
+      undone = false;
+    },
+    async isValid() {
+      const first = undone ? order[0] : order.at(-1);
+      return (await first?.isValid?.()) !== false;
+    },
+  };
+};
 
 /**
  * Runs children in order and undoes them in reverse. When a child fails, the ones already run
@@ -17,17 +59,7 @@ export const compositeCommand = (
   children,
   sizeBytes: children.reduce((total, child) => total + (child.sizeBytes ?? 0), 0),
   do: () => runAll(children, (child) => child.do()),
-  undo: () =>
-    runAll(
-      [...children].reverse(),
-      (child) => child.undo(),
-      (child) => (child.redo ?? child.do).call(child),
-    ),
-  redo: () => runAll(children, (child) => (child.redo ?? child.do).call(child)),
-  async isValid() {
-    for (const child of children) if ((await child.isValid?.()) === false) return false;
-    return true;
-  },
+  ...sequence(children),
   dispose() {
     for (const child of children) child.dispose?.();
   },
@@ -68,16 +100,7 @@ export const mergeCommands = (previous: HistoryCommand, next: HistoryCommand): H
   sizeBytes: (previous.sizeBytes ?? 0) + (next.sizeBytes ?? 0),
   ...(next.mergeKey && { mergeKey: next.mergeKey }),
   do: () => next.do(),
-  undo: () =>
-    runAll(
-      [next, previous],
-      (command) => command.undo(),
-      (command) => (command.redo ?? command.do).call(command),
-    ),
-  redo: () => runAll([previous, next], (command) => (command.redo ?? command.do).call(command)),
-  async isValid() {
-    return (await previous.isValid?.()) !== false && (await next.isValid?.()) !== false;
-  },
+  ...sequence([previous, next]),
   dispose() {
     previous.dispose?.();
     next.dispose?.();

@@ -8,6 +8,9 @@ import { fromPackument, fromSearchObject } from '../wire/packument';
 import { Packument, ROUTES, WireSearch } from '../wire/wire.schema';
 
 const ABBREVIATED = 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8';
+/** Statuses whose `location` is followed, and how many redirects in a row at most. */
+const REDIRECTS = new Set([301, 302, 303, 307, 308]);
+const MAX_REDIRECTS = 5;
 
 export interface RegistryClientOptions {
   /** Base URL of the API holding `/registry/…`. */
@@ -67,7 +70,8 @@ export class RegistryClient implements Registry {
 
   /**
    * A request to the registry, or to where it keeps an archive (`dist.tarball` may be anywhere):
-   * http(s) only, and the registry's headers only go to the registry's own origin.
+   * http(s) only, and the registry's headers only go to the registry's own origin. Redirects are
+   * followed here, so that the headers stay off an address one leads to on another origin.
    */
   private async _request(
     path: string,
@@ -75,26 +79,35 @@ export class RegistryClient implements Registry {
     headers: Record<string, string> = {},
   ): Promise<Response> {
     const base = new URL(this._options.baseUrl);
-    const url = new URL(path, base);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:')
-      throw new RegistryError(
-        'INVALID',
-        `The registry gave an address that is not http(s): ${url.protocol}`,
-      );
+    const signal = AbortSignal.timeout(this._options.timeoutMs ?? 60_000);
+    let url = new URL(path, base);
     let response: Response;
-    try {
-      response = await (this._options.fetch ?? fetch)(url.toString(), {
-        headers: {
-          ...headers,
-          ...(url.origin === base.origin ? this._options.headers?.() : {}),
-        },
-        signal: AbortSignal.timeout(this._options.timeoutMs ?? 60_000),
-      });
-    } catch (error) {
-      throw new RegistryError(
-        'UNAVAILABLE',
-        `The registry cannot be reached: ${error instanceof Error ? error.message : String(error)}`,
-      );
+    for (let redirects = 0; ; redirects++) {
+      if (url.protocol !== 'https:' && url.protocol !== 'http:')
+        throw new RegistryError(
+          'INVALID',
+          `The registry gave an address that is not http(s): ${url.protocol}`,
+        );
+      try {
+        response = await (this._options.fetch ?? fetch)(url.toString(), {
+          headers: {
+            ...headers,
+            ...(url.origin === base.origin ? this._options.headers?.() : {}),
+          },
+          redirect: 'manual',
+          signal,
+        });
+      } catch (error) {
+        throw new RegistryError(
+          'UNAVAILABLE',
+          `The registry cannot be reached: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      const location = REDIRECTS.has(response.status) ? response.headers.get('location') : null;
+      if (location === null) break;
+      if (redirects >= MAX_REDIRECTS)
+        throw new RegistryError('UNAVAILABLE', 'The registry redirected too many times');
+      url = new URL(location, url);
     }
     if (response.status === 404) {
       throw subject

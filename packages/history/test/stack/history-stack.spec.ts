@@ -196,4 +196,65 @@ describe('HistoryStack', () => {
     expect(state.value).toBe(0);
     expect(stack.state.past).toHaveLength(0);
   });
+  describe('steps made of several edits of one document', () => {
+    /** A document and its edits, valid in the text they last left (as `DocumentService`'s). */
+    const doc = () => {
+      const file = { text: '' };
+      const append = (chars: string, extra: Partial<HistoryCommand> = {}): HistoryCommand => {
+        let expected = '';
+        const run = (text: string) => {
+          file.text = text;
+          expected = text;
+        };
+        return {
+          label: `append ${chars}`,
+          do: () => run(file.text + chars),
+          undo: () => run(file.text.slice(0, -chars.length)),
+          isValid: () => file.text === expected,
+          ...extra,
+        };
+      };
+      return { file, append };
+    };
+
+    it('undoes and redoes a transaction that edits the same document twice', async () => {
+      const { stack } = setup();
+      const { file, append } = doc();
+      await stack.transaction('two edits', async (tx) => {
+        await tx.push(append('a'));
+        await tx.push(append('b'));
+      });
+      expect(await stack.undo()).toBe(true);
+      expect(file.text).toBe('');
+      expect(await stack.redo()).toBe(true);
+      expect(file.text).toBe('ab');
+      expect(await stack.undo()).toBe(true);
+      expect(file.text).toBe('');
+    });
+
+    it('undoes merged edits of one document', async () => {
+      const { stack } = setup();
+      const { file, append } = doc();
+      await stack.push(append('a', { mergeKey: 'typing' }));
+      await stack.push(append('b', { mergeKey: 'typing' }));
+      await stack.push(append('c', { mergeKey: 'typing' }));
+      expect(stack.state.past).toHaveLength(1);
+      expect(await stack.undo()).toBe(true);
+      expect(file.text).toBe('');
+      expect(await stack.redo()).toBe(true);
+      expect(file.text).toBe('abc');
+    });
+
+    it('drops the step, leaving the text as it was, when a part of it changed since', async () => {
+      const { stack } = setup();
+      const other = doc();
+      const { file, append } = doc();
+      await stack.push(compositeCommand('edits', [append('a'), other.append('x')]));
+      file.text = 'a by hand';
+      expect(await stack.undo()).toBe(false);
+      expect(file.text).toBe('a by hand');
+      expect(other.file.text).toBe('x');
+      expect(stack.state.past).toHaveLength(0);
+    });
+  });
 });

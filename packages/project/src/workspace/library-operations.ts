@@ -68,28 +68,17 @@ export const specifier = (library: string) =>
     'g',
   );
 
-/** The code files that import a library. */
+/** A file's text as the user sees it, unsaved edits included (`WorkspaceIo.readEdited`). */
+const editedText = (io: WorkspaceIo, path: string) => (io.readEdited ?? io.read).call(io, path);
+
+/** The code files that import a library (outside of it). */
 export const libraryImporters = async (io: WorkspaceIo, library: AppModel): Promise<string[]> => {
   const importers: string[] = [];
   for (const path of io.files()) {
     if (!CODE.test(path) || path === library.root || path.startsWith(`${library.root}/`)) continue;
-    if (specifier(library.name).test(await io.read(path))) importers.push(path);
+    if (specifier(library.name).test(await editedText(io, path))) importers.push(path);
   }
   return importers.sort();
-};
-
-/**
- * A text with the imports of a library pointed at its new name; undefined when it has none. A
- * text search: it also rewrites look-alikes in comments and strings, so it is only used without
- * a code worker (`WorkspaceIo.renameImports`).
- */
-export const withRenamedImports = (text: string, from: string, to: string): string | undefined => {
-  const renamed = text.replace(
-    specifier(from),
-    (_match, keyword: string, quote: string, rest: string | undefined) =>
-      `${keyword}${quote}${to}${rest ?? ''}${quote}`,
-  );
-  return renamed === text ? undefined : renamed;
 };
 
 /**
@@ -108,6 +97,16 @@ export const renameLibrary = (
     if (invalid) throw new WorkspaceError(invalid);
     if (model.apps.some((app) => app.name === packageName))
       throw new WorkspaceError(`${packageName} is already the name of an app or library.`);
+    const importers: string[] = [];
+    for (const path of io.files()) {
+      if (CODE.test(path) && specifier(library.name).test(await editedText(io, path)))
+        importers.push(path);
+    }
+    if (importers.length && !io.renameImports)
+      throw new WorkspaceError(
+        `${library.name} is imported, and its imports can only be rewritten once the code analysis has started: try again in a moment.`,
+        importers,
+      );
     if (io.exists(TSCONFIG)) {
       const without = withoutPathsEntry(await io.read(TSCONFIG), `${library.name}/*`);
       await changes.write(
@@ -129,12 +128,7 @@ export const renameLibrary = (
         }
       });
     }
-    for (const path of io.files()) {
-      if (!CODE.test(path) || !specifier(library.name).test(await io.read(path))) continue;
-      await changes.renameImports(path, library.name, packageName, (text) =>
-        withRenamedImports(text, library.name, packageName),
-      );
-    }
+    for (const path of importers) await changes.renameImports(path, library.name, packageName);
     await editJson(io, changes, packageJson(library), (json) => {
       json.name = packageName;
     });

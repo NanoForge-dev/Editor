@@ -15,6 +15,11 @@ export interface WorkspaceIo {
   /** Paths of the project's files (what the editor lists: no `node_modules`). */
   files(): readonly string[];
   read(path: string): Promise<string>;
+  /**
+   * A file's text as the user sees it: an open document's, unsaved edits included. Searches that
+   * must not miss a file read it (an import typed but not saved yet). Defaults to `read`.
+   */
+  readEdited?(path: string): Promise<string>;
   /** Creates or replaces a file. */
   write(path: string, text: string): Promise<void>;
   /** Removes a file or folder; resolves with what brings it back. */
@@ -24,7 +29,8 @@ export interface WorkspaceIo {
   /**
    * Points a code file's imports of package `from` at `to`, reading the code (not a text search:
    * comments and strings stay as they are), through the open document if any. Resolves with the
-   * edit made, or undefined when the file has none. Without it, imports are rewritten as text.
+   * edit made, or undefined when the file has none. Without it, a library that is imported can't
+   * be renamed: a text search would also rewrite look-alikes in comments and strings.
    */
   renameImports?(path: string, from: string, to: string): Promise<ImportsEdit | undefined>;
 }

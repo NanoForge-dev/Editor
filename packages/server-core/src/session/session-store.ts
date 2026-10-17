@@ -22,7 +22,7 @@ export interface Session {
   readonly mode: 'OFFLINE' | 'ONLINE';
   user: User | null;
   tokens: AuthTokens | null;
-  /** Projects this session opened (ONLINE access control). */
+  /** Projects this session's user opened (ONLINE access control): cleared when the user changes. */
   readonly projects: Set<string>;
   lastSeen: number;
   /** Open WebSockets of this session: its projects stay open while there is one. */
@@ -126,7 +126,7 @@ export class SessionStore {
     const refreshToken = cookies[REFRESH_TOKEN_COOKIE];
     if (!accessToken && !refreshToken) {
       session.tokens = null;
-      session.user = null;
+      this._setUser(session, null);
       this._verifications.delete(session.id);
       return;
     }
@@ -140,7 +140,7 @@ export class SessionStore {
       .verify(session)
       .catch(() => null)
       .then((user) => {
-        session.user = user;
+        this._setUser(session, user);
         delete verification.pending;
         if (!user || !session.tokens) {
           this._verifications.delete(session.id);
@@ -151,6 +151,15 @@ export class SessionStore {
       });
     this._verifications.set(session.id, verification);
     return verification.pending;
+  }
+
+  /**
+   * Who a session belongs to now. The projects it opened belong to its user: another user (or
+   * none, after a sign-out) gets none of them, even on the same browser.
+   */
+  private _setUser(session: Session, user: User | null): void {
+    if (user?.id !== session.user?.id) session.projects.clear();
+    session.user = user;
   }
 
   private _new(): Session {

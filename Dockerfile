@@ -10,7 +10,7 @@ WORKDIR /app
 
 FROM base AS prod
 
-ARG PUBLIC_MODE
+ARG PUBLIC_MODE=ONLINE
 ARG PUBLIC_PM_URL
 ARG PUBLIC_DOCS_URL
 ARG PUBLIC_LANDING_URL
@@ -28,7 +28,7 @@ FROM oven/bun:1.3.14 AS final
 
 ARG FS_ROOT
 ARG ARCHIVE_ROOT
-ARG PUBLIC_MODE
+ARG PUBLIC_MODE=ONLINE
 ARG PUBLIC_PM_URL
 
 # The server reads its mode at runtime (packages/server-core/src/env/load-env.ts)

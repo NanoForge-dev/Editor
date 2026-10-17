@@ -15,7 +15,7 @@ import { type RpcClient, defineContract } from '@nanoforge-dev/editor-rpc';
 import { loadEnv } from '../../src/env/load-env';
 import { createEditorServer } from '../../src/server/create-editor-server';
 import type { EditorServer } from '../../src/server/editor-server.type';
-import { TEST_ORIGIN as ORIGIN, createLoopbackClient } from '../../src/testing';
+import { TEST_ORIGIN as ORIGIN, createLoopbackClient, openTrustedProject } from '../../src/testing';
 
 const FIXTURES = join(import.meta.dirname, '../fixtures');
 
@@ -120,6 +120,7 @@ describe('editor server', () => {
       }),
     );
     writeFileSync(join(dir, 'index.js'), 'export const activate = () => {};');
+    writeFileSync(join(dir, 'page.html'), '<script>parent.alert(1)</script>');
     try {
       const plugins = client.api(PluginsContract);
       const names = (listings: { manifest: unknown }[]) =>
@@ -133,8 +134,17 @@ describe('editor server', () => {
       });
       const get = (path: string) =>
         editor.fetch(new Request(`${ORIGIN}${path}`)) as Promise<Response>;
-      expect((await get(`/plugins/project/${id}/@acme/local/1.0.0/index.js`)).status).toBe(200);
+      const script = `/plugins/project/${id}/@acme/local/1.0.0/index.js`;
+      expect((await get(script)).status).toBe(404);
+      expect(await openTrustedProject(client, 'pong')).toBe(id);
+      expect((await get(script)).status).toBe(200);
+      expect((await get(script)).headers.get('content-security-policy')).toBeNull();
+      const page = await get(`/plugins/project/${id}/@acme/local/1.0.0/page.html`);
+      expect(page.status).toBe(200);
+      expect(page.headers.get('content-security-policy')).toBe('sandbox');
       expect((await get('/plugins/project/unknown/@acme/local/1.0.0/index.js')).status).toBe(404);
+      expect((await get(`/plugins/project/${id}/@acme/local/1.0.0/%E0`)).status).toBe(404);
+      expect((await get('/plugins/bundled/%E0')).status).toBe(404);
       await expect(plugins.list({ project: 'unknown' })).rejects.toMatchObject({
         code: 'NOT_FOUND',
       });

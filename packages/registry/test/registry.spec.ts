@@ -377,6 +377,39 @@ describe('registries', () => {
     expect(existsSync(join(target, 'src/nanoforge.manifest.json'))).toBe(true);
     expect(accepts[0]).toContain('application/vnd.npm.install-v1+json');
   });
+
+  it('keeps its headers off an address a redirect leads to on another origin', async () => {
+    const seen: { url: string; authorization: string | null }[] = [];
+    const api = new RegistryClient({
+      baseUrl: 'https://api.test',
+      headers: () => ({ authorization: 'Bearer secret' }),
+      fetch: (async (input: string, init?: RequestInit) => {
+        seen.push({ url: input, authorization: new Headers(init?.headers).get('authorization') });
+        expect(init?.redirect).toBe('manual');
+        const url = new URL(input);
+        if (url.origin === 'https://api.test' && url.pathname === '/registry/-/v1/search')
+          return new Response(null, {
+            status: 302,
+            headers: { location: 'https://elsewhere.test/search' },
+          });
+        if (url.origin === 'https://elsewhere.test')
+          return new Response(null, { status: 307, headers: { location: '/again' } });
+        return Response.json({ error: 'No such route' }, { status: 404 });
+      }) as typeof fetch,
+    });
+    await expect(api.search()).rejects.toThrow(RegistryError);
+    expect(seen).toEqual([
+      {
+        url: 'https://api.test/registry/-/v1/search?text=&from=0&size=30',
+        authorization: 'Bearer secret',
+      },
+      { url: 'https://elsewhere.test/search', authorization: null },
+      ...Array.from({ length: 4 }, () => ({
+        url: 'https://elsewhere.test/again',
+        authorization: null,
+      })),
+    ]);
+  });
 });
 
 describe('installItem', () => {

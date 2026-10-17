@@ -29,18 +29,10 @@ export class Changes {
     });
   }
 
-  /** Rewrites a code file's imports of a package (`WorkspaceIo.renameImports`, else as text). */
-  async renameImports(
-    path: string,
-    from: string,
-    to: string,
-    asText: (text: string) => string | undefined,
-  ): Promise<void> {
-    if (!this._io.renameImports) {
-      const renamed = asText(await this._io.read(path));
-      if (renamed !== undefined) await this.write(path, renamed);
-      return;
-    }
+  /** Rewrites a code file's imports of a package (`WorkspaceIo.renameImports`). */
+  async renameImports(path: string, from: string, to: string): Promise<void> {
+    if (!this._io.renameImports)
+      throw new WorkspaceError(`Imports of ${from} can't be rewritten without the code analysis.`);
     const edit = await this._io.renameImports(path, from, to);
     if (edit) this._steps.push({ undo: () => edit.undo(), edit: { path, edit } });
   }

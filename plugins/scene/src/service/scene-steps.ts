@@ -35,8 +35,8 @@ export class SceneSteps {
     return command ? saved(command, () => documents.save(path)) : undefined;
   }
   /**
-   * Commands run in order, undone in reverse; valid while each of them is (an edit by hand in
-   * between drops the step instead of undoing at the wrong place).
+   * Commands run in order, undone in reverse; each is checked when its turn comes (an edit by
+   * hand in between drops the step instead of undoing at the wrong place).
    */
   group(label: string, children: readonly HistoryCommand[]): HistoryCommand | undefined {
     return children.length ? compositeCommand(label, children) : undefined;
@@ -47,27 +47,21 @@ export class SceneSteps {
    */
   async push(label: string, steps: readonly Step[]): Promise<boolean> {
     const done: HistoryCommand[] = [];
+    let group: HistoryCommand | undefined;
     const command: HistoryCommand = {
       label,
       do: async () => {
-        if (done.length) {
-          for (const step of done) await step.do();
-          return;
-        }
         for (const step of steps) {
           const next = await step();
           if (!next) continue;
           await next.do();
           done.push(next);
         }
+        group = compositeCommand(label, done);
       },
-      undo: async () => {
-        for (const step of [...done].reverse()) await step.undo();
-      },
-      isValid: async () => {
-        for (const step of done) if ((await step.isValid?.()) === false) return false;
-        return true;
-      },
+      undo: () => group?.undo(),
+      redo: () => group?.redo?.(),
+      isValid: async () => (await group?.isValid?.()) ?? true,
     };
     try {
       const history = this.history();

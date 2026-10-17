@@ -38,9 +38,22 @@ export interface ProcessResult {
   readonly truncated: boolean;
 }
 
+/** Processes run in a group of their own (not on Windows): stopping one stops what it started. */
+const GROUPS = process.platform !== 'win32';
+
+/** Stops the groups still running when the editor exits: they no longer share its terminal's. */
+const running = new Set<() => void>();
+let stopOnExit = false;
+
+const abortError = (signal: AbortSignal) =>
+  Object.assign(new Error('The operation was aborted', { cause: signal.reason }), {
+    name: 'AbortError',
+  });
+
 /**
  * Spawns a process without a shell, with the editor's environment filtered (`childEnv`); output
- * is split into lines and buffered.
+ * is split into lines and buffered. `kill()` and `signal` stop its whole process group: a build's
+ * bundler or a package manager's scripts go with it.
  */
 export const runProcess = (
   command: string,
@@ -52,8 +65,27 @@ export const runProcess = (
     cwd: options.cwd,
     env: childEnv(options.env),
     stdio: ['pipe', 'pipe', 'pipe'],
-    ...(options.signal && { signal: options.signal }),
+    detached: GROUPS,
   });
+  const kill = (signal: NodeJS.Signals = 'SIGTERM') => {
+    if (!child.pid) return;
+    try {
+      if (GROUPS) process.kill(-child.pid, signal);
+      else child.kill(signal);
+    } catch {}
+  };
+  const stop = () => kill('SIGKILL');
+  running.add(stop);
+  if (!stopOnExit) {
+    stopOnExit = true;
+    process.once('exit', () => {
+      for (const each of running) each();
+    });
+  }
+  const { signal } = options;
+  const onAbort = () => kill();
+  if (signal?.aborted) onAbort();
+  else signal?.addEventListener('abort', onAbort, { once: true });
   const maxBuffer = options.maxBuffer ?? MAX_BUFFER;
   const buffers = { stdout: '', stderr: '' };
   const pending = { stdout: '', stderr: '' };
@@ -80,15 +112,25 @@ export const runProcess = (
   else child.stdin.end();
 
   const done = new Promise<ProcessResult>((resolve, reject) => {
-    child.on('error', (error) => {
+    const end = () => {
+      running.delete(stop);
+      signal?.removeEventListener('abort', onAbort);
       onLine.dispose();
+    };
+    child.on('error', (error) => {
+      end();
       reject(error);
     });
     child.on('close', (code) => {
       for (const stream of ['stdout', 'stderr'] as const) {
         if (pending[stream]) onLine.fire({ stream, text: pending[stream] });
       }
-      onLine.dispose();
+      end();
+      if (signal?.aborted) {
+        kill();
+        reject(abortError(signal));
+        return;
+      }
       resolve({
         exitCode: code ?? -1,
         stdout: buffers.stdout,
@@ -98,5 +140,5 @@ export const runProcess = (
     });
   });
 
-  return { onLine: onLine.event, done, kill: () => child.kill() };
+  return { onLine: onLine.event, done, kill: () => kill() };
 };

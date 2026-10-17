@@ -77,21 +77,27 @@ export const relocateItem = async (
   const original = await documents.getText(from);
   const fs = project.fs;
   const textOf = (path: string) => documents.getText(path).catch(() => undefined);
+  /** Moves a file and writes its new text; a failed write moves it back. */
+  const moveWith = async (source: string, target: string, text: string) => {
+    await fs.rename(source, target);
+    try {
+      await fs.write(target, text);
+    } catch (error) {
+      await fs.rename(target, source).catch(() => undefined);
+      throw error;
+    }
+  };
   let applied = false;
   const file: HistoryCommand = {
     label: `${move ? 'Move' : 'Copy'} ${from}`,
     do: async () => {
-      if (move) await fs.rename(from, to);
-      await fs.write(to, relocated.text);
+      if (move) await moveWith(from, to, relocated.text);
+      else await fs.write(to, relocated.text);
       applied = true;
     },
     undo: async () => {
-      if (move) {
-        await fs.write(to, original);
-        await fs.rename(to, from);
-      } else {
-        await fs.delete(to);
-      }
+      if (move) await moveWith(to, from, original);
+      else await fs.delete(to);
       applied = false;
     },
     isValid: async () => {

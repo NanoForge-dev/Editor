@@ -66,4 +66,26 @@ describe('SessionStore', () => {
     );
     expect(again.session.id).not.toBe(first.session.id);
   });
+  it("gives a new user none of the previous user's projects", async () => {
+    const store = new SessionStore(env, {
+      verify: async (session) => {
+        const id = session.tokens?.accessToken.replace('access-', '');
+        return id ? { id, name: id, email: `${id}@nanoforge.test` } : null;
+      },
+    });
+    const first = await store.resolve('accessToken=access-ada; refreshToken=r');
+    const cookie = cookieOf(first.setCookies);
+    first.session.projects.add('project-1');
+
+    await store.resolve(`${cookie}; accessToken=access-ada2; refreshToken=r`);
+    expect(first.session.user?.id).toBe('ada2');
+    expect([...first.session.projects]).toEqual([]);
+
+    first.session.projects.add('project-2');
+    await store.resolve(`${cookie}; accessToken=access-ada2; refreshToken=r`);
+    expect([...first.session.projects]).toEqual(['project-2']);
+    await store.resolve(cookie);
+    expect(first.session.user).toBeNull();
+    expect([...first.session.projects]).toEqual([]);
+  });
 });

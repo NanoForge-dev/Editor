@@ -2,6 +2,7 @@ import { Emitter, type Event } from '@nanoforge-dev/editor-kernel';
 
 import { compositeCommand, mergeCommands, sameOrigin } from '../command/composite-command';
 import type { CommandOrigin, HistoryCommand } from '../command/history-command.type';
+import { InvalidCommandError } from '../command/invalid-command.exception';
 import type {
   HistoryEntry,
   InvalidationReason,
@@ -187,7 +188,7 @@ export class HistoryStack {
       this._invalidate('invalid-command');
       return false;
     }
-    await entry.command.undo();
+    if (!(await this._run(() => entry.command.undo()))) return false;
     this._past.splice(index, 1);
     this._future.push(entry);
     this._changed();
@@ -201,11 +202,27 @@ export class HistoryStack {
       this._invalidate('invalid-command');
       return false;
     }
-    await (entry.command.redo ?? entry.command.do).call(entry.command);
+    if (!(await this._run(() => (entry.command.redo ?? entry.command.do).call(entry.command))))
+      return false;
     this._future.pop();
     this._past.push(entry);
     this._changed();
     return true;
+  }
+
+  /**
+   * Runs an undo or a redo; false when a part of the step changed since (it reverted itself):
+   * the history is then dropped, as for a step found invalid beforehand.
+   */
+  private async _run(step: () => Promise<void> | void): Promise<boolean> {
+    try {
+      await step();
+      return true;
+    } catch (error) {
+      if (!(error instanceof InvalidCommandError)) throw error;
+      this._invalidate('invalid-command');
+      return false;
+    }
   }
 
   private _add(command: HistoryCommand, local: boolean, mergeable = true): void {

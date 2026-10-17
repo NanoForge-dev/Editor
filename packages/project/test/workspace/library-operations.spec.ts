@@ -7,10 +7,28 @@ import {
   removeLibrary,
   renameLibrary,
   setLibraryUse,
-  withRenamedImports,
 } from '../../src/workspace/library-operations';
 import { WorkspaceError } from '../../src/workspace/workspace.exception';
+import type { WorkspaceIo } from '../../src/workspace/workspace.type';
 import { app, client, model, project, server, shared } from '../fixtures/workspace';
+
+/**
+ * An io that rewrites imports as the code worker does (here by text, on `from "<package>…"`), with
+ * edits valid while the file holds what they wrote.
+ */
+const reading = (io: WorkspaceIo, files: Map<string, string>): WorkspaceIo => ({
+  ...io,
+  renameImports: async (path, from, to) => {
+    const before = files.get(path)!;
+    const after = before.replaceAll(new RegExp(`(["'])${from}(/|\\1)`, 'g'), `$1${to}$2`);
+    if (after === before) return undefined;
+    files.set(path, after);
+    return {
+      undo: async () => void files.set(path, before),
+      isValid: async () => files.get(path) === after,
+    };
+  },
+});
 
 describe('shared libraries', () => {
   it('creates a library used by the chosen apps, and undoes it', async () => {
@@ -102,7 +120,7 @@ describe('shared libraries', () => {
     const library = app('libs/shared', '@pong/shared', 'lib');
     const all = model(client, server, library);
 
-    const undo = await renameLibrary(io, all, library, '@pong/common');
+    const undo = await renameLibrary(reading(io, files), all, library, '@pong/common');
     expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/common');
     const tsconfig = files.get('tsconfig.json')!;
     expect(tsconfig).toContain('"@pong/common/*": ["./libs/shared/src/*"]');
@@ -117,7 +135,30 @@ describe('shared libraries', () => {
     expect(snapshot()).toEqual(before);
 
     await expect(renameLibrary(io, all, library, 'pong-client')).rejects.toThrow(/already/);
-    expect(withRenamedImports('const a = 1;', '@pong/shared', '@x/y')).toBeUndefined();
+  });
+
+  it('renames an imported library only with the code analysis, which sees unsaved imports', async () => {
+    const { io, files, snapshot } = project();
+    await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });
+    const library = app('libs/shared', '@pong/shared', 'lib');
+    const all = model(client, server, library);
+    const unsaved = 'import { a } from "@pong/shared/a";\n';
+    const edited: WorkspaceIo = {
+      ...io,
+      readEdited: async (path) => (path === 'apps/client/src/main.ts' ? unsaved : io.read(path)),
+    };
+    const before = snapshot();
+    const refused = await renameLibrary(edited, all, library, '@pong/common').catch(
+      (error: unknown) => error,
+    );
+    expect(refused).toBeInstanceOf(WorkspaceError);
+    expect((refused as WorkspaceError).paths).toEqual(['apps/client/src/main.ts']);
+    expect(snapshot()).toEqual(before);
+
+    expect(await libraryImporters(edited, library)).toEqual(['apps/client/src/main.ts']);
+    expect(await libraryImporters(io, library)).toEqual([]);
+    await renameLibrary(io, all, library, '@pong/common');
+    expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/common');
   });
 
   it('does not undo over a file edited since, and keeps the step for another try', async () => {
@@ -125,7 +166,12 @@ describe('shared libraries', () => {
     await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });
     files.set('apps/client/src/main.ts', 'import { a } from "@pong/shared/a";\n');
     const library = app('libs/shared', '@pong/shared', 'lib');
-    const undo = await renameLibrary(io, model(client, server, library), library, '@pong/common');
+    const undo = await renameLibrary(
+      reading(io, files),
+      model(client, server, library),
+      library,
+      '@pong/common',
+    );
     files.set('apps/client/src/main.ts', 'import { a } from "@pong/common/a";\n// hand edit\n');
     await expect(undo()).rejects.toThrow(/apps\/client\/src\/main.ts changed since/);
     expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/common');
@@ -140,7 +186,7 @@ describe('shared libraries', () => {
     const text = '// see "@pong/shared" docs\nimport { a } from "@pong/shared/a";\n';
     files.set('apps/client/src/main.ts', text);
     const asked: string[] = [];
-    const reading = {
+    const custom = {
       ...io,
       renameImports: async (path: string, from: string, to: string) => {
         asked.push(`${path}:${from}->${to}`);
@@ -153,7 +199,7 @@ describe('shared libraries', () => {
     };
     const library = app('libs/shared', '@pong/shared', 'lib');
     const undo = await renameLibrary(
-      reading,
+      custom,
       model(client, server, library),
       library,
       '@pong/common',

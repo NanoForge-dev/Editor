@@ -7,7 +7,6 @@ export {
   createLibrary,
   setLibraryUse,
   libraryImporters,
-  withRenamedImports,
   renameLibrary,
   removeLibrary,
 } from './library-operations';

@@ -26,7 +26,8 @@ const unsafe = (path: string): boolean =>
 /**
  * The files of an archive by path (folders left out); rejects unsafe paths, and archives that
  * unpack to more than 256 MiB or 20,000 files (checked on the sizes the entries claim, before
- * anything is allocated, then on what they gave).
+ * anything is allocated, then on what they gave). An entry allocates the larger of its packed and
+ * unpacked sizes: a stored one takes its packed size, whatever it claims unpacked.
  */
 export const readArchive = (bytes: Uint8Array): Map<string, Uint8Array> => {
   if (bytes.length > MAX_ARCHIVE_BYTES) throw tooLarge();
@@ -36,7 +37,7 @@ export const readArchive = (bytes: Uint8Array): Map<string, Uint8Array> => {
   try {
     entries = unzipSync(bytes, {
       filter: (file) => {
-        claimed += file.originalSize;
+        claimed += Math.max(file.size, file.originalSize);
         if (++count > MAX_FILES || claimed > MAX_UNPACKED_BYTES) throw tooLarge();
         return true;
       },

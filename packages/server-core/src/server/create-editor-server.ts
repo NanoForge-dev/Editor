@@ -34,6 +34,10 @@ import { hostAllowed, originAllowed } from './request-guard';
 
 /** A project nobody has a connected editor on is closed after this long without a request. */
 const PROJECT_IDLE_MS = 30 * 60_000;
+/** The account setting listing the hosted projects whose own plugins the user allowed. */
+const TRUSTED_PROJECTS_SETTING = 'plugins.trustedProjects';
+/** Plugin files loaded as scripts (a sandbox policy would not apply to them). */
+const SCRIPT = /\.m?js$/i;
 
 const json = (status: number, body: unknown, headers: HeadersInit = {}) =>
   new Response(JSON.stringify(body), {
@@ -56,6 +60,10 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
     new ProjectRegistry(env, git, api, logs.getLogger('projects')),
   );
   const plugins = new PluginSources(env, logs.getLogger('plugins'));
+  const accountSettings =
+    env.mode === 'ONLINE' && env.apiFeatures.includes('settings')
+      ? new ApiAccountBackend(api)
+      : new FileAccountBackend(env);
   const runtime = store.add(new RuntimeManager(cli, env, logs.getLogger('runtime')));
   const router = new RpcRouter<RequestContext>({
     authorize,
@@ -73,10 +81,7 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       syncProjectServerPlugins: (located) => serverPlugins.syncProject(located),
       cli,
       api,
-      accountSettings:
-        env.mode === 'ONLINE' && env.apiFeatures.includes('settings')
-          ? new ApiAccountBackend(api)
-          : new FileAccountBackend(env),
+      accountSettings,
       projectLocalSettings: new ProjectLocalSettingsStore(env),
       runtime,
       git,
@@ -124,16 +129,27 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
     ]);
   };
 
+  /**
+   * Whether a session may load a project's own plugins, as the client decides: a local folder
+   * that is trusted, or a hosted project its user allowed (`plugins.trustedProjects`). Checked
+   * here too, or a direct link would load them anyway.
+   */
+  const mayLoadProjectPlugins = async (session: Session, projectId: string) => {
+    try {
+      const project = projects.get(session, projectId);
+      if (env.mode === 'OFFLINE') return project.trusted;
+      const allowed = (await accountSettings.get(session)).values[TRUSTED_PROJECTS_SETTING];
+      return Array.isArray(allowed) && allowed.includes(projectId);
+    } catch {
+      return false;
+    }
+  };
+
   const handlePlugin = async (request: Request, pathname: string): Promise<Response> => {
     const { session } = await sessions.resolve(request.headers.get('cookie'), { create: false });
-    const resolved = await plugins.resolveFile(pathname, (projectId) => {
-      try {
-        projects.get(session, projectId);
-        return true;
-      } catch {
-        return false;
-      }
-    });
+    const resolved = await plugins.resolveFile(pathname, (projectId) =>
+      mayLoadProjectPlugins(session, projectId),
+    );
     if (!resolved) return json(404, { error: 'Not found' });
     const cache = {
       dev: 'no-cache',
@@ -141,7 +157,12 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       installed: 'public, max-age=31536000, immutable',
       bundled: 'public, max-age=31536000, immutable',
     }[resolved.plugin.source];
-    return (await fileResponse(resolved.file, cache)) ?? json(404, { error: 'Not found' });
+    const response = await fileResponse(resolved.file, cache);
+    if (!response) return json(404, { error: 'Not found' });
+    /** A project's page or image opened on its own runs nothing on the editor's origin. */
+    if (resolved.plugin.source === 'project' && !SCRIPT.test(resolved.file))
+      response.headers.set('content-security-policy', 'sandbox');
+    return response;
   };
 
   /**
