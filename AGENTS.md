@@ -36,25 +36,29 @@ src/
     ├── client/                        # logic executed client-side (browser)
     │   ├── ecs/                          # editor-side ECS model: asset, component, library, scene, system
     │   ├── action/                         # UI-triggered actions + associated repositories
-    │   ├── event/                            # event bus (events, listeners, types)
-    │   ├── loader/                             # loading the game/project into the editor
-    │   ├── project / project-loader/             # management of the open project
-    │   ├── sync-file-system/                       # file system synchronization
-    │   └── utils/{file-system,indexed-db}           # client utilities (file access, IndexedDB)
+    │   ├── config/                           # client-side editor config (reads PUBLIC_MODE, exposes getConfig())
+    │   ├── event/                              # event bus (events, listeners, types)
+    │   ├── info/                                 # editor info store (info.store.ts)
+    │   ├── loader/                                 # loading the game/project into the editor
+    │   ├── project / project-loader/                 # management of the open project
+    │   ├── sync-file-system/                           # file system synchronization
+    │   └── utils/{file-system,indexed-db}               # client utilities (file access, IndexedDB)
     ├── server/                        # logic executed server-side (SvelteKit server-side)
-    │   ├── api/                           # client for the NanoForge API (repositories, middlewares, types)
-    │   ├── cli/                             # bridge to the `nf` binary (the CLI drives build/dev of the edited project)
-    │   ├── file-system/                       # disk access (reading/writing projects)
-    │   ├── git/                                 # server-side git operations
-    │   ├── project/{library,loader,package,save} # management of persisted projects
-    │   ├── session/project/                         # user session tied to a project
+    │   ├── actions/project/               # server-side project actions (load, save, new, complete, gateway, info)
+    │   ├── api/                              # client for the NanoForge API (repositories, middlewares, types)
+    │   ├── cli/                                # bridge to the `nf` binary (the CLI drives build/dev of the edited project)
+    │   ├── file-system/                          # disk access (reading/writing projects)
+    │   ├── git/                                    # server-side git operations
+    │   ├── project/{library,loader,package,save}     # management of persisted projects
+    │   ├── session/project/                            # user session tied to a project
     │   └── utils/{cookies,request-handler,validators}
     ├── components/                    # reusable Svelte components
     │   ├── ui/                            # shadcn-svelte primitives (button, dialog, form, select, tabs...)
     │   ├── Widget/                          # editor's main widgets: ecs-tree, entity-inspector,
     │   │                                       content-browser, CodeEditor, EditorGame, OutputLog
     │   ├── Panel / Tabs / Menu                # editor's panel/tab/menu system
-    │   ├── dialogs / forms / marketplace       # dialogs, forms, component marketplace
+    │   ├── project-loader/                      # project loading spinners/progress bar
+    │   ├── dialogs / forms / marketplace           # dialogs, forms, component marketplace
     └── utils/                         # generic utilities (http, types)
 
 messages/                     # translations (en.json, fr.json) for Paraglide
