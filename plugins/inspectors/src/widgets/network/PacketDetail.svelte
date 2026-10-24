@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type decodePayload, formatBytes, type hexDump } from '../../network/packets';
+  import { type Decoded, formatBytes, type hexDump } from '../../network/packets';
   import type { Packet } from '../../recorder/recorder';
 
   interface Props {
@@ -8,7 +8,9 @@
     detail:
       | {
           bytes: Uint8Array;
-          decoded: ReturnType<typeof decodePayload>;
+          /** The type name of a typed packet. */
+          name: string | undefined;
+          decoded: Decoded;
           rows: ReturnType<typeof hexDump>;
           missing: number;
         }
@@ -28,6 +30,9 @@
       <p class="note">
         The first {detail.bytes.length} bytes: {detail.missing} more were not sent to the editor.
       </p>
+    {/if}
+    {#if detail.name}
+      <p>Packet type <code aria-label="Packet type">{detail.name}</code></p>
     {/if}
     {#if detail.decoded.kind !== 'binary'}
       <h4>Decoded ({detail.decoded.kind === 'json' ? 'JSON' : 'text'})</h4>

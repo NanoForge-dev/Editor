@@ -10,6 +10,8 @@ export default defineConfig({
     include: ['test/**/*.spec.ts'],
     exclude: ['**/node_modules', '**/dist', '**/*.svelte.spec.ts'],
     passWithNoTests: true,
+    /** Tests that build a ts-morph project or a TypeScript program take seconds on CI runners. */
+    testTimeout: 30_000,
     globalSetup: [fileURLToPath(new URL('./vitest.global-setup.ts', import.meta.url))],
     setupFiles: [fileURLToPath(new URL('./vitest.setup.ts', import.meta.url))],
     coverage: {

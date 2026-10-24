@@ -95,7 +95,7 @@ test('adds a shared library, chooses the apps that use it, renames and removes i
     .getByRole('checkbox', { name: 'pong-network-client' })
     .uncheck();
   await expect.poll(() => dependencies(CLIENT)).toEqual({});
-  expect(read(CLIENT_CONFIG)).toContain('libs: [],');
+  await expect.poll(() => read(CLIENT_CONFIG)).toContain('libs: [],');
   expect(dependencies(SERVER)).toEqual({ '@pong-network/shared': 'workspace:*' });
   await expect(components.getByRole('button', { name: 'C Score', exact: true })).toHaveCount(0);
 

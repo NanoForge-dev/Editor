@@ -113,7 +113,7 @@ test.describe('with the engine', () => {
     });
     await expect(page.getByRole('img', { name: 'Packets per second' })).toBeVisible();
 
-    await page.getByRole('textbox', { name: 'Search payloads' }).fill('"type":"assignId"');
+    await page.getByRole('textbox', { name: 'Search payloads' }).fill('assignId');
     const direction = page.getByRole('group', { name: 'Direction' });
     await direction.getByRole('button', { name: 'In', exact: true }).click();
     await page
@@ -124,10 +124,11 @@ test.describe('with the engine', () => {
     await expect(packets.first()).toContainText('TCP');
     await packets.first().click();
     const detail = page.getByRole('complementary', { name: 'Packet detail' });
+    await expect(detail.getByLabel('Packet type')).toHaveText('assignId');
     await expect(detail.getByText('Decoded (JSON)')).toBeVisible();
-    await expect(detail.getByLabel('Decoded payload')).toContainText('"type": "assignId"');
+    await expect(detail.getByLabel('Decoded payload')).toContainText('"assigned":');
     await expect(detail.getByRole('group', { name: 'Payload bytes' })).toContainText(
-      '7b 22 74 79 70 65',
+      '08 61 73 73 69 67 6e 49 64',
     );
     await direction.getByRole('button', { name: 'Out' }).click();
     await expect(packets).toHaveCount(0);

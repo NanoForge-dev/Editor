@@ -41,6 +41,31 @@ export const decodePayload = (bytes: Uint8Array, complete = true): Decoded => {
   return { kind: 'text', text };
 };
 
+export interface ReadPacket {
+  /** The type name of a typed packet (`definePacket`), absent for `sendData` and older packets. */
+  readonly name?: string;
+  /** The payload, without the type name in front. */
+  readonly decoded: Decoded;
+}
+
+/**
+ * A packet as people read it. The network library writes `[name length][name][payload]`
+ * (a length of 0 for `sendData`); older engines sent the payload alone, read as such when it is
+ * JSON, or when the bytes after the first one do not start with a plausible name (no spaces nor
+ * JSON punctuation).
+ */
+export const readPacket = (bytes: Uint8Array, complete = true): ReadPacket => {
+  const whole = decodePayload(bytes, complete);
+  if (whole.kind === 'json' || !bytes.length) return { decoded: whole };
+  const end = 1 + bytes[0]!;
+  if (bytes.length < end) return { decoded: whole };
+  const payload = decodePayload(bytes.subarray(end), complete);
+  if (end === 1) return { decoded: payload };
+  const name = decodePayload(bytes.subarray(1, end));
+  if (name.kind !== 'text' || /[\s"{}[\]:,]/.test(name.text)) return { decoded: whole };
+  return { name: name.text, decoded: payload };
+};
+
 export interface DumpRow {
   /** Offset of the row, hex. */
   readonly offset: string;

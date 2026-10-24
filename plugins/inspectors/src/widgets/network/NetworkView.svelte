@@ -5,7 +5,7 @@
 
   import SourcePicker from '../SourcePicker.svelte';
   import { follow } from '../follow.svelte';
-  import { decodePayload, formatBytes, hexDump, hexToBytes } from '../../network/packets';
+  import { formatBytes, hexDump, hexToBytes, readPacket } from '../../network/packets';
   import type { Packet } from '../../recorder/recorder';
   import { getRecorder } from '../../session/recorder-session';
   import PacketDetail from './PacketDetail.svelte';
@@ -29,14 +29,19 @@
   const totals = $derived(record?.network ?? []);
 
   /** Payload bytes the editor has, and how people read them (computed once per packet). */
-  const details = new WeakMap<Packet, { bytes: Uint8Array; text: string; search: string }>();
+  const details = new WeakMap<
+    Packet,
+    { bytes: Uint8Array; read: ReturnType<typeof readPacket>; text: string; search: string }
+  >();
   const detailOf = (packet: Packet) => {
     let found = details.get(packet);
     if (!found) {
       const bytes = hexToBytes(packet.data ?? packet.head);
-      const decoded = decodePayload(bytes, bytes.length >= packet.size);
-      const text = decoded.kind === 'binary' ? '' : decoded.text;
-      found = { bytes, text, search: text.toLowerCase().replace(/\s+/g, '') };
+      const read = readPacket(bytes, bytes.length >= packet.size);
+      const text = [read.name, read.decoded.kind === 'binary' ? '' : read.decoded.text]
+        .filter(Boolean)
+        .join(' ');
+      found = { bytes, read, text, search: text.toLowerCase().replace(/\s+/g, '') };
       details.set(packet, found);
     }
     return found;
@@ -57,10 +62,11 @@
   const selected = $derived(packets.find((packet) => packet.id === selectedId));
   const selectedDetail = $derived.by(() => {
     if (!selected) return undefined;
-    const { bytes } = detailOf(selected);
+    const { bytes, read } = detailOf(selected);
     return {
       bytes,
-      decoded: decodePayload(bytes, bytes.length >= selected.size),
+      name: read.name,
+      decoded: read.decoded,
       rows: hexDump(bytes),
       missing: selected.size - bytes.length,
     };

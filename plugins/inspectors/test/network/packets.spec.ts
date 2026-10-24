@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodePayload, formatBytes, hexDump, hexToBytes } from '../../src/network/packets';
+import {
+  decodePayload,
+  formatBytes,
+  hexDump,
+  hexToBytes,
+  readPacket,
+} from '../../src/network/packets';
 
 const bytesOf = (text: string) => new TextEncoder().encode(text);
 
@@ -31,6 +37,31 @@ describe('packets', () => {
     const cut = bytesOf('abé').subarray(0, 3);
     expect(decodePayload(cut, false)).toEqual({ kind: 'text', text: 'ab' });
     expect(decodePayload(cut, true)).toEqual({ kind: 'binary' });
+  });
+
+  it('reads the type name of typed packets, and older packets as they are', () => {
+    const framed = (name: string, payload: string) =>
+      new Uint8Array([name.length, ...bytesOf(name), ...bytesOf(payload)]);
+    expect(readPacket(framed('assignId', '{"id":0}'))).toEqual({
+      name: 'assignId',
+      decoded: { kind: 'json', text: '{\n  "id": 0\n}' },
+    });
+    expect(readPacket(framed('play', ''))).toEqual({ name: 'play', decoded: { kind: 'binary' } });
+    expect(readPacket(framed('', 'hello'))).toEqual({ decoded: { kind: 'text', text: 'hello' } });
+    expect(readPacket(framed('move', '{"x":1'), false)).toEqual({
+      name: 'move',
+      decoded: { kind: 'text', text: '{"x":1' },
+    });
+    expect(readPacket(bytesOf('{"type":"play"}'))).toEqual({
+      decoded: { kind: 'json', text: '{\n  "type": "play"\n}' },
+    });
+    expect(readPacket(framed('playerMove', '{"x":1}'))).toMatchObject({ name: 'playerMove' });
+    expect(readPacket(framed('spawnEntity!', '{}'))).toMatchObject({ name: 'spawnEntity!' });
+    expect(readPacket(framed('x'.repeat(40), '1'))).toMatchObject({ name: 'x'.repeat(40) });
+    const cut = `{"type":"state","items":[${'1,'.repeat(70)}`;
+    expect(readPacket(bytesOf(cut), false)).toEqual({ decoded: { kind: 'text', text: cut } });
+    expect(readPacket(new Uint8Array([9, 1, 2]))).toEqual({ decoded: { kind: 'binary' } });
+    expect(readPacket(new Uint8Array([2, 1, 2, 3]))).toEqual({ decoded: { kind: 'binary' } });
   });
 
   it('dumps bytes in rows with offsets and printable characters', () => {
