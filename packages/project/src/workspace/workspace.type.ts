@@ -1,0 +1,64 @@
+import type { AppModel } from '@nanoforge-dev/editor-protocol';
+
+/**
+ * Changes of a project's workspace: its apps (clients, servers) and its shared libraries
+ * (ADR 0004). Each operation edits the project's files through a small file interface and
+ * resolves with what undoes it.
+ *
+ * An app **uses** a shared library when its `package.json` lists the library's package name in
+ * `dependencies`: the meaning it has in any workspace.
+ */
+
+/** The files of the project, as the operations need them. */
+export interface WorkspaceIo {
+  exists(path: string): boolean;
+  /** Paths of the project's files (what the editor lists: no `node_modules`). */
+  files(): readonly string[];
+  read(path: string): Promise<string>;
+  /**
+   * A file's text as the user sees it: an open document's, unsaved edits included. Searches that
+   * must not miss a file read it (an import typed but not saved yet). Defaults to `read`.
+   */
+  readEdited?(path: string): Promise<string>;
+  /** Creates or replaces a file. */
+  write(path: string, text: string): Promise<void>;
+  /** Removes a file or folder; resolves with what brings it back. */
+  remove(path: string): Promise<() => Promise<void>>;
+  /** Copies a file or a folder with everything in it. */
+  copy(from: string, to: string): Promise<void>;
+  /**
+   * Points a code file's imports of package `from` at `to`, reading the code (not a text search:
+   * comments and strings stay as they are), through the open document if any. Resolves with the
+   * edit made, or undefined when the file has none. Without it, a library that is imported can't
+   * be renamed: a text search would also rewrite look-alikes in comments and strings.
+   */
+  renameImports?(path: string, from: string, to: string): Promise<ImportsEdit | undefined>;
+}
+
+/** An edit of a file's imports, as `renameImports` made it. */
+export interface ImportsEdit {
+  undo(): Promise<void>;
+  /** False when the file changed since: undoing would lose that change. */
+  isValid(): Promise<boolean>;
+}
+
+export type Undo = () => Promise<void>;
+
+export interface NewLibrary {
+  /** Folder in `libs/`. */
+  readonly folder: string;
+  /** How apps import it: `@my-game/shared`. */
+  readonly packageName: string;
+  /** The apps (and libraries) that use it from the start. */
+  readonly usedBy: readonly Pick<AppModel, 'root' | 'type'>[];
+}
+
+export interface NewApp {
+  readonly type: 'client' | 'server';
+  /** Folder in `apps/`. */
+  readonly folder: string;
+  /** Package name of the app. */
+  readonly name: string;
+  /** An app of the same type to copy; an empty app without it. */
+  readonly from?: AppModel;
+}

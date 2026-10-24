@@ -1,0 +1,216 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/file-manager",
+  "version": "0.1.0",
+  "displayName": "File manager",
+  "description": "Browse and organize the project's files: tree, asset grid, templates, import, undo.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "entry": {
+    "client": "index.js"
+  },
+  "activation": [
+    "onWidget:file-manager.files",
+    "onCommand:fileManager.import",
+    "onCommand:fileManager.preview"
+  ],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "file-manager.files",
+        "title": "Files",
+        "icon": "folder-tree",
+        "defaultSlot": "leftTop",
+        "order": 100,
+        "historyContext": "file-manager"
+      }
+    ],
+    "commands": [
+      {
+        "id": "fileManager.newFile",
+        "title": "New file\u2026",
+        "category": "File"
+      },
+      {
+        "id": "fileManager.newFolder",
+        "title": "New folder\u2026",
+        "category": "File"
+      },
+      {
+        "id": "fileManager.newFromTemplate",
+        "title": "New from template\u2026",
+        "category": "File",
+        "palette": false
+      },
+      {
+        "id": "fileManager.import",
+        "title": "Import files\u2026",
+        "category": "File"
+      },
+      {
+        "id": "fileManager.rename",
+        "title": "Rename\u2026",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.delete",
+        "title": "Delete",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.duplicate",
+        "title": "Duplicate",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.copy",
+        "title": "Copy",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.cut",
+        "title": "Cut",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.paste",
+        "title": "Paste",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.reveal",
+        "title": "Reveal in file manager",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.download",
+        "title": "Download",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.copyPath",
+        "title": "Copy path",
+        "category": "Files"
+      },
+      {
+        "id": "fileManager.toggleHidden",
+        "title": "Show or hide hidden files",
+        "category": "View"
+      },
+      {
+        "id": "fileManager.preview",
+        "title": "Preview",
+        "category": "File",
+        "palette": false
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "Delete",
+        "command": "fileManager.delete",
+        "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+      },
+      {
+        "key": "Mod+C",
+        "command": "fileManager.copy",
+        "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+      },
+      {
+        "key": "Mod+X",
+        "command": "fileManager.cut",
+        "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+      },
+      {
+        "key": "Mod+V",
+        "command": "fileManager.paste",
+        "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+      },
+      {
+        "key": "Mod+D",
+        "command": "fileManager.duplicate",
+        "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+      }
+    ],
+    "menus": [
+      {
+        "menu": "file",
+        "command": "fileManager.newFile",
+        "group": "new",
+        "order": 0
+      },
+      {
+        "menu": "file",
+        "command": "fileManager.newFolder",
+        "group": "new",
+        "order": 1
+      },
+      {
+        "menu": "file",
+        "command": "fileManager.import",
+        "group": "new",
+        "order": 2
+      },
+      {
+        "menu": "view",
+        "command": "fileManager.toggleHidden",
+        "group": "files"
+      }
+    ],
+    "settings": [
+      {
+        "key": "exclude",
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": ["node_modules/", "dist/", ".turbo/", "coverage/", ".*", "!.env"],
+        "title": "Hidden files",
+        "description": "Files the file manager hides (gitignore syntax). .nfignore hides files from the whole editor.",
+        "category": "Editor/Files",
+        "order": 0
+      },
+      {
+        "key": "showHidden",
+        "type": "boolean",
+        "default": false,
+        "title": "Show hidden files",
+        "category": "Editor/Files",
+        "order": 1,
+        "scopes": ["account", "machine"]
+      },
+      {
+        "key": "view",
+        "type": "string",
+        "enum": ["tree", "split"],
+        "default": "split",
+        "title": "View",
+        "description": "Tree only, or tree and asset grid.",
+        "category": "Editor/Files",
+        "order": 2,
+        "scopes": ["account", "machine"]
+      },
+      {
+        "key": "gridSize",
+        "type": "number",
+        "integer": true,
+        "minimum": 48,
+        "maximum": 256,
+        "default": 96,
+        "title": "Thumbnail size (px)",
+        "category": "Editor/Files",
+        "order": 3,
+        "scopes": ["account", "machine"]
+      }
+    ],
+    "documentEditors": [
+      {
+        "pattern": "**/*.{png,jpg,jpeg,gif,webp,avif,bmp,ico,mp3,wav,ogg,flac,m4a,mp4,webm}",
+        "widget": "file-manager.files",
+        "command": "fileManager.preview",
+        "title": "Preview"
+      }
+    ]
+  }
+}

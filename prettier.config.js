@@ -4,14 +4,6 @@ export default {
   ...prettierConfig,
   plugins: ['@trivago/prettier-plugin-sort-imports', 'prettier-plugin-svelte'],
   overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }],
-  importOrder: [
-    '^.app/(.*)$',
-    '^.env/(.*)$',
-    '^.lib/(.*)$',
-    '^@utils/(.*)$',
-    '^@utils-client/(.*)$',
-    '^@utils-server/(.*)$',
-    '^[./]',
-  ],
+  importOrder: ['^@nanoforge-dev/(.*)$', '^\\$app/(.*)$', '^\\$lib/(.*)$', '^[./]'],
   singleQuote: true,
 };

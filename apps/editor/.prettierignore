@@ -1,0 +1,21 @@
+# Ignore files for PNPM, NPM and YARN
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+bun.lock
+
+.turbo/
+node_modules/
+dist/
+coverage/
+CHANGELOG.md
+
+test/fixtures/
+test/.tmp-*/
+
+.svelte-kit/
+build/
+test-results/
+e2e/.workspace*/
+.nanoforge/
+.data/

@@ -1,0 +1,110 @@
+---
+title: 'Widgets and styles'
+icon: 'layout-panel-left'
+description: 'Panels, screens, their state, and how to style them like the editor'
+---
+
+A **widget** is a panel in a dock (or a floating window), or a **screen** in the center. The manifest declares it; the code gives it a view.
+
+## Declare and show
+
+```json
+"widgets": [
+  { "id": "counter.panel", "title": "Counter", "icon": "plus", "defaultSlot": "rightBottom" }
+]
+```
+
+```ts
+import { WIDGET_VIEWS, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
+
+context.subscriptions.add(
+  context.contribute(WIDGET_VIEWS, {
+    id: 'counter.panel',
+    component: Panel as Component<{ instance: WidgetInstance }>,
+  }),
+);
+```
+
+With `"activation": ["onWidget:counter.panel"]`, the plugin loads when the panel is first shown. Users move panels between docks, float them and close them; _View › Panels_ lists them all.
+
+## The widget instance
+
+The component gets `instance`:
+
+| Member                          | Use                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `services`                      | The editor's services.                                                               |
+| `visible`                       | An observable: true while the widget is on screen.                                   |
+| `onShow`, `onHide`              | Events of the same.                                                                  |
+| `getState()`, `setState(state)` | A small JSON state (scroll, filters, expanded nodes) kept across reloads.            |
+| `setHistoryContext(id)`         | Which history `Ctrl+Z` acts on while the widget has focus. See [history](./history). |
+
+<Note>
+  A tab that was shown once stays mounted while hidden. Do expensive work, and ask the running game
+  for data, only while `instance.visible` is true.
+</Note>
+
+## Svelte rules
+
+- Plugins compile in **runes mode** (`$props`, `$state`, `$derived`, `$effect`).
+- A value that changes outside Svelte must be an observable (read with `$`), or state you update from a subscription.
+- A store that hands back the same array or object does not update the view: return a new one.
+
+## The component kit
+
+Use the editor's components so your panel looks and behaves like the rest: `Button`, `IconButton`, `Input`, `NumberInput`, `Checkbox`, `Switch`, `Select`, `Combobox`, `Tabs`, `Tree`, `Menu`, `ContextMenu`, `Dialog`, `Tooltip`, `EmptyState`, `Icon`, `Splitter`, `PropertyGrid`, `ColorPicker`, `Vector2Input`.
+
+```svelte
+<script lang="ts">
+  import { Button, EmptyState, Input } from '@nanoforge-dev/editor-sdk/ui';
+
+  let name = $state('');
+</script>
+
+<Input bind:value={name} placeholder="Name" aria-label="Name" />
+<Button variant="primary" disabled={!name}>Create</Button>
+```
+
+- Give every control an accessible name (`aria-label` when there is no visible label).
+- Write labels in sentence case, with a verb that says what the button does.
+- Icons are Lucide names. A plugin adds its own with `registerIcons({ name: Component })`. A dock panel shows only its icon, in a stripe on the edge of the window, before its plugin activates: until then, an icon the plugin registers shows as a box. Prefer an `onStartup` registration, or an icon the editor already has.
+
+## Styles
+
+Component `<style>` blocks are built into one CSS file (`build.lib.cssFileName` in `vite.config.ts`). Inject it when the plugin starts:
+
+```ts
+const css = await fetch(context.resolveAsset('counter.css')).then((r) => (r.ok ? r.text() : ''));
+context.subscriptions.add(context.services.get(StyleServiceToken).inject(context.name, css));
+```
+
+The editor puts it in a cascade layer of the plugin (`plugins.<name>`), and removes it with the plugin.
+
+### Theme tokens
+
+Use the editor's CSS variables, never fixed colors: your panel then follows the theme.
+
+| Variables                                                          | For                                     |
+| ------------------------------------------------------------------ | --------------------------------------- |
+| `--nf-color-bg`, `-surface`, `-raised`, `-sunken`                  | Backgrounds: app, panels, menus, inputs |
+| `--nf-color-hover`, `-pressed`, `-selection`                       | States                                  |
+| `--nf-color-border`, `-border-strong`                              | Lines                                   |
+| `--nf-color-text`, `-text-muted`, `-text-faint`                    | Text                                    |
+| `--nf-color-accent`, `-accent-hover`, `-on-accent`, `-accent-text` | Primary actions                         |
+| `--nf-color-success`, `-warning`, `-danger`                        | Status                                  |
+| `--nf-space-1` … `--nf-space-4`                                    | Spacing                                 |
+| `--nf-font-size-sm`, `--nf-font-size-lg`                           | Text sizes                              |
+| `--nf-radius-control`, `--nf-radius-float`                         | Corners                                 |
+| `--nf-control-height`                                              | Height of buttons and inputs            |
+
+A plugin adds a theme with `contributes.themes`: an `id`, a `label`, a `kind` (`dark` or `light`) and a color for every token.
+
+## Screens
+
+A widget with `"kind": "screen"` is a main screen, next to Project, Scene, Script and Game. It is declared and given a view the same way.
+
+## Opening a widget from code
+
+```ts
+await context.executeCommand('workbench.openWidget', 'counter.panel');
+```

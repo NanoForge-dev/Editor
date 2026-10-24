@@ -1,0 +1,98 @@
+---
+title: 'History'
+icon: 'history'
+description: 'Make what your plugin does undoable'
+---
+
+Undo in the editor is not one global list. Each area has its own **history context**: each file, the layout, the Files panel, and any context a plugin registers. `Ctrl+Z` acts on the context of what has focus, and the History panel shows them all.
+
+## A command
+
+A step is a `HistoryCommand`: a label and two functions.
+
+```ts
+const add = (step: number) => ({
+  label: `Add ${step}`,
+  do: () => count.set(count.get() + step),
+  undo: () => count.set(count.get() - step),
+});
+```
+
+`do` and `undo` may be async. Other fields: `mergeKey` (commands with the same key pushed close together become one step, for a drag or a slider), `preview` (what changed, for the History panel).
+
+## A context of your own
+
+```ts
+import { HistoryServiceToken } from '@nanoforge-dev/editor-sdk';
+
+const history = context.services
+  .get(HistoryServiceToken)
+  .registerContext({ id: 'counter', label: 'Counter', owner: context.name });
+context.subscriptions.add(history);
+
+await history.stack.push(add(1)); // runs do(), then records the step
+await history.stack.undo();
+await history.stack.redo();
+```
+
+`push` **runs** the command: do not apply the change yourself first.
+
+### Several changes, one step
+
+```ts
+await history.stack.transaction('Add twice', async (tx) => {
+  await tx.push(add(1));
+  await tx.push(add(1));
+});
+```
+
+If the function throws, the steps already done are undone. `compositeCommand` builds one command from several when you have them up front.
+
+## Point undo at your context
+
+`Ctrl+Z` needs to know which context your panel uses.
+
+```svelte
+<script lang="ts">
+  const { instance } = $props();
+  $effect(() => {
+    instance.setHistoryContext('counter');
+    return () => instance.setHistoryContext(undefined);
+  });
+</script>
+```
+
+Or, when the panel always uses the same context, `"historyContext": "counter"` on the widget in the manifest.
+
+While a text field has focus, `Ctrl+Z` stays the field's own undo.
+
+## Changing files
+
+Do not write to files directly when the change should be undoable: edit them through the document service. The step then lands in the **file's** history (`file:<path>`), next to what the user typed, and works whether the file is open in the code editor or not.
+
+```ts
+import { DocumentServiceToken } from '@nanoforge-dev/editor-sdk';
+
+const documents = context.services.get(DocumentServiceToken);
+await documents.edit('apps/client/src/main.ts', [{ start: 0, end: 0, text: '// hello\n' }], {
+  label: 'Add a greeting',
+});
+```
+
+An edit is a list of `{ start, end, text }` offsets in the file's current text. A step whose file changed underneath it (the content it produced is gone) is dropped rather than applied to the wrong text.
+
+To change code by its meaning rather than by offsets, see [code and code generation](./code-and-codegen).
+
+## A change across several files
+
+Take the commands instead of pushing them, and group them in a context of your own:
+
+```ts
+const commands = [
+  documents.editCommand('a.ts', editsA, { label: 'Move Health' }),
+  documents.editCommand('b.ts', editsB, { label: 'Move Health' }),
+];
+await history.stack.push(compositeCommand('Move Health', commands));
+```
+
+One undo then reverts both files.

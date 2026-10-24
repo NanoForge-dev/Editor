@@ -1,0 +1,18 @@
+{
+  "name": "breakout-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@nanoforge-dev/asset": "*",
+    "@nanoforge-dev/common": "*",
+    "@nanoforge-dev/core": "*",
+    "@nanoforge-dev/env": "*",
+    "@nanoforge-dev/ecs": "*",
+    "@nanoforge-dev/editor-lib": "*",
+    "@nanoforge-dev/graphics-2d": "*",
+    "@nanoforge-dev/input": "*",
+    "@nanoforge-dev/scene": "*",
+    "typescript": "^5.9.0 || ^6.0.0"
+  }
+}

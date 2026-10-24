@@ -9,6 +9,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
   PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
@@ -27,6 +30,12 @@ jobs:
 
       - name: Run linter
         run: pnpm lint
+
+      - name: Run type checks
+        run: pnpm typecheck
+
+      - name: Install browsers for component tests
+        run: pnpm --filter @nanoforge-dev/editor-ui exec playwright install --with-deps chromium
 
       - name: Run tests
         run: pnpm test:unit

@@ -1,0 +1,175 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/code-editor",
+  "version": "0.1.0",
+  "displayName": "Code editor",
+  "description": "Edit the game's code with Monaco: tabs, split view, types, diagnostics and Prettier.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": [
+    "onCommand:codeEditor.open",
+    "onCommand:codeEditor.compare",
+    "onWidget:code-editor.script",
+    "onScreen:code-editor.script"
+  ],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "code-editor.script",
+        "title": "Script",
+        "icon": "code",
+        "kind": "screen",
+        "order": 200
+      }
+    ],
+    "documentEditors": [
+      {
+        "pattern": "**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs,json,jsonc,md,mdx,css,scss,less,html,svelte,vue,yaml,yml,toml,txt,xml,svg,glsl,wgsl,sh,env,lock,log}",
+        "widget": "code-editor.script",
+        "command": "codeEditor.open",
+        "title": "Code editor"
+      },
+      {
+        "pattern": "**/{.*,*rc,Dockerfile,LICENSE,Makefile}",
+        "widget": "code-editor.script",
+        "command": "codeEditor.open",
+        "title": "Code editor",
+        "priority": -10
+      }
+    ],
+    "commands": [
+      {
+        "id": "codeEditor.open",
+        "title": "Open in code editor",
+        "category": "File",
+        "palette": false
+      },
+      {
+        "id": "codeEditor.compare",
+        "title": "Compare with another version",
+        "category": "Code",
+        "palette": false
+      },
+      { "id": "codeEditor.save", "title": "Save", "category": "File" },
+      { "id": "codeEditor.saveAll", "title": "Save all", "category": "File" },
+      { "id": "codeEditor.revert", "title": "Revert file", "category": "File" },
+      { "id": "codeEditor.format", "title": "Format file", "category": "Code" },
+      { "id": "codeEditor.organizeImports", "title": "Organize imports", "category": "Code" },
+      { "id": "codeEditor.splitRight", "title": "Split editor right", "category": "View" },
+      { "id": "codeEditor.closeTab", "title": "Close tab", "category": "View" }
+    ],
+    "keybindings": [
+      {
+        "key": "Mod+S",
+        "command": "codeEditor.save",
+        "when": "focusedWidget == 'code-editor.script'"
+      },
+      { "key": "Mod+K S", "command": "codeEditor.saveAll" },
+      {
+        "key": "Shift+Alt+F",
+        "command": "codeEditor.format",
+        "when": "focusedWidget == 'code-editor.script'"
+      },
+      {
+        "key": "Shift+Alt+O",
+        "command": "codeEditor.organizeImports",
+        "when": "focusedWidget == 'code-editor.script'"
+      },
+      {
+        "key": "Mod+\\",
+        "command": "codeEditor.splitRight",
+        "when": "focusedWidget == 'code-editor.script'"
+      },
+      {
+        "key": "Alt+W",
+        "command": "codeEditor.closeTab",
+        "when": "focusedWidget == 'code-editor.script'"
+      }
+    ],
+    "menus": [
+      { "menu": "file", "command": "codeEditor.save", "group": "save", "order": 0 },
+      { "menu": "file", "command": "codeEditor.saveAll", "group": "save", "order": 1 },
+      { "menu": "file", "command": "codeEditor.revert", "group": "save", "order": 2 },
+      { "menu": "edit", "command": "codeEditor.format", "group": "code", "order": 0 },
+      { "menu": "edit", "command": "codeEditor.organizeImports", "group": "code", "order": 1 },
+      { "menu": "view", "command": "codeEditor.splitRight", "group": "editor" }
+    ],
+    "settings": [
+      {
+        "key": "autoSave.afterDelay",
+        "type": "boolean",
+        "default": false,
+        "title": "Save after a delay",
+        "description": "Save files automatically when you stop typing.",
+        "category": "Editor/Code editor/Saving",
+        "order": 0
+      },
+      {
+        "key": "autoSave.delayMs",
+        "type": "number",
+        "integer": true,
+        "minimum": 100,
+        "maximum": 60000,
+        "default": 1000,
+        "title": "Autosave delay (ms)",
+        "category": "Editor/Code editor/Saving",
+        "order": 1
+      },
+      {
+        "key": "autoSave.onFocusLoss",
+        "type": "boolean",
+        "default": false,
+        "title": "Save when the editor loses focus",
+        "description": "Save when you leave the editor, switch tabs or leave the window.",
+        "category": "Editor/Code editor/Saving",
+        "order": 2
+      },
+      {
+        "key": "onSave.format",
+        "type": "boolean",
+        "default": false,
+        "title": "Reformat with Prettier on save",
+        "description": "Uses the project's Prettier and its config.",
+        "category": "Editor/Code editor/Actions on save",
+        "order": 0
+      },
+      {
+        "key": "onSave.organizeImports",
+        "type": "boolean",
+        "default": false,
+        "title": "Organize imports on save",
+        "description": "Sorts imports and removes unused ones in TypeScript and JavaScript files.",
+        "category": "Editor/Code editor/Actions on save",
+        "order": 1
+      },
+      {
+        "key": "fontSize",
+        "type": "number",
+        "integer": true,
+        "minimum": 8,
+        "maximum": 32,
+        "default": 13,
+        "title": "Font size",
+        "category": "Editor/Code editor/Display",
+        "scopes": ["account", "machine"]
+      },
+      {
+        "key": "minimap",
+        "type": "boolean",
+        "default": true,
+        "title": "Show the minimap",
+        "category": "Editor/Code editor/Display",
+        "scopes": ["account", "machine"]
+      },
+      {
+        "key": "wordWrap",
+        "type": "boolean",
+        "default": false,
+        "title": "Wrap long lines",
+        "category": "Editor/Code editor/Display",
+        "scopes": ["account", "machine"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,197 @@
+---
+title: 'SDK'
+icon: 'code'
+description: 'The activation context and the services of the editor'
+---
+
+A plugin imports the SDK and nothing else from the editor.
+
+| Module                             | Holds                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `@nanoforge-dev/editor-sdk`        | The plugin entry, services, observables, settings, history, code, runtime. |
+| `@nanoforge-dev/editor-sdk/ui`     | Extension points of the workbench, UI services, and the component kit.     |
+| `@nanoforge-dev/editor-sdk/worker` | `defineWorkerPlugin` and the types of worker entries.                      |
+
+## The plugin entry
+
+```ts
+import { definePlugin } from '@nanoforge-dev/editor-sdk';
+
+export default definePlugin({
+  activate(context) {
+    // add things to the editor
+  },
+  deactivate() {
+    // optional: the editor already disposes context.subscriptions
+  },
+});
+```
+
+`activate` may be `async`. The editor waits for it before running the command or showing the panel that activated the plugin.
+
+## The context
+
+| Member                                                 | Use                                                                                                   |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `name`, `manifest`, `source`                           | The plugin's name, its manifest, where it was loaded from.                                            |
+| `subscriptions`                                        | A store of disposables, disposed when the plugin stops. **Add everything you register.**              |
+| `services`                                             | `services.get(Token)` gives a service; `tryGet` gives `undefined` when it is not there.               |
+| `registerCommand(id, handler)`                         | The handler of a command declared in the manifest. Its first argument is the services.                |
+| `executeCommand(id, ...args)`                          | Runs any command (it activates the plugin that owns it).                                              |
+| `contribute(point, value)`                             | Adds a value to an [extension point](./extension-points).                                             |
+| `contributions(point)`                                 | An observable of what an extension point holds.                                                       |
+| `contextKeys`                                          | Sets and reads keys used in `when` clauses.                                                           |
+| `logger`                                               | `debug`, `info`, `warn`, `error`. Lines show in the Console under _Plugins_, with your plugin's name. |
+| `t(key, params)`, `registerMessages(locale, messages)` | Translations of the plugin.                                                                           |
+| `resolveAsset(path)`                                   | URL of a file of the plugin's built folder.                                                           |
+| `eligibleApps`                                         | An observable of the project's apps that have the engine libraries the plugin requires.               |
+| `provide(token, value)`                                | Offers a service to the editor and to other plugins.                                                  |
+| `override(token, decorate)`                            | Wraps a service of the editor.                                                                        |
+| `scope`                                                | A container private to the plugin.                                                                    |
+
+Everything that registers something returns a **disposable**. Pass it to `context.subscriptions.add(...)`.
+
+## Services
+
+```ts
+import { EditorServices, ProjectServiceToken } from '@nanoforge-dev/editor-sdk';
+
+const commands = context.services.get(EditorServices.Commands);
+const project = context.services.get(ProjectServiceToken).current.get();
+```
+
+| Token                                                                               | Service                                                                                                                     |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `EditorServices.Commands`                                                           | The command registry: `execute(id, ...args)`.                                                                               |
+| `EditorServices.ContextKeys`                                                        | Context keys of `when` clauses.                                                                                             |
+| `EditorServices.EventBus`                                                           | Events between plugins.                                                                                                     |
+| `EditorServices.Extensions`                                                         | The extension registry (`getValues(point)`).                                                                                |
+| `EditorServices.Localization`, `EditorServices.Logger`, `EditorServices.EngineLibs` | Translations, loggers, engine libraries of apps.                                                                            |
+| `ProjectServiceToken`                                                               | The open project: `current` (an observable), with its `model` (apps, engine libraries) and its `fs` (files, change events). |
+| `SettingsServiceToken`, `SettingsRegistryToken`                                     | [Settings](./settings).                                                                                                     |
+| `HistoryServiceToken`                                                               | [History](./history): undo and redo.                                                                                        |
+| `DocumentServiceToken`                                                              | Text of files, open or not, and edits that can be undone.                                                                   |
+| `CodeServiceToken`, `CatalogServiceToken`, `DiagnosticsServiceToken`                | [Code](./code-and-codegen): analysis, items, problems.                                                                      |
+| `RuntimeServiceToken`                                                               | The running game: play, pause, stop, and its events. See [engine libraries](./engine-libs).                                 |
+| `RpcClientToken`                                                                    | Calls to the editor's server.                                                                                               |
+| `PluginHostToken`                                                                   | The plugins and their state.                                                                                                |
+| `AccountSyncToken`                                                                  | State of the account settings sync.                                                                                         |
+
+From `@nanoforge-dev/editor-sdk/ui`:
+
+| Token                                            | Service                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| `NotificationServiceToken`                       | `notify(severity, message, { detail, actions, timeout })`.  |
+| `PromptServiceToken`                             | `ask(options)`: asks the user for a text in a small dialog. |
+| `StyleServiceToken`                              | Injects the plugin's CSS.                                   |
+| `ThemeServiceToken`                              | The current theme and the list of themes.                   |
+| `WorkbenchServiceToken`, `LayoutControllerToken` | Widgets and the layout.                                     |
+| `KeybindingServiceToken`                         | The resolved shortcuts.                                     |
+
+## Observables
+
+Values that change are `Observable`s: `get()` reads, `subscribe(listener)` listens and returns an unsubscribe function. In Svelte, read one as a store with `$`.
+
+```ts
+import { ObservableValue, derived, observe } from '@nanoforge-dev/editor-sdk';
+
+const count = new ObservableValue(0);
+const label = derived([count], (value) => `${value} clicks`);
+context.subscriptions.add(observe(label, (text) => context.logger.info(text)));
+count.set(1);
+```
+
+`observe` calls the listener at once and on every change, and returns a disposable.
+
+## Disposables and events
+
+- `DisposableStore`: holds disposables and disposes them together. `context.subscriptions` is one.
+- `toDisposable(fn)`: makes a disposable of a function.
+- `Emitter<T>`: an event source. `emitter.event(listener)` subscribes and returns a disposable; `emitter.fire(value)` notifies.
+
+## Calling the editor's server
+
+The server speaks typed **contracts**. The SDK exports those a plugin may need.
+
+```ts
+import {
+  GitContract,
+  RegistryContract,
+  RpcClientToken,
+  SessionContract,
+} from '@nanoforge-dev/editor-sdk';
+
+const rpc = context.services.get(RpcClientToken);
+const session = await rpc.api(SessionContract).info(null); // mode, user, features
+const status = await rpc.api(GitContract).status({ project: project.id });
+```
+
+Errors are `RpcError`s with a `code` (`NOT_FOUND`, `FORBIDDEN`, `UNAVAILABLE`…). A hosted editor refuses with `FORBIDDEN` what only a local editor can do.
+
+## Server entries
+
+A plugin with `entry.server` runs code in the editor's server (Bun), for what a browser cannot do. It implements a **contract** in its own namespace, `plugin.<name>`, which its client entry then calls.
+
+```ts
+// index.ts (client): the contract, and the call
+import { z } from 'zod';
+
+import { RpcClientToken, defineContract } from '@nanoforge-dev/editor-sdk';
+
+export const EchoContract = defineContract('plugin.@acme/echo', {
+  methods: { echo: { input: z.object({ text: z.string() }), output: z.string() } },
+});
+
+const answer = await context.services.get(RpcClientToken).api(EchoContract).echo({ text: 'hi' });
+```
+
+```js
+// server.js: a file of its own, not built with the client entry
+import { z } from 'zod';
+
+// The same contract, written out: the SDK does not exist in the server.
+const EchoContract = {
+  namespace: 'plugin.@acme/echo',
+  methods: { echo: { input: z.object({ text: z.string() }), output: z.string() } },
+  events: {},
+};
+
+export const activate = (context) => {
+  context.implement(EchoContract, {
+    methods: { echo: ({ text }) => `${text} from ${process.platform}` },
+  });
+};
+```
+
+The server context has `name`, `manifest`, `subscriptions`, `logger`, `namespace` and `implement(contract, implementation)`. Inputs and outputs are checked against the contract's schemas.
+
+<Warning>
+  Server entries are less finished than the rest. The plugin build does not handle them: a server
+  entry must **not import the SDK** (those imports only work in the editor's page), and must
+  **bundle what it imports** (`zod` here) or be built apart with a bundler targeting Bun, then
+  shipped in the plugin's folder.
+</Warning>
+
+A server entry runs with the rights of the editor's server. It starts when the plugin is installed and stops when it is uninstalled. A project plugin's server entry never runs in a hosted editor.
+
+## Dialogs
+
+Mount a Svelte component from a command, and unmount it when it closes. The kit's `Dialog` handles focus and the overlay.
+
+```ts
+import { mount, unmount } from 'svelte';
+
+context.registerCommand('counter.about', () => {
+  const target = document.createElement('div');
+  document.body.append(target);
+  const dialog = mount(AboutDialog, {
+    target,
+    props: {
+      onclose: () => {
+        void unmount(dialog);
+        target.remove();
+      },
+    },
+  });
+});
+```

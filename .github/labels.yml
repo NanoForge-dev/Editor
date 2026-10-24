@@ -1,3 +1,7 @@
+- name: 'apps:editor'
+  description: 'Related to Editor app'
+  color: '5319e7'
+
 - name: 'blocked'
   description: 'This is blocked'
   color: 'e92f1d'
@@ -42,6 +46,110 @@
   description: "This doesn't seem right"
   color: 'e4e669'
 
+- name: 'packages:code'
+  description: 'Related to Code package'
+  color: 'aaa3dc'
+
+- name: 'packages:history'
+  description: 'Related to History package'
+  color: 'aaa3dc'
+
+- name: 'packages:kernel'
+  description: 'Related to Kernel package'
+  color: 'aaa3dc'
+
+- name: 'packages:layout'
+  description: 'Related to Layout package'
+  color: 'aaa3dc'
+
+- name: 'packages:meta'
+  description: 'Related to Meta package'
+  color: 'aaa3dc'
+
+- name: 'packages:project'
+  description: 'Related to Project package'
+  color: 'aaa3dc'
+
+- name: 'packages:protocol'
+  description: 'Related to Protocol package'
+  color: 'aaa3dc'
+
+- name: 'packages:registry'
+  description: 'Related to Registry package'
+  color: 'aaa3dc'
+
+- name: 'packages:rpc'
+  description: 'Related to RPC package'
+  color: 'aaa3dc'
+
+- name: 'packages:runtime'
+  description: 'Related to Runtime package'
+  color: 'aaa3dc'
+
+- name: 'packages:sdk'
+  description: 'Related to SDK package'
+  color: 'aaa3dc'
+
+- name: 'packages:server-core'
+  description: 'Related to Server core package'
+  color: 'aaa3dc'
+
+- name: 'packages:settings'
+  description: 'Related to Settings package'
+  color: 'aaa3dc'
+
+- name: 'packages:ui'
+  description: 'Related to UI package'
+  color: 'aaa3dc'
+
+- name: 'plugins:code-editor'
+  description: 'Related to Code editor plugin'
+  color: '1c3f78'
+
+- name: 'plugins:command-palette'
+  description: 'Related to Command palette plugin'
+  color: '1c3f78'
+
+- name: 'plugins:console'
+  description: 'Related to Console plugin'
+  color: '1c3f78'
+
+- name: 'plugins:ecs'
+  description: 'Related to ECS plugin'
+  color: '1c3f78'
+
+- name: 'plugins:file-manager'
+  description: 'Related to File manager plugin'
+  color: '1c3f78'
+
+- name: 'plugins:git'
+  description: 'Related to Git plugin'
+  color: '1c3f78'
+
+- name: 'plugins:history-panel'
+  description: 'Related to History panel plugin'
+  color: '1c3f78'
+
+- name: 'plugins:inspectors'
+  description: 'Related to Inspectors plugin'
+  color: '1c3f78'
+
+- name: 'plugins:packages'
+  description: 'Related to Packages plugin'
+  color: '1c3f78'
+
+- name: 'plugins:scene'
+  description: 'Related to Scene plugin'
+  color: '1c3f78'
+
+- name: 'plugins:settings-ui'
+  description: 'Related to Settings ui plugin'
+  color: '1c3f78'
+
+- name: 'plugins:viewport'
+  description: 'Related to Viewport plugin'
+  color: '1c3f78'
+
 - name: 'question'
   description: 'Further information is requested'
   color: 'd876e3'
@@ -53,6 +161,14 @@
 - name: 'tests'
   description: 'Adding missing tests or correcting existing tests'
   color: '7f8f92'
+
+- name: 'tooling:example-plugin'
+  description: 'Related to Example plugin tooling'
+  color: '606bdf'
+
+- name: 'tooling:vite-plugin'
+  description: 'Related to Vite plugin tooling'
+  color: '606bdf'
 
 - name: 'wontfix'
   description: 'This will not be worked on'

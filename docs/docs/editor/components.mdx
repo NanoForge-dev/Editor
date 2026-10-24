@@ -1,50 +1,104 @@
 ---
 title: 'Components'
-icon: 'book'
-description: 'Nanoforge Editor components'
+icon: 'blocks'
+description: 'Create components, use them, and choose how they look in the inspector'
 ---
 
-Components define the data and properties of an entity. On their own, they do not contain any logic. Instead, systems use them to determine how entities behave during the game.
+A component is the data of an entity: a position, a speed, a sprite. It holds no logic; [systems](systems) use it.
 
-## Navigate
+A component is a class:
 
-To access your components, navigate to the **Components** tabs in the left panel.
+```ts
+/**
+ * Where an entity is, in viewport pixels.
+ * @component
+ */
+export class Position {
+  name = 'Position';
+  constructor(
+    public x = 0,
+    public y = 0,
+  ) {}
+}
+```
 
-![Components navigation](../components-navigate.png)
+## The Components panel
+
+![The Components panel](../images/ecs-components.png)
+
+The panel lists the components (**C**) and systems (**S**) the selected app can use, grouped by where they come from:
+
+- **App**: the app's own;
+- **Shared library**: code shared by the client and the server;
+- **Installed packages**: read-only, with a lock.
+
+Select one to read its description, its parameters and where it is defined. The search box filters by name.
+
+An item marked _untagged_ was recognized from the code but has no `@component` or `@system` tag: add the tag to make it explicit.
 
 ## Create a component
 
-In the **Components** panel, click **+** and **Create**. Enter a name for your component, and click **Confirm**.
+**New › New component in app**, then a name. The file is created in the app's components folder, with its tags, and opens in the code editor.
 
-![Create component](../system-create.png) ![Create component name](../components-create-name.png)
+## Add it to an entity
 
-## Import a component
+Select an entity in the **Hierarchy**, select the component in the panel and click **Add to** the entity; or use **Add component…** in the Inspector. The component and its import are added to `main.ts`.
 
-In this **Components** panel, click **+** and **Import**.
+## Share between client and server
 
-![Import component](../images/component-import.png)
+A **shared library** holds components and systems that both apps use.
 
-Choose the components that you need, click **Install** in the top right corner, and click **Apply** when you install all components you want.
+- **New › New shared library…** creates it (a folder in `libs/` and a package name such as `@my-game/shared`).
+- **New › New component in shared library** creates a component there.
+- **Move to shared library** moves an app's component into it and rewrites every import in the project, in one step you can undo.
 
-![Import components selection](../images/components-import-selection.png)
+Apps import shared code by package name: `@my-game/shared/components/player`.
 
-## Edit a component
+A new library is used by every app. The [Project screen](overview#the-project-screen) lists the libraries and chooses which apps use each one: an app is only offered the components and systems of the libraries it uses.
 
-To edit a component, navigate to **Components** tab, right-click the component, and click **Open code**. The component source file opens in the code editor.
-![Access component code](../components-access.png)
+## Components from packages
 
-## Add Component to an entity
+Packages installed from [File › Packages…](plugins-and-packages) bring components you can use as they are. To change one, use **Copy to…**: it copies the component into your app or a shared library.
 
-Navigate to **Scenes** tab, and **Entities** subtab. Choose an entity and the component panel will be display on the right panel.
+## How a component looks in the inspector
 
-![Components entity selection](../images/components-entity.png) ![Components entity panel](../images/components-entity-panel)
+The author of a component chooses how its parameters show, with tags in the documentation comments. Nothing changes in the game.
 
-You can click **Add component** and select the component that you need.
+```ts
+/**
+ * Where an entity is, in viewport pixels.
+ *
+ * @component
+ * @group Coords color=#4aa3ff - Position from the top-left corner.
+ */
+export class Position {
+  name = 'Position';
+  constructor(
+    /** Distance from the left edge. @group Coords @preset vector.x */
+    public x = 0,
+    /** Distance from the top edge. @group Coords @preset vector.y */
+    public y = 0,
+    /** Draw order. @label Layer @color orange */
+    public z = 0,
+    /** Draws the path the entity followed. @hidden */
+    public trail = false,
+  ) {}
+}
+```
 
-![Add component to a entity](../components-entity-add.png)
+| Tag                             | Effect                                                                                                               |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `@group Name`                   | Puts the parameter in a foldable group. Declare the group in the class comment to give it a color and a description. |
+| `@preset vector.x` / `vector.y` | Shows several parameters as one control. Presets: `vector`, `size`, `color`.                                         |
+| `@label Text`                   | The name shown instead of the parameter's.                                                                           |
+| `@color orange`                 | Colors the name.                                                                                                     |
+| `@hidden`                       | Hidden by default; _Show hidden_ in the inspector reveals it.                                                        |
+| The comment's text              | Shown behind the ⓘ next to the name.                                                                                 |
 
-## Change entity components data
+### Without writing tags
 
-You can modify the data of a component attach to an entity in the components inspector in the right panel.
+Open the component's file: the **Component** panel beside the code (a toggle in the editor's toolbar, or _Edit layout_ in the inspector's ⋯ menu) has a control for each of these, and a preview. It writes the tags for you.
 
-![Change component data](../images/components-data.png)
+## Two components with the same name
+
+The engine finds a component by its `name`. When an app can use two components with the same name (yours and a package's), the panel warns, and the app's own is the one used.

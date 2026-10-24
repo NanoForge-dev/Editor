@@ -1,0 +1,137 @@
+---
+title: 'Code and code generation'
+icon: 'braces'
+description: 'Read the game code, change it safely, and describe items such as components and systems'
+---
+
+A NanoForge game is code: there is no scene file beside it. A plugin that shows or edits something of the game reads the code and writes code. The editor gives three tools for that.
+
+| Tool               | Runs in         | Does                                                                  |
+| ------------------ | --------------- | --------------------------------------------------------------------- |
+| **Analyzer**       | the code worker | Reads a file's syntax tree and returns a model (plain data).          |
+| **Transformer**    | the code worker | Changes the syntax tree; the editor turns it into text edits.         |
+| **Codegen target** | the page        | Ties both together for an app: a live model, and undoable operations. |
+
+The code worker holds the project's files in memory, with unsaved edits, and TypeScript. It is the only place where the compiler is loaded.
+
+## A worker entry
+
+Add a second entry to the manifest and to the build.
+
+```json
+"entry": { "client": "index.js", "worker": "worker.js" }
+```
+
+```ts
+// vite.config.ts
+build: { lib: { entry: { index: 'src/index.ts', worker: 'src/worker.ts' }, formats: ['es'] } }
+```
+
+```ts
+// src/worker.ts
+import { defineWorkerPlugin } from '@nanoforge-dev/editor-sdk/worker';
+
+export default defineWorkerPlugin({
+  activate(sdk) {
+    sdk.registerAnalyzer('counter.exports', ({ file }) => file.getExportedDeclarations().size);
+    sdk.registerTransformer('counter.addComment', ({ file, edit }, op) => {
+      edit.insertAt(0, `// ${(op as { text: string }).text}\n`);
+    });
+  },
+});
+```
+
+The context of an analyzer has:
+
+| Member                      | Is                                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| `path`, `text`              | The file's project path and its current text.                                              |
+| `file`, `project`           | The ts-morph `SourceFile` and `Project`. ts-morph comes from the editor: do not bundle it. |
+| `ref(node)`, `resolve(ref)` | A stable reference of a node, to send to the page and get the node back later.             |
+| `literals`                  | Helpers between literals in code and values (`literalToValue`, `valueToLiteral`…).         |
+
+A transformer also gets `edit`, which records the changes: `replace(node, text)`, `insertBefore`, `insertAfter`, `insertAt(offset, text)`, `remove(node)`, `removeLines(node)`.
+
+## Call them from the page
+
+```ts
+import { CodeServiceToken } from '@nanoforge-dev/editor-sdk';
+
+const code = context.services.get(CodeServiceToken);
+
+const count = await code.analyze<number>('apps/client/src/main.ts', 'counter.exports');
+
+// An undoable command, applied through the document service:
+const command = await code.edit(
+  'apps/client/src/main.ts',
+  'counter.addComment',
+  { text: 'hi' },
+  {
+    label: 'Add a comment',
+  },
+);
+```
+
+`code.edit` returns a `HistoryCommand` (or `undefined` when nothing changes). Push it on the file's history, or group several in a transaction: see [history](./history).
+
+The model an analyzer returns crosses to the page as plain data: no syntax nodes, no functions.
+
+## Codegen targets
+
+A **codegen target** is how one kind of app keeps part of its state in code. The ECS plugin's target reads an app's entry file as a list of entities, components and systems, and writes back operations such as "add a component to this entity".
+
+```ts
+import { CODEGEN_TARGETS, type CodegenTarget } from '@nanoforge-dev/editor-sdk';
+
+const target: CodegenTarget<Model, Op> = {
+  id: 'counter.target',
+  label: 'Counter',
+  priority: 0,
+  appliesTo: (app) => app.type === 'client',
+  load: (app) => modelOf(app), // Observable<Model | undefined>, re-read on change
+  apply: (app, op) => commandFor(app, op), // Promise<HistoryCommand>
+};
+context.subscriptions.add(context.contribute(CODEGEN_TARGETS, target));
+```
+
+- When several targets apply to an app, the highest `priority` wins (`selectTarget`).
+- The Scene screen shows the editor a plugin contributed to `SCENE_EDITORS` for the target in use.
+- To make the ECS widgets (hierarchy, inspector, systems, 2D scene) edit another place than the entry file's `main`, contribute to the ECS plugin's `ecs.sources` instead: a location is a file and a function body (`{ kind: 'method', class: 'Level1', method: 'setup' }`), and the widgets keep working unchanged. The scene plugin edits the selected scene's `setup` this way.
+
+## Item owners
+
+**Items** are exports of the game's code that the editor lists: components, systems, and whatever a plugin describes. The editor extracts for each one its name, documentation, constructor parameters and fields, with their types and defaults, from the code and its TSDoc.
+
+What an item _is_ belongs to a plugin, its **owner**. The ECS plugin owns the `@component` and `@system` tags; the core knows nothing about them.
+
+```json
+"contributes": { "itemOwner": { "schema": 1, "tags": ["widget"] } }
+```
+
+```ts
+// worker entry
+sdk.registerItemOwner({
+  name: '@acme/widgets',
+  version: '0.1.0',
+  schema: 1,
+  tags: ['widget'],
+  extract: ({ tags }) => (tags.widget ? { kind: 'widget' } : undefined),
+});
+```
+
+`extract` returns the plugin's own data about an export, stored under the plugin's name. Read items in the page with the catalog:
+
+```ts
+import { CatalogServiceToken, ownerObjects } from '@nanoforge-dev/editor-sdk';
+
+const catalog = context.services.get(CatalogServiceToken);
+catalog.state.subscribe(({ items }) => {
+  const mine = items.filter((item) => ownerObjects(item.meta)['@acme/widgets']);
+});
+```
+
+Items come from the project's apps, its shared libraries and its installed packages (`nf_modules`, read-only). The catalog keeps a cache in `.nanoforge/editor/cache/meta/` and extracts again only what changed.
+
+## Problems
+
+A plugin reports problems (shown in the Problems panel and in the code editor) through `DiagnosticsServiceToken`, and JSON files get completion and validation from a schema contributed to `JSON_SCHEMAS`.

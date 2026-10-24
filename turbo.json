@@ -1,0 +1,53 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "tsconfig.json",
+    "eslint.config.js",
+    "vitest.config.ts",
+    "vitest.setup.ts",
+    "vitest.global-setup.ts",
+    "prettier.config.js"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "static/**",
+        "server/**",
+        "scripts/**",
+        "package.json",
+        "tsconfig.json",
+        "*.config.{js,ts}",
+        "nanoforge.manifest.json"
+      ],
+      "outputs": ["dist/**", ".svelte-kit/**"],
+      "outputLogs": "errors-only"
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "outputLogs": "new-only"
+    },
+    "lint": {
+      "outputs": [],
+      "outputLogs": "new-only"
+    },
+    "format": {
+      "cache": false,
+      "outputs": []
+    },
+    "test:unit": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "test/**", "package.json", "tsconfig.json", "*.config.{js,ts}"],
+      "outputs": [],
+      "outputLogs": "new-only"
+    }
+  },
+  "globalPassThroughEnv": ["CHROME", "CI"]
+}

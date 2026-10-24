@@ -1,0 +1,57 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@acme/hello",
+  "version": "0.1.0",
+  "displayName": "Hello",
+  "description": "Says hello when a project with the ECS is opened.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "engineLibs": {
+    "optional": {
+      "@nanoforge-dev/ecs": "*"
+    }
+  },
+  "entry": {
+    "client": "index.js"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "id": "hello.greet",
+        "title": "Say hello",
+        "category": "Hello"
+      },
+      {
+        "id": "hello.twice",
+        "title": "Say hello twice",
+        "category": "Hello"
+      },
+      {
+        "id": "hello.log",
+        "title": "Log hello",
+        "category": "Hello"
+      }
+    ],
+    "keymapPresets": [
+      {
+        "id": "hello",
+        "title": "Hello keys",
+        "bindings": [{ "key": "F9", "command": "hello.twice" }]
+      }
+    ],
+    "menus": [
+      {
+        "menu": "help",
+        "command": "hello.twice",
+        "group": "hello"
+      },
+      {
+        "menu": "help",
+        "command": "hello.log",
+        "group": "hello"
+      }
+    ]
+  }
+}

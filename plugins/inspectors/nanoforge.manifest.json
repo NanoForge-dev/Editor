@@ -1,0 +1,53 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/inspectors",
+  "version": "0.1.0",
+  "displayName": "Inspectors",
+  "description": "The running game from the inside: tick times and systems, network packets, and the ECS world.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": [
+    "onWidget:inspectors.profiler",
+    "onWidget:inspectors.network",
+    "onWidget:inspectors.world"
+  ],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "inspectors.profiler",
+        "title": "Profiler",
+        "icon": "activity",
+        "defaultSlot": "bottom",
+        "order": 120
+      },
+      {
+        "id": "inspectors.network",
+        "title": "Network",
+        "icon": "network",
+        "defaultSlot": "bottom",
+        "order": 130
+      },
+      {
+        "id": "inspectors.world",
+        "title": "World",
+        "icon": "globe",
+        "defaultSlot": "bottom",
+        "order": 140
+      }
+    ],
+    "settings": [
+      {
+        "key": "tickBudgetMs",
+        "type": "number",
+        "minimum": 1,
+        "maximum": 1000,
+        "default": 16.7,
+        "title": "Tick time budget (ms)",
+        "description": "The Profiler draws this line and marks the windows whose slowest tick went over it. 16.7 ms is 60 ticks per second.",
+        "category": "Editor/Inspectors",
+        "order": 0
+      }
+    ]
+  }
+}
