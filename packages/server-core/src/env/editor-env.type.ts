@@ -24,6 +24,8 @@ export interface EditorEnv {
   readonly allowedHosts: readonly string[];
   readonly devPlugins: readonly string[];
   readonly bundledPluginsDir: string | undefined;
+  /** The token a local editor asks for (`EDITOR_TOKEN`), undefined when it asks none. */
+  readonly launchToken: string | undefined;
   /** Files the tutorial writes over a new project (`tutorial/` next to the server). */
   readonly tutorialDir: string | undefined;
 }

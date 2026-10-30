@@ -1,13 +1,22 @@
+import { readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import { DisposableStore, LoggerService, consoleSink } from '@nanoforge-dev/editor-kernel';
 import { decodeRuntimeApp } from '@nanoforge-dev/editor-protocol';
-import { PROJECT_HEADER, RPC_HTTP_PREFIX, RPC_WS_PATH, RpcRouter } from '@nanoforge-dev/editor-rpc';
+import {
+  PROJECT_HEADER,
+  RPC_HTTP_PREFIX,
+  RPC_WS_PATH,
+  RpcError,
+  RpcRouter,
+} from '@nanoforge-dev/editor-rpc';
 
 import { ApiClient } from '../api/api-client';
 import { archiveFolder } from '../fs/archive';
 import { PathJail } from '../fs/path-jail';
 import { GitService } from '../git/git-service';
+import { MAX_RPC_BODY_BYTES, readBody } from '../http/read-body';
+import { shellCsp } from '../http/shell-csp';
 import { fileResponse } from '../http/static-files';
 import { PluginSources } from '../plugin/plugin-sources';
 import { ServerPluginHost, type ServerPluginServices } from '../plugin/server-plugins';
@@ -30,6 +39,7 @@ import {
   ProjectLocalSettingsStore,
 } from '../settings/account-backends';
 import type { EditorServer, EditorServerOptions } from './editor-server.type';
+import { launchTokenCheck } from './launch-token';
 import { hostAllowed, originAllowed } from './request-guard';
 
 /** A project nobody has a connected editor on is closed after this long without a request. */
@@ -113,11 +123,16 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
   };
 
   const handleRpc = async (request: Request, path: string): Promise<Response> => {
+    const body = await readBody(request, MAX_RPC_BODY_BYTES);
+    if (body === undefined)
+      return json(413, {
+        error: `A call carries ${Math.round(MAX_RPC_BODY_BYTES / 1024 / 1024)} MiB at most`,
+      });
     const cookie = request.headers.get('cookie');
     const before = parseCookies(cookie)[ACCESS_TOKEN_COOKIE];
     const { session, setCookies } = await sessions.resolve(cookie);
     const context: RequestContext = { session, responseCookies: [] };
-    const result = await router.handle(path, await request.text(), context, request.signal);
+    const result = await router.handle(path, body, context, request.signal);
     const response = new Response(result.body, {
       status: result.status,
       headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
@@ -225,7 +240,7 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       if (entry.kind === 'directory') {
         if (!download) return json(400, { error: 'Folders can only be downloaded' });
         const archive = await archiveFolder(project.fs, path);
-        return new Response(archive as Uint8Array<ArrayBuffer>, {
+        return new Response(archive, {
           headers: {
             'content-type': 'application/zip',
             'content-disposition': disposition(`${name}.zip`),
@@ -246,7 +261,9 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       response.headers.set('content-security-policy', 'sandbox');
       if (download) response.headers.set('content-disposition', disposition(name));
       return response;
-    } catch {
+    } catch (error) {
+      if (error instanceof RpcError && error.code === 'PAYLOAD_TOO_LARGE')
+        return json(413, { error: error.message });
       return json(404, { error: 'Not found' });
     }
   };
@@ -281,10 +298,23 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       ));
     if (asset) return notFramed(asset)!;
     if (/\.[a-z0-9]+$/i.test(rel)) return json(404, { error: 'Not found' });
-    return (
-      notFramed(await fileResponse(join(staticJail.root, 'index.html'), 'no-cache', accept)) ??
-      json(404, { error: 'Not found' })
-    );
+    const index = join(staticJail.root, 'index.html');
+    const page = notFramed(await fileResponse(index, 'no-cache', accept));
+    if (!page) return json(404, { error: 'Not found' });
+    page.headers.set('content-security-policy', await pageCsp(index));
+    return page;
+  };
+
+  /** The page's policy, for the inline scripts its `index.html` holds now (read once per change). */
+  let csp: { mtime: number; policy: string } | undefined;
+  const pageCsp = async (index: string): Promise<string> => {
+    const { mtimeMs } = await stat(index);
+    if (csp?.mtime !== mtimeMs)
+      csp = {
+        mtime: mtimeMs,
+        policy: shellCsp(await readFile(index, 'utf8'), { games: env.mode === 'OFFLINE' }),
+      };
+    return csp.policy;
   };
 
   return {
@@ -311,6 +341,10 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
         if (!hostAllowed(env, request.headers.get('host') ?? url.host))
           return json(421, { error: 'Unknown host' });
         if (!originAllowed(env, request)) return json(403, { error: 'Forbidden origin' });
+        if (env.launchToken) {
+          const refused = launchTokenCheck(env.launchToken, request);
+          if (refused) return refused;
+        }
         if (pathname === RPC_WS_PATH) {
           const { session, setCookies } = await sessions.resolve(request.headers.get('cookie'));
           const headers = new Headers();

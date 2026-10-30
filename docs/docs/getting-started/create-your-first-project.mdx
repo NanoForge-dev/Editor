@@ -29,6 +29,8 @@ nf editor my-game        # starts the editor and opens the project in your brows
 
 A local editor can do what a hosted one cannot: run the game, use Git with your own credentials, and install plugins and packages.
 
+On a computer other people use too, start it with `EDITOR_TOKEN=random`: the editor then answers only to the link it prints when it starts (it ends with `?token=…`), so the others can't reach your projects through its port.
+
 ## The tutorial
 
 New to the editor? Its home page offers **Start the tutorial** (and _Help › Tutorial_ plays it again at any time). A local editor makes a small game, `my-first-game`, in the folder it works on: an orange ball that should bounce, and one mistake that keeps it still. A tour then walks you through the editor while you fix it: the screens, adding an entity, changing a value, fixing the mistake from **Problems**, playing the game, looking into it with **World**, and a first Git commit.
