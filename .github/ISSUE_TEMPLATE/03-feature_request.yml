@@ -39,6 +39,7 @@ body:
         - settings-ui
         - viewport
         - example-plugin
+        - example-theme
         - vite-plugin
         - other
     validations:

@@ -61,6 +61,12 @@ for (const [path, content] of Object.entries(files)) {
   writeFileSync(join(fixture, path), content);
 }
 
+/** The example theme has no code: its build copies its manifest and icons into dist/. */
+execFileSync('node', ['build.mjs'], {
+  cwd: join(import.meta.dirname, '../../../tooling/example-theme'),
+  stdio: 'ignore',
+});
+
 const registry = {
   '@acme/badge/1.0.0/nanoforge.manifest.json': JSON.stringify({
     type: 'plugin',
@@ -108,6 +114,17 @@ const registry = {
     dependencies: { '@acme/shapes': '^1.0.0' },
   }),
   '@acme/render/1.0.0/README.md': 'Draws the shapes of @acme/shapes.\n',
+  '@acme/sunset/1.0.0/nanoforge.manifest.json': JSON.stringify({
+    type: 'plugin',
+    name: '@acme/sunset',
+    version: '1.0.0',
+    description: 'A warm light theme.',
+    keywords: ['theme'],
+    engines: { editor: '>=0.1.0' },
+    contributes: {
+      themes: [{ id: 'acme-sunset', label: 'Sunset', extends: 'nanoforge-light', colors: {} }],
+    },
+  }),
 };
 for (const [path, content] of Object.entries(registry)) {
   mkdirSync(dirname(join(root, '.registry', path)), { recursive: true });

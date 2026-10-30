@@ -8,7 +8,6 @@ import {
   basename,
   dirname,
   editorsFor,
-  matchesGlob,
 } from '@nanoforge-dev/editor-sdk';
 import {
   FILE_ICONS,
@@ -20,6 +19,7 @@ import {
 import { isPackagePath } from '../filter/file-filter';
 import type { Clipboard, FileManagerServiceOptions } from './file-manager-service.type';
 import { FileOperations } from './file-operations';
+import { iconOfEntry } from './icon-of-entry';
 
 export const NAME = /^[^/\\:*?"<>|]+$/;
 export const validateName = (value: string) =>
@@ -104,12 +104,7 @@ export class FileManagerService implements Disposable {
 
   /** Icon of an entry: contributed icons (highest priority first), else a default. */
   iconOf(entry: Pick<FileEntry, 'path' | 'kind'>, expanded = false): string {
-    if (entry.kind === 'directory') return expanded ? 'folder-open' : 'folder';
-    const icon = this._options.extensions
-      .getValues(FILE_ICONS)
-      .filter((candidate) => matchesGlob(candidate.pattern, entry.path))
-      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
-    return icon?.icon ?? 'file';
+    return iconOfEntry(this._options.extensions.getValues(FILE_ICONS), entry, expanded);
   }
 
   open(path: string): Promise<unknown> {

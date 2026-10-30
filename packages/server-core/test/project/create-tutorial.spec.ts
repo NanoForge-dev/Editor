@@ -87,6 +87,46 @@ describe('projects.createTutorial', () => {
     expect(readFileSync(join(root, 'notes.txt'), 'utf8')).toBe('kept');
   });
 
+  it('refuses a CLI too old to write nanoforge.config.ts, and leaves no folder', async () => {
+    const cli = join(workspace, 'old-nf.cjs');
+    writeFileSync(
+      cli,
+      `#!/usr/bin/env node
+const { mkdirSync, writeFileSync } = require('node:fs');
+const { join } = require('node:path');
+const args = process.argv.slice(2);
+const root = join(process.cwd(), args[args.indexOf('--path') + 1]);
+mkdirSync(join(root, 'client'), { recursive: true });
+writeFileSync(join(root, 'nanoforge.config.json'), '{}');
+writeFileSync(join(root, 'package.json'), '{}');
+`,
+    );
+    chmodSync(cli, 0o755);
+    const old = createEditorServer({
+      env: loadEnv(
+        {
+          NODE_ENV: 'test',
+          FS_ROOT: workspace,
+          DATA_DIR: join(mkdtempSync(join(tmpdir(), 'nf-data-')), 'editor'),
+          NF_CLI_PATH: cli,
+          TUTORIAL_DIR: join(import.meta.dirname, '../../../../apps/editor/tutorial'),
+        },
+        workspace,
+      ),
+      version: '0.0.0-test',
+    });
+    const oldClient = createLoopbackClient(old);
+    try {
+      await expect(
+        oldClient.api(ProjectsContract).createTutorial({ name: 'old-game', install: false }),
+      ).rejects.toThrow(/too old for the editor/);
+      expect(existsSync(join(workspace, 'old-game'))).toBe(false);
+    } finally {
+      oldClient.dispose();
+      old.dispose();
+    }
+  });
+
   it('refuses a folder of that name that is not the tutorial, even a NanoForge project', async () => {
     mkdirSync(join(workspace, 'other-game'));
     await expect(

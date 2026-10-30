@@ -126,5 +126,41 @@ export const registerIcons = (icons: Record<string, IconComponent>): Disposable 
   return { dispose: () => added.forEach(([name]) => registry.delete(name)) };
 };
 
+/** Icons contributed as SVG files (`contributes.icons`): name → URL. */
+const files = new SvelteMap<string, string>();
+/** The active icon theme's icons: name → URL, ahead of every other icon. */
+const themed = new SvelteMap<string, string>();
+
+/**
+ * Registers SVG files as icons by name (`contributes.icons`); names the editor already has
+ * stay its own (an icon theme replaces those).
+ */
+export const registerIconFiles = (icons: Record<string, string>): Disposable => {
+  const added = Object.entries(icons).filter(([name]) => !registry.has(name) && !files.has(name));
+  for (const [name, url] of added) files.set(name, url);
+  return { dispose: () => added.forEach(([name]) => files.delete(name)) };
+};
+
+/** The active icon theme's icons (empty: the editor's own). */
+export const setThemeIcons = (icons: Record<string, string>): void => {
+  themed.clear();
+  for (const [name, url] of Object.entries(icons)) themed.set(name, url);
+};
+
+/** An icon to draw: a component, or an SVG file drawn as a mask (never inlined). */
+export type ResolvedIcon =
+  | { readonly kind: 'component'; readonly component: IconComponent }
+  | { readonly kind: 'url'; readonly url: string };
+
+/** An icon by name: the icon theme's, a contributed file, then the editor's own set. */
+export const resolveIconOf = (name: string | undefined): ResolvedIcon | undefined => {
+  if (!name) return undefined;
+  const url = themed.get(name) ?? files.get(name);
+  if (url) return { kind: 'url', url };
+  const component = registry.get(name);
+  return component ? { kind: 'component', component } : undefined;
+};
+
+/** The component of an icon of the editor's own set (not themed). */
 export const resolveIcon = (name: string | undefined): IconComponent | undefined =>
   name ? registry.get(name) : undefined;

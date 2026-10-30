@@ -26,6 +26,8 @@
   import { untrack } from 'svelte';
 
   import ConflictsPage from './ConflictsPage.svelte';
+  import AppearancePanel from './AppearancePanel.svelte';
+  import { APPEARANCE_SETTINGS } from './appearance-settings.const';
   import ImportExportPage from './ImportExportPage.svelte';
   import StoragePanel from './StoragePanel.svelte';
   import PluginsPage from './plugins/PluginsPage.svelte';
@@ -114,8 +116,14 @@
   let expanded = $state(new Set(categories.map((node) => node.id)));
   const page = $derived([...selected][0] ?? categories[0]?.id ?? '');
   const shown = $derived(
-    query.trim() ? searchSettings(definitions, query) : settingsIn(definitions, page),
+    query.trim()
+      ? searchSettings(definitions, query)
+      : settingsIn(definitions, page).filter(
+          (definition) => page !== 'Editor/Appearance' || !APPEARANCE_SETTINGS.has(definition.key),
+        ),
   );
+  /** What the marketplace searches when it opens (Get more themes). */
+  let marketQuery = $state<string>();
   const contributedPage = $derived(pages.find((contributed) => contributed.id === page));
 
   let kept = $state(false);
@@ -247,6 +255,7 @@
           <PluginsPage
             {services}
             {host}
+            query={marketQuery}
             {draft}
             definition={pluginsDisabled}
             {revision}
@@ -266,6 +275,18 @@
           />
         {:else}
           {#if page === 'Editor/Storage'}<StoragePanel {services} />{/if}
+          {#if page === 'Editor/Appearance'}
+            <AppearancePanel
+              {services}
+              {draft}
+              {revision}
+              {definitions}
+              ongetmore={() => {
+                marketQuery = 'keywords:theme';
+                selected = new Set(['plugins']);
+              }}
+            />
+          {/if}
           {#each shown as definition (definition.key)}
             <SettingRow
               {definition}

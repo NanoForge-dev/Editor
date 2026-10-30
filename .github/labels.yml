@@ -166,6 +166,10 @@
   description: 'Related to Example plugin tooling'
   color: '606bdf'
 
+- name: 'tooling:example-theme'
+  description: 'Related to Example theme tooling'
+  color: '606bdf'
+
 - name: 'tooling:vite-plugin'
   description: 'Related to Vite plugin tooling'
   color: '606bdf'

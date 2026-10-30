@@ -38,11 +38,33 @@ export const COLOR_TOKENS = [
 
 export type ColorToken = (typeof COLOR_TOKENS)[number];
 
+/** Code colors a theme may give (Monaco's token rules); the others come from Monaco's base. */
+export const SYNTAX_TOKENS = [
+  'keyword',
+  'string',
+  'number',
+  'comment',
+  'type',
+  'variable',
+  'regexp',
+  'delimiter',
+] as const;
+
+export type SyntaxToken = (typeof SYNTAX_TOKENS)[number];
+
+/** Shared tokens a theme may change (fonts and corners); the rest stays the editor's. */
+export const THEME_TOKENS = ['font-ui', 'font-code', 'radius-control', 'radius-float'] as const;
+
+export type ThemeToken = (typeof THEME_TOKENS)[number];
+
+/** A complete theme, as applied: every color, and the code colors and tokens it changes. */
 export interface ThemeDefinition {
   readonly id: string;
   readonly label: string;
   readonly kind: 'dark' | 'light';
   readonly colors: Readonly<Record<ColorToken, string>>;
+  readonly syntax?: Readonly<Partial<Record<SyntaxToken, string>>>;
+  readonly tokens?: Readonly<Partial<Record<ThemeToken, string>>>;
 }
 
 /**
@@ -150,10 +172,31 @@ export const SHARED_TOKENS: Readonly<Record<string, string>> = {
 export const cssVar = (group: 'color' | 'token', name: string) =>
   group === 'color' ? `var(--nf-color-${name})` : `var(--nf-${name})`;
 
+/** How tight the UI is: `normal` is the editor's own sizes. */
+export type Density = 'compact' | 'normal' | 'comfortable';
+
+/** The sizes a density changes, and its factor. */
+const DENSITY_TOKENS = ['space-1', 'space-2', 'space-3', 'space-4', 'control-height', 'row-height'];
+const DENSITY_FACTOR: Record<Density, number> = { compact: 0.85, normal: 1, comfortable: 1.2 };
+
+/** The shared tokens for a theme and a density. */
+export const sharedTokens = (
+  theme?: Pick<ThemeDefinition, 'tokens'>,
+  density: Density = 'normal',
+): Record<string, string> => {
+  const tokens: Record<string, string> = { ...SHARED_TOKENS, ...theme?.tokens };
+  if (density !== 'normal')
+    for (const name of DENSITY_TOKENS)
+      tokens[name] = `${Math.round(Number.parseFloat(tokens[name]!) * DENSITY_FACTOR[density])}px`;
+  return tokens;
+};
+
 /** CSS declarations of a theme (colors) plus the shared tokens. */
-export const themeDeclarations = (theme: ThemeDefinition): string =>
+export const themeDeclarations = (theme: ThemeDefinition, density: Density = 'normal'): string =>
   [
     `color-scheme: ${theme.kind};`,
     ...Object.entries(theme.colors).map(([name, value]) => `--nf-color-${name}: ${value};`),
-    ...Object.entries(SHARED_TOKENS).map(([name, value]) => `--nf-${name}: ${value};`),
+    ...Object.entries(sharedTokens(theme, density)).map(
+      ([name, value]) => `--nf-${name}: ${value};`,
+    ),
   ].join('\n  ');
