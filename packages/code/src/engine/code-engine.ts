@@ -224,13 +224,11 @@ export class CodeEngine {
 
   /**
    * Asks again for the declarations of packages that had none: dependencies may have been
-   * installed since (a `package.json` or a lockfile changed).
+   * installed since (a `package.json` or a lockfile changed). Folders where it was found keep
+   * it; the others (another app's own `node_modules`) are asked again.
    */
   forgetMissingTypes(): void {
-    for (const packageName of this._missing) {
-      const roots = this._typeRoots.get(packageName);
-      if (roots && !roots.found.length) this._typeRoots.delete(packageName);
-    }
+    for (const packageName of this._missing) this._typeRoots.get(packageName)?.asked.clear();
     this._missing.clear();
   }
 

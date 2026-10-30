@@ -295,6 +295,36 @@ describe('CodeService', () => {
     code.dispose();
   }, 30_000);
 
+  it('keeps an edit made while a check reads what changed', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    const start = Date.now();
+    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
+      await new Promise((r) => setTimeout(r, 25));
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    /** While the check of `broken.ts` reads it, `speed.ts` changes: what imports it is checked. */
+    const service = code as unknown as {
+      _declaresGlobally: (paths: readonly string[]) => Promise<boolean>;
+    };
+    vi.spyOn(service, '_declaresGlobally').mockImplementationOnce(async () => {
+      await project.fs.write('checks/speed.ts', 'export const speed = 2;\n');
+      await new Promise((r) => setTimeout(r, 300));
+      return false;
+    });
+    await project.fs.write('checks/broken.ts', 'export const n: number =\n  "other";\n');
+    const user = 'checks/uses-speed.ts';
+    const edited = Date.now();
+    const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    while (!checked().has(user) && Date.now() - edited < 10_000)
+      await new Promise((r) => setTimeout(r, 25));
+    expect(checked().has('checks/broken.ts')).toBe(true);
+    expect(checked().has(user)).toBe(true);
+    await project.fs.write('checks/broken.ts', 'export const n: number =\n  "text";\n');
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 30_000);
+
   it('after an edit, checks again only the file and what imports it', async () => {
     const { code, diagnostics } = setup();
     const check = code.checkProject();

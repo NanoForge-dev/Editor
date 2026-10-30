@@ -29,6 +29,8 @@ export class TypeLibraries implements Disposable {
   private readonly _resolved = new Set<string>();
   private readonly _models = new Set<string>();
   private readonly _subscription: Disposable;
+  /** Set on a project switch: loads still under way must not add the old project's files. */
+  private _disposed = false;
 
   constructor(
     private readonly _monaco: Monaco,
@@ -68,13 +70,14 @@ export class TypeLibraries implements Disposable {
 
   /** Loads the declarations of the packages a text imports (unsaved edits included). */
   async resolveImports(path: string, text: string): Promise<void> {
-    if (!this._code) return;
+    if (!this._code || this._disposed) return;
     const app = this._appRoot(path);
     for (const module of bareImports(text)) {
       const key = `${app}:${module}`;
       if (this._resolved.has(key)) continue;
       this._resolved.add(key);
       const files = await this._code.typeFiles(module, path).catch(() => []);
+      if (this._disposed) return;
       for (const file of files) {
         if (this._libraries.has(file.path)) continue;
         this._libraries.set(file.path, file.text);
@@ -84,6 +87,7 @@ export class TypeLibraries implements Disposable {
   }
 
   dispose(): void {
+    this._disposed = true;
     this._subscription.dispose();
     for (const file of this._files.values()) file.dispose();
     this._files.clear();
@@ -93,7 +97,7 @@ export class TypeLibraries implements Disposable {
   private async _loadAll(paths: readonly string[]): Promise<void> {
     const queue = [...paths];
     const worker = async () => {
-      for (let path = queue.shift(); path !== undefined; path = queue.shift())
+      for (let path = queue.shift(); path !== undefined && !this._disposed; path = queue.shift())
         await this._load(path).catch(() => undefined);
     };
     await Promise.all(Array.from({ length: Math.min(8, queue.length) }, worker));
@@ -116,7 +120,7 @@ export class TypeLibraries implements Disposable {
   private async _load(path: string): Promise<void> {
     if (this._models.has(path)) return;
     const { text } = await this._project.fs.readText(path).catch(() => ({ text: undefined }));
-    if (text === undefined || this._models.has(path)) return;
+    if (this._disposed || text === undefined || this._models.has(path)) return;
     this._add(path, text);
     await this.resolveImports(path, text);
   }

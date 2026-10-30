@@ -409,9 +409,11 @@ export class CodeService implements Disposable {
       .map((entry) => entry.path);
     const changed = [...this._changedSinceCheck];
     /** Declarations that reach files without imports (augmentations, globals) can break any. */
-    const full = this._fullCheck || (await this._declaresGlobally(changed));
+    const wasFull = this._fullCheck;
+    /** Reset before awaiting: changes recorded meanwhile belong to the next check. */
     this._fullCheck = false;
     this._changedSinceCheck.clear();
+    const full = wasFull || (await this._declaresGlobally(changed));
     /** A newer run cut this one short: it takes over what was left. */
     const handOver = () => {
       if (full) this._fullCheck = true;

@@ -85,7 +85,7 @@ export class MetaCache {
     const text = `${JSON.stringify(file, null, 2)}\n`;
     if (this._written.get(path) === text) return;
     this._written.set(path, text);
-    await this._ensureIgnored();
+    await this._ensureIgnored().catch(() => undefined);
     await this._fs.write(path, text).catch((error: unknown) => {
       this._written.delete(path);
       this._logger?.warn(`Could not cache ${path}`, error);
