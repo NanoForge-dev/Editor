@@ -71,26 +71,30 @@
   <div class="screens" role="tablist" aria-label="Main screens" tabindex="-1" {onkeydown}>
     {#each current.screens as screen (screen)}
       {@const description = screenDescription(screen)}
-      <Tooltip text={description ?? screenTitle(screen)} side="bottom">
-        {#snippet children({ props })}
-          <button
-            {...props}
-            type="button"
-            role="tab"
-            class="screen"
-            data-screen={screen}
-            aria-selected={current.activeScreen === screen}
-            aria-describedby={description ? `${uid}-${screen}` : undefined}
-            tabindex={current.activeScreen === screen ? 0 : -1}
-            onclick={() => context.layout.showScreen(screen)}
-          >
-            {#if screenIcon(screen)}<Icon name={screenIcon(screen)} size={15} />{/if}
-            {screenTitle(screen)}
-          </button>
-        {/snippet}
-      </Tooltip>
-      {#if description}<span id={`${uid}-${screen}`} class="nf-visually-hidden">{description}</span
-        >{/if}
+      {#snippet tab(props: Record<string, unknown>)}
+        <button
+          {...props}
+          type="button"
+          role="tab"
+          class="screen"
+          data-screen={screen}
+          aria-selected={current.activeScreen === screen}
+          aria-describedby={description ? `${uid}-${screen}` : undefined}
+          tabindex={current.activeScreen === screen ? 0 : -1}
+          onclick={() => context.layout.showScreen(screen)}
+        >
+          {#if screenIcon(screen)}<Icon name={screenIcon(screen)} size={15} />{/if}
+          {screenTitle(screen)}
+        </button>
+      {/snippet}
+      {#if description}
+        <Tooltip text={description} side="bottom">
+          {#snippet children({ props })}{@render tab(props)}{/snippet}
+        </Tooltip>
+        <span id={`${uid}-${screen}`} hidden>{description}</span>
+      {:else}
+        {@render tab({})}
+      {/if}
     {/each}
   </div>
 

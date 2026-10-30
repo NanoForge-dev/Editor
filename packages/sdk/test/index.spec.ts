@@ -88,6 +88,7 @@ describe('public API', () => {
         "disposeAll",
         "documentHistoryId",
         "editorsFor",
+        "errorCodeOf",
         "formatLogValue",
         "formatMessage",
         "isDisposable",

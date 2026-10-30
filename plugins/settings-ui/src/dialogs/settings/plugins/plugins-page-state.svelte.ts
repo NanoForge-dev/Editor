@@ -7,6 +7,7 @@ import {
   type RegistrySummary,
   type RpcClient,
   type SettingsService,
+  errorCodeOf,
 } from '@nanoforge-dev/editor-sdk';
 
 import {
@@ -26,7 +27,6 @@ export type RegistryApi = ReturnType<typeof registryApi>;
 export type PluginDetails = RegistryItem & { compatible?: string | undefined };
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
-const codeOf = (error: unknown) => (error as { code?: string }).code;
 
 /**
  * What the Plugins page keeps while its tabs come and go: the marketplace search, the selected
@@ -82,7 +82,7 @@ export class PluginsPageState {
       this.results = [];
       this.total = 0;
       this.unavailable =
-        codeOf(error) === 'UNAVAILABLE'
+        errorCodeOf(error) === 'UNAVAILABLE'
           ? 'The plugin registry cannot be reached right now. Installed plugins keep working.'
           : message(error);
     } finally {
@@ -148,7 +148,7 @@ export class PluginsPageState {
       this.pending.set(name, await action());
     } catch (error) {
       this.failure =
-        codeOf(error) === 'FORBIDDEN'
+        errorCodeOf(error) === 'FORBIDDEN'
           ? 'Plugins can only be installed in a local editor.'
           : `${name}: ${message(error)}`;
     } finally {

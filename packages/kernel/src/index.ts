@@ -1,6 +1,7 @@
 export * from './command';
 export * from './context';
 export * from './di';
+export * from './error';
 export * from './event';
 export * from './extension';
 export * from './i18n';

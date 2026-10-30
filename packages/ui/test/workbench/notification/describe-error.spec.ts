@@ -46,3 +46,29 @@ describe('notifyError', () => {
     expect(plain!.technical).toBeUndefined();
   });
 });
+
+describe('describeError for git and the server', () => {
+  it("shows git's own message on a failed command, the hint only for the server's generic one", () => {
+    const rejected = describeError(rpcError('INTERNAL', '! [rejected] main -> main (fetch first)'));
+    expect(rejected.hint).toBeUndefined();
+    expect(rejected.technical).toBe('! [rejected] main -> main (fetch first)');
+    expect(rejected.retryable).toBe(false);
+    expect(describeError(rpcError('INTERNAL', 'Internal error')).hint).toMatch(
+      /Something went wrong in the editor server/,
+    );
+  });
+
+  it('keeps the message of a timeout and offers to try again', () => {
+    const message = 'git push got no answer from the remote: run it once in a terminal';
+    const stuck = describeError(rpcError('TIMEOUT', message));
+    expect(stuck).toMatchObject({ hint: undefined, technical: message, retryable: true });
+    const notifications = new NotificationService();
+    notifyError(notifications, 'Push failed', rpcError('TIMEOUT', message), {
+      retry: () => undefined,
+    });
+    expect(notifications.history.get()[0]).toMatchObject({
+      detail: message,
+      actions: [{ title: 'Try again' }],
+    });
+  });
+});

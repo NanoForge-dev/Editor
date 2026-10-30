@@ -4,6 +4,7 @@ import {
   type RegistryItem,
   type RegistrySummary,
   type RpcClient,
+  errorCodeOf,
 } from '@nanoforge-dev/editor-sdk';
 
 import { missing } from '../../model/installed-package';
@@ -12,7 +13,6 @@ export const registryApi = (rpc: RpcClient) => rpc.api(RegistryContract);
 export type RegistryApi = ReturnType<typeof registryApi>;
 
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
-const codeOf = (error: unknown) => (error as { code?: string }).code;
 
 /**
  * What the Packages dialog keeps while its tabs come and go: the search, the selected package,
@@ -55,7 +55,7 @@ export class PackagesDialogState {
       this.installed = await this._registry.packages({ project: this.project });
       this.readOnly = undefined;
     } catch (error) {
-      if (codeOf(error) === 'FORBIDDEN')
+      if (errorCodeOf(error) === 'FORBIDDEN')
         this.readOnly = 'Packages can only be installed in a local editor.';
       else this.failure = message(error);
     }
@@ -77,7 +77,7 @@ export class PackagesDialogState {
       this.results = [];
       this.total = 0;
       this.unavailable =
-        codeOf(error) === 'UNAVAILABLE'
+        errorCodeOf(error) === 'UNAVAILABLE'
           ? 'The package registry cannot be reached right now. Installed packages keep working.'
           : message(error);
     } finally {
@@ -136,7 +136,7 @@ export class PackagesDialogState {
       void this._catalog?.refresh();
     } catch (error) {
       this.failure =
-        codeOf(error) === 'FORBIDDEN'
+        errorCodeOf(error) === 'FORBIDDEN'
           ? 'Packages can only be installed in a local editor.'
           : message(error);
     } finally {
