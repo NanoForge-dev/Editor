@@ -41,7 +41,7 @@ In another terminal, start the editor with the plugin as a **dev plugin**:
 DEV_PLUGINS=/path/to/counter nf editor /path/to/a/project
 ```
 
-The Counter panel is in the bottom right dock. _View › Panels › Counter_ shows it again once closed. When you save a source file, the editor reloads the plugin without reloading the page.
+The Counter panel is in the bottom right dock. In the simple layout, which shows only the main panels, open it with _View › Panels › Counter_ (or _View › Layouts › All panels_); the same entry shows it again once closed. A plugin can put its panel in the simple layout with `"essential": true`, for the few panels most work needs. When you save a source file, the editor reloads the plugin without reloading the page.
 
 <Warning>
   `@nanoforge-dev/editor-sdk` and `@nanoforge-dev/editor-vite-plugin` are not published on npm yet,

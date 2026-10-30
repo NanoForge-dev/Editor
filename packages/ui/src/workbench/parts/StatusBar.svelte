@@ -78,10 +78,19 @@
             >
           </header>
           {#each $history as notification (notification.id)}
-            <p class="entry {notification.severity}">
-              <time>{time(notification.time)}</time>
-              {notification.message}
-            </p>
+            <div class="entry {notification.severity}">
+              <p>
+                <time>{time(notification.time)}</time>
+                {notification.message}
+              </p>
+              {#if notification.detail}<p class="entry-detail">{notification.detail}</p>{/if}
+              {#if notification.technical}
+                <details class="entry-detail">
+                  <summary>Show details</summary>
+                  <pre>{notification.technical}</pre>
+                </details>
+              {/if}
+            </div>
           {:else}
             <p class="none">No notifications</p>
           {/each}
@@ -140,8 +149,21 @@
     padding: 6px 4px;
     border-top: 1px solid var(--nf-color-border);
   }
-  :global(.notification-center .error) {
+  :global(.notification-center .entry p) {
+    margin: 0;
+  }
+  :global(.notification-center .error > p:first-child) {
     color: var(--nf-color-danger);
+  }
+  :global(.notification-center .entry-detail) {
+    margin: 2px 0 0;
+    color: var(--nf-color-text-muted);
+    font-size: var(--nf-font-size-sm);
+  }
+  :global(.notification-center .entry-detail pre) {
+    margin: 2px 0 0;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
   :global(.notification-center time) {
     margin-right: 6px;

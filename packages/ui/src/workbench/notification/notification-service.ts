@@ -12,6 +12,8 @@ export interface Notification {
   readonly severity: Severity;
   readonly message: string;
   readonly detail?: string;
+  /** The raw error, behind Show details: the message and `detail` say it in plain words. */
+  readonly technical?: string;
   readonly actions: readonly NotificationAction[];
   readonly source?: string;
   readonly time: number;
@@ -19,6 +21,7 @@ export interface Notification {
 
 export interface NotifyOptions {
   readonly detail?: string;
+  readonly technical?: string;
   readonly actions?: readonly NotificationAction[];
   readonly source?: string;
   /** Auto dismiss delay in ms; errors stay until dismissed. Default 5000 (0 = sticky). */
@@ -60,6 +63,7 @@ export class NotificationService {
       actions: options.actions ?? [],
       time: Date.now(),
       ...(options.detail && { detail: options.detail }),
+      ...(options.technical && { technical: options.technical }),
       ...(options.source && { source: options.source }),
     };
     this._active.update((list) => [...list, notification]);

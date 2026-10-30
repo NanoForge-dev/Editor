@@ -1,11 +1,14 @@
 import { type Page, expect } from '@playwright/test';
 
-/** Puts the saved layout of the project back to the default (tests reuse projects). */
+/**
+ * Puts the saved layout of the project back to the default with every panel (tests reuse
+ * projects, and expect the panels of the full layout).
+ */
 export const resetLayout = async (page: Page): Promise<void> => {
   await page.getByRole('button', { name: 'View', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Layouts' }).click();
-  await page.getByRole('menuitem', { name: 'Reset layout' }).click();
-  await expect(page.getByText('Layout reset to default').last()).toBeVisible();
+  await page.getByRole('menuitem', { name: 'All panels' }).click();
+  await expect(page.getByText('Layout reset with all panels').last()).toBeVisible();
 };
 
 /** Expands folders of the Files tree, from the root (already expanded ones stay open). */
@@ -32,6 +35,12 @@ export const panelTab = (page: Page, name: string | RegExp) =>
  */
 export const showPanel = async (page: Page, name: string | RegExp): Promise<void> => {
   const tab = panelTab(page, name);
+  /** A panel the layout does not show (History, by default) opens from View › Panels. */
+  if (typeof name === 'string' && !(await tab.count())) {
+    await page.getByRole('button', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Panels' }).click();
+    await page.getByRole('menuitem', { name, exact: true }).click();
+  }
   await expect(tab).toBeVisible();
   if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click();
   await expect(tab).toHaveAttribute('aria-selected', 'true');

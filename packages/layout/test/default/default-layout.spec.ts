@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { allWidgets, deserializeLayout, reconcileLayout, serializeLayout } from '../../src';
+import {
+  allWidgets,
+  composeDefaultLayout,
+  deserializeLayout,
+  reconcileLayout,
+  serializeLayout,
+} from '../../src';
 import { apply, base, widgets } from '../fixtures/layout';
 
 describe('default layout', () => {
@@ -16,6 +22,31 @@ describe('default layout', () => {
       active: 'hierarchy',
     });
     expect(allWidgets(layout).map((ref) => ref.instanceId)).not.toContain('profiler');
+  });
+
+  it('opens only the essential docks with the simple preset, and keeps the others out', () => {
+    const marked = widgets.map((widget) =>
+      widget.id === 'files' || widget.id === 'inspector' ? { ...widget, essential: true } : widget,
+    );
+    const simple = composeDefaultLayout(marked, 'simple');
+    expect(
+      allWidgets(simple)
+        .map((ref) => ref.widgetId)
+        .sort(),
+    ).toEqual(['files', 'inspector']);
+    expect(simple.screens).toEqual(['scene', 'script', 'game']);
+    expect(simple.known).toContain('console');
+
+    const reloaded = deserializeLayout(serializeLayout(simple))!;
+    const known = new Set(reloaded.known ?? []);
+    const withPlugin = reconcileLayout(
+      reloaded,
+      [...marked, { id: 'network', kind: 'dock', defaultSlot: 'bottom' }],
+      known,
+    );
+    const shown = allWidgets(withPlugin).map((ref) => ref.widgetId);
+    expect(shown).not.toContain('console');
+    expect(shown).toContain('network');
   });
 
   it('keeps a closed dock closed after a reload', () => {

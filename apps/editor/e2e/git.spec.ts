@@ -77,24 +77,24 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await showPanel(page, 'Commit');
   await expect(commitPanel(page).getByText('This project is not a git repository')).toBeVisible();
   await vcs(page, 'Initialize repository');
-  await expect(group(page, 'Unversioned Files')).toBeVisible();
+  await expect(group(page, 'Unversioned files')).toBeVisible();
   git(PONG, 'config', 'user.name', 'E2E');
   git(PONG, 'config', 'user.email', 'e2e@example.com');
 
-  const nested = row(page, 'Unversioned Files', 'apps/client/src/main.ts');
+  const nested = row(page, 'Unversioned files', 'apps/client/src/main.ts');
   await expect(nested).toContainText('main.ts');
   await expect(nested).toContainText('apps/client/src');
   await message(page).fill('first commit');
   await expect(commitButton).toBeDisabled();
-  const includeAll = group(page, 'Unversioned Files').getByRole('checkbox', {
-    name: 'Include all: Unversioned Files',
+  const includeAll = group(page, 'Unversioned files').getByRole('checkbox', {
+    name: 'Include all: Unversioned files',
     includeHidden: true,
   });
   await nested.getByRole('checkbox').check();
   expect(await includeAll.evaluate((box: HTMLInputElement) => box.indeterminate)).toBe(true);
   await includeAll.check();
   await commit(page, 'first commit');
-  await expect(row(page, 'Unversioned Files', 'package.json')).toHaveCount(0);
+  await expect(row(page, 'Unversioned files', 'package.json')).toHaveCount(0);
   await expect(branchStatus(page, 'main')).toBeVisible();
 
   await showPanel(page, 'Git');
@@ -181,23 +181,23 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await page.keyboard.press('Space');
   await expect(changed.getByRole('checkbox')).toBeChecked();
   await changed.click({ button: 'right' });
-  await expect(page.getByRole('menuitem', { name: /^Show Diff/ })).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: /^Jump to Source/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /^Show diff/ })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /^Jump to source/ })).toBeVisible();
   await page.getByRole('menuitem', { name: /^Rollback…/ }).click();
   await expect(page.getByRole('heading', { name: `Rollback ${FILE}?` })).toBeVisible();
   await page.getByRole('button', { name: 'Rollback', exact: true }).last().click();
   await expect(changed).toHaveCount(0);
   writeFileSync(join(PONG, NEW_FILE), 'new\n');
-  await row(page, 'Unversioned Files', NEW_FILE).click({ button: 'right' });
+  await row(page, 'Unversioned files', NEW_FILE).click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Add to VCS' }).click();
   await expect(row(page, 'Changes', NEW_FILE)).toBeVisible();
   await row(page, 'Changes', NEW_FILE).click();
   await rollBack.click();
   await page.getByRole('button', { name: 'Rollback', exact: true }).last().click();
-  await row(page, 'Unversioned Files', NEW_FILE).click();
+  await row(page, 'Unversioned files', NEW_FILE).click();
   await page.keyboard.press('Delete');
   await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
-  await expect(row(page, 'Unversioned Files', NEW_FILE)).toHaveCount(0);
+  await expect(row(page, 'Unversioned files', NEW_FILE)).toHaveCount(0);
 
   await vcs(page, 'New branch…');
   await page.getByRole('textbox', { name: 'Branch name' }).fill('feature');
@@ -207,7 +207,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await local.getByRole('button', { name: 'main', exact: true }).dblclick();
   await expect(branchStatus(page, 'main')).toBeVisible();
   await local.getByRole('button', { name: 'feature', exact: true }).click({ button: 'right' });
-  await expect(page.getByRole('menuitem', { name: "New Branch from 'feature'…" })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: "New branch from 'feature'…" })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
   await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
   await expect(local.getByRole('button', { name: 'feature', exact: true })).toHaveCount(0);
@@ -229,7 +229,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   writeFileSync(join(OTHER, FILE), 'theirs\n');
   git(OTHER, 'commit', '--quiet', '-am', 'their change');
   git(OTHER, 'push', '--quiet');
-  await logPanel(page).getByRole('button', { name: 'Fetch All Remotes' }).click();
+  await logPanel(page).getByRole('button', { name: 'Fetch all remotes' }).click();
   await expect(branchStatus(page, 'main ↓1')).toBeVisible();
   const remote = logPanel(page).getByRole('list', { name: 'Branches of origin' });
   await remote.getByRole('button', { name: 'main', exact: true }).click();
@@ -248,12 +248,12 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await expect(branchStatus(page, 'main ↑1 ↓1')).toBeVisible();
   await vcs(page, 'Update project');
   await expect(page.getByText('The update stopped on conflicts').last()).toBeVisible();
-  const conflict = row(page, 'Merge Conflicts', FILE);
+  const conflict = row(page, 'Merge conflicts', FILE);
   await expect(conflict).toBeVisible();
   writeFileSync(join(PONG, FILE), 'both\n');
   await conflict.getByRole('button', { name: 'Mark resolved' }).click();
-  await expect(group(page, 'Merge Conflicts')).toHaveCount(0);
-  await commit(page, 'merge', 'Commit and Push…');
+  await expect(group(page, 'Merge conflicts')).toHaveCount(0);
+  await commit(page, 'merge', 'Commit and push…');
   const afterMerge = await push();
   await expect(afterMerge.getByRole('list', { name: 'Commits to push' })).toContainText('merge');
   await afterMerge.getByRole('button', { name: 'Push', exact: true }).click();
@@ -267,7 +267,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await commit(page, 'merge, amended');
   await expect(commits(page).getByRole('row').first()).toContainText('merge, amended');
   await expect(changed).toHaveCount(0);
-  await commitPanel(page).getByRole('button', { name: 'Commit Message History' }).click();
+  await commitPanel(page).getByRole('button', { name: 'Commit message history' }).click();
   await page.getByRole('menuitem', { name: 'my change' }).click();
   await expect(message(page)).toHaveValue('my change');
   await message(page).fill('');
@@ -299,9 +299,9 @@ test('browses, folds and includes changes from the keyboard', async ({ page }) =
   await showPanel(page, 'Commit');
   await vcs(page, 'Initialize repository');
   const files = commitPanel(page).getByRole('group', { name: 'Changed files' });
-  const node = commitPanel(page).getByRole('button', { name: /^Unversioned Files, / });
+  const node = commitPanel(page).getByRole('button', { name: /^Unversioned files, / });
   const includeAll = commitPanel(page).getByRole('checkbox', {
-    name: 'Include all: Unversioned Files',
+    name: 'Include all: Unversioned files',
     includeHidden: true,
   });
   const active = () =>
@@ -314,7 +314,7 @@ test('browses, folds and includes changes from the keyboard', async ({ page }) =
   await page.keyboard.press('ArrowDown');
   await expect.poll(active).toMatch(/^Changes, 0 files/);
   await page.keyboard.press('ArrowDown');
-  await expect.poll(active).toMatch(/^Unversioned Files, /);
+  await expect.poll(active).toMatch(/^Unversioned files, /);
   await page.keyboard.press('Space');
   await expect(includeAll).toBeChecked();
   await page.keyboard.press('Space');
@@ -324,12 +324,12 @@ test('browses, folds and includes changes from the keyboard', async ({ page }) =
   await page.keyboard.press('ArrowRight');
   await expect(node).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('ArrowRight');
-  await expect.poll(active).not.toMatch(/^Unversioned Files/);
+  await expect.poll(active).not.toMatch(/^Unversioned files/);
   await expect(
-    group(page, 'Unversioned Files').getByRole('option', { selected: true }),
+    group(page, 'Unversioned files').getByRole('option', { selected: true }),
   ).toHaveCount(1);
   await page.keyboard.press('ArrowLeft');
-  await expect.poll(active).toMatch(/^Unversioned Files, /);
+  await expect.poll(active).toMatch(/^Unversioned files, /);
   await resetLayout(page);
   /** The layout is saved after 500 ms. */
   await page.waitForTimeout(900);
