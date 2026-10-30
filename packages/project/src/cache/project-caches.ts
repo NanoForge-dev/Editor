@@ -64,6 +64,8 @@ export class ProjectCaches implements CacheFactory {
   private _writtenSinceSweep = 0;
   private _sweepTimer: ReturnType<typeof setTimeout> | undefined;
   private _touchTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The sweep making room after a full disk: every write waiting for room shares it. */
+  private _roomSweep: Promise<void> | undefined;
   private readonly _contents: ContentCache;
 
   constructor(
@@ -245,29 +247,55 @@ export class ProjectCaches implements CacheFactory {
     void this._flushTouches();
   }
 
+  /**
+   * The record is written before the file: a tab closed in between leaves a record whose file is
+   * missing (a miss, swept later), never a file no sweep knows of.
+   */
   private async _set(hash: string, content: Uint8Array): Promise<void> {
-    try {
-      await this._store.set(hash, content);
-    } catch (error) {
-      if ((error as { name?: string })?.name !== 'QuotaExceededError') return;
-      await this.sweep({ room: content.length }).catch(() => undefined);
-      try {
-        await this._store.set(hash, content);
-      } catch {
-        return;
-      }
-    }
-    await transact(BLOBS, 'readwrite', (transaction) =>
+    const recorded = await transact(BLOBS, 'readwrite', (transaction) =>
       transaction
         .objectStore(BLOBS)
         .put(
           { user: this.user, hash, size: content.length, used: Date.now() } satisfies BlobRecord,
           blobKey(this.user, hash),
         ),
-    ).catch(() => undefined);
+    ).then(
+      () => true,
+      () => false,
+    );
+    if (!recorded) return;
+    try {
+      await this._store.set(hash, content);
+    } catch (error) {
+      const stored =
+        (error as { name?: string })?.name === 'QuotaExceededError' &&
+        (await this._makeRoom()
+          .then(() => this._store.set(hash, content))
+          .then(
+            () => true,
+            () => false,
+          ));
+      if (!stored) {
+        await transact(BLOBS, 'readwrite', (transaction) =>
+          transaction.objectStore(BLOBS).delete(blobKey(this.user, hash)),
+        ).catch(() => undefined);
+        return;
+      }
+    }
     this._writtenSinceSweep += content.length;
     if (!this._sweepTimer && this._writtenSinceSweep > this._options.budgetBytes() / 10)
       this._sweepTimer = setTimeout(() => void this.sweep().catch(() => undefined), 30_000);
+  }
+
+  /**
+   * One sweep at a time for room, joined by every write that ran out of it meanwhile. Their
+   * records are already written, so the sweep counts their bytes.
+   */
+  private _makeRoom(): Promise<void> {
+    this._roomSweep ??= this.sweep()
+      .catch(() => undefined)
+      .finally(() => (this._roomSweep = undefined));
+    return this._roomSweep;
   }
 
   private _remember(hash: string, bytes: Uint8Array): void {
@@ -311,11 +339,25 @@ export class ProjectCaches implements CacheFactory {
     ).catch(() => undefined);
   }
 
+  /** Keys and values are read in one transaction, so another tab's write can't misalign them. */
   private async _trees(): Promise<Map<string, FileEntry[]>> {
     const prefix = `${this.user}\0`;
-    const keys = await keysWithPrefix(TREES, prefix);
-    const values = await valuesWithPrefix<FileEntry[]>(TREES, prefix);
-    return new Map(keys.map((key, index) => [key.slice(prefix.length), values[index] ?? []]));
+    const range = IDBKeyRange.bound(prefix, `${prefix}\uffff`);
+    let keys: IDBRequest<IDBValidKey[]> | undefined;
+    let values: IDBRequest<FileEntry[][]> | undefined;
+    await transact(TREES, 'readonly', (transaction) => {
+      const store = transaction.objectStore(TREES);
+      keys = store.getAllKeys(range);
+      values = store.getAll(range);
+      return [keys, values];
+    });
+    const all = values?.result ?? [];
+    return new Map(
+      (keys?.result ?? []).map((key, index) => [
+        String(key).slice(prefix.length),
+        all[index] ?? [],
+      ]),
+    );
   }
 
   private async _budget(): Promise<number> {

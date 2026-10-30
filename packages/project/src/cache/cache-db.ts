@@ -47,25 +47,60 @@ export const openCacheDb = (): Promise<IDBDatabase> =>
     request.onblocked = () => reject(new Error('IndexedDB upgrade blocked by another tab'));
   });
 
+/** The open connection, shared by every transaction of this page. */
+let connection: Promise<IDBDatabase> | undefined;
+
+/**
+ * The shared connection, opened on first use. It closes (and is opened again on next use) when
+ * another tab upgrades the database, and a failed open is not kept.
+ */
+const connect = (): Promise<IDBDatabase> => {
+  if (connection) return connection;
+  const opening = openCacheDb().then(
+    (db) => {
+      const forget = () => {
+        if (connection === opening) connection = undefined;
+      };
+      db.onversionchange = () => {
+        db.close();
+        forget();
+      };
+      db.onclose = forget;
+      return db;
+    },
+    (error: unknown) => {
+      if (connection === opening) connection = undefined;
+      throw error;
+    },
+  );
+  connection = opening;
+  return opening;
+};
+
 /** Runs requests in one transaction; resolves with the last request's result. */
 export const transact = async <T>(
   stores: string | string[],
   mode: IDBTransactionMode,
   run: (transaction: IDBTransaction) => IDBRequest | IDBRequest[] | undefined,
 ): Promise<T> => {
-  const db = await openCacheDb();
+  let db = await connect();
+  let transaction: IDBTransaction;
   try {
-    return await new Promise<T>((resolve, reject) => {
-      const transaction = db.transaction(stores, mode);
-      const requests = run(transaction);
-      const last = Array.isArray(requests) ? requests.at(-1) : requests;
-      transaction.oncomplete = () => resolve(last?.result as T);
-      transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB failed'));
-      transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB aborted'));
-    });
-  } finally {
-    db.close();
+    transaction = db.transaction(stores, mode);
+  } catch (error) {
+    /** Closed under us (another tab upgraded it): opened again once. */
+    if ((error as { name?: string })?.name !== 'InvalidStateError') throw error;
+    connection = undefined;
+    db = await connect();
+    transaction = db.transaction(stores, mode);
   }
+  return new Promise<T>((resolve, reject) => {
+    const requests = run(transaction);
+    const last = Array.isArray(requests) ? requests.at(-1) : requests;
+    transaction.oncomplete = () => resolve(last?.result as T);
+    transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB failed'));
+    transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB aborted'));
+  });
 };
 
 /** Every value of a store whose key starts with `prefix`. */

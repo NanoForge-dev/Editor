@@ -130,4 +130,39 @@ describe('ProjectCaches', () => {
     expect(user).toBeTruthy();
     await caches.clearAll();
   });
+
+  it('runs one sweep for every write the full quota refused at once', async () => {
+    const { caches } = setup();
+    const store = (caches as unknown as { _store: OpfsContentCache })._store;
+    const set = store.set.bind(store);
+    const refused = new Set<string>();
+    store.set = async (hash, bytes) => {
+      if (!refused.has(hash)) {
+        refused.add(hash);
+        throw Object.assign(new Error('full'), { name: 'QuotaExceededError' });
+      }
+      return set(hash, bytes);
+    };
+    const sweep = caches.sweep.bind(caches);
+    let sweeps = 0;
+    caches.sweep = (options) => {
+      sweeps++;
+      return sweep(options);
+    };
+    const items = await Promise.all(['a', 'b', 'c'].map(content));
+    await Promise.all(items.map((item) => caches.contents().set(item.hash, item.bytes)));
+    expect(sweeps).toBe(1);
+    for (const item of items) expect(await store.get(item.hash)).toEqual(item.bytes);
+    await caches.clearAll();
+  });
+
+  it('counts no content the browser could not keep', async () => {
+    const { caches } = setup();
+    const store = (caches as unknown as { _store: OpfsContentCache })._store;
+    store.set = () => Promise.reject(new Error('broken'));
+    const item = await content('lost');
+    await caches.contents().set(item.hash, item.bytes);
+    expect((await caches.usage()).bytes).toBe(0);
+    await caches.clearAll();
+  });
 });

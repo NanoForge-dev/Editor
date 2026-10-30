@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -43,6 +45,47 @@ describe('ProjectFileSystem', () => {
     writeFileSync(join(root, 'src/main.ts'), 'export [];\n');
     utimesSync(join(root, 'src/main.ts'), later, later);
     expect((await fs.stat('src/main.ts'))?.hash).toBe(sha1('export [];\n'));
+  });
+
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'gives no hash to a file it cannot read, and still stats it after a rename',
+    async () => {
+      const { root, fs } = project();
+      writeFileSync(join(root, 'src/locked.ts'), 'x');
+      chmodSync(join(root, 'src/locked.ts'), 0o000);
+      try {
+        expect(await fs.stat('src/locked.ts')).toMatchObject({
+          path: 'src/locked.ts',
+          kind: 'file',
+        });
+        expect((await fs.stat('src/locked.ts'))?.hash).toBeUndefined();
+        expect(await fs.rename('src/locked.ts', 'src/moved.ts')).toMatchObject({
+          path: 'src/moved.ts',
+        });
+        const listed = await fs.list('', true);
+        expect(listed.find((entry) => entry.path === 'src/moved.ts')?.hash).toBeUndefined();
+      } finally {
+        for (const name of ['locked.ts', 'moved.ts']) {
+          if (existsSync(join(root, 'src', name))) chmodSync(join(root, 'src', name), 0o644);
+        }
+      }
+    },
+  );
+
+  it.skipIf(process.platform === 'win32')('lists a named pipe without reading it', async () => {
+    const { root, fs } = project();
+    execFileSync('mkfifo', [join(root, 'src/pipe')]);
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === 'src/pipe')?.hash).toBeUndefined();
+    expect((await fs.stat('src/pipe'))?.hash).toBeUndefined();
+  });
+
+  it('gives no hash to the files in the trash', async () => {
+    const { fs } = project();
+    const { trashPath } = await fs.delete('src/main.ts');
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === trashPath)).toBeDefined();
+    expect(listed.find((entry) => entry.path === trashPath)?.hash).toBeUndefined();
   });
 
   it('answers readMany within 8 MiB, the rest for the next call', async () => {
