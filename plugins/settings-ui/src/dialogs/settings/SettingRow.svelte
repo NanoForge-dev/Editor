@@ -54,8 +54,17 @@
   let error = $state<string>();
   let inspecting = $state(false);
   let jsonText = $state('');
+  /**
+   * The text follows the value only when the value itself changes: rows are refreshed whenever any
+   * setting changes, which wiped JSON being typed (not valid yet, so not in the draft).
+   */
+  let shownJson: string | undefined;
   $effect(() => {
-    if (control.kind === 'json') jsonText = JSON.stringify(value, null, 2);
+    if (control.kind !== 'json') return;
+    const next = JSON.stringify(value, null, 2);
+    if (next === shownJson) return;
+    shownJson = next;
+    jsonText = next;
   });
 
   const update = (next: unknown) => {

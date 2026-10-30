@@ -145,6 +145,22 @@
     onclose();
   };
 
+  /** Closing with changes not applied asks first, in the footer. */
+  let discarding = $state(false);
+  const beforeclose = () => {
+    if (!$changes.size) return true;
+    discarding = true;
+    return false;
+  };
+  const cancel = () => {
+    if (beforeclose()) close();
+  };
+  const discard = () => {
+    for (const key of [...$changes.keys()]) draft.discard(key);
+    discarding = false;
+    close();
+  };
+
   const editJson = (): MenuEntry[] => [
     ...(settings.hasStore('project')
       ? [
@@ -175,7 +191,7 @@
   };
 </script>
 
-<Dialog bind:open title="Settings" width="min(1040px, 94vw)" onclose={close}>
+<Dialog bind:open title="Settings" width="min(1040px, 94vw)" onclose={close} {beforeclose}>
   <div class="settings">
     <div class="top">
       <Input bind:value={query} placeholder="Search settings" aria-label="Search settings" />
@@ -268,18 +284,32 @@
     </div>
   </div>
   {#snippet footer()}
-    <Button onclick={close}>Cancel</Button>
-    <Button disabled={!$changes.size} onclick={() => void apply()}>Apply</Button>
-    <Button
-      variant="primary"
-      onclick={async () => {
-        if (await apply()) close();
-      }}>OK</Button
-    >
+    {#if discarding && $changes.size}
+      <p class="discard" role="alert">
+        {$changes.size}
+        {$changes.size === 1 ? 'setting is' : 'settings are'} changed but not applied.
+      </p>
+      <Button onclick={() => (discarding = false)}>Keep editing</Button>
+      <Button variant="danger" onclick={discard}>Discard changes</Button>
+    {:else}
+      <Button onclick={cancel}>Cancel</Button>
+      <Button disabled={!$changes.size} onclick={() => void apply()}>Apply</Button>
+      <Button
+        variant="primary"
+        onclick={async () => {
+          if (await apply()) close();
+        }}>OK</Button
+      >
+    {/if}
   {/snippet}
 </Dialog>
 
 <style>
+  .discard {
+    flex: 1;
+    margin: 0;
+    color: var(--nf-color-warning);
+  }
   .sync-error {
     color: var(--nf-color-text-muted);
     font-size: var(--nf-font-size-sm);

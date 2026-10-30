@@ -183,3 +183,16 @@ test('opens a project from a link (nf editor <folder>)', async ({ page }) => {
   await page.getByRole('button', { name: 'Back to projects' }).click();
   await expect(page.getByLabel('Project folder')).toBeVisible();
 });
+
+test('the project name in the status bar shows the Project screen, it no longer closes it', async ({
+  page,
+}) => {
+  await openPong(page);
+  await page.getByRole('tab', { name: 'Scene', exact: true }).click();
+  await page.getByRole('contentinfo').getByRole('button', { name: 'pong-network' }).click();
+  await expect(page.getByRole('tab', { name: 'Project', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page).toHaveURL(/\/project\//);
+});

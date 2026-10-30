@@ -98,5 +98,18 @@ export const portableStroke = (stroke: string, mac = isMac()): string => {
   return main.test(stroke) ? `Mod+${stroke.replace(main, '$1')}` : stroke;
 };
 
+/**
+ * Whether a stroke would take a key from typing if it started a shortcut: shortcuts are caught
+ * before the code editor and text fields, so without Ctrl, Alt or ⌘ only function keys are free
+ * (a letter would no longer type, Delete no longer delete, an arrow no longer move the caret).
+ */
+export const blocksTyping = (stroke: string): boolean => {
+  const parts = stroke.split('+');
+  const key = parts.at(-1) === '' ? '+' : parts.at(-1)!;
+  const modifiers = parts.slice(0, parts.at(-1) === '' ? -2 : -1);
+  if (modifiers.some((modifier) => modifier !== 'Shift')) return false;
+  return !/^F\d{1,2}$/.test(key);
+};
+
 export const startsWith = (strokes: readonly string[], prefix: readonly string[]) =>
   prefix.length <= strokes.length && prefix.every((stroke, index) => strokes[index] === stroke);

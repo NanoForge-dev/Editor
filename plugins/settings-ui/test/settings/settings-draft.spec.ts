@@ -48,4 +48,15 @@ describe('SettingsDraft', () => {
     expect([...changes.keys()]).toEqual(['machine']);
     expect(draft.valueOf(disabled)).toEqual(['a', 'b']);
   });
+
+  it('applies a reset in each scope it was asked for', async () => {
+    const settings = settingsWith({ account: ['a'], machine: ['m'] });
+    const draft = new SettingsDraft(settings as never);
+    draft.reset(disabled, 'account');
+    draft.reset(disabled, 'machine');
+    expect(draft.valueOf(disabled)).toEqual([]);
+    await draft.apply();
+    expect(settings.reset).toHaveBeenCalledWith('plugins.disabled', 'account');
+    expect(settings.reset).toHaveBeenCalledWith('plugins.disabled', 'machine');
+  });
 });

@@ -15,13 +15,26 @@ const isBoundary = (text: string, index: number): boolean => {
   );
 };
 
+/** Whether a piece starting at `start` lands inside a word after the one that ended at `end`. */
+const jumpsWord = (text: string, end: number, start: number): boolean => {
+  if (isBoundary(text, start)) return false;
+  for (let index = end; index <= start; index++) if (isBoundary(text, index)) return true;
+  return false;
+};
+
 /**
  * Matches the letters of a query in order in a text, not necessarily adjacent (spaces of the
  * query are ignored). Letters at the start of words and runs of adjacent letters score higher,
  * a query found in one piece higher still, and so do matches near the start and shorter texts.
- * Undefined when a letter is missing.
+ * Undefined when a letter is missing. With `wordStarts`, a piece that does not start a word must
+ * be in the word of the piece before it: "rst" finds "Reset", but "theme" no longer finds "the"
+ * and two letters of "game".
  */
-export const fuzzyMatch = (query: string, text: string): FuzzyMatch | undefined => {
+export const fuzzyMatch = (
+  query: string,
+  text: string,
+  options: { readonly wordStarts?: boolean } = {},
+): FuzzyMatch | undefined => {
   const needle = query.replace(/\s+/g, '').toLowerCase();
   if (!needle) return { score: 0, ranges: [] };
   const haystack = text.toLowerCase();
@@ -79,6 +92,11 @@ export const fuzzyMatch = (query: string, text: string): FuzzyMatch | undefined 
     if (last && last[1] === position) last[1] = position + 1;
     else ranges.push([position, position + 1]);
   }
+  if (
+    options.wordStarts &&
+    ranges.some((range, index) => index > 0 && jumpsWord(text, ranges[index - 1]![1], range[0]))
+  )
+    return undefined;
   const whole = ranges.length === 1 ? 10 : 0;
   return { score: previous[end]! + whole - text.length * 0.01, ranges };
 };
