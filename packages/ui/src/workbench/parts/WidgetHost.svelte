@@ -4,6 +4,7 @@
   import Button from '../../components/button.svelte';
   import EmptyState from '../../components/empty-state.svelte';
   import { getWorkbenchContext } from '../workbench-context';
+  import PanelTip from './PanelTip.svelte';
 
   interface Props {
     ref: WidgetRef;
@@ -34,6 +35,9 @@
   data-nf-history={$status.kind === 'ready' ? $status.descriptor.historyContext : undefined}
   hidden={!active}
 >
+  {#if $status.kind === 'ready' && $status.descriptor.tip && $status.descriptor.kind === 'dock'}
+    <PanelTip id={ref.widgetId} tip={$status.descriptor.tip} />
+  {/if}
   {#if $status.kind === 'ready'}
     {@const view = $status.view}
     <svelte:boundary>

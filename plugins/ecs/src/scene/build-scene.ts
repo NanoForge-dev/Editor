@@ -1,7 +1,9 @@
 /**
  * The 2D scene of an app (spec: "Scene screen"), drawn from its entry file: each entity's
  * position (a component with numeric `x` and `y` params) and its graphics-2d shapes (`Rect`,
- * `Circle` arguments written as literals). While playing, positions come from the live world.
+ * `Circle` arguments written as literals, or a component with a `radius`, or `width` and
+ * `height`, param: `nf new`'s `DrawableCircle2D`). While playing, positions come from the live
+ * world.
  */
 import type { CatalogItem } from '@nanoforge-dev/editor-sdk';
 
@@ -69,30 +71,57 @@ export const buildScene = (
         y: argNumber(use.args[yParam], defaults[yParam]?.default),
       };
     });
+    const at = (shape: Omit<SceneShape, 'entity' | 'x' | 'y' | 'position'>, dx = 0, dy = 0) =>
+      shapes.push({
+        entity: entity.name,
+        ...shape,
+        x: (position?.x ?? 0) + dx,
+        y: (position?.y ?? 0) + dy,
+        ...(position && {
+          position: {
+            component: position.component,
+            componentName: position.componentName,
+            xParam: position.xParam,
+            yParam: position.yParam,
+          },
+        }),
+      });
     for (const use of entity.components) {
+      if (!use.args.some((arg) => arg.construct && SHAPES[arg.construct.className])) {
+        const params = itemOf(use.item)?.meta.params ?? [];
+        const index = (...names: string[]) =>
+          params.findIndex((param) => names.includes(param.name));
+        const value = (at: number, fallback: number) =>
+          at < 0
+            ? undefined
+            : argNumber(use.args[at], (params[at] as { default?: unknown }).default) || fallback;
+        const fill = index('fillColor', 'fill', 'color');
+        const colors = {
+          ...(fill >= 0 && str(use.args[fill]?.value) && { fill: str(use.args[fill]?.value) }),
+        };
+        const radius = value(index('radius'), 25);
+        const width = value(index('width'), 50);
+        const height = value(index('height'), 50);
+        if (radius !== undefined) at({ kind: 'circle', width: 50, height: 50, radius, ...colors });
+        else if (width !== undefined && height !== undefined)
+          at({ kind: 'rect', width, height, radius: 25, ...colors });
+      }
       for (const arg of use.args) {
         const kind = arg.construct ? SHAPES[arg.construct.className] : undefined;
         if (!kind || !arg.construct) continue;
         const config = (arg.construct.args[0] ?? {}) as Record<string, unknown>;
-        shapes.push({
-          entity: entity.name,
-          kind,
-          x: (position?.x ?? 0) + num(config.x),
-          y: (position?.y ?? 0) + num(config.y),
-          width: num(config.width, 50),
-          height: num(config.height, 50),
-          radius: num(config.radius, 25),
-          ...(str(config.fill) && { fill: str(config.fill) }),
-          ...(str(config.stroke) && { stroke: str(config.stroke) }),
-          ...(position && {
-            position: {
-              component: position.component,
-              componentName: position.componentName,
-              xParam: position.xParam,
-              yParam: position.yParam,
-            },
-          }),
-        });
+        at(
+          {
+            kind,
+            width: num(config.width, 50),
+            height: num(config.height, 50),
+            radius: num(config.radius, 25),
+            ...(str(config.fill) && { fill: str(config.fill) }),
+            ...(str(config.stroke) && { stroke: str(config.stroke) }),
+          },
+          num(config.x),
+          num(config.y),
+        );
       }
     }
   }

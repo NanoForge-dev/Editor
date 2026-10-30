@@ -30,6 +30,10 @@
     "widgets": [
       {
         "id": "scene.scenes",
+        "tip": {
+          "text": "The scenes of the app. Select one to edit its entities and systems in the Hierarchy, Inspector and Scene screen.",
+          "docs": "editor/scenes"
+        },
         "essential": true,
         "title": "Scenes",
         "icon": "layers",
@@ -38,6 +42,10 @@
       },
       {
         "id": "scene.vars",
+        "tip": {
+          "text": "The vars that scenes and systems share, and their live values while the game plays.",
+          "docs": "editor/scenes"
+        },
         "title": "Vars",
         "icon": "variable",
         "defaultSlot": "rightBottom",

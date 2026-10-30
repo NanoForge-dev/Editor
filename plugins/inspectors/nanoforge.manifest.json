@@ -16,6 +16,10 @@
     "widgets": [
       {
         "id": "inspectors.profiler",
+        "tip": {
+          "text": "While the game plays: tick time, and the time per library and per system. Click the chart to freeze it.",
+          "docs": "editor/play"
+        },
         "title": "Profiler",
         "icon": "activity",
         "defaultSlot": "bottom",
@@ -23,6 +27,10 @@
       },
       {
         "id": "inspectors.network",
+        "tip": {
+          "text": "While the game plays: the packets it sends and receives, with their size and content.",
+          "docs": "editor/play"
+        },
         "title": "Network",
         "icon": "network",
         "defaultSlot": "bottom",
@@ -30,6 +38,10 @@
       },
       {
         "id": "inspectors.world",
+        "tip": {
+          "text": "While the game plays: every entity with its components, live. Search with Position or Position.x > 100.",
+          "docs": "editor/play"
+        },
         "title": "World",
         "icon": "globe",
         "defaultSlot": "bottom",

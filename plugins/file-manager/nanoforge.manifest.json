@@ -20,6 +20,10 @@
     "widgets": [
       {
         "id": "file-manager.files",
+        "tip": {
+          "text": "Your project's folders and files. Double-click a file to open it; + or a right-click on a folder creates one.",
+          "docs": "editor/files"
+        },
         "essential": true,
         "title": "Files",
         "icon": "folder-tree",

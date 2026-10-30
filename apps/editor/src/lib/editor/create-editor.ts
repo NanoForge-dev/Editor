@@ -41,6 +41,7 @@ import {
   type Shell,
   StyleServiceToken,
   ThemeServiceToken,
+  TourServiceToken,
   setupShell,
 } from '@nanoforge-dev/editor-ui';
 
@@ -190,6 +191,9 @@ export const createEditor = async (
   services.provide(KeybindingServiceToken, shell.keybindings);
   services.provide(StyleServiceToken, shell.styles);
   services.provide(ThemeServiceToken, shell.themes);
+  services.provide(TourServiceToken, shell.tours);
+  /** `editor.local`: games, git and installs work here (tour steps, menus). */
+  services.get(CoreServices.ContextKeys).set('editor.local', session.mode === 'OFFLINE');
   store.add(registerCorePanels(services.get(CoreServices.Extensions)));
   const code = store.add(
     followProjectCode({

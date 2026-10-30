@@ -100,6 +100,29 @@ export default definePlugin({
     context.subscriptions.add(registerIcons({ move: Move }));
     const contextKeys = context.services.get(EditorServices.ContextKeys);
     context.subscriptions.add(observe(moveInGame, (on) => contextKeys.set(MOVE_IN_GAME_KEY, on)));
+    /** For tours: the entities of the edited code, and a count bumped when it is edited. */
+    let revision = 0;
+    let signature: string | undefined;
+    contextKeys.set('ecs.revision', revision);
+    context.subscriptions.add(
+      observe(ecs.model, (model) => {
+        /** Only an edit counts, not the same code analyzed again nor a model loading. */
+        if (!model) {
+          signature = undefined;
+          return;
+        }
+        contextKeys.set('ecs.entityCount', model.entities.length);
+        const next = JSON.stringify(
+          model.entities.map((entity) => [
+            entity.name,
+            entity.components.map((use) => use.args.map((arg) => arg.code)),
+          ]),
+        );
+        if (signature !== undefined && next !== signature)
+          contextKeys.set('ecs.revision', ++revision);
+        signature = next;
+      }),
+    );
     context.subscriptions.add({ dispose: () => moveInGame.set(false) });
     context.registerCommand('ecs.toggleMoveInGame', () => moveInGame.set(!moveInGame.get()), {
       title: 'Move entities in the game',

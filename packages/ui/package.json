@@ -25,6 +25,7 @@
     },
     "./fonts.css": "./src/theme/fonts.css",
     "./notification": "./src/workbench/notification/index.ts",
+    "./tour": "./src/workbench/tour/index.ts",
     "./package.json": "./package.json"
   },
   "type": "module",

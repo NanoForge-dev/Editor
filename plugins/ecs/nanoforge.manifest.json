@@ -38,6 +38,10 @@
     "widgets": [
       {
         "id": "ecs.hierarchy",
+        "tip": {
+          "text": "The entities your app's main.ts creates. + adds one; select one to see its components in the Inspector.",
+          "docs": "editor/entities"
+        },
         "essential": true,
         "title": "Hierarchy",
         "icon": "list-tree",
@@ -46,6 +50,10 @@
       },
       {
         "id": "ecs.inspector",
+        "tip": {
+          "text": "The components of the selected entity. A change here is written into your code, and Ctrl+Z undoes it.",
+          "docs": "editor/components"
+        },
         "essential": true,
         "title": "Inspector",
         "icon": "sliders-horizontal",
@@ -54,6 +62,10 @@
       },
       {
         "id": "ecs.browser",
+        "tip": {
+          "text": "The components (C) and systems (S) the selected app can use: its own, its shared libraries' and its installed packages'.",
+          "docs": "editor/components"
+        },
         "title": "Components",
         "icon": "blocks",
         "defaultSlot": "leftBottom",
@@ -61,6 +73,10 @@
       },
       {
         "id": "ecs.systems",
+        "tip": {
+          "text": "The systems the selected app runs, in run order, with the components each one reads.",
+          "docs": "editor/systems"
+        },
         "title": "Systems",
         "icon": "settings",
         "defaultSlot": "leftBottom",

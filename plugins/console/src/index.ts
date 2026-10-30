@@ -72,6 +72,22 @@ export default definePlugin({
     );
 
     const diagnostics = services.get(DiagnosticsServiceToken);
+    /**
+     * For tours: whether the project's code has errors. Unset until diagnostics come, so that "no
+     * errors yet" does not read as "fixed".
+     */
+    const contextKeys = services.get(EditorServices.ContextKeys);
+    let checked = false;
+    context.subscriptions.add({
+      dispose: diagnostics.all.subscribe((all) => {
+        checked ||= all.size > 0;
+        if (!checked) return;
+        contextKeys.set(
+          'problems.hasErrors',
+          [...all.values()].some((list) => list.some((problem) => problem.severity === 'error')),
+        );
+      }),
+    });
     context.subscriptions.add(
       context.contribute(STATUS_BAR_ITEMS, {
         id: 'console.problems',

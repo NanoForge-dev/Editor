@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   cpSync,
   existsSync,
@@ -147,6 +149,23 @@ const copyGame = (source, destination) => {
   }
 };
 
+/**
+ * The panels' first-time tips take room the tests did not plan for: the local account starts
+ * with them put away, but for History's (`tips.spec.ts`).
+ */
+const tips = readdirSync(join(import.meta.dirname, '../../../plugins'))
+  .map((plugin) => join(import.meta.dirname, '../../../plugins', plugin, 'nanoforge.manifest.json'))
+  .filter((file) => existsSync(file))
+  .flatMap((file) => JSON.parse(readFileSync(file, 'utf8')).contributes?.widgets ?? [])
+  .filter((widget) => widget.tip && widget.id !== 'history-panel.history' && !process.env.E2E_TIPS)
+  .map((widget) => widget.id);
+const account = createHash('sha256').update('local').digest('hex').slice(0, 16);
+mkdirSync(join(root, '.data/settings/accounts'), { recursive: true });
+writeFileSync(
+  join(root, `.data/settings/accounts/${account}.json`),
+  `${JSON.stringify({ revision: '1', values: { 'tips.dismissed': tips } }, null, 2)}\n`,
+);
+
 const engine = engineRoot(join(import.meta.dirname, '../../..'));
 const pong = join(engine, 'example/pong-network');
 /** Engines without the editor bridge cannot be paused, stepped or stopped. */
@@ -194,6 +213,36 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
       '',
     ].join('\n'),
   );
+  if (cli && existsSync(join(cli, 'dist/nf.js'))) {
+    /** The tutorial's project, as `projects.createTutorial` makes it, on the engine's libraries. */
+    const tutorial = join(root, 'my-first-game');
+    execFileSync(
+      'node',
+      [
+        join(cli, 'dist/nf.js'),
+        'new',
+        ...['--name', 'my-first-game', '--path', 'my-first-game', '--language', 'ts'],
+        ...['--package-manager', 'npm', '--no-strict', '--no-server', '--no-git', '--no-docker'],
+        '--skip-install',
+      ],
+      { cwd: root, stdio: 'ignore' },
+    );
+    cpSync(join(import.meta.dirname, '../tutorial'), tutorial, { recursive: true, force: true });
+    writeFileSync(
+      join(tutorial, '.gitignore'),
+      `${readFileSync(join(tutorial, '.gitignore'), 'utf8')}\ndist/\n`,
+    );
+    linkNodeModules(join(pong, 'apps/client/node_modules'), join(tutorial, 'node_modules'));
+    rmSync(join(tutorial, 'node_modules/@nanoforge-dev/cli'), { recursive: true, force: true });
+    symlinkSync(cli, join(tutorial, 'node_modules/@nanoforge-dev/cli'));
+    symlinkSync(
+      realpathSync(join(pong, 'node_modules/@nanoforge-dev/config')),
+      join(tutorial, 'node_modules/@nanoforge-dev/config'),
+    );
+    linkEditorLibrary(engine, tutorial);
+  } else {
+    console.warn('No built CLI in NANOFORGE_CLI: the tutorial e2e test is skipped.');
+  }
   if (existsSync(join(engine, 'modules/scene/dist/index.js'))) {
     const breakout = join(root, 'breakout');
     cpSync(join(import.meta.dirname, '../../../examples/breakout'), breakout, {
