@@ -50,10 +50,12 @@
   /**
    * Keyboard of the grid: the arrows move between tiles (Up and Down by a row), Home and End to
    * the ends; Enter opens, Space selects (Ctrl adds), Backspace or Alt+Up goes to the parent.
+   * The parent folder's `..` tile is one of them: it takes the first cell, but the first arrow
+   * into the grid goes to its first file.
    */
   const onGridKey = (event: KeyboardEvent) => {
     const grid = event.currentTarget as HTMLElement;
-    const tiles = [...grid.querySelectorAll<HTMLElement>('[role="option"]')];
+    const tiles = [...grid.querySelectorAll<HTMLElement>('.tile')];
     if ((event.key === 'Backspace' || (event.altKey && event.key === 'ArrowUp')) && folder) {
       event.preventDefault();
       service.showFolder(dirname(folder));
@@ -72,7 +74,11 @@
       ArrowDown: columns,
     };
     let next: number | undefined;
-    if (event.key in step) next = index < 0 ? 0 : index + step[event.key]!;
+    const first = Math.max(
+      0,
+      tiles.findIndex((tile) => tile.getAttribute('role') === 'option'),
+    );
+    if (event.key in step) next = index < 0 ? first : index + step[event.key]!;
     else if (event.key === 'Home') next = 0;
     else if (event.key === 'End') next = tiles.length - 1;
     if (next !== undefined) {
@@ -143,6 +149,7 @@
     <button
       type="button"
       class="tile up"
+      tabindex="-1"
       ondblclick={() => service.showFolder(dirname(folder))}
       onkeydown={(event) => {
         if (event.key !== 'Enter' && event.key !== ' ') return;

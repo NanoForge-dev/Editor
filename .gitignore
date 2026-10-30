@@ -253,3 +253,4 @@ apps/editor/build/
 # The example editor's data (pnpm example)
 examples/.data/
 examples/node_modules
+.vitest-attachments

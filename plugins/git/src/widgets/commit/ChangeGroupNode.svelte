@@ -98,7 +98,6 @@
     class:selected={active}
     role="button"
     aria-expanded={!folded}
-    aria-pressed={active}
     aria-label={`${group.title}, ${group.rows.length} ${group.rows.length === 1 ? 'file' : 'files'}${group.checkable ? `, ${count} included` : ''}`}
     onclick={onselectgroup}
   >
@@ -106,6 +105,7 @@
       type="button"
       class="chevron"
       tabindex="-1"
+      aria-hidden="true"
       aria-expanded={!folded}
       aria-label={`${folded ? 'Expand' : 'Collapse'} ${group.title}`}
       onclick={(event) => {
@@ -119,6 +119,7 @@
       <input
         type="checkbox"
         tabindex="-1"
+        aria-hidden="true"
         aria-label={`Include all: ${group.title}`}
         checked={group.rows.length > 0 && count === group.rows.length}
         indeterminate={count > 0 && count < group.rows.length}

@@ -66,6 +66,10 @@
     ),
   );
   const selected = $derived(packets.find((packet) => packet.id === selectedId));
+  /** The row Tab reaches: the selected packet, else the first shown when it is filtered out. */
+  const tabStop = $derived(
+    shown.some((packet) => packet.id === selectedId) ? selectedId : shown[0]?.id,
+  );
   const selectedDetail = $derived.by(() => {
     if (!selected) return undefined;
     const { bytes, read } = detailOf(selected);
@@ -167,7 +171,7 @@
             {#each shown as packet (packet.id)}
               <tr
                 aria-selected={packet.id === selectedId}
-                tabindex={packet.id === (selectedId ?? shown[0]?.id) ? 0 : -1}
+                tabindex={packet.id === tabStop ? 0 : -1}
                 onclick={() => (selectedId = packet.id)}
                 onkeydown={(event) => {
                   const row = moveRowFocus(event);

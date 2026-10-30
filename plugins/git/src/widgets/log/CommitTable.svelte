@@ -46,6 +46,11 @@
     ),
   );
 
+  /** The row Tab reaches: the selected commit, else the first shown when it is filtered out. */
+  const tabStop = $derived(
+    commits.some((commit) => commit.hash === selectedHash) ? selectedHash : commits[0]?.hash,
+  );
+
   let menuCommit: GitCommit | undefined;
   const commitMenu = (): MenuEntry[] => {
     const commit = menuCommit;
@@ -102,7 +107,7 @@
           {#each commits as commit, index (commit.hash)}
             <tr
               aria-selected={commit.hash === selectedHash}
-              tabindex={commit.hash === (selectedHash ?? commits[0]?.hash) ? 0 : -1}
+              tabindex={commit.hash === tabStop ? 0 : -1}
               onclick={() => (selectedHash = commit.hash)}
               oncontextmenu={() => {
                 menuCommit = commit;

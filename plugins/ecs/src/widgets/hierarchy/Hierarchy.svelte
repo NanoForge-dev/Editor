@@ -6,6 +6,7 @@
     EmptyState,
     IconButton,
     Input,
+    isKeyboardMenu,
     type MenuEntry,
     Select,
     Tree,
@@ -16,6 +17,7 @@
   import { EcsServiceToken } from '../../service/ecs-service';
   import type { LiveSource } from '../../live/live.type';
   import { LiveServiceToken } from '../../live/live-service';
+  import { MoveGuard } from '../move-guard';
   import InheritedEntitiesTree from './InheritedEntitiesTree.svelte';
   import LiveEntitiesTree from './LiveEntitiesTree.svelte';
 
@@ -94,34 +96,27 @@
     if ($model) void ecs.openInCode($model.path, lineOf(id));
   };
 
-  /**
-   * True from a move until the model shows it (2 s at most): a key pressed again before that
-   * would read the old order, so it waits for the next press.
-   */
-  let moving = false;
-  let movingTimer: ReturnType<typeof setTimeout> | undefined;
+  const moving = new MoveGuard();
   $effect(() => {
     void $model;
-    moving = false;
+    moving.done();
   });
-  $effect(() => () => clearTimeout(movingTimer));
+  $effect(() => () => moving.done());
   const move = (ids: string[], target: string, position: DropPosition) => {
     const [entity] = ids;
-    if (moving || !entity || entity === target || target.startsWith(CODE_PREFIX)) return;
+    if (moving.busy || !entity || entity === target || target.startsWith(CODE_PREFIX)) return;
     const names = ($model?.entities ?? []).map((candidate) => candidate.name);
     const before =
       position === 'after' || position === 'inside' ? names[names.indexOf(target) + 1] : target;
     if (names[names.indexOf(entity) + 1] === before || before === entity) return;
-    moving = true;
-    clearTimeout(movingTimer);
-    movingTimer = setTimeout(() => (moving = false), 2000);
+    moving.start();
     void ecs
       .apply(
         { kind: 'moveEntity', entity, ...(before && before !== entity && { before }) },
         `Move ${entity}`,
       )
       .then((done) => {
-        if (!done) moving = false;
+        if (!done) moving.done();
       });
   };
 
@@ -245,7 +240,9 @@
         class="list"
         role="presentation"
         oncontextmenu={(event) => {
-          if (!(event.target as HTMLElement).closest('[data-id]')) menuTarget = undefined;
+          if (!isKeyboardMenu(event) && !(event.target as HTMLElement).closest('[data-id]')) {
+            menuTarget = undefined;
+          }
         }}
       >
         {#if nodes.length}
