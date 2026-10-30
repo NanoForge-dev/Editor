@@ -253,6 +253,10 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
     linkNodeModules(join(pong, 'apps/client/node_modules'), join(tutorial, 'node_modules'));
     rmSync(join(tutorial, 'node_modules/@nanoforge-dev/cli'), { recursive: true, force: true });
     symlinkSync(cli, join(tutorial, 'node_modules/@nanoforge-dev/cli'));
+    /** Builds run the project's own `nf`: without it they need one on the PATH, which CI has not. */
+    mkdirSync(join(tutorial, 'node_modules/.bin'), { recursive: true });
+    rmSync(join(tutorial, 'node_modules/.bin/nf'), { force: true });
+    symlinkSync(join(cli, 'dist/nf.js'), join(tutorial, 'node_modules/.bin/nf'));
     symlinkSync(
       realpathSync(join(pong, 'node_modules/@nanoforge-dev/config')),
       join(tutorial, 'node_modules/@nanoforge-dev/config'),

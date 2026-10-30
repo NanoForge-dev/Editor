@@ -3,7 +3,14 @@ import { join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '../../..');
 const BUILD = join(import.meta.dirname, '../dist/index.js');
-const SOURCES = ['apps/editor/src', 'apps/editor/server', 'packages', 'plugins', 'tooling'];
+const SOURCES = [
+  'apps/editor/src',
+  'apps/editor/server',
+  'apps/editor/tutorial',
+  'packages',
+  'plugins',
+  'tooling',
+];
 const SKIPPED = new Set([
   'node_modules',
   'dist',

@@ -10,6 +10,7 @@
     ".engine/**"
   ],
   "ignoreDependencies": ["eslint-formatter-pretty", "@nanoforge-dev/actions"],
+  "ignoreBinaries": ["mkfifo"],
   "workspaces": {
     ".": {
       "entry": ["scripts/*.mjs", "vitest.*.ts", "commitlint.config.cjs"]

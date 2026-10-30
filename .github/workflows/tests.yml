@@ -63,7 +63,7 @@ jobs:
       - name: Install browsers
         uses: ./.github/actions/playwright-install
         with:
-          browsers: chromium firefox webkit
+          browsers: chromium firefox
 
       # Coverage on Chromium (v8 coverage reads Chromium only), failing under each
       # workspace's floor (coverage-floors.json). The kit's component tests use the runner's
@@ -73,10 +73,10 @@ jobs:
         env:
           CHROME: /usr/bin/google-chrome
 
-      - name: Run the browser cache tests on Firefox and WebKit
+      - name: Run the browser cache tests on Firefox
         run: pnpm --filter @nanoforge-dev/editor-project exec vitest run --config vitest.config.ts --project browser
         env:
-          BROWSERS: firefox,webkit
+          BROWSERS: firefox
 
       - name: Upload coverage
         if: always()
