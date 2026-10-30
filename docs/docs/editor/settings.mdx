@@ -25,6 +25,14 @@ When several scopes have a value, the more specific one wins: Project (only me),
 
 _Edit as JSON_ opens the project's settings file in the code editor, with completion.
 
+## Files kept in the browser
+
+The editor keeps the files of the projects you open in your browser, so opening one again downloads only what changed. A file that several projects or branches have is kept once.
+
+_Editor › Storage_ shows the space each project takes, with **Clear** for one project and **Clear all**. **Cache size** (500 MB) and **Forget projects after** (30 days) are saved on this machine: the least recently used files go first, and the editor never takes more than a tenth of what the browser allows. Removing a project from _Recent_ also clears its files. Clearing only drops these copies: unsaved changes and undo history are kept apart and never cleared. Switch on **Keep these files when the browser runs short of space** so the browser does not remove them on its own.
+
+In the online editor, signing in as someone else on the same browser removes the previous user's files.
+
 ## Import and export
 
 The _Import & export_ page saves a scope to a `.json` file, and loads one with a preview of what would change.

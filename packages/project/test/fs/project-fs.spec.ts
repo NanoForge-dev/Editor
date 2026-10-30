@@ -1,14 +1,13 @@
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import type { FileChange } from '@nanoforge-dev/editor-protocol';
+import { type FileChange, FsContract } from '@nanoforge-dev/editor-protocol';
 import type { RpcClient } from '@nanoforge-dev/editor-rpc';
 import { type EditorServer, createEditorServer, loadEnv } from '@nanoforge-dev/editor-server-core';
 import { createLoopbackClient } from '@nanoforge-dev/editor-server-core/testing';
 
-import type { ContentCache } from '../../src/cache/cache.type';
 import { MemoryContentCache } from '../../src/cache/memory.content-cache';
 import { MemoryTreeCache } from '../../src/cache/memory.tree-cache';
 import { ProjectService } from '../../src/service/project-service';
@@ -20,18 +19,9 @@ let editor: EditorServer;
 let rpc: RpcClient;
 let service: ProjectService;
 const contents = new MemoryContentCache();
+/** Files the server sent bytes for, and files it answered "not modified" for. */
 const reads: string[] = [];
-
-/** Content cache spy: counts server reads by observing cache fills. */
-const spyCache = (inner: ContentCache): ContentCache => ({
-  get: (path) => inner.get(path),
-  set: (path, value) => {
-    reads.push(path);
-    return inner.set(path, value);
-  },
-  delete: (path) => inner.delete(path),
-  clear: () => inner.clear(),
-});
+const notModified: string[] = [];
 
 const waitFor = async (predicate: () => boolean, timeout = 2000) => {
   const start = Date.now();
@@ -50,8 +40,24 @@ beforeAll(async () => {
     version: 'test',
   });
   rpc = createLoopbackClient(editor);
+  const api = rpc.api.bind(rpc);
+  rpc.api = ((contract: Parameters<RpcClient['api']>[0]) => {
+    const methods = api(contract);
+    if (contract !== FsContract) return methods;
+    const fs = methods as ReturnType<typeof api<typeof FsContract>>;
+    return {
+      ...fs,
+      readMany: async (input: Parameters<typeof fs.readMany>[0]) => {
+        const answer = await fs.readMany(input);
+        for (const file of answer.files)
+          if ('notModified' in file) notModified.push(file.path);
+          else if (!('error' in file)) reads.push(file.path);
+        return answer;
+      },
+    };
+  }) as RpcClient['api'];
   service = new ProjectService(rpc, {
-    contents: () => spyCache(contents),
+    contents: () => contents,
     tree: () => new MemoryTreeCache(),
   });
 });
@@ -112,5 +118,40 @@ describe('ProjectFs', () => {
     ).rejects.toMatchObject({
       code: 'CONFLICT',
     });
+  });
+
+  it('reads again only what changed: not a touch, a rename, or a current copy', async () => {
+    const project = service.current.get()!;
+    const path = 'apps/client/src/main.ts';
+    const file = join(workspace, 'pong', path);
+    await project.fs.readText(path);
+    reads.length = 0;
+    notModified.length = 0;
+
+    const later = new Date(Date.now() + 120_000);
+    utimesSync(file, later, later);
+    await project.fs.refresh();
+    expect((await project.fs.readText(path, { fresh: true })).text).toContain('');
+    expect(reads).toEqual([]);
+    expect(notModified).toEqual([path]);
+
+    const before = statSync(file);
+    const text = (await project.fs.readText(path)).text;
+    writeFileSync(
+      file,
+      text.replace(/./, (char) => (char === 'x' ? 'y' : 'x')),
+    );
+    utimesSync(file, before.atime, before.mtime);
+    await project.fs.refresh();
+    expect((await project.fs.readText(path)).text).not.toBe(text);
+    expect(reads).toEqual([path]);
+
+    reads.length = 0;
+    await project.fs.rename(path, 'apps/client/src/renamed.ts');
+    await project.fs.readText('apps/client/src/renamed.ts');
+    expect(reads).toEqual([]);
+    await project.fs.rename('apps/client/src/renamed.ts', path);
+    writeFileSync(file, text);
+    await project.fs.refresh();
   });
 });

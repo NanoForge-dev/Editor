@@ -12,6 +12,8 @@
     Switch,
   } from '@nanoforge-dev/editor-ui';
 
+  import { ProjectCachesToken } from '@nanoforge-dev/editor-project';
+
   import { getEditor } from '$lib/editor/editor-context';
 
   const editor = getEditor();
@@ -81,6 +83,7 @@
     try {
       await projectsApi.forget({ id: project.id });
       recent = recent?.filter((candidate) => candidate.id !== project.id);
+      void editor.services.tryGet(ProjectCachesToken)?.clearProject(project.id);
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason);
     }

@@ -34,8 +34,10 @@ jobs:
       - name: Run type checks
         run: pnpm typecheck
 
-      - name: Install browsers for component tests
-        run: pnpm --filter @nanoforge-dev/editor-ui exec playwright install --with-deps chromium
+      - name: Install browsers for component and cache tests
+        run: pnpm --filter @nanoforge-dev/editor-ui exec playwright install --with-deps chromium firefox webkit
 
       - name: Run tests
         run: pnpm test:unit
+        env:
+          BROWSERS: chromium,firefox,webkit

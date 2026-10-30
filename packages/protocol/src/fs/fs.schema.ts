@@ -13,6 +13,11 @@ export const FileEntry = z.object({
   size: z.number().int().nonnegative(),
   /** Modification time in ms since epoch. */
   mtime: z.number(),
+  /**
+   * sha1 of a file's content (files the server can read: 64 MiB at most). A client trusts its
+   * cached copy of the content when the hashes match, whatever the modification time says.
+   */
+  hash: z.string().optional(),
 });
 export type FileEntry = z.output<typeof FileEntry>;
 
@@ -29,3 +34,21 @@ export const FileChange = z.object({
   kind: FileKind,
 });
 export type FileChange = z.output<typeof FileChange>;
+
+/** One file asked for by `readMany`, with the hash of the copy the client already has. */
+export const ReadRequest = z.object({ path: ProjectPath, knownHash: z.string().optional() });
+export type ReadRequest = z.output<typeof ReadRequest>;
+
+/**
+ * One answer of `readMany`: the content, or `notModified` when the client's copy is current
+ * (no bytes sent), or why the file could not be read.
+ */
+export const ReadResult = z.union([
+  FileContent,
+  FileEntry.extend({ notModified: z.literal(true), hash: z.string() }),
+  z.object({
+    path: ProjectPath,
+    error: z.object({ code: z.string(), message: z.string() }),
+  }),
+]);
+export type ReadResult = z.output<typeof ReadResult>;

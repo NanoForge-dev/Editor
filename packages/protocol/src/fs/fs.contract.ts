@@ -4,7 +4,7 @@ import { defineContract } from '@nanoforge-dev/editor-rpc';
 
 import { ProjectPath } from '../path/project-path';
 import { ProjectId } from '../project/project.schema';
-import { Bytes, FileChange, FileContent, FileEntry } from './fs.schema';
+import { Bytes, FileChange, FileContent, FileEntry, ReadRequest, ReadResult } from './fs.schema';
 
 const Target = z.object({ project: ProjectId, path: ProjectPath });
 
@@ -16,6 +16,15 @@ export const FsContract = defineContract('fs', {
       output: z.array(FileEntry),
     },
     read: { input: Target, output: FileContent },
+    /**
+     * Several files in one call (a project opening, its open tabs). A file whose `knownHash` is
+     * current comes back `notModified`, without bytes. Answers stop past a few MiB: `rest` holds
+     * the paths still to ask for.
+     */
+    readMany: {
+      input: z.object({ project: ProjectId, files: z.array(ReadRequest).max(1000) }),
+      output: z.object({ files: z.array(ReadResult), rest: z.array(ProjectPath) }),
+    },
     write: {
       input: Target.extend({
         content: z.union([Bytes, z.string()]),

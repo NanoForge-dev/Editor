@@ -54,7 +54,7 @@ jobs:
         working-directory: engine
 
       - name: Install browsers
-        run: pnpm --filter @nanoforge-dev/editor exec playwright install --with-deps chromium
+        run: pnpm --filter @nanoforge-dev/editor exec playwright install --with-deps chromium firefox
 
       - name: Run end-to-end tests
         run: pnpm --filter @nanoforge-dev/editor test:e2e

@@ -55,6 +55,7 @@ describe('public API', () => {
         "MutableDisposable",
         "ObservableValue",
         "PluginHostToken",
+        "ProjectCachesToken",
         "ProjectServiceToken",
         "REQUIRED_PLUGINS",
         "RUNTIME_PROTOCOL_VERSION",

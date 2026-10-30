@@ -324,6 +324,14 @@ export class CodeService implements Disposable {
     const paths = this._options.fs.entries.filter(
       (entry) => entry.kind === 'file' && isCodeFile(entry.path),
     );
+    /** Fills the cache in a few requests; the reads below then cost nothing. */
+    await this._options.fs
+      .readMany(
+        paths
+          .filter((entry) => !this._options.documents.get(entry.path))
+          .map((entry) => entry.path),
+      )
+      .catch(() => undefined);
     for (let i = 0; i < paths.length; i += 32) {
       const batch = await Promise.all(
         paths.slice(i, i + 32).map(async (entry) => ({
