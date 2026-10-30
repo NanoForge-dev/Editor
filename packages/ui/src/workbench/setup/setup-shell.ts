@@ -81,7 +81,7 @@ export const setupShell = (options: ShellOptions): Shell => {
   );
   const notifications = new NotificationService();
   const prompts = new PromptService();
-  const tours = store.add(new TourService(extensions, contextKeys, commands));
+  const tours = store.add(new TourService(extensions, contextKeys, commands, notifications));
   store.add(
     commands.register({
       id: 'tour.start',

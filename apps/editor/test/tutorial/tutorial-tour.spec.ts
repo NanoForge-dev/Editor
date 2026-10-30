@@ -15,7 +15,7 @@ const steps = (keys: Record<string, unknown>) => {
 };
 
 describe('the tutorial tour', () => {
-  it('walks a local editor through its own project, the bridge decides World', () => {
+  it('walks a local editor through its own project, the bridge decides World, git decides Commit', () => {
     const local = { 'editor.local': true, 'git.repository': false, 'runtime.active': true };
     expect(steps({ ...local, 'runtime.controllable': true })).toEqual([
       'welcome',
@@ -28,9 +28,11 @@ describe('the tutorial tour', () => {
       'play',
       'world',
       'init',
-      'commit',
       'done',
     ]);
+    const repository = steps({ ...local, 'git.repository': true, 'runtime.controllable': true });
+    expect(repository).toContain('commit');
+    expect(repository).not.toContain('init');
     expect(steps({ ...local, 'runtime.controllable': false })).toContain('no-bridge');
     expect(steps({ ...local, 'runtime.controllable': false })).not.toContain('world');
   });

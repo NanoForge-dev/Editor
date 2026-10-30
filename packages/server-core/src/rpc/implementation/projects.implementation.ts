@@ -11,12 +11,55 @@ import type { CoreRpcDependencies } from '../core-rpc.type';
 import { packageManagerOf } from '../package-manager-of';
 import { requireUser } from '../require-user';
 
+/** A file of the tutorial's sources (`apps/editor/tutorial`): a folder that has it is the tutorial's project. */
+const TUTORIAL_MARKER = 'src/systems/move-2d.system.ts';
+
 /** Implements the projects contract. */
 export const implementProjectsRpc = (
   router: RpcRouter<RequestContext>,
   deps: CoreRpcDependencies,
 ): Disposable => {
   const { env, projects } = deps;
+
+  /** Tutorial projects being made, by folder name: a second call waits for the first. */
+  const tutorials = new Map<string, Promise<void>>();
+
+  /**
+   * Makes the tutorial's project in `name`, unless it is already there: a folder of that name is
+   * the tutorial's only when it has the tutorial's own file.
+   */
+  const makeTutorial = async (name: string, install: boolean) => {
+    const root = join(env.fsRoot, name);
+    if (existsSync(root)) {
+      if (existsSync(join(root, TUTORIAL_MARKER))) return;
+      throw new RpcError(
+        'CONFLICT',
+        `A folder named ${name} already exists and is not the tutorial's project: move it away to make the tutorial's project`,
+      );
+    }
+    if (!env.tutorialDir || !existsSync(env.tutorialDir))
+      throw new RpcError('INTERNAL', 'This editor was built without the tutorial files');
+    await newProject({
+      name,
+      language: 'ts',
+      server: false,
+      install: false,
+      packageManager: 'npm',
+      strict: false,
+    });
+    await cp(env.tutorialDir, root, { recursive: true, force: true });
+    await addEditorLibraryDependency(join(root, 'package.json'));
+    await ignoreBuildOutput(join(root, '.gitignore'));
+    await projects.trust.trust(await realpath(root));
+    if (install) {
+      const result = await deps.cli.exec('npm', ['install'], { cwd: root }).done;
+      if (result.exitCode !== 0)
+        throw new RpcError(
+          'INTERNAL',
+          'The tutorial project was made, but installing its dependencies failed: open it and use Install dependencies on the Project screen',
+        );
+    }
+  };
 
   /** `nf new` in the root folder, given every option: the server has no terminal to answer. */
   const newProject = async (options: {
@@ -101,36 +144,12 @@ export const implementProjectsRpc = (
       createTutorial: async ({ name, install }, { session }) => {
         if (env.mode !== 'OFFLINE')
           throw new RpcError('FORBIDDEN', 'The tutorial project is made by local editors');
-        const root = join(env.fsRoot, name);
-        if (existsSync(root) && !existsSync(join(root, 'nanoforge.config.ts')))
-          throw new RpcError(
-            'CONFLICT',
-            `A folder named ${name} already exists and is not a NanoForge project: move it away to make the tutorial's project`,
-          );
-        if (!existsSync(root)) {
-          if (!env.tutorialDir || !existsSync(env.tutorialDir))
-            throw new RpcError('INTERNAL', 'This editor was built without the tutorial files');
-          await newProject({
-            name,
-            language: 'ts',
-            server: false,
-            install: false,
-            packageManager: 'npm',
-            strict: false,
-          });
-          await cp(env.tutorialDir, root, { recursive: true, force: true });
-          await addEditorLibraryDependency(join(root, 'package.json'));
-          await ignoreBuildOutput(join(root, '.gitignore'));
-          await projects.trust.trust(await realpath(root));
-          if (install) {
-            const result = await deps.cli.exec('npm', ['install'], { cwd: root }).done;
-            if (result.exitCode !== 0)
-              throw new RpcError(
-                'INTERNAL',
-                'The tutorial project was made, but installing its dependencies failed: open it and use Install dependencies on the Project screen',
-              );
-          }
+        let making = tutorials.get(name);
+        if (!making) {
+          making = makeTutorial(name, install).finally(() => tutorials.delete(name));
+          tutorials.set(name, making);
         }
+        await making;
         const project = await projects.open(session, { path: name });
         return { id: project.id, name: project.name, trusted: project.trusted };
       },

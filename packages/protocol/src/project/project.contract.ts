@@ -48,7 +48,8 @@ export const ProjectsContract = defineContract('projects', {
     /**
      * Local editors: the tutorial's project, made with `nf new` and the tutorial's own files
      * (a moving ball, a mistake to fix, the editor library), then opened. An existing folder of
-     * that name is opened as it is.
+     * that name is opened as it is when it is the tutorial's project, refused (CONFLICT)
+     * otherwise.
      */
     createTutorial: {
       input: z.object({

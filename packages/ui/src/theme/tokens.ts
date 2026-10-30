@@ -136,6 +136,8 @@ export const SHARED_TOKENS: Readonly<Record<string, string>> = {
   'shadow-float': '0 10px 30px -8px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25)',
   'z-dock': '10',
   'z-float': '100',
+  /** The tour's bubble and ring: over docks and floats, under dialogs, menus and toasts. */
+  'z-tour': '1500',
   'z-dialog': '2000',
   'z-menu': '2500',
   'z-toast': '3000',

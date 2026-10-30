@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CoreServices, createCoreContainer } from '@nanoforge-dev/editor-kernel';
 
+import { NotificationService } from '../../../src/workbench/notification/notification-service';
 import { TourService } from '../../../src/workbench/tour/tour-service';
 import { TOURS, type Tour } from '../../../src/workbench/tour/tour.extension-point';
 
@@ -9,11 +10,13 @@ const setup = (tour: Tour) => {
   const container = createCoreContainer();
   const extensions = container.get(CoreServices.Extensions);
   const contextKeys = container.get(CoreServices.ContextKeys);
+  const commands = container.get(CoreServices.Commands);
+  const notifications = new NotificationService();
   extensions.contribute(TOURS, tour, { owner: 'test' });
-  const tours = new TourService(extensions, contextKeys, container.get(CoreServices.Commands));
+  const tours = new TourService(extensions, contextKeys, commands, notifications);
   const title = () => tours.state.get()?.step.title;
   const settle = () => new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
-  return { tours, contextKeys, title, settle };
+  return { tours, contextKeys, commands, notifications, title, settle };
 };
 
 const step = (id: string, extra: object = {}) => ({ id, title: id, text: `About ${id}`, ...extra });
@@ -89,5 +92,48 @@ describe('TourService', () => {
     contextKeys.set('git.repository', true);
     tours.next();
     expect(tours.state.get()).toMatchObject({ position: 2, count: 3 });
+  });
+
+  it('stays on a step reached by Back until its condition turns true again', async () => {
+    const { tours, contextKeys, title, settle } = setup({
+      id: 'demo',
+      title: 'Demo',
+      steps: [step('scene', { advanceWhen: "screen == 'scene'" }), step('add'), step('end')],
+    });
+    tours.start('demo');
+    contextKeys.set('screen', 'scene');
+    await settle();
+    expect(title()).toBe('add');
+    tours.back();
+    await settle();
+    expect(title()).toBe('scene');
+    contextKeys.set('other', 1);
+    await settle();
+    expect(title()).toBe('scene');
+    contextKeys.set('screen', 'game');
+    await settle();
+    expect(title()).toBe('scene');
+    contextKeys.set('screen', 'scene');
+    await settle();
+    expect(title()).toBe('add');
+  });
+
+  it('shows a failed action as a notification instead of rejecting', async () => {
+    const { tours, commands, notifications } = setup({
+      id: 'demo',
+      title: 'Demo',
+      steps: [step('commit', { action: { title: 'Show Commit', command: 'test.fails' } })],
+    });
+    commands.register({
+      id: 'test.fails',
+      title: 'Fails',
+      when: 'git.repository',
+      handler: () => undefined,
+    });
+    tours.start('demo');
+    await expect(tours.act()).resolves.toBeUndefined();
+    expect(notifications.active.get()).toMatchObject([
+      { severity: 'error', message: 'Show Commit failed' },
+    ]);
   });
 });

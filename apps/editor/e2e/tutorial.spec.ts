@@ -1,7 +1,8 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject } from './helpers';
+import { accountSetting, openProject, putBackAccountSetting } from './helpers';
 import { type Page, expect, test } from './test';
 import { TUTORIAL } from './workspace';
 
@@ -25,7 +26,14 @@ test.skip(
   'needs a built CLI (NANOFORGE_CLI) and engine (NANOFORGE_ENGINE)',
 );
 
+/** Starting the tutorial puts the welcome away, in the account settings that outlive tests. */
+let welcome: unknown;
+test.beforeEach(async ({ page }) => {
+  welcome = await accountSetting(page, 'welcome.show');
+});
+
 test.afterEach(async ({ page }) => {
+  await putBackAccountSetting(page, 'welcome.show', welcome);
   const stop = run(page, 'Stop');
   if (await stop.isVisible().catch(() => false)) {
     await stop.click();
@@ -78,6 +86,10 @@ test('the tutorial: from the welcome to a first commit', async ({ page }) => {
   await step(page, 'Fix the mistake');
   await press(page, 'Show problems');
   await expect(page.getByText("Property 'speed' does not exist")).toBeVisible();
+  await expect(
+    page.getByRole('button').and(page.getByTitle('Show problems', { exact: true })),
+    'Problems should hold only the planted mistake: another error comes from the environment (a failed build, missing dependencies), and the step would never go on',
+  ).toHaveText(/^\s*1 error(?!s)/);
   writeFileSync(SYSTEM, readFileSync(SYSTEM, 'utf8').replace('velocity.speed', 'velocity.x'));
 
   await step(page, 'Play');
@@ -92,11 +104,14 @@ test('the tutorial: from the welcome to a first commit', async ({ page }) => {
   await step(page, 'Keep your work in git');
   await press(page, 'Initialize repository');
   await step(page, 'Commit');
+  /** The editor made this repository: a runner without a git identity could not commit in it. */
+  execFileSync('git', ['config', 'user.name', 'E2E'], { cwd: TUTORIAL });
+  execFileSync('git', ['config', 'user.email', 'e2e@example.com'], { cwd: TUTORIAL });
   await press(page, 'Show Commit');
   const commit = page.getByRole('region', { name: 'Commit', exact: true });
   await commit
     .getByRole('region', { name: 'Unversioned files', exact: true })
-    .getByRole('checkbox', { name: 'Include all: Unversioned files' })
+    .getByRole('checkbox', { name: 'Include all: Unversioned files', includeHidden: true })
     .check();
   await commit.getByRole('textbox', { name: 'Commit message' }).fill('my first game');
   await commit.getByRole('button', { name: 'Commit', exact: true }).click();
