@@ -2,6 +2,7 @@ import {
   type Disposable,
   DisposableStore,
   type ExtensionRegistry,
+  type Logger,
   MutableDisposable,
   type Observable,
   ObservableValue,
@@ -65,10 +66,14 @@ export class IconThemeService implements Disposable {
   private readonly _store = new DisposableStore();
   private readonly _files = new MutableDisposable<DisposableStore>();
   private readonly _current = new ObservableValue<IconTheme>(DEFAULT_ICON_THEME);
+  /** Icon themes with an id already taken, each reported once. */
+  private readonly _reported = new Set<string>();
 
   constructor(
     private readonly _extensions: ExtensionRegistry,
     private readonly _selected: Observable<string>,
+    /** Where icon themes with an id already taken are reported. */
+    private readonly _logger?: Logger,
   ) {
     this._store.add(_extensions.contribute(ICON_THEMES, DEFAULT_ICON_THEME, { owner: 'core' }));
     const apply = () => this._apply();
@@ -80,8 +85,20 @@ export class IconThemeService implements Disposable {
     return this._current.readonly();
   }
 
+  /** Every icon theme: the first contribution of an id (core's comes first), the rest reported. */
   get themes(): IconTheme[] {
-    return this._extensions.getValues(ICON_THEMES);
+    const themes = new Map<string, IconTheme>();
+    for (const { value, owner } of this._extensions.getContributions(ICON_THEMES)) {
+      if (!themes.has(value.id)) {
+        themes.set(value.id, value);
+        continue;
+      }
+      const message = `Icon theme "${value.id}" of ${owner} has the id of an icon theme already contributed`;
+      if (this._reported.has(message)) continue;
+      this._reported.add(message);
+      this._logger?.warn(message);
+    }
+    return [...themes.values()];
   }
 
   dispose(): void {

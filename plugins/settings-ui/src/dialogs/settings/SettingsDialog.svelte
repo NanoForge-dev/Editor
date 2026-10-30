@@ -124,6 +124,10 @@
   );
   /** What the marketplace searches when it opens (Get more themes). */
   let marketQuery = $state<string>();
+  /** Plugins opens on its own tab again once the user leaves it. */
+  $effect(() => {
+    if (page !== 'plugins') marketQuery = undefined;
+  });
   const contributedPage = $derived(pages.find((contributed) => contributed.id === page));
 
   let kept = $state(false);

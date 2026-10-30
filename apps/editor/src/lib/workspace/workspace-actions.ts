@@ -305,10 +305,15 @@ export class WorkspaceActions implements Disposable {
     const saved = async (path: string) => {
       if (documents.get(path)) await documents.save(path);
     };
-    /** An open file is changed through its document, then saved: never behind it. */
+    /**
+     * An open file is changed through its document, then saved: never behind it. One with unsaved
+     * edits is refused (the operation rolls back): its text was built from the file on disk.
+     */
     const write = async (path: string, text: string) => {
       const open = documents.get(path);
       if (!open) return io.write(path, text);
+      if (open.dirty.get())
+        throw new WorkspaceError(`${path} has unsaved changes: save it first`, [path]);
       const current = open.getText();
       if (current !== text)
         await documents.applyEdits(path, [{ start: 0, end: current.length, text }]);

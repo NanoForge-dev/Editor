@@ -3,7 +3,8 @@ import type { ExportDeclaration, ImportDeclaration, SourceFile } from 'ts-morph'
 import type { AnalyzeContext, TransformContext } from '@nanoforge-dev/editor-sdk/worker';
 
 const ROOT = '/project/';
-const projectPath = (file: SourceFile) => file.getFilePath().replace(ROOT, '');
+/** A file's path in the project (the worker's files live under `/project/`). */
+export const projectPath = (file: SourceFile): string => file.getFilePath().replace(ROOT, '');
 
 const moduleDeclarations = (file: SourceFile): (ImportDeclaration | ExportDeclaration)[] => [
   ...file.getImportDeclarations(),

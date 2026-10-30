@@ -64,6 +64,50 @@ describe('theme contributions', () => {
     ).toBeTruthy();
   });
 
+  it('refuses values that run into what follows them', () => {
+    const theme = (accent: string) => ({
+      id: 'x',
+      label: 'X',
+      extends: 'nanoforge-dark',
+      colors: { accent },
+    });
+    const refused = (value: string) =>
+      expect(() => parse(theme(value)), value).toThrow(/not a plain CSS value/);
+    refused('#000 /*');
+    refused('rgb(0 0 0');
+    refused('rgb(0 0 0))');
+    refused('rgb(0 0 0]');
+    refused('#000 [x');
+    refused('"Fira Code, monospace');
+    refused("'Fira Code', 'mono");
+    for (const value of [
+      'rgb(0 0 0 / 50%)',
+      'color-mix(in srgb, rgb(0 0 0) 20%, #fff)',
+      '"a ( [ \' b", monospace',
+    ])
+      expect(parse(theme(value)), value).toBeTruthy();
+  });
+
+  it('keeps the first theme of an id and reports the others', () => {
+    const reports: string[] = [];
+    const usurper = parse({
+      id: 'nanoforge-dark',
+      label: 'Not the default',
+      extends: 'nanoforge-light',
+      colors: { accent: '#f00' },
+    });
+    const themes = resolveThemes(
+      [nanoforgeDark, nanoforgeLight, usurper].map(parse).concat(usurper),
+      (_id, error, theme) => reports.push(`${theme.label}: ${error.message}`),
+    );
+    expect(themes.map((theme) => theme.label)).toEqual(['NanoForge Dark', 'NanoForge Light']);
+    expect(themes[0]!.colors).toEqual(nanoforgeDark.colors);
+    expect(reports).toEqual([
+      'Not the default: has the id of a theme already contributed',
+      'Not the default: has the id of a theme already contributed',
+    ]);
+  });
+
   it('names what is wrong: unknown tokens, missing colors, missing bases and cycles', () => {
     expect(() =>
       parse({ id: 'x', label: 'X', extends: 'nanoforge-dark', colors: { acent: '#fff' } }),

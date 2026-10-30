@@ -1,16 +1,19 @@
-import {
-  type ImportDeclaration,
-  Node,
-  type SourceFile,
-  type Statement,
-  SyntaxKind,
-} from 'ts-morph';
+import { Node, type Statement, SyntaxKind } from 'ts-morph';
 
 import { type AnalyzeContext, CodeError } from '@nanoforge-dev/editor-sdk/worker';
 
-/** Items to move out of the analyzed file: export name → the new file's project path. */
+import { type Binding, bindingsOf, importLines, isRelative } from './import-lines';
+import { projectPath } from './refactor';
+import { type Edit, applyEdits, removalStart, tidy } from './source-edits';
+import { declaredNames, isExported, movedText, topStatement } from './top-statements';
+
+/**
+ * Items to move out of the analyzed file: export name → the new file's project path. `entry`: the
+ * file is the app's entry, which imports the moved items: they must not import it back.
+ */
 export interface SplitItemsArgs {
   readonly items: readonly { readonly name: string; readonly to: string }[];
+  readonly entry?: boolean;
 }
 
 /** The texts a split leaves: new files, the file itself (null: it goes) and its importers. */
@@ -20,105 +23,6 @@ export interface SplitItemsResult {
   readonly importers: readonly { readonly path: string; readonly text: string }[];
 }
 
-const ROOT = '/project/';
-const projectPath = (file: SourceFile) => file.getFilePath().replace(ROOT, '');
-
-/** One binding an import brings: `{ a }`, `{ a as b }`, a default or a namespace. */
-interface Binding {
-  readonly kind: 'named' | 'default' | 'namespace';
-  /** The exported name (named bindings). */
-  readonly imported?: string;
-  readonly local: string;
-  readonly typeOnly: boolean;
-}
-
-/** Import lines in the file's quote style, grouped by module. */
-const importLines = (needs: Map<string, Binding[]>, quote: string): string[] =>
-  [...needs]
-    .sort(([a], [b]) => Number(a.startsWith('.')) - Number(b.startsWith('.')))
-    .map(([module, bindings]) => {
-      const unique = [...new Map(bindings.map((binding) => [binding.local, binding])).values()];
-      const allTypes = unique.every((binding) => binding.typeOnly);
-      const parts: string[] = [];
-      const def = unique.find((binding) => binding.kind === 'default');
-      const namespace = unique.find((binding) => binding.kind === 'namespace');
-      const named = unique
-        .filter((binding) => binding.kind === 'named')
-        .sort((a, b) => a.local.localeCompare(b.local))
-        .map(
-          (binding) =>
-            `${binding.typeOnly && !allTypes ? 'type ' : ''}${binding.imported === binding.local ? binding.local : `${binding.imported} as ${binding.local}`}`,
-        );
-      if (def) parts.push(def.local);
-      if (namespace) parts.push(`* as ${namespace.local}`);
-      if (named.length) parts.push(`{ ${named.join(', ')} }`);
-      return `import ${allTypes ? 'type ' : ''}${parts.join(', ')} from ${quote}${module}${quote};`;
-    });
-
-const bindingsOf = (declaration: ImportDeclaration): (Binding & { node: Node })[] => {
-  const typeOnly = declaration.isTypeOnly();
-  const bindings: (Binding & { node: Node })[] = [];
-  const def = declaration.getDefaultImport();
-  if (def) bindings.push({ kind: 'default', local: def.getText(), typeOnly, node: def });
-  const namespace = declaration.getNamespaceImport();
-  if (namespace)
-    bindings.push({ kind: 'namespace', local: namespace.getText(), typeOnly, node: namespace });
-  for (const specifier of declaration.getNamedImports()) {
-    const local = specifier.getAliasNode() ?? specifier.getNameNode();
-    bindings.push({
-      kind: 'named',
-      imported: specifier.getName(),
-      local: local.getText(),
-      typeOnly: typeOnly || specifier.isTypeOnly(),
-      node: local,
-    });
-  }
-  return bindings;
-};
-
-/** The top-level statement a node belongs to. */
-const topStatement = (node: Node): Statement | undefined => {
-  let current: Node | undefined = node;
-  while (current && !Node.isSourceFile(current.getParent())) current = current.getParent();
-  return current as Statement | undefined;
-};
-
-/** The names a top-level statement declares. */
-const declaredNames = (statement: Statement): string[] => {
-  if (Node.isClassDeclaration(statement) || Node.isFunctionDeclaration(statement))
-    return statement.getName() ? [statement.getName()!] : [];
-  if (Node.isVariableStatement(statement))
-    return statement.getDeclarations().map((declaration) => declaration.getName());
-  if (Node.isInterfaceDeclaration(statement) || Node.isTypeAliasDeclaration(statement))
-    return [statement.getName()];
-  if (Node.isEnumDeclaration(statement)) return [statement.getName()];
-  return [];
-};
-
-const isExported = (statement: Statement) => Node.isExportable(statement) && statement.isExported();
-
-/** The statement's text with its doc comment, exported, without the blank lines before it. */
-const movedText = (statement: Statement, exported = true) => {
-  const full = statement.getFullText();
-  const at = statement.getStart() - statement.getFullStart();
-  const text =
-    !exported || isExported(statement) ? full : `${full.slice(0, at)}export ${full.slice(at)}`;
-  return text.replace(/^(?:[ \t]*\r?\n)+/, '').trimEnd();
-};
-
-interface Edit {
-  readonly start: number;
-  readonly end: number;
-  readonly text: string;
-}
-const applyEdits = (text: string, edits: readonly Edit[]) => {
-  let result = text;
-  for (const edit of [...edits].sort((a, b) => b.start - a.start))
-    result = result.slice(0, edit.start) + edit.text + result.slice(edit.end);
-  return result;
-};
-const tidy = (text: string) => `${text.replace(/\n{3,}/g, '\n\n').trim()}\n`;
-
 /**
  * Moves top-level items (components, systems…) of the analyzed file to files of their own:
  * each takes only the imports it uses; what stays in the file and is used by a moved item is
@@ -126,7 +30,7 @@ const tidy = (text: string) => `${text.replace(/\n{3,}/g, '\n\n').trim()}\n`;
  * from its new file. Read-only: returns the texts.
  */
 export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): SplitItemsResult => {
-  const { items } = args as SplitItemsArgs;
+  const { items, entry = false } = args as SplitItemsArgs;
   const file = context.file;
   const path = context.path;
   const quote =
@@ -156,7 +60,12 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
   for (let changed = true; changed;) {
     changed = false;
     for (const helper of statements) {
-      if (moved.has(helper) || Node.isImportDeclaration(helper) || !declaredNames(helper).length)
+      if (
+        moved.has(helper) ||
+        isExported(helper) ||
+        Node.isImportDeclaration(helper) ||
+        !declaredNames(helper).length
+      )
         continue;
       const users = statements.filter((user) => user !== helper && references(user, helper));
       const targets = new Set(users.map((user) => moved.get(user)));
@@ -169,6 +78,8 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
   const movedOf = (statement: Statement | undefined) =>
     statement ? moved.get(statement) : undefined;
   const exportInFile = new Set<Statement>();
+  /** What the moved items would import back from an entry file. */
+  const fromEntry = new Set<string>();
 
   /** What `node`'s identifiers refer to outside of `scope`: imports and top-level declarations. */
   const needsOf = (scope: Node, from: string, ownNames: readonly string[]) => {
@@ -208,6 +119,7 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
           });
         continue;
       }
+      if (entry) fromEntry.add(identifier.getText());
       if (!isExported(statement)) exportInFile.add(statement);
       need(context.moduleSpecifier(path, from), {
         kind: 'named',
@@ -219,6 +131,22 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
     return needs;
   };
 
+  /** Imports without bindings (`import "./register"`): each new file keeps them. */
+  const sideEffects = file
+    .getImportDeclarations()
+    .filter((declaration) => !bindingsOf(declaration).length && !declaration.isTypeOnly());
+  const sideEffectLines = (to: string) =>
+    sideEffects.map((declaration) => {
+      const value = declaration.getModuleSpecifierValue();
+      if (!value.startsWith('.')) return `import ${quote}${value}${quote};`;
+      const target = declaration.getModuleSpecifierSourceFile();
+      if (!target)
+        throw new CodeError(
+          `${path} imports ${value} for its effects, and the moved items need it too: move them by hand.`,
+        );
+      return `import ${quote}${context.moduleSpecifier(projectPath(target), to)}${quote};`;
+    });
+
   const byTarget = new Map<string, Statement[]>();
   for (const [statement, to] of [...moved].sort(([a], [b]) => a.getPos() - b.getPos()))
     byTarget.set(to, [...(byTarget.get(to) ?? []), statement]);
@@ -228,8 +156,10 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
     for (const statement of group)
       for (const [module, bindings] of needsOf(statement, to, own))
         needs.set(module, [...(needs.get(module) ?? []), ...bindings]);
-    const lines = importLines(needs, quote);
-    const firstRelative = lines.findIndex((line) => / from ["']\./.test(line));
+    const lines = [...sideEffectLines(to), ...importLines(needs, quote)].sort(
+      (a, b) => Number(isRelative(a)) - Number(isRelative(b)),
+    );
+    const firstRelative = lines.findIndex(isRelative);
     const imports =
       firstRelative > 0
         ? [...lines.slice(0, firstRelative), '', ...lines.slice(firstRelative)]
@@ -239,6 +169,11 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
       .join('\n\n');
     return { path: to, text: tidy(`${imports.join('\n')}${imports.length ? '\n\n' : ''}${body}`) };
   });
+
+  if (fromEntry.size)
+    throw new CodeError(
+      `The moved items use ${[...fromEntry].sort().join(', ')} of ${path}, which imports them: move ${fromEntry.size === 1 ? 'it' : 'them'} out of ${path} first (to a module of ${fromEntry.size === 1 ? 'its' : 'their'} own).`,
+    );
 
   /** The file without the moved items. */
   const edits: Edit[] = [];
@@ -264,10 +199,12 @@ export const analyzeSplitItems = (context: AnalyzeContext, args: unknown): Split
     const used = bindings.filter((binding) => usedOutsideMoved(binding.node));
     if (used.length === bindings.length) continue;
     edits.push({
-      start: declaration.getFullStart(),
+      start: used.length
+        ? declaration.getStart()
+        : removalStart(context.text, declaration.getStart()),
       end: declaration.getEnd(),
       text: used.length
-        ? `\n${importLines(new Map([[declaration.getModuleSpecifierValue(), used]]), quote)[0]}`
+        ? importLines(new Map([[declaration.getModuleSpecifierValue(), used]]), quote)[0]!
         : '',
     });
   }

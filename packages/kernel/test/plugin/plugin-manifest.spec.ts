@@ -75,4 +75,10 @@ describe('parsePluginManifest', () => {
       keywords: ['theme'],
     });
   });
+
+  it('refuses an entry it does not know (a typo would leave the plugin doing nothing)', () => {
+    expect(() =>
+      parsePluginManifest({ ...base, entry: { clinet: 'dist/index.js' } }, 'plugins/typo'),
+    ).toThrow(/clinet/);
+  });
 });

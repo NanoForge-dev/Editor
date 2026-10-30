@@ -14,12 +14,30 @@ import {
  * A value goes into a stylesheet: nothing that ends its declaration or loads another file
  * (a theme brings no files but its icons).
  */
-const UNSAFE = /[;{}\\<>@]|\b(?:url|image|image-set|src|element)\s*\(/i;
+const UNSAFE = /[;{}\\<>@]|\/\*|\b(?:url|image|image-set|src|element)\s*\(/i;
+
+const CLOSERS: Record<string, string> = { ')': '(', ']': '[' };
+
+/** Brackets closed in order and quotes closed, so the value can't run into what follows it. */
+const balanced = (value: string): boolean => {
+  const open: string[] = [];
+  let quote: string | undefined;
+  for (const char of value) {
+    if (quote) {
+      if (char === quote) quote = undefined;
+    } else if (char === '"' || char === "'") quote = char;
+    else if (char === '(' || char === '[') open.push(char);
+    else if (CLOSERS[char] && open.pop() !== CLOSERS[char]) return false;
+  }
+  return !quote && !open.length;
+};
+
 const CssValue = z
   .string()
   .min(1)
-  .refine((value) => !UNSAFE.test(value), {
-    message: 'is not a plain CSS value (no ; { } \\ < > @, url() nor images)',
+  .refine((value) => !UNSAFE.test(value) && balanced(value), {
+    message:
+      'is not a plain CSS value (no ; { } \\ < > @, /*, url() nor images, brackets and quotes closed)',
   });
 
 const partial = <T extends string>(names: readonly T[]) =>
@@ -62,14 +80,20 @@ export class ThemeResolveError extends Error {}
 
 /**
  * The complete themes from their contributions: each `extends` chain is followed (a base's
- * colors, code colors and tokens, then the theme's own). Themes that can't be resolved are
- * left out, with the reason given to `report`.
+ * colors, code colors and tokens, then the theme's own). The first contribution of an id is
+ * kept (core's themes come first); later ones, and themes that can't be resolved, are left out,
+ * with the reason given to `report`.
  */
 export const resolveThemes = (
   contributions: readonly ThemeContribution[],
-  report: (id: string, error: ThemeResolveError) => void = () => undefined,
+  report: (id: string, error: ThemeResolveError, theme: ThemeContribution) => void = () =>
+    undefined,
 ): ThemeDefinition[] => {
-  const byId = new Map(contributions.map((theme) => [theme.id, theme]));
+  const byId = new Map<string, ThemeContribution>();
+  for (const theme of contributions)
+    if (byId.has(theme.id))
+      report(theme.id, new ThemeResolveError('has the id of a theme already contributed'), theme);
+    else byId.set(theme.id, theme);
   const resolved = new Map<string, ThemeDefinition>();
   const resolve = (id: string, chain: readonly string[]): ThemeDefinition => {
     const done = resolved.get(id);
@@ -96,11 +120,11 @@ export const resolveThemes = (
     return definition;
   };
   const themes: ThemeDefinition[] = [];
-  for (const theme of contributions) {
+  for (const theme of byId.values()) {
     try {
       themes.push(resolve(theme.id, []));
     } catch (error) {
-      if (error instanceof ThemeResolveError) report(theme.id, error);
+      if (error instanceof ThemeResolveError) report(theme.id, error, theme);
       else throw error;
     }
   }
