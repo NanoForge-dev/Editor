@@ -1,0 +1,8 @@
+{
+  "name": "pong-server",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@pong/shared": "workspace:*"
+  }
+}

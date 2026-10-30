@@ -9,6 +9,7 @@ import {
   registerIcons,
 } from '@nanoforge-dev/editor-sdk/ui';
 
+import { registerSceneCheck } from './adoption/scene-check';
 import { ECS_SOURCES, type EcsSource } from './extension/ecs-source.extension-point';
 import { ICONS } from './icons';
 import { SceneLiveService, SceneLiveServiceToken } from './live/scene-live-service';
@@ -28,6 +29,7 @@ export default definePlugin({
     context.subscriptions.add(registerIcons(ICONS));
 
     const scenes = context.subscriptions.add(new SceneService(context));
+    context.subscriptions.add(registerSceneCheck(context));
     context.provide(SceneServiceToken, scenes);
     const live = context.subscriptions.add(new SceneLiveService(context));
     context.provide(SceneLiveServiceToken, live);

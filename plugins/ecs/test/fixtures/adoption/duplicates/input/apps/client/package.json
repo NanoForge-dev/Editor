@@ -1,0 +1,5 @@
+{
+  "name": "pong-client",
+  "private": true,
+  "type": "module"
+}

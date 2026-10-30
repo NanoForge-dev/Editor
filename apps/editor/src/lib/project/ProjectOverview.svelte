@@ -21,6 +21,7 @@
   import { PROJECT_HISTORY_CONTEXT, WorkspaceActionsToken } from '../workspace/workspace-actions';
   import AddAppDialog from './AddAppDialog.svelte';
   import AddLibraryDialog from './AddLibraryDialog.svelte';
+  import AdoptionReport from './AdoptionReport.svelte';
 
   const { instance }: { instance: WidgetInstance } = $props();
   const current = $derived(instance.services.get(ProjectServiceToken).current);
@@ -93,6 +94,8 @@
         {/each}
       </section>
     {/if}
+
+    <AdoptionReport services={instance.services} />
 
     <header class="heading">
       <h2>Apps</h2>

@@ -14,6 +14,7 @@ import {
   createToken,
 } from '@nanoforge-dev/editor-kernel';
 import {
+  type Changeset,
   type ClientProject,
   EDITOR_LIBRARY,
   type NewApp,
@@ -23,6 +24,7 @@ import {
   WorkspaceError,
   type WorkspaceIo,
   addEditorLibrary,
+  applyChangeset,
   createApp,
   createLibrary,
   nameTaken,
@@ -277,6 +279,11 @@ export class WorkspaceActions implements Disposable {
     }
   }
 
+  /** Applies a previewed changeset as one step of the Project history. */
+  applyChangeset(changeset: Changeset): Promise<boolean> {
+    return this._run(changeset.title, (io) => applyChangeset(io, changeset));
+  }
+
   dispose(): void {
     this._store.dispose();
   }
@@ -295,12 +302,22 @@ export class WorkspaceActions implements Disposable {
       ...plain,
       readEdited: async (path) => documents.get(path)?.getText() ?? plain.read(path),
     };
-    if (!code) return io;
     const saved = async (path: string) => {
       if (documents.get(path)) await documents.save(path);
     };
+    /** An open file is changed through its document, then saved: never behind it. */
+    const write = async (path: string, text: string) => {
+      const open = documents.get(path);
+      if (!open) return io.write(path, text);
+      const current = open.getText();
+      if (current !== text)
+        await documents.applyEdits(path, [{ start: 0, end: current.length, text }]);
+      await documents.save(path);
+    };
+    if (!code) return { ...io, write };
     return {
       ...io,
+      write,
       renameImports: async (path, from, to) => {
         const command = await code.edit(
           path,

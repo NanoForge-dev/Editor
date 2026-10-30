@@ -139,8 +139,19 @@
     return !current || current === window.document.body || !!groupElement?.contains(current);
   };
 
-  onDestroy(() => {
+  /**
+   * Detaches the diff editor's models before disposing it: a diff still being computed would
+   * otherwise make widgets through its disposed services ("InstantiationService has been
+   * disposed").
+   */
+  const disposeDiff = () => {
+    diff?.setModel(null);
     diff?.dispose();
+    diff = undefined;
+  };
+
+  onDestroy(() => {
+    disposeDiff();
     editor?.dispose();
   });
 
@@ -177,8 +188,7 @@
     });
     diff.setModel({ original, modified: active.model });
     return () => {
-      diff?.dispose();
-      diff = undefined;
+      disposeDiff();
       original.dispose();
     };
   });

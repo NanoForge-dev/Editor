@@ -21,6 +21,7 @@ import {
   registerIcons,
 } from '@nanoforge-dev/editor-sdk/ui';
 
+import { registerEcsChecks } from './adoption/ecs-checks';
 import { LiveService, LiveServiceToken } from './live/live-service';
 import { MOVE_IN_GAME_KEY, moveInGame } from './live/move-in-game';
 import type { EntryModel, EntryOp } from './model/ecs-model.type';
@@ -45,6 +46,7 @@ export default definePlugin({
     context.subscriptions.add(context.services.get(StyleServiceToken).inject(context.name, css));
 
     const ecs = context.subscriptions.add(new EcsService(context));
+    context.subscriptions.add(registerEcsChecks(context, ecs.catalogState));
     context.provide(EcsServiceToken, ecs);
     const live = context.subscriptions.add(new LiveService(context, ecs));
     context.provide(LiveServiceToken, live);

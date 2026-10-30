@@ -77,6 +77,16 @@ export const CoreSettings = {
     category: 'Editor/Appearance',
     scopes: ['account', 'machine'],
   }),
+  adoptionDismissed: defineSetting({
+    key: 'adoption.dismissed',
+    schema: z.array(z.string()),
+    default: [],
+    title: 'Dismissed suggestions',
+    description:
+      'Suggestions of the Project screen\'s "Adapt to the editor" report that were put away in this project.',
+    category: 'Editor/Project',
+    scopes: ['projectLocal'],
+  }),
   layoutPreset: defineSetting({
     key: 'layout.preset',
     schema: z.enum(['simple', 'full']),
