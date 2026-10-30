@@ -21,8 +21,8 @@ import { ecsData } from '../service/ecs-data';
 import type { EcsService } from '../service/ecs-service';
 import type { EngineWorld, LiveEntity, LiveInstance, LiveSelection, LiveSource } from './live.type';
 
-export const AUTO_APPLY = '@nanoforge/ecs.autoApply';
-export const RATE = '@nanoforge/ecs.liveRateMs';
+const AUTO_APPLY = '@nanoforge/ecs.autoApply';
+const RATE = '@nanoforge/ecs.liveRateMs';
 
 /** Changes made while playing, by app, entity key (`liveKey`), component name and field. */
 export type Pending = Map<string, Map<string, Map<string, Record<string, unknown>>>>;
@@ -387,20 +387,20 @@ export class LiveService implements Disposable {
   }
 }
 
-export const siteKey = (
+const siteKey = (
   app: string,
   site: { file: string; line: number; column: number },
   scene?: string,
 ) => `${app}|${scene ?? ''}|${site.file.replace(/\?.*$/, '')}|${site.line}|${site.column}`;
 
 /** The scene and variable of a `LiveEntity.key`. */
-export const parseKey = (key: string): { scene?: string; name: string } => {
+const parseKey = (key: string): { scene?: string; name: string } => {
   const colon = key.indexOf(':');
   return colon < 0 ? { name: key } : { scene: key.slice(0, colon), name: key.slice(colon + 1) };
 };
 
 /** The `spawnEntity()` calls of `main` in text order: entity variables and "from code" ones. */
-export const spawnSites = (
+const spawnSites = (
   model: EntryModel | undefined,
 ): { name?: string; line: number; start: number }[] =>
   [
@@ -432,7 +432,7 @@ export const withoutApplied = (
   return next;
 };
 
-export const clonePending = (pending: Pending): Pending =>
+const clonePending = (pending: Pending): Pending =>
   new Map(
     [...pending].map(([app, entities]) => [
       app,

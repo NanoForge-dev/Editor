@@ -21,8 +21,8 @@ import type { Clipboard, FileManagerServiceOptions } from './file-manager-servic
 import { FileOperations } from './file-operations';
 import { iconOfEntry } from './icon-of-entry';
 
-export const NAME = /^[^/\\:*?"<>|]+$/;
-export const validateName = (value: string) =>
+const NAME = /^[^/\\:*?"<>|]+$/;
+const validateName = (value: string) =>
   !value.trim()
     ? 'Enter a name'
     : !NAME.test(value) || value === '.' || value === '..'

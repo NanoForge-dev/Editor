@@ -45,9 +45,11 @@
     "lint": "prettier --check . && eslint --format=pretty .",
     "format": "prettier --write . && eslint --fix --format=pretty src",
     "test:unit": "vitest run --config ../../vitest.config.ts",
+    "test:coverage": "vitest run --config ../../vitest.config.ts --coverage",
     "changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'apps/editor/*' --include-path 'packages/*' --include-path 'plugins/*'",
     "release": "cliff-jumper",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "e2e:last-failure": "node ./scripts/last-failure.mjs"
   },
   "dependencies": {
     "chokidar": "catalog:server",

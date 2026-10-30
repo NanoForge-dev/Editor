@@ -1,0 +1,43 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "examples/**",
+    "my-first-game/**",
+    "docs/drafts/**",
+    "**/test/fixtures/**",
+    "apps/editor/tutorial/**",
+    "apps/editor/e2e/.workspace*/**",
+    ".engine/**"
+  ],
+  "ignoreDependencies": ["eslint-formatter-pretty", "@nanoforge-dev/actions"],
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.mjs", "vitest.*.ts", "commitlint.config.cjs"]
+    },
+    "apps/editor": {
+      "entry": [
+        "server/main.ts",
+        "scripts/*.{ts,mjs}",
+        "e2e/**/*.ts",
+        "test/**/*.spec.ts",
+        "e2e/prepare-workspace.mjs"
+      ],
+      "ignoreDependencies": ["@nanoforge-dev/editor-plugin-.+", "chokidar", "unrun"]
+    },
+    "{packages,plugins,tooling}/*": {
+      "entry": [
+        "src/worker/index.ts",
+        "src/server/index.ts",
+        "scripts/*.{ts,mjs}",
+        "test/**/*.spec.ts",
+        "*.mjs"
+      ]
+    },
+    "packages/ui": {
+      "ignoreDependencies": ["@fontsource/.+"]
+    },
+    "tooling/example-plugin": {
+      "ignoreDependencies": ["svelte"]
+    }
+  }
+}

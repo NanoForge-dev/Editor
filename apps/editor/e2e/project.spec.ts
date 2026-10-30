@@ -88,6 +88,8 @@ test('adds a shared library, chooses the apps that use it, renames and removes i
   await page.getByRole('dialog').getByRole('textbox', { name: 'Name' }).fill('Score');
   await page.getByRole('dialog').getByRole('button', { name: 'Create' }).click();
   await expect(components.getByRole('button', { name: 'C Score', exact: true })).toBeVisible();
+  /** The new component's file opens in the Script screen: go back to Project once it has. */
+  await expect(page.getByRole('tab', { name: /^score\.ts/ })).toBeVisible();
   await page.getByRole('tab', { name: 'Project', exact: true }).click();
   await expect(card('@pong-network/shared')).toContainText('1 component or system');
 

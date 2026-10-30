@@ -58,6 +58,7 @@ import { followProjectCaches } from '../project/follow-project-caches';
 import { followProjectTrust } from '../project/follow-project-trust';
 import { followProjectRuntime } from '../runtime/follow-project-runtime';
 import { WorkspaceActions, WorkspaceActionsToken } from '../workspace/workspace-actions';
+import { followSaved } from './follow-saved';
 import { registerAppContributions } from './register-app-contributions';
 
 /** How long startup waits for the editor server before saying it does not answer. */
@@ -142,6 +143,7 @@ export const createEditor = async (
   );
   const { settings } = settingsSetup;
   services.provide(AccountSyncToken, settingsSetup.account);
+  store.add(followSaved(settings, settingsSetup.account));
   store.add(followProjectCaches({ services, projects, settings, session }));
 
   const history = store.add(

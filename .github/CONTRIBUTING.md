@@ -7,8 +7,8 @@ If you wish to contribute to the NanoForge project, fork the repository and subm
 To get ready to work on the codebase, please do the following:
 
 1. Fork & clone the repository, and make sure you're on the **main** branch
-2. Run `pnpm install --frozen-lockfile` ([install](https://pnpm.io/installation))
-3. Copy `.env.example` to `.env` and modify env variable as you wish
+2. Run `pnpm install --frozen-lockfile` ([install](https://pnpm.io/installation)), then `pnpm setup:check`: it says what else is missing (Bun, Chrome, a built engine for the tests that play games: `pnpm setup:engine`)
+3. Optionally, copy `.env.example` to `.env`: every variable is listed there, commented out with its default; uncomment what you change
 4. Run the editor `pnpm run dev`
 5. Make your changes
 6. Run `pnpm format && pnpm build && pnpm test` to run ESLint/Prettier, build and tests

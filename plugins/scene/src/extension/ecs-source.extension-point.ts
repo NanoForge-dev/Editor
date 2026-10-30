@@ -4,7 +4,7 @@
  */
 import { type AppModel, type Observable, defineExtensionPoint } from '@nanoforge-dev/editor-sdk';
 
-export type EntryScope =
+type EntryScope =
   | { readonly kind: 'main' }
   | { readonly kind: 'method'; readonly class: string; readonly method: string };
 

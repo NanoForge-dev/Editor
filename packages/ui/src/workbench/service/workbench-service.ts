@@ -65,6 +65,8 @@ export class WorkbenchService implements Disposable {
   private readonly _styleRefs = new Map<WidgetView, { count: number; sheet: Disposable }>();
   private readonly _state: ObservableValue<Record<string, unknown>>;
   private _stateTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Counts the coming save in the settings' pending saves. */
+  private _stateHold: (() => void) | undefined;
   private readonly _onDidFail = new Emitter<string>();
 
   constructor(private readonly _options: WorkbenchServiceOptions) {
@@ -236,7 +238,7 @@ export class WorkbenchService implements Disposable {
   dispose(): void {
     if (this._stateTimer) {
       clearTimeout(this._stateTimer);
-      void this._saveState();
+      void this._saveState().finally(this._stateHold);
     }
     for (const record of this._instances.values()) record.store.dispose();
     this._instances.clear();
@@ -282,9 +284,12 @@ export class WorkbenchService implements Disposable {
 
   private _scheduleStateSave(): void {
     clearTimeout(this._stateTimer);
+    this._stateHold ??= this._options.settings.hold();
     this._stateTimer = setTimeout(() => {
       this._stateTimer = undefined;
-      void this._saveState();
+      const release = this._stateHold;
+      this._stateHold = undefined;
+      void this._saveState().finally(release);
     }, 1000);
   }
 

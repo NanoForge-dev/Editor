@@ -1,13 +1,10 @@
-import { type CallExpression, type ExpressionStatement, type NewExpression, Node } from 'ts-morph';
+import { type ExpressionStatement, type NewExpression, Node } from 'ts-morph';
 
 import type { TransformContext } from '@nanoforge-dev/editor-sdk/worker';
 
 import type { ArgValue } from '../model/ecs-model.type';
 import { componentExpression } from './entry-file';
 import { fail, literal } from './transform-helpers';
-
-export const componentCall = (statement: ExpressionStatement): CallExpression =>
-  statement.getExpression() as CallExpression;
 
 /** Rewrites `new X(...)` arguments: in place when they exist, else the whole argument list. */
 export const setArgs = (

@@ -2,7 +2,7 @@ import { ts } from 'ts-morph';
 
 import type { AnalyzeContext } from '@nanoforge-dev/editor-sdk/worker';
 
-export interface BundleSite {
+interface BundleSite {
   /** 1-based, as in stack traces. */
   readonly line: number;
   readonly column: number;
@@ -12,7 +12,7 @@ export interface BundleSite {
   readonly enclosing?: boolean;
 }
 
-export interface BundleSpawnsArgs {
+interface BundleSpawnsArgs {
   /** The built entry file (`main.js`). */
   readonly bundle: string;
   readonly sites: readonly BundleSite[];

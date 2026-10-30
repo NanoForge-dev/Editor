@@ -53,6 +53,8 @@ export class LayoutController implements Disposable {
   private readonly _store = new DisposableStore();
   private readonly _history: HistoryContext;
   private _saveTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Counts the coming save in the settings' pending saves. */
+  private _saveHold: (() => void) | undefined;
   /** No layout was saved yet: the preset's default was used (offer the other one). */
   firstRun = false;
   private _floatCounter = 0;
@@ -248,7 +250,7 @@ export class LayoutController implements Disposable {
   dispose(): void {
     if (this._saveTimer) {
       clearTimeout(this._saveTimer);
-      void this._persist(this._activeName());
+      void this._persist(this._activeName()).finally(this._saveHold);
     }
     this._store.dispose();
   }
@@ -265,11 +267,14 @@ export class LayoutController implements Disposable {
     this._layout.set(layout);
     if (options.save === false) return;
     clearTimeout(this._saveTimer);
+    this._saveHold ??= this._options.settings.hold();
     this._saveTimer = setTimeout(() => {
       this._saveTimer = undefined;
-      this._persist(this._activeName()).catch((error: unknown) =>
-        this._options.logger?.error('Saving the layout failed', error),
-      );
+      const release = this._saveHold;
+      this._saveHold = undefined;
+      this._persist(this._activeName())
+        .catch((error: unknown) => this._options.logger?.error('Saving the layout failed', error))
+        .finally(release);
     }, SAVE_DELAY_MS);
   }
 

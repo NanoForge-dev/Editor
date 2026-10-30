@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -81,7 +81,7 @@ test('palette: runs commands, recent ones first, from where the focus was', asyn
   await page.keyboard.press('Escape');
   await expect(box(page)).toHaveCount(0);
   await resetLayout(page);
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test('palette: opens a file by a fuzzy name, goes to a line and to a symbol', async ({ page }) => {
@@ -118,7 +118,7 @@ test('palette: opens a file by a fuzzy name, goes to a line and to a symbol', as
   await expect(cursorLine(page)).toHaveText(String(mainLine));
 
   await page.getByRole('tab', { name: 'main.ts' }).click({ button: 'middle' });
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test('keymap: chords, conflicts, conditions, removals, presets, kept on this machine', async ({

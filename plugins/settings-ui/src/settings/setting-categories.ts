@@ -8,7 +8,7 @@ export const SCOPE_LABELS: Record<SettingScope, string> = {
   projectLocal: 'Project (only me)',
 };
 
-export const OTHER_CATEGORY = 'Other';
+const OTHER_CATEGORY = 'Other';
 
 /** A node of the category tree: `Editor`, `Editor/Code editor`… */
 export interface CategoryNode {
@@ -17,8 +17,7 @@ export interface CategoryNode {
   readonly children: CategoryNode[];
 }
 
-export const categoryOf = (definition: SettingDefinition): string =>
-  definition.category ?? OTHER_CATEGORY;
+const categoryOf = (definition: SettingDefinition): string => definition.category ?? OTHER_CATEGORY;
 
 /** Category tree of every setting (paths split on `/`). */
 export const categoryTree = (definitions: readonly SettingDefinition[]): CategoryNode[] => {

@@ -11,7 +11,7 @@ import { declaredNames, isExported, movedText, topStatement } from './top-statem
  * Items to move out of the analyzed file: export name → the new file's project path. `entry`: the
  * file is the app's entry, which imports the moved items: they must not import it back.
  */
-export interface SplitItemsArgs {
+interface SplitItemsArgs {
   readonly items: readonly { readonly name: string; readonly to: string }[];
   readonly entry?: boolean;
 }

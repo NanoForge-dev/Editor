@@ -78,6 +78,24 @@ describe('AccountSyncStore', () => {
     expect(store.status.get()).toBe('idle');
   });
 
+  it('is pending from the write until its push, debounce included', async () => {
+    const remote = new FakeRemote();
+    const store = new AccountSyncStore(remote, new MemoryKeyValueStore(), 'account:local', {
+      debounceMs: 50,
+    });
+    await store.initialize();
+    expect(store.status.get()).toBe('idle');
+    const write = store.write({ 'editor.fontSize': 14 });
+    expect(store.status.get()).toBe('pending');
+    await write;
+    expect(store.status.get()).toBe('pending');
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    await flush();
+    expect(store.status.get()).toBe('idle');
+    expect(remote.document.values).toEqual({ 'editor.fontSize': 14 });
+    store.dispose();
+  });
+
   it('keeps offline edits (persisted) and flushes them on reconnect', async () => {
     const remote = new FakeRemote();
     const kv = new MemoryKeyValueStore();

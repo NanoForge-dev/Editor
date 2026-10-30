@@ -45,7 +45,7 @@ const MAX_RESULTS = 60;
  * Items whose label matches the query, best first. `boost` breaks ties and orders an empty
  * query (recent actions, open files): lower comes first, undefined last.
  */
-export const rank = <T>(
+const rank = <T>(
   items: readonly T[],
   query: string,
   label: (item: T) => string,

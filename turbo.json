@@ -4,6 +4,8 @@
     "tsconfig.json",
     "eslint.config.js",
     "vitest.config.ts",
+    "vitest.coverage.ts",
+    "coverage-floors.json",
     "vitest.setup.ts",
     "vitest.global-setup.ts",
     "prettier.config.js"
@@ -47,6 +49,12 @@
       "dependsOn": ["^build"],
       "inputs": ["src/**", "test/**", "package.json", "tsconfig.json", "*.config.{js,ts}"],
       "outputs": [],
+      "outputLogs": "new-only"
+    },
+    "test:coverage": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "test/**", "package.json", "tsconfig.json", "*.config.{js,ts}"],
+      "outputs": ["coverage/**"],
       "outputLogs": "new-only"
     }
   },

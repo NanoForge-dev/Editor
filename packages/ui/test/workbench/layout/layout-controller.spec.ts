@@ -9,6 +9,7 @@ const setup = () => {
   const settings = {
     get: () => ({}),
     set: async () => undefined,
+    hold: () => () => undefined,
     hasStore: () => false,
     observe: () => ({ get: () => ({}), subscribe: () => () => undefined }),
   };

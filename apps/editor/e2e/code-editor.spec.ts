@@ -145,6 +145,16 @@ test('asks what to do when a file changes on disk during unsaved edits', async (
   await page.keyboard.press('Control+s');
   await expect.poll(() => onDisk('conflict')).toContain('// mine');
   expect(onDisk('conflict')).not.toContain('// theirs');
+
+  /**
+   * The closed diff editor's services are disposed: suggestions in the editor still work (they
+   * threw "InstantiationService has been disposed", caught by the page error fixture).
+   */
+  await typeAtEnd(page, '\nNanoforgeFac');
+  await page.keyboard.press('Control+Space');
+  await expect(page.locator('.suggest-widget')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Control+z');
 });
 
 test('autosaves after a delay when the setting is on', async ({ page }) => {

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { BREAKOUT } from './workspace';
 
@@ -48,7 +48,7 @@ test.describe('scenes', () => {
     for (const path of snapshot().keys()) if (!original.has(path)) rmSync(path);
     for (const [path, text] of original) writeFileSync(path, text);
     await resetLayout(page);
-    await page.waitForTimeout(1500);
+    await saved(page);
   });
 
   test('shows the scene tree, and the ECS widgets edit the selected scene', async ({ page }) => {
@@ -237,13 +237,6 @@ test.describe('scenes', () => {
   test.describe('while playing', () => {
     const run = (page: Page, name: string) =>
       page.getByRole('toolbar', { name: 'Run' }).getByRole('button', { name });
-
-    test.afterEach(async ({ page }) => {
-      if (await run(page, 'Stop').isVisible()) {
-        await run(page, 'Stop').click();
-        await expect(run(page, 'Play')).toBeVisible({ timeout: 15_000 });
-      }
-    });
 
     test('shows the loaded scenes and vars, loads a scene and sets a var', async ({ page }) => {
       await run(page, 'Play').click();

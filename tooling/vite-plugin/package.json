@@ -44,6 +44,7 @@
     "format": "prettier --write . && eslint --fix --format=pretty src",
     "typecheck": "tsc -p tsconfig.json",
     "test:unit": "vitest run --config ../../vitest.config.ts",
+    "test:coverage": "vitest run --config ../../vitest.config.ts --coverage",
     "changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'tooling/vite-plugin/*'",
     "release": "cliff-jumper"
   },

@@ -1,4 +1,4 @@
-import { expandFolders, openProject, resetLayout } from './helpers';
+import { expandFolders, openProject, resetLayout, saved } from './helpers';
 import { type Page, expect, test } from './test';
 
 /** Files kept in the browser's cache (OPFS), every user together. */
@@ -74,5 +74,5 @@ test('keeps project files in the browser and reads none of them again after a re
   await page.keyboard.press('Escape');
   await page.getByRole('tab', { name: 'main.ts' }).click({ button: 'middle' });
   await resetLayout(page);
-  await page.waitForTimeout(900);
+  await saved(page);
 });
