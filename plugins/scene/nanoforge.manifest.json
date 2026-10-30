@@ -30,6 +30,7 @@
     "widgets": [
       {
         "id": "scene.scenes",
+        "essential": true,
         "title": "Scenes",
         "icon": "layers",
         "defaultSlot": "leftTop",

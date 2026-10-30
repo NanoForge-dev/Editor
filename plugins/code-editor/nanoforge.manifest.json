@@ -17,6 +17,7 @@
     "widgets": [
       {
         "id": "code-editor.script",
+        "description": "The code of your game: components, systems, scenes.",
         "title": "Script",
         "icon": "code",
         "kind": "screen",

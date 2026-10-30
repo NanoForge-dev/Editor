@@ -38,6 +38,8 @@ import {
 import { type AppModel, ProjectsContract } from '@nanoforge-dev/editor-protocol';
 import type { RpcClient } from '@nanoforge-dev/editor-rpc';
 import type { NotificationService, PromptService } from '@nanoforge-dev/editor-ui';
+/** The notification helpers alone: the kit's main entry brings its Svelte components. */
+import { notifyError } from '@nanoforge-dev/editor-ui/notification';
 
 /** Undo and redo target of the Project screen: changes of the workspace. */
 export const PROJECT_HISTORY_CONTEXT = 'project';
@@ -269,8 +271,8 @@ export class WorkspaceActions implements Disposable {
           detail: 'Its output is in the Console, under Tasks.',
         });
     } catch (error) {
-      notifications.notify('error', 'Could not install the dependencies', {
-        detail: error instanceof Error ? error.message : String(error),
+      notifyError(notifications, 'Could not install the dependencies', error, {
+        retry: () => this.install(),
       });
     }
   }

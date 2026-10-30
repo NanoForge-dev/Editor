@@ -59,13 +59,13 @@
       {
         kind: 'item',
         id: 'copy',
-        label: 'Copy Revision Number',
+        label: 'Copy revision number',
         onSelect: () => void navigator.clipboard?.writeText(commit.hash).catch(() => undefined),
       },
       {
         kind: 'item',
         id: 'branch',
-        label: 'New Branch…',
+        label: 'New branch…',
         onSelect: () => void act.newBranch(commit.hash),
       },
     ];

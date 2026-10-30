@@ -84,7 +84,7 @@
       {
         kind: 'item',
         id: 'new',
-        label: `New Branch from '${branch.name}'…`,
+        label: `New branch from '${branch.name}'…`,
         onSelect: () => void act.newBranch(branch.name),
       },
       { kind: 'separator' },
@@ -153,27 +153,27 @@
     <IconButton
       icon="plus"
       size={14}
-      label="New Branch"
+      label="New branch"
       onclick={() => void act.newBranch(selectedBranchEntry?.name)}
     />
     <IconButton
       icon="arrow-down-to-line"
       size={14}
-      label="Update Selected"
+      label="Update selected"
       disabled={busy}
       onclick={() => void act.pull()}
     />
     <IconButton
       icon="trash-2"
       size={14}
-      label="Delete Branch"
+      label="Delete branch"
       disabled={!selectedBranchEntry || selectedBranchEntry.current || selectedBranchEntry.remote}
       onclick={() => selectedBranchEntry && remove(selectedBranchEntry)}
     />
     <IconButton
       icon="refresh-cw"
       size={14}
-      label="Fetch All Remotes"
+      label="Fetch all remotes"
       disabled={busy}
       onclick={() => void act.fetch()}
     />

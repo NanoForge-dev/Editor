@@ -18,6 +18,7 @@ const PANELS = [
   {
     id: 'core.project',
     title: 'Project',
+    description: 'Your apps and shared libraries, and what each one uses.',
     icon: 'layers',
     kind: 'screen',
     order: 100,

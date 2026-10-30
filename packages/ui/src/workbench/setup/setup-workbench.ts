@@ -103,6 +103,55 @@ export const setupWorkbench = (options: WorkbenchSetupOptions): WorkbenchContext
     await layout.reset();
     shell.notifications.notify('info', 'Layout reset to default');
   });
+  /** Switches the default layout and resets to it (the layout's undo history starts over). */
+  const usePreset = async (preset: 'simple' | 'full') => {
+    await settings.set(
+      CoreSettings.layoutPreset,
+      preset,
+      settings.hasStore('account') ? 'account' : 'machine',
+    );
+    await layout.reset(preset);
+    shell.notifications.notify(
+      'info',
+      preset === 'full' ? 'Layout reset with all panels' : 'Layout reset with the main panels',
+    );
+  };
+  register('layout.simple', 'Simple layout', () => usePreset('simple'));
+  register('layout.full', 'All panels', () => usePreset('full'));
+  /**
+   * Someone who used the editor before presets keeps every panel when resetting: saved layouts
+   * and no preset chosen in any scope mean an existing user.
+   */
+  const presetScopes = settings.inspect(CoreSettings.layoutPreset).scopes;
+  if (
+    !layout.firstRun &&
+    Object.entries(presetScopes).every(
+      ([scope, value]) => scope === 'default' || value === undefined,
+    ) &&
+    layout.savedNames.length
+  )
+    void settings
+      .set(CoreSettings.layoutPreset, 'full', settings.hasStore('account') ? 'account' : 'machine')
+      .catch(() => undefined);
+
+  /** Said once per browser: the default layout is composed again until something is saved. */
+  const NOTICE_KEY = 'nanoforge.layout.simpleNoticeShown';
+  const noticeShown = () => {
+    try {
+      return localStorage.getItem(NOTICE_KEY) !== null;
+    } catch {
+      return true;
+    }
+  };
+  if (layout.firstRun && settings.get(CoreSettings.layoutPreset) === 'simple' && !noticeShown()) {
+    try {
+      localStorage.setItem(NOTICE_KEY, '1');
+    } catch {}
+    shell.notifications.notify('info', 'Only the main panels are shown', {
+      detail: 'View › Panels opens the others, or show them all.',
+      actions: [{ title: 'Show all panels', run: () => usePreset('full') }],
+    });
+  }
 
   const dynamic = store.add(new DisposableStore());
   const refreshMenus = () => {
@@ -135,6 +184,8 @@ export const setupWorkbench = (options: WorkbenchSetupOptions): WorkbenchContext
     }
     add({ menu: 'view.layouts', command: 'layout.saveAs', group: 'manage', order: 0 });
     add({ menu: 'view.layouts', command: 'layout.reset', group: 'manage', order: 1 });
+    add({ menu: 'view.layouts', command: 'layout.simple', group: 'presets', order: 0 });
+    add({ menu: 'view.layouts', command: 'layout.full', group: 'presets', order: 1 });
     for (const name of layout.savedNames) {
       add({
         menu: 'view.layouts',

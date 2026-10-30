@@ -74,7 +74,7 @@
     <span class="grow"></span>
     <Menu items={messageHistory} align="end">
       {#snippet trigger({ props })}
-        <IconButton {...props} icon="history" size={14} label="Commit Message History" />
+        <IconButton {...props} icon="history" size={14} label="Commit message history" />
       {/snippet}
     </Menu>
   </div>
@@ -95,7 +95,7 @@
       >Commit</Button
     >
     <Button size="sm" disabled={!canCommit} onclick={() => void commit(true)}
-      >Commit and Push…</Button
+      >Commit and push…</Button
     >
   </div>
 </div>

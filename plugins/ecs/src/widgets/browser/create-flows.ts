@@ -4,7 +4,11 @@ import {
   validateFolder,
   validatePackageName,
 } from '@nanoforge-dev/editor-sdk';
-import type { NotificationService, PromptService } from '@nanoforge-dev/editor-sdk/ui';
+import {
+  type NotificationService,
+  type PromptService,
+  notifyError,
+} from '@nanoforge-dev/editor-sdk/ui';
 
 import { type ItemKind, createItem, validateItemName } from '../../create/create-item';
 import type { EcsService } from '../../service/ecs-service';
@@ -36,9 +40,7 @@ export const createItemFlow = async (
     const path = await createItem(project, kind, name, target);
     await ecs.openInCode(path);
   } catch (error) {
-    notifications?.notify('error', `Could not create ${name}`, {
-      detail: error instanceof Error ? error.message : String(error),
-    });
+    notifyError(notifications, `Could not create ${name}`, error);
   }
 };
 

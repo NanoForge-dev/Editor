@@ -21,7 +21,7 @@
     size="sm"
     variant="ghost"
     disabled={$git.busy || !hasChanges}
-    onclick={() => void act.stash()}>Stash Changes</Button
+    onclick={() => void act.stash()}>Stash changes</Button
   >
 </div>
 <ul class="scroll" aria-label="Stashes">

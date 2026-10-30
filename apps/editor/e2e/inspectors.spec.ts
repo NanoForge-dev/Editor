@@ -101,14 +101,16 @@ test.describe('with the engine', () => {
 
     /** The count shown; screen readers get it only once a search has settled. */
     const count = page.getByText(/of \d+ packets/).first();
+    /**
+     * While hidden (still mounted), the panel records nothing: read its count twice while it is
+     * hidden, once the packets already on their way have landed.
+     */
     await showPanel(page, 'Console');
-    await page.waitForTimeout(1500);
-    await showPanel(page, 'Network');
+    await page.waitForTimeout(500);
     const before = await count.textContent();
-    await showPanel(page, 'Console');
     await page.waitForTimeout(2500);
-    await showPanel(page, 'Network');
     expect(await count.textContent()).toBe(before);
+    await showPanel(page, 'Network');
     await expect(page.getByRole('img', { name: 'Bytes per second' })).toBeVisible({
       timeout: 10_000,
     });

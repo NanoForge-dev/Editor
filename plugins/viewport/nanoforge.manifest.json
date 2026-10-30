@@ -16,6 +16,7 @@
     "widgets": [
       {
         "id": "viewport.scene",
+        "description": "Your entities drawn in 2D: select and move them.",
         "title": "Scene",
         "icon": "box",
         "kind": "screen",
@@ -23,6 +24,7 @@
       },
       {
         "id": "viewport.game",
+        "description": "Play the game here, and see it run.",
         "title": "Game",
         "icon": "gamepad-2",
         "kind": "screen",

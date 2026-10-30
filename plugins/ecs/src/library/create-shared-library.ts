@@ -6,7 +6,7 @@ import {
   runnableApps,
   workspaceIo,
 } from '@nanoforge-dev/editor-sdk';
-import { NotificationServiceToken } from '@nanoforge-dev/editor-sdk/ui';
+import { NotificationServiceToken, notifyError } from '@nanoforge-dev/editor-sdk/ui';
 
 import { refactorsHistory } from './refactors-history';
 
@@ -36,11 +36,11 @@ export const createSharedLibrary = async (
     await refactorsHistory(context).push(command);
     return true;
   } catch (error) {
-    context.services
-      .tryGet(NotificationServiceToken)
-      ?.notify('error', 'Could not create the shared library', {
-        detail: error instanceof Error ? error.message : String(error),
-      });
+    notifyError(
+      context.services.tryGet(NotificationServiceToken),
+      'Could not create the shared library',
+      error,
+    );
     return false;
   }
 };
