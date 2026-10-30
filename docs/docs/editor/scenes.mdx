@@ -71,7 +71,7 @@ declare module '@nanoforge-dev/scene' {
 
 - Each var shows its type, its default, its description, the scenes that make it (`init`, its possible owners), and its uses: click it to list them, and click a use to open it.
 - **Add var** asks for its name, type, default and description; the file is created with the first var.
-- _Rename_ changes the declaration and every `vars.get("…")`, `vars.set("…")`… of that var. _Change type_, _Change default_ and _Change description_ edit the declaration; _Remove_ removes it.
+- _Rename_ changes the declaration and every `vars.get("…")`, `vars.set("…")`… of that var. _Change type_, _Change default_ and _Change description_ edit the declaration; _Remove_ removes it, after a warning when the code uses it (_Remove anyway_).
 - A var used in code but not declared is listed under _Used but not declared_, with **Declare**.
 
 A var belongs to the scene that made it, and goes away when that scene is unloaded, unless it is persistent.

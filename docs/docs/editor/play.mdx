@@ -61,6 +61,8 @@ The **Console** shows what the game prints, the output of builds, and messages o
 - A logged **object** shows as one line that expands into a tree.
 - A **file path** in a line is a link: it opens the file at that line. Lines of the game show where they were logged (`main.ts:12`).
 - Identical lines in a row are grouped with a count.
+- The Console follows new lines, except while the pointer is over them. `Ctrl`+`Alt`+`E` shows only errors, and every level again.
+- **Save shown lines** (the download button, or right-click) saves what the filters show as a `.log` file.
 
 ## Edit the running game
 
@@ -70,7 +72,7 @@ While the game plays, the **Hierarchy** and the **Inspector** show the live worl
 - Add or remove a component, spawn or remove an entity: same.
 - In the **Scene** screen, drag a shape to move the entity in the running game.
 - In the **Game** screen, turn on **Move entities** in its toolbar: the entities are outlined over the game, and you drag them there the same way. While it is on, the pointer goes to the editor, not to the game. In a networked game the server sends the positions of what it owns: pause the game before moving those, then apply.
-- **Apply to code** writes the changes of an entity to `main.ts`. Entities spawned at runtime exist only in the game and cannot be applied.
+- **Apply to code** writes the changes of an entity to `main.ts`; **Apply all changes to code**, in the Hierarchy's toolbar, writes those of every entity. Entities spawned at runtime exist only in the game and cannot be applied.
 - In the **Systems** panel, switch a system off to see the game without it.
 
 Stopping the game drops the changes that were not applied; the editor offers to apply them first. The ECS setting _Apply live edits to code_ writes every live change to code as it happens.
@@ -81,8 +83,8 @@ Three panels at the bottom, each with a Client / Server selector.
 
 ![The profiler](../images/profiler.png)
 
-- **Profiler**: tick time over the last two minutes, against a budget line (16.7 ms by default); spikes are marked. Below, the time per engine library and **per system**. Click the chart to freeze it on a moment.
-- **Network**: the packets sent and received, with their size, type name and decoded content; filters by direction, transport and text; charts of bytes and packets per second.
+- **Profiler**: tick time over the last two minutes, against a budget line (16.7 ms by default); spikes are marked. Below, the time per engine library and **per system**. Click the chart to freeze it on a moment. **Pause**, **Clear** and **Export** (CSV or JSON) are in its toolbar.
+- **Network**: the packets sent and received, with their size, type name and decoded content; filters by direction, transport and text; charts of bytes and packets per second. **Pause** keeps the list still, **Clear** starts it over, **Export** saves the packets shown (CSV or JSON).
 - **World**: every entity of the running game with its components, read-only, with a search: `Position` (has the component), `Position.x > 100`, `#12` (an entity id).
 
 They ask the game for data only while they are shown.

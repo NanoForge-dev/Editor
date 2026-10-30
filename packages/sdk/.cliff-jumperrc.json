@@ -3,6 +3,5 @@
   "name": "editor-sdk",
   "org": "nanoforge-dev",
   "packagePath": "packages/sdk",
-  "tagTemplate": "{{new-version}}",
   "identifierBase": false
 }

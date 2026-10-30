@@ -3,7 +3,9 @@
   import {
     Button,
     IconThemeServiceToken,
+    SYSTEM_THEME,
     Select,
+    type ThemeDefinition,
     ThemeServiceToken,
     themeDeclarations,
   } from '@nanoforge-dev/editor-sdk/ui';
@@ -12,7 +14,7 @@
 
   /**
    * Editor › Appearance: the themes as cards that preview their own colors (each card holds its
-   * theme's variables), the density, the icon theme, and Get more themes (the marketplace). Like
+   * theme's variables), first Match the system (light or dark, as the system is now), the density, the icon theme, and Get more themes (the marketplace). Like
    * every setting, a choice is pending until Apply.
    */
   interface Props {
@@ -29,7 +31,9 @@
   const density = $derived(definition('appearance.density'));
   const iconTheme = $derived(definition('appearance.iconTheme'));
   // svelte-ignore state_referenced_locally
-  const themes = services.tryGet(ThemeServiceToken)?.themes ?? [];
+  const themeService = services.tryGet(ThemeServiceToken);
+  const themes = themeService?.themes ?? [];
+  const system = themeService?.resolve(SYSTEM_THEME);
   // svelte-ignore state_referenced_locally
   const iconThemes = services.tryGet(IconThemeServiceToken)?.themes ?? [];
 
@@ -52,37 +56,53 @@
     <h3>Theme</h3>
     <Button size="sm" icon="search" onclick={ongetmore}>Get more themes</Button>
   </div>
-  <div class="themes" role="radiogroup" aria-label="Theme">
-    {#each themes as candidate (candidate.id)}
-      {@const checked = value(theme) === candidate.id}
-      <button
-        type="button"
-        class="card"
-        class:checked
-        role="radio"
-        aria-checked={checked}
-        aria-label={candidate.label}
-        onclick={() => set(theme, candidate.id)}
-      >
-        <span class="preview" style={themeDeclarations(candidate)} aria-hidden="true">
-          <span class="bar"><span class="dot"></span><span class="dot"></span></span>
-          <span class="body">
-            <span class="line strong"></span>
-            <span class="line muted"></span>
-            <span class="code"
-              ><span style:color={candidate.syntax?.keyword ?? 'var(--nf-color-accent-text)'}
-                >const</span
-              >
-              ball =
-              <span style:color={candidate.syntax?.number ?? 'var(--nf-color-success)'}>42</span
-              ></span
+  {#snippet card(id: string, label: string, kind: string, candidate: ThemeDefinition)}
+    {@const checked = value(theme) === id}
+    <button
+      type="button"
+      class="card"
+      class:checked
+      role="radio"
+      aria-checked={checked}
+      aria-label={label}
+      onclick={() => set(theme, id)}
+    >
+      <span class="preview" style={themeDeclarations(candidate)} aria-hidden="true">
+        <span class="bar"><span class="dot"></span><span class="dot"></span></span>
+        <span class="body">
+          <span class="line strong"></span>
+          <span class="line muted"></span>
+          <span class="code"
+            ><span style:color={candidate.syntax?.keyword ?? 'var(--nf-color-accent-text)'}
+              >const</span
             >
-            <span class="pill">Play</span>
-          </span>
+            ball =
+            <span style:color={candidate.syntax?.number ?? 'var(--nf-color-success)'}>42</span
+            ></span
+          >
+          <span class="pill">Play</span>
         </span>
-        <span class="name">{candidate.label}</span>
-        <span class="kind">{candidate.kind === 'dark' ? 'Dark' : 'Light'}</span>
-      </button>
+      </span>
+      <span class="name">{label}</span>
+      <span class="kind">{kind}</span>
+    </button>
+  {/snippet}
+  <div class="themes" role="radiogroup" aria-label="Theme">
+    {#if system}
+      {@render card(
+        SYSTEM_THEME,
+        'Match the system',
+        system.kind === 'dark' ? 'Dark now' : 'Light now',
+        system,
+      )}
+    {/if}
+    {#each themes as candidate (candidate.id)}
+      {@render card(
+        candidate.id,
+        candidate.label,
+        candidate.kind === 'dark' ? 'Dark' : 'Light',
+        candidate,
+      )}
     {/each}
   </div>
 

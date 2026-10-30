@@ -16,9 +16,10 @@ export const CoreSettings = {
   theme: defineSetting({
     key: 'appearance.theme',
     schema: z.string().min(1),
-    default: 'nanoforge-dark',
+    default: 'system',
     title: 'Theme',
-    description: 'Color theme of the editor.',
+    description:
+      'Color theme of the editor: `system` follows the light or dark mode of the system.',
     category: 'Editor/Appearance',
     scopes: ['account', 'machine'],
   }),

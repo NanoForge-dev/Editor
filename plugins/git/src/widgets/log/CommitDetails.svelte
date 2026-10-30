@@ -61,6 +61,7 @@
     </ul>
     <div class="info">
       <h3>{commit.subject}</h3>
+      {#if commit.body}<p class="body">{commit.body}</p>{/if}
       <p class="meta">
         <span class="hash">{commit.shortHash}</span>
         {commit.author} on {new Date(commit.time * 1000).toLocaleString()}
@@ -157,6 +158,11 @@
   }
   .hash {
     font-family: var(--nf-font-code);
+  }
+  .body {
+    margin: var(--nf-space-1) 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   .none {
     margin: 0;

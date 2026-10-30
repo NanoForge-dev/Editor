@@ -1,10 +1,19 @@
 <script lang="ts">
   import { SettingsServiceToken } from '@nanoforge-dev/editor-sdk';
-  import { Button, EmptyState, Icon, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
+  import {
+    Button,
+    EmptyState,
+    Icon,
+    Menu,
+    type MenuEntry,
+    type WidgetInstance,
+    saveAsFile,
+  } from '@nanoforge-dev/editor-sdk/ui';
 
   import LineChart from '../chart/LineChart.svelte';
   import SourcePicker from '../SourcePicker.svelte';
   import { follow } from '../follow.svelte';
+  import { exportName, framesCsv } from '../../export/inspector-export';
   import { type FrameSample, LIMITS, isSpike, libraryRows } from '../../recorder/recorder';
   import { getRecorder } from '../../session/recorder-session';
 
@@ -12,7 +21,9 @@
   // svelte-ignore state_referenced_locally
   const settings = instance.services.get(SettingsServiceToken);
   // svelte-ignore state_referenced_locally
-  const view = follow(getRecorder(), 'profiler', instance.visible);
+  const recorder = getRecorder();
+  // svelte-ignore state_referenced_locally
+  const view = follow(recorder, 'profiler', instance.visible);
   const budgetSetting = settings.observe<number>('@nanoforge/inspectors.tickBudgetMs');
   const budget = $derived($budgetSetting ?? 16.7);
 
@@ -36,6 +47,30 @@
     frozen = undefined;
     pinned = undefined;
   };
+  const clear = () => {
+    recorder.clear(view.source ?? 'client');
+    resume();
+  };
+  /** Saves the windows shown (the frozen ones while paused). */
+  const exportItems = (): MenuEntry[] => [
+    {
+      kind: 'item',
+      id: 'csv',
+      label: 'Save as CSV',
+      onSelect: () => saveAsFile(exportName('profiler', 'csv'), framesCsv(frames), 'text/csv'),
+    },
+    {
+      kind: 'item',
+      id: 'json',
+      label: 'Save as JSON',
+      onSelect: () =>
+        saveAsFile(
+          exportName('profiler', 'json'),
+          `${JSON.stringify(frames, null, 2)}\n`,
+          'application/json',
+        ),
+    },
+  ];
   const pin = (index: number) => {
     if (!frozen) pause();
     pinned = frames[index];
@@ -78,6 +113,12 @@
       {:else}
         <Button size="sm" icon="pause" onclick={pause}>Pause</Button>
       {/if}
+      <Button size="sm" icon="trash-2" onclick={clear}>Clear</Button>
+      <Menu items={exportItems()}>
+        {#snippet trigger({ props })}
+          <Button {...props} size="sm" icon="download">Export</Button>
+        {/snippet}
+      </Menu>
     </div>
     <div class="charts">
       <LineChart

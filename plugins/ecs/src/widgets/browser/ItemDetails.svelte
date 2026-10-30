@@ -106,6 +106,11 @@
       >
     {/if}
     <Button size="sm" variant="ghost" onclick={() => void ecs.openItem(item)}>Open in code</Button>
+    {#if data.type === 'component' && !item.readonly}
+      <Button size="sm" variant="ghost" onclick={() => void ecs.editLayout(item)}
+        >Edit layout</Button
+      >
+    {/if}
     {#if item.source.kind === 'app' && libraries.length}
       <Menu items={moveMenu()}>
         {#snippet trigger({ props })}

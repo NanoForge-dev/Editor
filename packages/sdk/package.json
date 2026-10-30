@@ -38,7 +38,7 @@
   },
   "funding": "https://github.com/NanoForge-dev/Editor?sponsor",
   "scripts": {
-    "build": "tsdown && node ./scripts/build-types.ts",
+    "build": "tsdown && node ./scripts/build-types.ts && node ./scripts/build-ui-stub.ts",
     "lint": "prettier --check . && eslint --format=pretty .",
     "format": "prettier --write . && eslint --fix --format=pretty src",
     "typecheck": "tsc -p tsconfig.json",
@@ -48,6 +48,21 @@
     "release": "cliff-jumper"
   },
   "dependencies": {
+    "bits-ui": "catalog:components",
+    "semver": "catalog:libs",
+    "zod": "catalog:libs"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0",
+    "ts-morph": "^28.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ts-morph": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@favware/cliff-jumper": "catalog:ci",
     "@nanoforge-dev/editor-code": "workspace:*",
     "@nanoforge-dev/editor-history": "workspace:*",
     "@nanoforge-dev/editor-kernel": "workspace:*",
@@ -57,10 +72,10 @@
     "@nanoforge-dev/editor-rpc": "workspace:*",
     "@nanoforge-dev/editor-runtime": "workspace:*",
     "@nanoforge-dev/editor-settings": "workspace:*",
-    "@nanoforge-dev/editor-ui": "workspace:*"
-  },
-  "devDependencies": {
-    "@favware/cliff-jumper": "catalog:ci",
+    "@nanoforge-dev/editor-ui": "workspace:*",
+    "svelte": "catalog:core",
+    "svelte2tsx": "catalog:core",
+    "ts-morph": "catalog:code",
     "tsdown": "catalog:build",
     "typescript": "catalog:build",
     "vitest": "catalog:test"
@@ -69,7 +84,6 @@
   "engines": {
     "node": "26"
   },
-  "private": true,
   "publishConfig": {
     "access": "public",
     "exports": {
@@ -78,6 +92,10 @@
         "default": "./dist/index.js"
       },
       "./package.json": "./package.json",
+      "./ui": {
+        "types": "./dist/types/sdk/src/ui.d.ts",
+        "default": "./dist/ui.js"
+      },
       "./worker": {
         "types": "./dist/types/sdk/src/worker.d.ts",
         "default": "./dist/worker.js"

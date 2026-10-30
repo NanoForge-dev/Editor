@@ -49,8 +49,8 @@ export const implementGitRpc = (
         git.show(repo(session, project), path, revision),
       stashes: ({ project }, { session }) => git.stashes(repo(session, project)),
       stash: nothing((root, { message }) => git.stash(root, message)),
-      applyStash: nothing((root, { index, pop }) => git.applyStash(root, index, pop)),
-      dropStash: nothing((root, { index }) => git.dropStash(root, index)),
+      applyStash: nothing((root, { hash, pop }) => git.applyStash(root, hash, pop)),
+      dropStash: nothing((root, { hash }) => git.dropStash(root, hash)),
     },
   });
 };

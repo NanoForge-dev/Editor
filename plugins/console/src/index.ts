@@ -68,6 +68,12 @@ export default definePlugin({
     context.subscriptions.add(context.registerCommand('console.show', () => show(CONSOLE)));
     context.subscriptions.add(context.registerCommand('console.clear', () => store.clear()));
     context.subscriptions.add(
+      context.registerCommand('console.errorsOnly', async () => {
+        store.askErrorsOnly();
+        await show(CONSOLE);
+      }),
+    );
+    context.subscriptions.add(
       context.registerCommand('console.showProblems', () => show(PROBLEMS)),
     );
 

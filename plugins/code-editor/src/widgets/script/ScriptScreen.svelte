@@ -12,7 +12,7 @@
 
   import EditorGroupView from './EditorGroupView.svelte';
   import type { EditorLayout } from '../../service/code-editor.type';
-  import { current } from '../../session/code-editor-session';
+  import { current, sidePanelRequest } from '../../session/code-editor-session';
 
   const { instance }: { instance: WidgetInstance } = $props();
   const layout = $derived($current?.service.layout);
@@ -34,6 +34,15 @@
       .filter((panel) => panel.appliesTo(path));
   });
   const panel = $derived(panels.find((candidate) => candidate.id === chosenPanel) ?? panels[0]);
+  /** _Edit layout_ and the like: `codeEditor.open` with a side panel shows it. */
+  $effect(() =>
+    sidePanelRequest.subscribe((request) => {
+      if (!request) return;
+      sidePanelRequest.set(undefined);
+      chosenPanel = request.id;
+      panelOpen = true;
+    }),
+  );
   $effect(() => {
     const subscriptions = $panelContributions.flatMap((contribution) =>
       contribution.value.changes

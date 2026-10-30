@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { GitStatus } from '@nanoforge-dev/editor-sdk';
 
@@ -43,6 +43,27 @@ describe('GitStore', () => {
     await store.refresh();
     expect(new Set(none.calls)).toEqual(new Set(['status']));
     expect(store.state.get().status?.repository).toBe(false);
+  });
+
+  it('shows a read as running only once it is slow', async () => {
+    vi.useFakeTimers();
+    try {
+      const store = new GitStore();
+      const repo = api(status());
+      let open: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => (open = resolve));
+      /** setApi starts the read. */
+      store.setApi({ ...repo.api, status: () => gate.then(() => status()) });
+      await vi.advanceTimersByTimeAsync(100);
+      expect(store.state.get().reading).toBe(false);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(store.state.get().reading).toBe(true);
+      open();
+      await store.refresh();
+      expect(store.state.get()).toMatchObject({ reading: false, status: { branch: 'main' } });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('refreshes after an operation and reports a failure', async () => {

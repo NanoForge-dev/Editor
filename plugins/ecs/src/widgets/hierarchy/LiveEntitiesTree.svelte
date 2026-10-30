@@ -3,7 +3,7 @@
 
   import { ContextMenu, type MenuEntry, Tree, type TreeNode } from '@nanoforge-dev/editor-sdk/ui';
 
-  import type { LiveService } from '../../live/live-service';
+  import { type LiveService, pendingCount } from '../../live/live-service';
   import type { LiveEntity, LiveInstance, LiveSource } from '../../live/live.type';
 
   interface Props {
@@ -100,6 +100,14 @@
             },
           ]
         : []),
+      {
+        kind: 'item',
+        id: 'apply-all',
+        label: 'Apply all changes to code',
+        disabled: !pendingCount($pending),
+        onSelect: () => void live.applyAll(),
+      },
+      { kind: 'separator' },
       {
         kind: 'item',
         id: 'remove',

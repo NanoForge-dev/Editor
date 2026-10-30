@@ -83,6 +83,9 @@ export const formatKeybinding = (key: string, mac = isMac()): string =>
     .map((stroke) =>
       mac
         ? stroke
+            .replace(/^Shift$/, '⇧')
+            .replace(/^Alt$/, '⌥')
+            .replace(/^Meta$/, '⌘')
             .replace('Ctrl+', '⌃')
             .replace('Alt+', '⌥')
             .replace('Shift+', '⇧')

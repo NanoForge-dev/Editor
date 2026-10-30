@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, saved, showPanel } from './helpers';
+import { openProject, panelTab, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -211,4 +211,31 @@ test('keymap: chords, conflicts, conditions, removals, presets, kept on this mac
   await expect(reset).toContainText('Ctrl+K Ctrl+L');
   await expect(previous.locator('kbd')).toHaveCount(0);
   await settings(page).getByRole('button', { name: 'Cancel' }).click();
+});
+
+test('keymap: the IntelliJ preset, Shift Shift and Alt+1', async ({ page }) => {
+  await open(page);
+  await openKeymap(page);
+  await settings(page).getByRole('button', { name: 'Preset' }).click();
+  await page.getByRole('option', { name: 'IntelliJ' }).click();
+  await find(page, 'command palette');
+  await expect(shortcut(page, 'View: Command palette…')).toContainText('Shift Shift');
+  await settings(page).getByRole('button', { name: 'OK' }).click();
+  await expect(settings(page)).toHaveCount(0);
+
+  await showPanel(page, 'Hierarchy');
+  await page.locator('[data-nf-part="screen"]').click();
+  await page.keyboard.press('Alt+1');
+  await expect(panelTab(page, 'Files')).toHaveAttribute('aria-selected', 'true');
+
+  /** One tap types on; two in a row open the palette. */
+  await page.keyboard.press('Shift');
+  await page.waitForTimeout(700);
+  await page.keyboard.press('Shift');
+  await expect(box(page)).toHaveCount(0);
+  await page.keyboard.press('Shift');
+  await page.keyboard.press('Shift');
+  await expect(box(page)).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(box(page)).toHaveCount(0);
 });

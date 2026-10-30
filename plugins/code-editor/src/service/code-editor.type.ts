@@ -31,6 +31,8 @@ export interface OpenOptions {
   readonly line?: number;
   readonly column?: number;
   readonly group?: number;
+  /** A side panel to show next to the file (`ecs.component`), opened even if it was closed. */
+  readonly sidePanel?: string;
 }
 
 /** Where to show a position in a group (consumed by the group's editor). */

@@ -19,6 +19,7 @@
     type MenuEntry,
     NotificationServiceToken,
     SETTINGS_PAGES,
+    SYSTEM_THEME,
     ThemeServiceToken,
     Tree,
   } from '@nanoforge-dev/editor-sdk/ui';
@@ -57,7 +58,10 @@
   const themes = services.tryGet(ThemeServiceToken)?.themes ?? [];
   const choices: Record<string, { value: string; label: string }[]> = {
     ...(themes.length && {
-      'appearance.theme': themes.map((theme) => ({ value: theme.id, label: theme.label })),
+      'appearance.theme': [
+        { value: SYSTEM_THEME, label: 'Match the system' },
+        ...themes.map((theme) => ({ value: theme.id, label: theme.label })),
+      ],
     }),
   };
   const draft = new SettingsDraft(settings);

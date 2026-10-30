@@ -69,6 +69,21 @@ test('console: groups, levels, search, repeats, values and file links', async ({
   await expect(hello).toContainText('Hello state');
   await page.getByLabel('Search console').fill('');
 
+  /** Ctrl+Alt+E: errors only, then every level again. */
+  await page.keyboard.press('Control+Alt+e');
+  await expect(level(page, 'Errors')).toHaveAttribute('aria-pressed', 'true');
+  await expect(level(page, 'Info')).toHaveAttribute('aria-pressed', 'false');
+  await expect(hello.filter({ hasText: 'Hello state' })).toHaveCount(0);
+  await page.keyboard.press('Control+Alt+e');
+  await expect(level(page, 'Info')).toHaveAttribute('aria-pressed', 'true');
+  await expect(hello.filter({ hasText: 'Hello state' })).toHaveCount(1);
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save shown lines' }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^console-[\d-]+\.log$/);
+  expect(readFileSync((await file.path())!, 'utf8')).toContain('Hello state');
+
   await page.getByRole('button', { name: 'Sources' }).click();
   await page.getByRole('menuitem', { name: 'Plugins' }).click();
   await page.getByRole('menuitem', { name: '@acme/hello' }).click();
@@ -129,7 +144,20 @@ test('problems: a file that is not open, grouped by file, opens at its position'
     .click();
   await page.getByLabel('Search problems').fill('');
 
-  await problem.click();
+  /** One Tab stop: arrows go through files and problems, Enter opens one. */
+  const header = file.getByRole('button', { name: /scratch\/broken\.ts/ });
+  await header.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(problem).toBeFocused();
+  await expect(header).toHaveAttribute('tabindex', '-1');
+  await page.keyboard.press('ArrowLeft');
+  await expect(header).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await expect(problem).toHaveCount(0);
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await expect(problem).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('tab', { name: 'broken.ts' })).toBeVisible();
   await expect(page.locator('.monaco-editor .active-line-number')).toHaveText('2');
 

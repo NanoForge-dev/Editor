@@ -150,12 +150,12 @@ export const createActions = (options: {
       const message = text.trim();
       return store.run('Could not stash', () => api.stash(input(message ? { message } : {})));
     },
-    applyStash: (index: number, pop: boolean) =>
+    applyStash: (hash: string, pop: boolean) =>
       store.run(pop ? 'Could not pop the stash' : 'Could not apply the stash', () =>
-        api.applyStash(input({ index, pop })),
+        api.applyStash(input({ hash, pop })),
       ),
-    dropStash: (index: number) =>
-      store.run('Could not drop the stash', () => api.dropStash(input({ index }))),
+    dropStash: (hash: string) =>
+      store.run('Could not drop the stash', () => api.dropStash(input({ hash }))),
 
     /** Shows a file next to an earlier version of it, in the code editor. */
     compare: async (path: string, revision: string, label: string) => {
@@ -169,6 +169,15 @@ export const createActions = (options: {
     },
     open: (path: string) => commands.execute('documents.open', path),
     info: (title: string) => notify('info', title),
+    /** Copies paths, one per line, to the clipboard. */
+    copyPaths: async (paths: readonly string[]) => {
+      try {
+        await navigator.clipboard.writeText(paths.join('\n'));
+        notify('info', paths.length === 1 ? `Copied ${paths[0]}` : `Copied ${paths.length} paths`);
+      } catch (error) {
+        notify('warning', 'Could not copy the path', String(error));
+      }
+    },
   };
   return actions;
 };

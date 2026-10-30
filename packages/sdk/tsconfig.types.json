@@ -8,17 +8,7 @@
     "sourceMap": false,
     "rootDir": "..",
     "outDir": "dist/types",
-    "types": [],
-    "paths": {
-      "@nanoforge-dev/editor-kernel": ["../kernel/src/index.ts"],
-      "@nanoforge-dev/editor-project": ["../project/src/index.ts"],
-      "@nanoforge-dev/editor-protocol": ["../protocol/src/index.ts"],
-      "@nanoforge-dev/editor-rpc": ["../rpc/src/index.ts"],
-      "@nanoforge-dev/editor-settings": ["../settings/src/index.ts"],
-      "@nanoforge-dev/editor-history": ["../history/src/index.ts"],
-      "@nanoforge-dev/editor-code": ["../code/src/index.ts"],
-      "@nanoforge-dev/editor-code/engine": ["../code/src/engine/index.ts"]
-    }
+    "types": []
   },
   "include": ["src/**/*.ts"]
 }

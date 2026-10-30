@@ -35,8 +35,9 @@ export const makeService = (
     { path: 'nf_modules/ball.ts', kind: 'file' },
   ] as FileEntry[],
   values: Record<string, unknown[]> = {},
-  { local = true } = {},
+  { local = true, apps = [] as { root: string; type: string }[] } = {},
 ) => {
+  const keys = contextKeys();
   const executeCommand = vi.fn(async () => undefined);
   const ask = vi.fn<(options: { validate?: (value: string) => string | undefined }) => Promise<string | undefined>>(
     async () => undefined,
@@ -46,6 +47,7 @@ export const makeService = (
   const service = new FileManagerService({
     project: {
       id: 'p1',
+      model: { get: () => ({ apps }) },
       fs: {
         entry: (path: string) => entries.find((entry) => entry.path === path),
         children: (path: string) => entries.filter((entry) => dirname(entry.path) === path),
@@ -56,6 +58,7 @@ export const makeService = (
     extensions: {
       getValues: <T>(point: ExtensionPoint<T>) => (values[point.id] ?? []) as T[],
     },
+    contextKeys: keys,
     prompts: { ask } as never,
     notifications: { notify } as never,
     executeCommand,
@@ -74,5 +77,5 @@ export const makeService = (
     'import',
   ] as const)
     vi.spyOn(service.operations, method).mockImplementation(async () => [] as never);
-  return { service, executeCommand, ask, notify, logger, contextKeys: contextKeys() };
+  return { service, executeCommand, ask, notify, logger, contextKeys: keys };
 };

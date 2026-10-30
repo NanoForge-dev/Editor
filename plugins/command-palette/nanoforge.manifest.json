@@ -56,6 +56,48 @@
           { "key": "Mod+F2", "command": "workbench.openWidget", "args": ["viewport.game"] },
           { "key": "Mod+F3", "command": "workbench.openWidget", "args": ["code-editor.script"] }
         ]
+      },
+      {
+        "id": "intellij",
+        "title": "IntelliJ",
+        "description": "Shortcuts close to IntelliJ IDEA's: Shift Shift, Ctrl+Shift+A, Alt+1 for the tool windows. Those a browser keeps for itself (Ctrl+T, Ctrl+F4, Ctrl+F5) are left out.",
+        "bindings": [
+          { "key": "Shift Shift", "command": "palette.show" },
+          { "key": "Mod+Shift+A", "command": "palette.show" },
+          { "key": "Mod+F12", "command": "palette.symbols" },
+          { "key": "Alt+1", "command": "workbench.openWidget", "args": ["file-manager.files"] },
+          { "key": "Alt+4", "command": "console.show" },
+          { "key": "Alt+6", "command": "console.showProblems" },
+          { "key": "Alt+9", "command": "workbench.openWidget", "args": ["git.log"] },
+          { "key": "Alt+0", "command": "workbench.openWidget", "args": ["git.changes"] },
+          { "key": "Mod+K S", "command": "codeEditor.saveAll", "remove": true },
+          {
+            "key": "Mod+S",
+            "command": "codeEditor.save",
+            "when": "focusedWidget == 'code-editor.script'",
+            "remove": true
+          },
+          { "key": "Mod+S", "command": "codeEditor.saveAll" },
+          { "key": "Mod+K", "command": "git.commit" },
+          {
+            "key": "Mod+Alt+L",
+            "command": "codeEditor.format",
+            "when": "focusedWidget == 'code-editor.script'"
+          },
+          {
+            "key": "Mod+Alt+O",
+            "command": "codeEditor.organizeImports",
+            "when": "focusedWidget == 'code-editor.script'"
+          },
+          {
+            "key": "Alt+Insert",
+            "command": "fileManager.newFile",
+            "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+          },
+          { "key": "Shift+F10", "command": "runtime.play", "when": "!runtime.active" },
+          { "key": "Mod+F2", "command": "runtime.stop", "when": "runtime.active" },
+          { "key": "Mod+Alt+Shift+S", "command": "project.show" }
+        ]
       }
     ]
   }

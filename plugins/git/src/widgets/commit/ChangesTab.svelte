@@ -2,7 +2,7 @@
   import { untrack } from 'svelte';
 
   import type { GitStatus } from '@nanoforge-dev/editor-sdk';
-  import { ContextMenu, IconButton, type MenuEntry } from '@nanoforge-dev/editor-sdk/ui';
+  import { ContextMenu, Icon, IconButton, type MenuEntry } from '@nanoforge-dev/editor-sdk/ui';
 
   import { type FileRow, changeGroups } from '../../model/change-groups';
   import { getSession } from '../../session/git-session';
@@ -122,6 +122,13 @@
       disabled: selectedRows.length !== 1 || selectedRows[0]?.letter === 'D',
       onSelect: () => selectedRows[0] && jumpToSource(selectedRows[0]),
     },
+    {
+      kind: 'item',
+      id: 'copy-path',
+      label: selectedRows.length > 1 ? 'Copy paths' : 'Copy path',
+      disabled: !selectedRows.length,
+      onSelect: () => void act.copyPaths(selectedRows.map((row) => row.file.path)),
+    },
     ...(conflictedSelected.length
       ? ([
           { kind: 'separator' },
@@ -219,6 +226,9 @@
     onclick={() => void act.stash()}
   />
   <span class="grow"></span>
+  {#if $git.reading}
+    <span class="reading" role="status"><Icon name="loader-circle" size={13} />Refreshing…</span>
+  {/if}
   <IconButton
     icon="chevrons-up-down"
     size={14}
@@ -238,6 +248,7 @@
     class="scroll"
     role="group"
     aria-label="Changed files"
+    aria-busy={$git.reading || busy}
     aria-activedescendant={current ? idOf(current) : undefined}
     aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Space Enter"
     tabindex="0"
@@ -280,6 +291,25 @@
   }
   .grow {
     flex: 1;
+  }
+  .reading {
+    display: flex;
+    gap: var(--nf-space-1);
+    align-items: center;
+    color: var(--nf-color-text-muted);
+  }
+  .reading :global(svg) {
+    animation: spin 1s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reading :global(svg) {
+      animation: none;
+    }
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
   .scroll {
     flex: 1;

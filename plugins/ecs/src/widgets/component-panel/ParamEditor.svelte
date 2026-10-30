@@ -2,7 +2,7 @@
   import type { Element, ParamGroup } from '@nanoforge-dev/editor-sdk';
   import { Button, ColorPicker, Input, Select, Switch } from '@nanoforge-dev/editor-sdk/ui';
 
-  import { BUILT_IN_PRESETS } from '../../layout/param-layout';
+  import type { PresetDefinition } from '../../layout/param-layout';
   import { hexColor } from '../../model/arg-values';
   import type { ParamDocs } from '../../model/item-docs.type';
   import { freeSlots } from './component-docs';
@@ -17,13 +17,25 @@
     /** Puts the param in a group of its own. */
     onnewgroup: () => void;
     onpreset: (presetId: string | undefined) => void;
+    /** The built-in presets and those of plugins (`ecs.paramPresets`). */
+    presets: readonly PresetDefinition[];
   }
 
-  const { element, params, groups, readonly, onchange, onnewgroup, onpreset }: Props = $props();
+  const { element, params, groups, readonly, onchange, onnewgroup, onpreset, presets }: Props =
+    $props();
 
   const NONE = '__none__';
   const NEW_GROUP = '__new__';
-  const presetIds = [...new Set(BUILT_IN_PRESETS.map((preset) => preset.id))];
+  /** Presets this param's type can use, by id (a preset has a definition per type). */
+  const presetChoices = $derived(
+    [
+      ...new Map(
+        presets
+          .filter((preset) => preset.types.includes(element.type))
+          .map((preset) => [preset.id, preset.title]),
+      ),
+    ].map(([value, label]) => ({ value, label })),
+  );
   const presetId = $derived(element.layout?.preset?.id ?? NONE);
 </script>
 
@@ -78,14 +90,14 @@
     <Select
       label="Preset of {element.name}"
       value={presetId}
-      items={[{ value: NONE, label: 'None' }, ...presetIds.map((id) => ({ value: id, label: id }))]}
+      items={[{ value: NONE, label: 'None' }, ...presetChoices]}
       disabled={readonly}
       onchange={(value) => onpreset(value === NONE ? undefined : value)}
     />
     {#if element.layout?.preset?.slot}
       {@const slots = [
         element.layout.preset.slot,
-        ...freeSlots(params, element, presetId).filter(
+        ...freeSlots(params, element, presetId, presets).filter(
           (slot) => slot !== element.layout?.preset?.slot,
         ),
       ]}

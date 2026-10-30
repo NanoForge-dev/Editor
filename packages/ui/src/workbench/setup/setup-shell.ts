@@ -9,6 +9,7 @@ import {
   type ExtensionRegistry,
   type Logger,
   type Observable,
+  ObservableValue,
   type PluginHost,
   type StaticContributionHandler,
   derived,
@@ -90,13 +91,25 @@ export const setupShell = (options: ShellOptions): Shell => {
   const styles = new StyleService();
   store.add(styles.inject('core', BASE_CSS, { layer: 'reset' }));
   store.add(styles.inject('core', KIT_CSS, { layer: 'ui' }));
+  const prefersLight = new ObservableValue(false);
+  const scheme = globalThis.matchMedia?.('(prefers-color-scheme: light)');
+  if (scheme) {
+    const update = () => prefersLight.set(scheme.matches);
+    update();
+    scheme.addEventListener('change', update);
+    store.add({ dispose: () => scheme.removeEventListener('change', update) });
+  }
   const themes = store.add(
     new ThemeService(
       extensions,
       styles,
       settings.observe(CoreSettings.theme),
       document.documentElement,
-      { density: settings.observe(CoreSettings.density) as Observable<Density>, logger },
+      {
+        density: settings.observe(CoreSettings.density) as Observable<Density>,
+        prefersLight: prefersLight.readonly(),
+        logger,
+      },
     ),
   );
   const iconThemes = store.add(

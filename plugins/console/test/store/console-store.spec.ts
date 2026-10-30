@@ -4,6 +4,7 @@ import { type LogEntry, LogLevel } from '@nanoforge-dev/editor-sdk';
 
 import { ConsoleStore } from '../../src/store/console-store';
 import { groupOf, sourceLabel } from '../../src/store/log-sources';
+import { toggledErrorsOnly } from '../../src/widgets/console/console-filters';
 
 /** The part of the editor's logger the console uses: sinks, with a replay of earlier entries. */
 class Logs {
@@ -115,5 +116,27 @@ describe('ConsoleStore', () => {
     store.clear();
     expect(store.lines).toEqual([]);
     expect(revisions).toBeGreaterThan(0);
+  });
+
+  it('keeps an errors-only request until the Console takes it', () => {
+    const store = new ConsoleStore(new Logs());
+    let fired = 0;
+    const subscription = store.onErrorsOnly(() => fired++);
+    expect(store.takeErrorsOnly()).toBe(false);
+    store.askErrorsOnly();
+    expect(fired).toBe(1);
+    expect(store.takeErrorsOnly()).toBe(true);
+    expect(store.takeErrorsOnly()).toBe(false);
+    subscription.dispose();
+    store.dispose();
+  });
+});
+
+describe('toggledErrorsOnly', () => {
+  it('shows only errors, then the usual levels again', () => {
+    const usual = { debug: false, info: true, warn: true, error: true };
+    const errors = toggledErrorsOnly(usual);
+    expect(errors).toEqual({ debug: false, info: false, warn: false, error: true });
+    expect(toggledErrorsOnly(errors)).toEqual(usual);
   });
 });

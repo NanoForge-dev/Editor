@@ -3,6 +3,7 @@ export type { MenuEntry } from './menu-entry.type';
 export type { PropertyField } from './property-field.type';
 export * from './menu-event';
 export * from './row-focus';
+export * from './save-as-file';
 export * from './tab-focus';
 export * from './tree-model';
 export { default as Button } from './button.svelte';
