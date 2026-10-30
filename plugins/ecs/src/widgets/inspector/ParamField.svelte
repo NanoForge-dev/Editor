@@ -2,6 +2,7 @@
   import type { Element } from '@nanoforge-dev/editor-sdk';
   import {
     ColorPicker,
+    Combobox,
     Input,
     NumberInput,
     Select,
@@ -12,6 +13,7 @@
   import { type FieldEditor, fieldEditorFor } from '../../extension/field-editor.extension-point';
   import type { ArgModel, ArgValue, ImportNeed } from '../../model/ecs-model.type';
   import { currentValue, enumMemberArg, hexColor } from '../../model/arg-values';
+  import { assetList } from './asset-context';
 
   interface Props {
     element: Element;
@@ -50,6 +52,14 @@
   );
   const literalOnly = $derived(arg !== undefined && arg.value === undefined);
   let text = $derived(typeof value === 'string' ? value : code);
+  const assets = assetList();
+  /** An `@asset` param picks among the app's assets of the accepted types (its value kept). */
+  const assetChoices = $derived.by(() => {
+    if (element.type !== 'asset' || !assets) return [];
+    const paths = assets(element.accept ?? []);
+    const current = typeof value === 'string' && value ? [value] : [];
+    return [...new Set([...current, ...paths])].map((path) => ({ value: path, label: path }));
+  });
 </script>
 
 <div class="field">
@@ -116,6 +126,14 @@
         value={hexColor(value) ?? '#ffffff'}
         {disabled}
         onchange={(next, final) => final && onchange({ value: next })}
+      />
+    {:else if assetChoices.length && !disabled}
+      <Combobox
+        {label}
+        value={typeof value === 'string' ? value : ''}
+        items={assetChoices}
+        placeholder="Pick an asset"
+        onchange={(next) => onchange({ value: next })}
       />
     {:else}
       <Input

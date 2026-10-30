@@ -34,6 +34,10 @@
         "*.mjs"
       ]
     },
+    "packages/sdk": {
+      "entry": ["scripts/*.ts", "test/**/*.spec.ts"],
+      "ignoreDependencies": ["bits-ui"]
+    },
     "packages/ui": {
       "ignoreDependencies": ["@fontsource/.+"]
     },

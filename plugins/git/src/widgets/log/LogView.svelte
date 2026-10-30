@@ -1,4 +1,8 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+
+  import type { WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
+
   import { getSession } from '../../session/git-session';
   import ConfirmDialog from '../ConfirmDialog.svelte';
   import RepositoryGate from '../RepositoryGate.svelte';
@@ -7,9 +11,24 @@
   import CommitDetails from './CommitDetails.svelte';
   import CommitTable from './CommitTable.svelte';
 
-  const git = getSession().store.state;
+  /** Kept with the layout: the commit selected, and the branch whose history is listed. */
+  interface SavedState {
+    commit?: string;
+    branch?: string;
+  }
 
-  let selectedHash = $state<string>();
+  const { instance }: { instance: WidgetInstance } = $props();
+  const { store } = getSession();
+  const git = store.state;
+
+  // svelte-ignore state_referenced_locally
+  const saved = instance.getState<SavedState>() ?? {};
+  let selectedHash = $state<string | undefined>(saved.commit);
+  if (saved.branch && !store.state.get().logBranch) void store.showBranch(saved.branch);
+  $effect(() => {
+    const state: SavedState = { commit: selectedHash, branch: $git.logBranch };
+    untrack(() => instance.setState(state));
+  });
   const selected = $derived($git.log.find((commit) => commit.hash === selectedHash));
   let confirming = $state<Confirmation>();
 </script>

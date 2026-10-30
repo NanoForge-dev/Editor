@@ -1,10 +1,26 @@
 import {
   EditorServices,
   HistoryServiceToken,
+  defineExtensionPoint,
   definePlugin,
   observe,
 } from '@nanoforge-dev/editor-sdk';
-import { FILE_TEMPLATES } from '@nanoforge-dev/editor-sdk/ui';
+import { FILE_TEMPLATES, NotificationServiceToken } from '@nanoforge-dev/editor-sdk/ui';
+
+/** Extension points of the ECS plugin: a plugin contributes to another's points by their id. */
+const ENTITY_ACTIONS = defineExtensionPoint<{
+  id: string;
+  title: string;
+  command: string;
+  when?: string;
+}>('ecs.entityActions');
+const PARAM_PRESETS = defineExtensionPoint<{
+  id: string;
+  title: string;
+  slots?: string[];
+  required?: string[];
+  types: string[];
+}>('ecs.paramPresets');
 
 export default definePlugin({
   activate(context) {
@@ -44,6 +60,31 @@ export default definePlugin({
         category: 'Hello',
         defaultName: 'greeting.txt',
         create: ({ name }) => [{ path: name, content: `Hello from ${name}!\n` }],
+      }),
+    );
+
+    context.subscriptions.add(
+      context.registerCommand('hello.greetEntity', (services, target?: { entity?: string }) =>
+        services
+          .tryGet(NotificationServiceToken)
+          ?.notify('info', `Hello, ${target?.entity ?? 'nobody'}!`),
+      ),
+    );
+    context.subscriptions.add(
+      context.contribute(ENTITY_ACTIONS, {
+        id: 'hello.greet-entity',
+        title: 'Say hello to it',
+        command: 'hello.greetEntity',
+        when: 'ecsComponent:Position',
+      }),
+    );
+    context.subscriptions.add(
+      context.contribute(PARAM_PRESETS, {
+        id: 'range',
+        title: 'Range',
+        slots: ['min', 'max'],
+        required: ['min', 'max'],
+        types: ['number'],
       }),
     );
 

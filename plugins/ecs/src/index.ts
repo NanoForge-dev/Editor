@@ -7,11 +7,13 @@ import {
   type CodegenTarget,
   EditorServices,
   type Observable,
+  ProjectServiceToken,
   definePlugin,
   observe,
 } from '@nanoforge-dev/editor-sdk';
 import {
   CODE_EDITOR_SIDE_PANELS,
+  FILE_TEMPLATES,
   SCENE_EDITORS,
   StyleServiceToken,
   VIEWPORT_OVERLAYS,
@@ -22,6 +24,8 @@ import {
 } from '@nanoforge-dev/editor-sdk/ui';
 
 import { registerEcsChecks } from './adoption/ecs-checks';
+import { itemFileTemplates } from './create/item-file-templates';
+import { followLayoutDiagnostics } from './layout/layout-diagnostics';
 import { LiveService, LiveServiceToken } from './live/live-service';
 import { MOVE_IN_GAME_KEY, moveInGame } from './live/move-in-game';
 import type { EntryModel, EntryOp } from './model/ecs-model.type';
@@ -47,9 +51,14 @@ export default definePlugin({
 
     const ecs = context.subscriptions.add(new EcsService(context));
     context.subscriptions.add(registerEcsChecks(context, ecs.catalogState));
+    context.subscriptions.add(followLayoutDiagnostics(context, ecs));
     context.provide(EcsServiceToken, ecs);
     const live = context.subscriptions.add(new LiveService(context, ecs));
     context.provide(LiveServiceToken, live);
+
+    const projects = context.services.get(ProjectServiceToken);
+    for (const template of itemFileTemplates(() => projects.current.get()?.model.get().apps ?? []))
+      context.subscriptions.add(context.contribute(FILE_TEMPLATES, template));
 
     const widgets: [string, WidgetComponent][] = [
       ['ecs.hierarchy', Hierarchy as WidgetComponent],

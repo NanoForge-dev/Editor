@@ -68,6 +68,7 @@ describe('keybinding parsing', () => {
     expect(normalizeStroke('esc', false)).toBe('Escape');
     expect(parseKeybinding('ctrl+k  ctrl+s', false)).toEqual(['Ctrl+K', 'Ctrl+S']);
     expect(formatKeybinding('Mod+Shift+P', true)).toBe('⇧⌘P');
+    expect(formatKeybinding('Shift Shift', true)).toBe('⇧ ⇧');
     expect(() => normalizeStroke('Hyper+X', false)).toThrow(/modifier/);
   });
 });
@@ -97,6 +98,33 @@ describe('KeybindingService', () => {
     service.handle(key({ key: 'x', ctrlKey: true }));
     await Promise.resolve();
     expect(ran).toEqual(['palette', 'save']);
+  });
+
+  it('runs a double tap of a modifier, and lets single taps and held keys type', async () => {
+    vi.useFakeTimers();
+    try {
+      const { service, ran, bind } = setup();
+      bind({ key: 'Shift Shift', command: 'other' });
+      const tap = (after = 50) => {
+        service.handle(key({ key: 'Shift', shiftKey: true }));
+        vi.advanceTimersByTime(after);
+        return service.handleKeyUp(key({ key: 'Shift' }));
+      };
+      expect(tap()).toBe(false);
+      expect(tap()).toBe(true);
+      /** A capital letter in between breaks the double tap. */
+      expect(tap()).toBe(false);
+      expect(service.handle(key({ key: 'A', shiftKey: true }))).toBe(false);
+      expect(tap()).toBe(false);
+      vi.advanceTimersByTime(600);
+      /** Too slow, then held too long. */
+      expect(tap()).toBe(false);
+      expect(tap(500)).toBe(false);
+      await Promise.resolve();
+      expect(ran).toEqual(['other']);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('applies user overrides and reports conflicts', () => {

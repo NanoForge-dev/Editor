@@ -5,6 +5,7 @@ import {
   type FileEntry,
   type Observable,
   ObservableValue,
+  appAt,
   basename,
   dirname,
   editorsFor,
@@ -94,8 +95,24 @@ export class FileManagerService implements Disposable {
     return isPackagePath(path);
   }
 
-  templates(): FileTemplate[] {
-    return this._options.extensions.getValues(FILE_TEMPLATES);
+  /**
+   * Templates offered in a folder: their `when` sees `fileFolder` (the folder) and `appType`
+   * (`client`, `server` or `lib` when the folder is in an app or a shared library, else empty).
+   * A template whose `when` can't be read is left out.
+   */
+  templates(folder = this.targetFolder()): FileTemplate[] {
+    const scope = this._options.contextKeys.createScoped('file-manager.templates');
+    scope.set('fileFolder', folder);
+    scope.set('appType', appAt(this._options.project.model.get().apps, folder)?.type ?? '');
+    const templates = this._options.extensions.getValues(FILE_TEMPLATES).filter((template) => {
+      try {
+        return scope.evaluate(template.when);
+      } catch {
+        return false;
+      }
+    });
+    scope.dispose();
+    return templates;
   }
 
   editorsOf(path: string): DocumentEditor[] {
@@ -139,7 +156,7 @@ export class FileManagerService implements Disposable {
   }
 
   async newFromTemplate(id: string, folder = this.targetFolder()): Promise<void> {
-    const template = this.templates().find((candidate) => candidate.id === id);
+    const template = this.templates(folder).find((candidate) => candidate.id === id);
     if (!template) return;
     const name = await this._ask(
       `New ${template.title.toLowerCase()}`,

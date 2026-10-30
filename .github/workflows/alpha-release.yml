@@ -3,6 +3,15 @@ name: Alpha Release
 on:
   workflow_dispatch:
     inputs:
+      package:
+        description: The package to release (the SDK and the vite-plugin are versioned on their own)
+        type: choice
+        required: true
+        default: '@nanoforge-dev/editor'
+        options:
+          - '@nanoforge-dev/editor'
+          - '@nanoforge-dev/editor-sdk'
+          - '@nanoforge-dev/editor-vite-plugin'
       dry_run:
         description: Perform a dry run?
         type: boolean
@@ -35,7 +44,7 @@ jobs:
       - name: Release alpha
         uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
         with:
-          package: '@nanoforge-dev/editor'
+          package: ${{ inputs.package }}
           tag: alpha
           dry: ${{ inputs.dry_run }}
         env:

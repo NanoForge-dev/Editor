@@ -25,24 +25,31 @@
   >
 </div>
 <ul class="scroll" aria-label="Stashes">
-  {#each $git.stashes as entry (entry.index)}
+  {#each $git.stashes as entry (entry.hash)}
     <li class="stash" aria-label={entry.message}>
       <span class="name">{entry.message}</span>
-      <Button size="sm" variant="ghost" onclick={() => void act.applyStash(entry.index, false)}
-        >Apply</Button
-      >
-      <Button size="sm" variant="ghost" onclick={() => void act.applyStash(entry.index, true)}
-        >Pop</Button
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={$git.busy}
+        onclick={() => void act.applyStash(entry.hash, false)}>Apply</Button
       >
       <Button
         size="sm"
         variant="ghost"
+        disabled={$git.busy}
+        onclick={() => void act.applyStash(entry.hash, true)}>Pop</Button
+      >
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={$git.busy}
         onclick={() =>
           confirm({
             title: 'Drop this stash?',
             description: `"${entry.message}" will be lost. This cannot be undone.`,
             confirm: 'Drop',
-            run: () => void act.dropStash(entry.index),
+            run: () => void act.dropStash(entry.hash),
           })}>Drop</Button
       >
     </li>

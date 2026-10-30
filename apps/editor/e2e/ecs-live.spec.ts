@@ -129,8 +129,12 @@ test('moves an entity by dragging it in the Game screen, and applies it to the c
     await expect.poll(async () => Number(await x.inputValue())).toBeLessThan(870);
     expect(Number(await x.inputValue())).toBeGreaterThan(840);
     expect(readFileSync(MAIN, 'utf8')).toBe(original);
-    await page.getByRole('button', { name: 'Apply to code' }).click();
+    /** The Hierarchy applies every entity's changes while the game plays. */
+    await showPanel(page, 'Hierarchy');
+    const applyAll = page.getByRole('button', { name: 'Apply all changes to code' });
+    await applyAll.click();
     await expect.poll(() => readFileSync(MAIN, 'utf8')).toMatch(/new Position\(8[4-6]\d, 0\)/);
+    await expect(applyAll).toBeDisabled();
 
     await move.click();
     await expect(overlay).toHaveCount(0);

@@ -138,6 +138,13 @@ export class Recorder implements Disposable {
     };
   }
 
+  /** Forgets what a game reported so far; what it reports next is recorded as usual. */
+  clear(source: GameSource): void {
+    if (!this._records.has(source)) return;
+    this._records.set(source, { ...emptyRecord(), world: this._records.get(source)?.world });
+    this._bump();
+  }
+
   /** Forgets the last run (a new one starts). */
   reset(): void {
     this._records = new Map();

@@ -15,11 +15,12 @@
     Menu,
     type MenuEntry,
     type WidgetInstance,
+    saveAsFile,
   } from '@nanoforge-dev/editor-sdk/ui';
 
   import ConsoleLineRow from './ConsoleLineRow.svelte';
   import GroupChips from './GroupChips.svelte';
-  import { consoleStats, sourcesMenu } from './console-filters';
+  import { consoleStats, sourcesMenu, toggledErrorsOnly } from './console-filters';
   import type { ConsoleLine, LineLevel } from '../../store/console-store';
   import type { FileTarget } from '../../link/linkify';
   import { FrameLocator, createSegmenter } from '../../link/frame-locator';
@@ -65,6 +66,16 @@
   $effect(() =>
     instance.setState({ groups: { ...groups }, hidden: [...hidden], levels: { ...levels } }),
   );
+
+  /** _Console › Show only errors_ (Ctrl+Alt+E): errors only, or every level when it already is. */
+  const toggleErrorsOnly = () => (levels = toggledErrorsOnly(levels));
+  if (store.takeErrorsOnly()) toggleErrorsOnly();
+  $effect(() => {
+    const subscription = store.onErrorsOnly(() => {
+      if (store.takeErrorsOnly()) toggleErrorsOnly();
+    });
+    return () => subscription.dispose();
+  });
   let query = $state('');
 
   let revision = $state(0);
@@ -124,12 +135,14 @@
 
   let list = $state<HTMLElement>();
   let follow = $state(true);
+  /** The pointer is over the lines: new lines don't scroll them away from what it points at. */
+  let hovering = $state(false);
   const toBottom = () => {
     if (list) list.scrollTop = list.scrollHeight;
   };
   $effect(() => {
     void visible;
-    if (untrack(() => follow)) void tick().then(toBottom);
+    if (untrack(() => follow && !hovering)) void tick().then(toBottom);
   });
   const onscroll = () => {
     if (!list) return;
@@ -147,6 +160,10 @@
   const asText = (line: ConsoleLine) =>
     `${time(line.time)} [${sourceLabel(line.source)}] ${line.text}${line.count > 1 ? ` (×${line.count})` : ''}`;
   const copy = (text: string) => void navigator.clipboard?.writeText(text).catch(() => undefined);
+  const save = () => {
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    saveAsFile(`console-${stamp}.log`, `${visible.map(asText).join('\n')}\n`);
+  };
   const contextItems = (): MenuEntry[] => {
     const line = contextLine;
     return [
@@ -166,6 +183,13 @@
         label: 'Copy every shown line',
         disabled: !visible.length,
         onSelect: () => copy(visible.map(asText).join('\n')),
+      },
+      {
+        kind: 'item',
+        id: 'save',
+        label: 'Save shown lines…',
+        disabled: !visible.length,
+        onSelect: save,
       },
       { kind: 'separator' },
       { kind: 'item', id: 'clear', label: 'Clear console', onSelect: clear },
@@ -192,6 +216,12 @@
       {/each}
     </div>
     <Input bind:value={query} placeholder="Search console" aria-label="Search console" />
+    <IconButton
+      icon="download"
+      label="Save shown lines"
+      disabled={!visible.length}
+      onclick={save}
+    />
     <IconButton icon="trash-2" label="Clear console" onclick={clear} />
   </div>
 
@@ -215,6 +245,11 @@
         aria-label="Console"
         aria-live="off"
         {onscroll}
+        onpointerenter={() => (hovering = true)}
+        onpointerleave={() => {
+          hovering = false;
+          if (follow) toBottom();
+        }}
         oncontextmenu={(event) => {
           const id = (event.target as HTMLElement).closest<HTMLElement>('[data-line]')?.dataset
             .line;

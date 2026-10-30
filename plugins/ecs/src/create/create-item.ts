@@ -25,7 +25,7 @@ export const validateItemName = (kind: ItemKind, name: string): string | undefin
 const sideOf = (target: AppModel): 'client' | 'server' | 'shared' =>
   target.type === 'lib' ? 'shared' : target.type;
 
-const itemTemplate = (kind: ItemKind, name: string, target: AppModel): string => {
+export const itemTemplate = (kind: ItemKind, name: string, target: AppModel): string => {
   const side = sideOf(target);
   if (kind === 'component') {
     return [

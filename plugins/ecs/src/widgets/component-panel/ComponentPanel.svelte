@@ -5,6 +5,7 @@
   import { Select } from '@nanoforge-dev/editor-sdk/ui';
 
   import { EcsServiceToken } from '../../service/ecs-service';
+  import { BUILT_IN_PRESETS } from '../../layout/param-layout';
   import type { ComponentUse } from '../../model/ecs-model.type';
   import type { ItemDocsOp, ParamDocs } from '../../model/item-docs.type';
   import ComponentCard from '../inspector/ComponentCard.svelte';
@@ -16,6 +17,8 @@
   const { path }: { path: string } = $props();
   const ecs = panelServices().get(EcsServiceToken);
   const catalog = ecs.catalogState;
+  const contributed = ecs.paramPresets;
+  const presets = $derived([...$contributed, ...BUILT_IN_PRESETS]);
 
   let chosen = $state<string>();
   const opened = ecs.openedItem;
@@ -88,7 +91,7 @@
   const setPreset = (element: Element, presetId: string | undefined) => {
     if (!presetId)
       return setParam(element, { preset: undefined }, `Remove the preset of ${element.name}`);
-    const preset = presetDoc(params, element, presetId);
+    const preset = presetDoc(params, element, presetId, presets);
     if (preset) setParam(element, { preset }, `Set the preset of ${element.name}`);
   };
 
@@ -154,6 +157,7 @@
           onchange={(change, label) => setParam(element, change, label)}
           onnewgroup={() => newGroupFor(element)}
           onpreset={(presetId) => setPreset(element, presetId)}
+          {presets}
         />
       {/each}
     </section>
@@ -165,6 +169,7 @@
           component={preview}
           {item}
           shown={new Set()}
+          presets={$contributed}
           first
           last
           onargs={() => undefined}

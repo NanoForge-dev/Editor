@@ -280,10 +280,7 @@ export class LiveService implements Disposable {
     this._session.clear();
     this._instances.set([]);
     this._selection.set(undefined);
-    const count = [...this._pending.get().values()].reduce(
-      (sum, entities) => sum + entities.size,
-      0,
-    );
+    const count = pendingCount(this._pending.get());
     if (!count) return;
     this._context.services
       .tryGet(NotificationServiceToken)
@@ -431,6 +428,10 @@ export const withoutApplied = (
   if (!components.size) next.get(app)!.delete(key);
   return next;
 };
+
+/** How many entities have changes not applied to the code yet. */
+export const pendingCount = (pending: Pending): number =>
+  [...pending.values()].reduce((sum, entities) => sum + entities.size, 0);
 
 const clonePending = (pending: Pending): Pending =>
   new Map(

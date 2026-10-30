@@ -220,11 +220,20 @@ describe('GitService on a project folder', () => {
     await git.commit(root, 'b and a new file', { paths: ['src/b.txt', 'fresh.txt'] });
     expect(await files(root)).toEqual([]);
     write(root, 'fresh.txt', 'fresher\n');
-    await git.commit(root, 'b and a fresh file', { paths: ['fresh.txt'], amend: true });
-    expect((await git.log(root)).map((commit) => commit.subject)).toEqual([
+    await git.commit(root, 'b and a fresh file\n\nWhy: the body.\nSecond line.', {
+      paths: ['fresh.txt'],
+      amend: true,
+    });
+    const amended = await git.log(root);
+    expect(amended.map((commit) => commit.subject)).toEqual([
       'b and a fresh file',
       'change a',
       'first commit',
+    ]);
+    expect(amended.map((commit) => commit.body)).toEqual([
+      'Why: the body.\nSecond line.',
+      undefined,
+      undefined,
     ]);
     raw(root, 'mv', 'fresh.txt', 'renamed.txt');
     expect((await git.projectStatus(root)).files).toEqual([
@@ -303,15 +312,25 @@ describe('GitService on a project folder', () => {
     write(root, 'extra.txt', 'extra\n');
     await git.stash(root, 'work in progress');
     expect(await files(root)).toEqual([]);
-    expect(await git.stashes(root)).toEqual([{ index: 0, message: 'On main: work in progress' }]);
-    await git.applyStash(root, 0);
+    const [wip] = await git.stashes(root);
+    expect(wip).toEqual({
+      hash: expect.stringMatching(/^[0-9a-f]{40}$/),
+      message: 'On main: work in progress',
+    });
+    await git.applyStash(root, wip!.hash);
     expect(await files(root)).toEqual(['-M a.txt', '-U extra.txt']);
     await git.discard(root, ['a.txt', 'extra.txt']);
-    await git.applyStash(root, 0, true);
+    /** A newer stash moves it to stash@{1}: its hash still names it. */
+    write(root, 'a.txt', 'newer\n');
+    await git.stash(root, 'newer');
+    await git.applyStash(root, wip!.hash, true);
+    expect((await git.stashes(root)).map((stash) => stash.message)).toEqual(['On main: newer']);
+    expect(await files(root)).toEqual(['-M a.txt', '-U extra.txt']);
+    await git.discard(root, ['a.txt', 'extra.txt']);
+    const [newer] = await git.stashes(root);
+    await git.dropStash(root, newer!.hash);
     expect(await git.stashes(root)).toEqual([]);
-    await git.stash(root);
-    await git.dropStash(root, 0);
-    expect(await git.stashes(root)).toEqual([]);
+    await expect(git.dropStash(root, newer!.hash)).rejects.toThrow(/no longer exists/);
   });
 
   it('pushes and pulls with a remote, counts ahead and behind, and reports a conflict', async () => {

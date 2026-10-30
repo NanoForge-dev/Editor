@@ -1,6 +1,6 @@
 import type { Element, ParamGroup } from '@nanoforge-dev/editor-sdk';
 
-import { BUILT_IN_PRESETS } from '../../layout/param-layout';
+import { BUILT_IN_PRESETS, type PresetDefinition } from '../../layout/param-layout';
 import type { ParamDocs } from '../../model/item-docs.type';
 
 /** A param's layout as its doc tags say it. */
@@ -54,8 +54,9 @@ export const freeSlots = (
   params: readonly Element[],
   element: Element,
   presetId: string,
+  presets: readonly PresetDefinition[] = BUILT_IN_PRESETS,
 ): string[] => {
-  const definition = BUILT_IN_PRESETS.find(
+  const definition = presets.find(
     (preset) => preset.id === presetId && preset.slots && preset.types.includes(element.type),
   );
   if (!definition?.slots) return [];
@@ -77,9 +78,10 @@ export const presetDoc = (
   params: readonly Element[],
   element: Element,
   presetId: string,
+  presets: readonly PresetDefinition[] = BUILT_IN_PRESETS,
 ): string | undefined => {
-  const slots = freeSlots(params, element, presetId);
-  const single = BUILT_IN_PRESETS.some(
+  const slots = freeSlots(params, element, presetId, presets);
+  const single = presets.some(
     (preset) => preset.id === presetId && !preset.slots && preset.types.includes(element.type),
   );
   return slots.length ? `${presetId}.${slots[0]}` : single ? presetId : undefined;

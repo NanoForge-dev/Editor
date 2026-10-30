@@ -8,10 +8,12 @@
   import { LiveServiceToken } from '../../live/live-service';
   import ComponentCard from './ComponentCard.svelte';
   import LiveInspector from './LiveInspector.svelte';
+  import { provideAssets } from './asset-context';
 
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
   const ecs = instance.services.get(EcsServiceToken);
+  provideAssets((accept) => ecs.assets(accept));
   /** Undo targets the file the Inspector edits: `main`, or the selected scene's file. */
   const location = ecs.location;
   $effect(() => {
@@ -136,6 +138,7 @@
               `Remove ${component.className ?? 'component'} from ${entity.name}`,
             )}
           onopen={() => item && void ecs.openItem(item)}
+          onlayout={() => item && void ecs.editLayout(item)}
         />
       {/each}
     </div>

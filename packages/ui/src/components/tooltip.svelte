@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Tooltip } from 'bits-ui';
+  import { Tooltip as BitsTooltip } from 'bits-ui';
   import type { Snippet } from 'svelte';
 
   interface Props {
@@ -11,15 +11,15 @@
   const { text, children, side = 'bottom' }: Props = $props();
 </script>
 
-<Tooltip.Provider>
-  <Tooltip.Root delayDuration={500}>
-    <Tooltip.Trigger>
+<BitsTooltip.Provider>
+  <BitsTooltip.Root delayDuration={500}>
+    <BitsTooltip.Trigger>
       {#snippet child({ props })}
         {@render children({ props })}
       {/snippet}
-    </Tooltip.Trigger>
-    <Tooltip.Portal>
-      <Tooltip.Content class="nf-tooltip" {side} sideOffset={6}>{text}</Tooltip.Content>
-    </Tooltip.Portal>
-  </Tooltip.Root>
-</Tooltip.Provider>
+    </BitsTooltip.Trigger>
+    <BitsTooltip.Portal>
+      <BitsTooltip.Content class="nf-tooltip" {side} sideOffset={6}>{text}</BitsTooltip.Content>
+    </BitsTooltip.Portal>
+  </BitsTooltip.Root>
+</BitsTooltip.Provider>

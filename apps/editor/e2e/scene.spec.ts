@@ -221,8 +221,16 @@ test.describe('scenes', () => {
       .poll(() => readFileSync(join(SCENES, 'run.ts'), 'utf8'))
       .toContain('vars.init("balls", 3)');
 
+    /** An unused var goes at once; a used one only once the warning is confirmed. */
+    await list.getByRole('listitem', { name: 'combo', exact: true }).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'Remove' }).click();
+    await expect.poll(vars).not.toContain('combo');
     await list.getByRole('listitem', { name: 'balls', exact: true }).click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Remove' }).click();
+    const warning = page.getByText(/^balls is used \d+ times in the code$/).last();
+    await expect(warning).toBeVisible();
+    expect(vars()).toContain('balls: number;');
+    await page.getByRole('button', { name: 'Remove anyway' }).last().click();
     await expect.poll(vars).not.toContain('balls');
     const undeclared = page.getByRole('list', { name: 'Undeclared vars' });
     await expect(undeclared.getByRole('listitem', { name: 'balls', exact: true })).toBeVisible();

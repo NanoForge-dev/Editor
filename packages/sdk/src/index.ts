@@ -97,7 +97,13 @@ export type {
   FileEntry,
   ProjectModel,
 } from '@nanoforge-dev/editor-protocol';
-export { basename, dirname, joinPath, runtimeOutputPath } from '@nanoforge-dev/editor-protocol';
+export {
+  appAt,
+  basename,
+  dirname,
+  joinPath,
+  runtimeOutputPath,
+} from '@nanoforge-dev/editor-protocol';
 
 export {
   type Changeset,

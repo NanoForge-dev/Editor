@@ -43,7 +43,7 @@ From `@nanoforge-dev/editor-sdk/ui`.
 
 | Point              | A value is                                                                                                                                                                                      |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FILE_TEMPLATES`   | A "New…" entry of the Files panel: `{ id, title, category, defaultName, create({ folder, name }) }` returning the files to write.                                                               |
+| `FILE_TEMPLATES`   | A "New…" entry of the Files panel: `{ id, title, category, when, defaultName, create({ folder, name }) }` returning the files to write. `when` sees `fileFolder` and `appType` (`client`, `server`, `lib`, empty outside apps).                                                               |
 | `FILE_ACTIONS`     | An entry of the context menu of files: `{ id, title, command, group, when }`. The command gets the selected paths. `when` sees `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount`. |
 | `FILE_ICONS`       | The icon of files matching a glob: `{ pattern, icon, priority }`.                                                                                                                               |
 | `FILE_DECORATIONS` | Marks on files (a badge and a tone), as Git does: `{ id, changes, decorate(path, kind) }`.                                                                                                      |
@@ -105,6 +105,7 @@ A plugin can define its own points with `defineExtensionPoint<T>(id)`, and other
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ecs.fieldEditors` | The inspector field of a value type, or of one referenced type.                                                                                                                     |
 | `ecs.paramPresets` | A visual preset that merges several constructor parameters into one control.                                                                                                        |
+| `ecs.entityActions` | An action on an entity of the Hierarchy: `{ id, title, command, when }`. The command gets `{ app, entity, path }`; `when` sees `ecsEntity` and `ecsComponent:<class>` (`ecsComponent:Position`). |
 | `ecs.sources`      | What the ECS widgets edit for an app: a file and the function holding its spawns (`main`, or a method of a class), and read-only locations shown with it. The scene plugin uses it. |
 
 Declare `@nanoforge/ecs` in your manifest's `dependencies` to contribute to them.

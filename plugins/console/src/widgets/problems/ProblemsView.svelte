@@ -52,6 +52,51 @@
       : [...collapsed, key];
   };
 
+  /**
+   * One Tab stop for the list: rows are `g:<file>` (a file) and `p:<index>:<file>` (its
+   * problems). Up and Down go through the rows shown, Home and End to the ends, Left folds a file
+   * or goes up to it, Right unfolds it or goes down to its first problem.
+   */
+  const groupRow = (key: string) => `g:${key}`;
+  const problemRow = (key: string, index: number) => `p:${index}:${key}`;
+  const groupOfRow = (row: string) =>
+    row.startsWith('g:') ? row.slice(2) : row.slice(row.indexOf(':', 2) + 1);
+  const rows = $derived(
+    groups.flatMap((group) => [
+      groupRow(group.key),
+      ...(collapsed.includes(group.key)
+        ? []
+        : group.problems.map((_, index) => problemRow(group.key, index))),
+    ]),
+  );
+  let active = $state<string>();
+  const current = $derived(active && rows.includes(active) ? active : rows[0]);
+  let list = $state<HTMLElement>();
+  const focusRow = (row: string | undefined) => {
+    if (!row) return;
+    active = row;
+    list?.querySelector<HTMLElement>(`[data-row="${CSS.escape(row)}"]`)?.focus();
+  };
+  const onkeydown = (event: KeyboardEvent) => {
+    const row = (event.target as HTMLElement).closest<HTMLElement>('[data-row]')?.dataset.row;
+    if (!row) return;
+    const at = rows.indexOf(row);
+    const key = groupOfRow(row);
+    const folded = collapsed.includes(key);
+    if (event.key === 'ArrowDown') focusRow(rows[Math.min(at + 1, rows.length - 1)]);
+    else if (event.key === 'ArrowUp') focusRow(rows[Math.max(at - 1, 0)]);
+    else if (event.key === 'Home') focusRow(rows[0]);
+    else if (event.key === 'End') focusRow(rows.at(-1));
+    else if (event.key === 'ArrowLeft') {
+      if (row.startsWith('p:')) focusRow(groupRow(key));
+      else if (!folded) toggle(key);
+    } else if (event.key === 'ArrowRight' && row.startsWith('g:')) {
+      if (folded) toggle(key);
+      else focusRow(rows[at + 1]?.startsWith('p:') ? rows[at + 1] : undefined);
+    } else return;
+    event.preventDefault();
+  };
+
   const counts = (errors: number, warnings: number) =>
     [
       errors && `${errors} error${errors > 1 ? 's' : ''}`,
@@ -91,11 +136,30 @@
     </div>
     <Input bind:value={query} placeholder="Search problems" aria-label="Search problems" />
   </div>
-  <div class="list" role="list" aria-label="Problems">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div
+    class="list"
+    role="list"
+    aria-label="Problems"
+    aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End"
+    bind:this={list}
+    {onkeydown}
+    onfocusin={(event) => {
+      const row = (event.target as HTMLElement).closest<HTMLElement>('[data-row]')?.dataset.row;
+      if (row) active = row;
+    }}
+  >
     {#each groups as group (group.key)}
       {@const open_ = !collapsed.includes(group.key)}
       <section role="listitem" aria-label={group.label}>
-        <button type="button" class="file" aria-expanded={open_} onclick={() => toggle(group.key)}>
+        <button
+          type="button"
+          class="file"
+          aria-expanded={open_}
+          data-row={groupRow(group.key)}
+          tabindex={current === groupRow(group.key) ? 0 : -1}
+          onclick={() => toggle(group.key)}
+        >
           <Icon name={open_ ? 'chevron-down' : 'chevron-right'} size={14} />
           <span class="path">{group.label}</span>
           <span class="counts">{counts(group.errors, group.warnings)}</span>
@@ -105,9 +169,11 @@
             <button
               type="button"
               class="problem {problem.severity}"
-              disabled={!problem.path}
+              aria-disabled={!problem.path}
+              data-row={problemRow(group.key, index)}
+              tabindex={current === problemRow(group.key, index) ? 0 : -1}
               title={problem.message}
-              onclick={() => void open(problem)}
+              onclick={() => problem.path && void open(problem)}
             >
               <Icon name={ICON[problem.severity]} size={14} label={problem.severity} />
               <span class="message">{problem.message.split('\n')[0]}</span>
@@ -173,7 +239,7 @@
     cursor: pointer;
   }
   .file:hover,
-  .problem:hover:not(:disabled) {
+  .problem:hover:not([aria-disabled='true']) {
     background: var(--nf-color-hover);
   }
   .file:focus-visible,
@@ -200,7 +266,7 @@
   .problem {
     padding-left: calc(var(--nf-space-4) + var(--nf-space-2));
   }
-  .problem:disabled {
+  .problem[aria-disabled='true'] {
     cursor: default;
   }
   .message {

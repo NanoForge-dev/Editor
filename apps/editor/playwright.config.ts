@@ -42,6 +42,8 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     viewport: { width: 1440, height: 860 },
+    /** The theme follows the system by default: the tests run on the dark one. */
+    colorScheme: 'dark',
     trace: 'retain-on-failure',
   },
   projects: [

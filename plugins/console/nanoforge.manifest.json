@@ -37,8 +37,14 @@
     "commands": [
       { "id": "console.show", "title": "Show the console", "category": "Console" },
       { "id": "console.clear", "title": "Clear the console", "category": "Console" },
-      { "id": "console.showProblems", "title": "Show problems", "category": "Console" }
+      { "id": "console.showProblems", "title": "Show problems", "category": "Console" },
+      {
+        "id": "console.errorsOnly",
+        "title": "Show only errors, or every level again",
+        "category": "Console"
+      }
     ],
+    "keybindings": [{ "key": "Mod+Alt+E", "command": "console.errorsOnly" }],
     "settings": [
       {
         "key": "maxLines",

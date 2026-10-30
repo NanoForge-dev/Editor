@@ -89,15 +89,16 @@ export class Position {
 | Tag                             | Effect                                                                                                               |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `@group Name`                   | Puts the parameter in a foldable group. Declare the group in the class comment to give it a color and a description. |
-| `@preset vector.x` / `vector.y` | Shows several parameters as one control. Presets: `vector`, `size`, `color`.                                         |
+| `@preset vector.x` / `vector.y` | Shows several parameters as one control. Presets: `vector`, `size`, `color`, and those of plugins.                   |
 | `@label Text`                   | The name shown instead of the parameter's.                                                                           |
 | `@color orange`                 | Colors the name.                                                                                                     |
 | `@hidden`                       | Hidden by default; _Show hidden_ in the inspector reveals it.                                                        |
+| `@asset .png .jpg`              | A text parameter that names an asset: the inspector offers the app's assets of these types (`/textures/hero.png`).   |
 | The comment's text              | Shown behind the ⓘ next to the name.                                                                                 |
 
 ### Without writing tags
 
-Open the component's file: the **Component** panel beside the code (a toggle in the editor's toolbar, or _Edit layout_ in the inspector's ⋯ menu) has a control for each of these, and a preview. It writes the tags for you.
+Open the component's file: the **Component** panel beside the code (a toggle in the editor's toolbar, or _Edit layout_ in the inspector's ⋯ menu and in the Components panel) has a control for each of these, and a preview. It writes the tags for you. A tag that can't apply (a preset missing a slot) is a warning on the component, in the panel, in the code and in **Problems**.
 
 ## Two components with the same name
 

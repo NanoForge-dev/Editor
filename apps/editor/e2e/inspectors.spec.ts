@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { openProject, resetLayout, showPanel } from './helpers';
@@ -138,6 +138,34 @@ test.describe('with the engine', () => {
     await expect(
       page.getByRole('status').filter({ hasText: /^\s*0 of \d+ packets/ }),
     ).toBeVisible();
+
+    /** Pause keeps the list as it was, Export saves what it shows, Clear starts it over. */
+    await direction.getByRole('button', { name: 'All', exact: true }).click();
+    await page
+      .getByRole('group', { name: 'Transport' })
+      .getByRole('button', { name: 'All', exact: true })
+      .click();
+    await page.getByRole('textbox', { name: 'Search payloads' }).fill('');
+    const network = page.getByRole('region', { name: 'Network', exact: true });
+    const total = async () =>
+      Number(/of (\d+) packets/.exec((await count.textContent()) ?? '')?.[1]);
+    await network.getByRole('button', { name: 'Pause', exact: true }).click();
+    const paused = await total();
+    await page.waitForTimeout(1000);
+    expect(await total()).toBe(paused);
+    const download = page.waitForEvent('download');
+    await network.getByRole('button', { name: 'Export' }).click();
+    await page.getByRole('menuitem', { name: 'Save as CSV' }).click();
+    const csv = await download;
+    expect(csv.suggestedFilename()).toMatch(/^network-[\d-]+\.csv$/);
+    const rows = readFileSync((await csv.path())!, 'utf8')
+      .trim()
+      .split('\n');
+    expect(rows[0]).toBe('time,direction,transport,client,size,payload hex,payload text');
+    expect(rows).toHaveLength(paused + 1);
+    await network.getByRole('button', { name: 'Resume' }).click();
+    await network.getByRole('button', { name: 'Clear', exact: true }).click();
+    await expect.poll(total).toBeLessThan(paused);
 
     await stop(page);
     await leave(page);
