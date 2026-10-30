@@ -13,7 +13,7 @@ import {
   META_GENERATOR,
   META_NOTICE,
   META_VERSION,
-  MetaFile,
+  type MetaFile,
   type MetaSource,
   metaCachePath,
   sourceHash,
@@ -26,6 +26,7 @@ import type { MetaRoot, MetaSourceFile } from '../engine/extract-meta';
 import { isCodeFile } from '../service/code-service';
 import type { CatalogItem, CatalogOptions, CatalogState } from './catalog.type';
 import { appRefName, itemFitsApp, within } from './item-fits-app';
+import { MetaCache } from './meta-cache';
 
 interface Source {
   readonly source: MetaSource;
@@ -36,13 +37,13 @@ interface Source {
 
 const MANIFEST = 'nanoforge.manifest.json';
 const MODULES = 'nf_modules';
-const EDITOR_GITIGNORE = '.nanoforge/editor/.gitignore';
 const EXPECTED_OWNERS_TIMEOUT_MS = 5000;
 
 /**
  * Items (components, systems…) of the open project and its installed packages (ADR 0003). Each
  * source's meta is cached in `.nanoforge/editor/cache/meta/`, used while its sources and owners
- * are unchanged, and extracted again by the code worker otherwise.
+ * are unchanged, and extracted again by the code worker otherwise. The cache is kept in memory
+ * and written to disk once a source rests (`cacheWriteDelayMs`), only when it changed.
  */
 export class CatalogService implements Disposable {
   private readonly _state = new ObservableValue<CatalogState>({
@@ -56,6 +57,7 @@ export class CatalogService implements Disposable {
     { items: CatalogItem[]; diagnostics: MetaDiagnostic[] }
   >();
   private readonly _dirty = new Set<string>();
+  private readonly _cache: MetaCache;
   private _sources: Source[] = [];
   private _timer: ReturnType<typeof setTimeout> | undefined;
   private _running: Promise<void> = Promise.resolve();
@@ -69,6 +71,7 @@ export class CatalogService implements Disposable {
 
   constructor(private readonly _options: CatalogOptions) {
     const { project, documents, plugins } = _options;
+    this._cache = new MetaCache(project.fs, _options.cacheWriteDelayMs, _options.logger);
     this._store.add({
       dispose: project.model.subscribe(() => this._scheduleAll()),
     });
@@ -133,10 +136,16 @@ export class CatalogService implements Disposable {
     return new Promise((resolve) => this._idle.push(resolve));
   }
 
+  /** Writes the cache files still waiting (a pause in typing, a closing project). */
+  flush(): Promise<void> {
+    return this._cache.flush();
+  }
+
   dispose(): void {
     this._disposed = true;
     clearTimeout(this._timer);
     this._timer = undefined;
+    void this.flush();
     this._store.dispose();
     this._settle();
   }
@@ -359,7 +368,7 @@ export class CatalogService implements Disposable {
     roots: readonly MetaRoot[],
     owners: readonly { name: string; version: string; schema: number }[],
   ): Promise<{ items: CatalogItem[]; diagnostics: MetaDiagnostic[] }> {
-    const { project, documents, code } = this._options;
+    const { documents, code } = this._options;
     const cachePath = metaCachePath(source.source);
     const texts = await Promise.all(
       source.files.map(async (file) => ({
@@ -376,7 +385,7 @@ export class CatalogService implements Disposable {
       owners.map((owner) => [owner.name, { version: owner.version, schema: owner.schema }]),
     );
 
-    const cached = await this._readCache(cachePath);
+    const cached = await this._cache.read(cachePath);
     const fresh =
       cached &&
       cached.sourceHash === hash &&
@@ -404,12 +413,7 @@ export class CatalogService implements Disposable {
         owners: result.owners,
         items,
       };
-      await this._ensureIgnored();
-      await project.fs
-        .write(cachePath, `${JSON.stringify(file, null, 2)}\n`)
-        .catch((error: unknown) =>
-          this._options.logger?.warn(`Could not cache ${cachePath}`, error),
-        );
+      this._cache.set(cachePath, file);
     }
     const base = sourceRefBase(source.source);
     return {
@@ -421,28 +425,6 @@ export class CatalogService implements Disposable {
       })),
       diagnostics,
     };
-  }
-
-  private async _readCache(path: string): Promise<MetaFile | undefined> {
-    if (!this._options.project.fs.entry(path)) return undefined;
-    try {
-      const parsed = MetaFile.safeParse(
-        JSON.parse((await this._options.project.fs.readText(path)).text),
-      );
-      return parsed.success ? parsed.data : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-
-  /** The cache is never committed: `cache/` in `.nanoforge/editor/.gitignore`. */
-  private async _ensureIgnored(): Promise<void> {
-    const fs = this._options.project.fs;
-    const current = fs.entry(EDITOR_GITIGNORE) ? await fs.readText(EDITOR_GITIGNORE) : undefined;
-    const lines = current?.text.split('\n').map((line) => line.trim()) ?? [];
-    if (lines.includes('cache/')) return;
-    const text = `${current?.text.trimEnd() ?? ''}${current?.text.trim() ? '\n' : ''}cache/\n`;
-    await fs.write(EDITOR_GITIGNORE, text).catch(() => undefined);
   }
 }
 

@@ -47,6 +47,8 @@ export class CodeEngine {
    * package loaded for the client is not visible from the server's files.
    */
   private readonly _typeRoots = new Map<string, { found: string[]; asked: Set<string> }>();
+  /** Packages asked for that had no declarations (not installed yet): see `forgetMissingTypes`. */
+  private readonly _missing = new Set<string>();
   private readonly _itemOwners = new Map<string, { plugin: string; owner: ItemOwner }>();
   private _paths: Readonly<Record<string, readonly string[]>> = {};
   /**
@@ -220,6 +222,33 @@ export class CodeEngine {
     return result.sort((a, b) => a.line - b.line || a.column - b.column);
   }
 
+  /**
+   * Asks again for the declarations of packages that had none: dependencies may have been
+   * installed since (a `package.json` or a lockfile changed).
+   */
+  forgetMissingTypes(): void {
+    for (const packageName of this._missing) {
+      const roots = this._typeRoots.get(packageName);
+      if (roots && !roots.found.length) this._typeRoots.delete(packageName);
+    }
+    this._missing.clear();
+  }
+
+  /** Files that import these, directly or through others: a change there can break them. */
+  dependents(paths: readonly string[]): string[] {
+    const found = new Set<string>();
+    const queue = paths.flatMap((path) => this.project.getSourceFile(toFsPath(path)) ?? []);
+    while (queue.length) {
+      for (const importer of queue.pop()!.getReferencingSourceFiles()) {
+        const path = toProjectPath(importer.getFilePath());
+        if (found.has(path)) continue;
+        found.add(path);
+        queue.push(importer);
+      }
+    }
+    return [...found].sort();
+  }
+
   /** TypeScript diagnostics of files (type declarations of bare imports are loaded first). */
   async diagnostics(paths: readonly string[]): Promise<CodeDiagnostic[]> {
     for (const path of paths) await this._loadTypes(path);
@@ -367,6 +396,7 @@ export class CodeEngine {
       roots.asked.add(dir);
       try {
         const files = await resolve(packageName, path);
+        if (!files.length) this._missing.add(packageName);
         const marker = files[0]?.path.indexOf('node_modules/') ?? -1;
         if (marker >= 0) {
           const root = files[0]!.path.slice(0, marker).replace(/\/$/, '');

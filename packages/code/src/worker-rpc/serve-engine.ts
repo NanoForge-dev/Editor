@@ -11,6 +11,8 @@ export interface EngineApi {
   analyze(path: string, analyzerId: string, args?: unknown): unknown;
   transform(path: string, transformerId: string, op: unknown): TextEdit[];
   diagnostics(paths: readonly string[]): Promise<CodeDiagnostic[]>;
+  dependents(paths: readonly string[]): string[];
+  forgetMissingTypes(): void;
   organizeImports(path: string): Promise<TextEdit[]>;
   symbols(path: string): CodeSymbol[];
   setTsconfig(text: string | undefined): void;
@@ -50,6 +52,8 @@ export const serveEngine = (
     analyze: (path, analyzerId, args) => engine.analyze(path, analyzerId, args),
     transform: (path, transformerId, op) => engine.transform(path, transformerId, op),
     diagnostics: (paths) => engine.diagnostics(paths),
+    dependents: (paths) => engine.dependents(paths),
+    forgetMissingTypes: () => engine.forgetMissingTypes(),
     symbols: (path) => engine.symbols(path),
     organizeImports: (path) => engine.organizeImports(path),
     setTsconfig: (text) => engine.setTsconfig(text),
