@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import type { AppModel, ProjectModel } from '@nanoforge-dev/editor-protocol';
@@ -70,6 +70,7 @@ const engineLibs = async (
   appRoot: string,
   projectRoot: string,
   pkg: PackageJson | undefined,
+  missing: string[] = [],
 ): Promise<Record<string, string>> => {
   const declared: Record<string, string> = { ...pkg?.devDependencies, ...pkg?.dependencies };
   const names = new Set(
@@ -79,9 +80,47 @@ const engineLibs = async (
   );
   const libs: Record<string, string> = {};
   for (const name of [...names].sort()) {
-    libs[name] = (await installedVersion(name, appRoot, projectRoot)) ?? declared[name] ?? '*';
+    const installed = await installedVersion(name, appRoot, projectRoot);
+    if (!installed) missing.push(name);
+    libs[name] = installed ?? declared[name] ?? '*';
   }
   return libs;
+};
+
+/** The `@nanoforge-dev/*` engine packages installed from an app up to the project (links too). */
+const availableEngineLibs = async (appRoot: string, projectRoot: string): Promise<string[]> => {
+  const found = new Set<string>();
+  for (let dir = appRoot; ; dir = dirname(dir)) {
+    const names = await readdir(join(dir, 'node_modules', '@nanoforge-dev')).catch(() => []);
+    for (const name of names) {
+      const full = `@nanoforge-dev/${name}`;
+      if (!TOOLING_PACKAGES.has(full)) found.add(full);
+    }
+    if (dir === projectRoot || dirname(dir) === dir) break;
+  }
+  return [...found].sort();
+};
+
+/**
+ * An app's engine libraries, those its package.json declares that are not installed, and those
+ * installed for it.
+ */
+const engineLibsOf = async (
+  appRoot: string,
+  projectRoot: string,
+  pkg: PackageJson | undefined,
+): Promise<{
+  engineLibs: Record<string, string>;
+  missingEngineLibs: string[];
+  availableEngineLibs: string[];
+}> => {
+  const missingEngineLibs: string[] = [];
+  const libs = await engineLibs(appRoot, projectRoot, pkg, missingEngineLibs);
+  return {
+    engineLibs: libs,
+    missingEngineLibs,
+    availableEngineLibs: await availableEngineLibs(appRoot, projectRoot),
+  };
 };
 
 /** Every package an app's package.json depends on (narrowed to the project's libraries later). */
@@ -199,7 +238,7 @@ const toApp = async (
         systems: at(config.dir.systems),
         scenes: at(config.dir.scenes),
       },
-      engineLibs: await engineLibs(appRoot, projectRoot, pkg),
+      ...(await engineLibsOf(appRoot, projectRoot, pkg)),
       libraries: [],
     };
   }
@@ -218,7 +257,7 @@ const toApp = async (
     entryFile: at(config.entryFile),
     editorEntryFile: at(config.editor.entryFile),
     outDir: at(config.out.dir),
-    engineLibs: await engineLibs(appRoot, projectRoot, pkg),
+    ...(await engineLibsOf(appRoot, projectRoot, pkg)),
     libraries: [],
   };
 };

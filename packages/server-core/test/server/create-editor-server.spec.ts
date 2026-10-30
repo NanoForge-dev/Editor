@@ -205,6 +205,13 @@ describe('editor server', () => {
     const plugin = await get('/plugins/bundled/@acme/echo/1.0.0/index.js');
     expect(plugin.status).toBe(200);
     expect(plugin.headers.get('content-type')).toContain('javascript');
+    /** Revalidated, not immutable: a new editor may ship other files under the same version. */
+    expect(plugin.headers.get('cache-control')).toBe('public, no-cache');
+    const etag = plugin.headers.get('etag')!;
+    expect(etag).toMatch(/^W\/"/);
+    expect(
+      (await get('/plugins/bundled/@acme/echo/1.0.0/index.js', { 'if-none-match': etag })).status,
+    ).toBe(304);
     expect(
       (await get('/plugins/bundled/@acme/echo/1.0.0/../../../../../package.json')).status,
     ).toBe(404);

@@ -8,6 +8,7 @@ import type {
 } from '@nanoforge-dev/editor-kernel';
 import type { SettingsService } from '@nanoforge-dev/editor-settings';
 
+import type { ChangesetPreviewService } from './changeset/changeset-preview-service';
 import type { KeybindingService } from './keybinding/keybinding-service';
 import type { DragController } from './layout/drag-controller';
 import type { LayoutController } from './layout/layout-controller';
@@ -28,6 +29,7 @@ export interface WorkbenchContext extends MenuContext {
   readonly contextKeys: ContextKeyService;
   readonly keybindings: KeybindingService;
   readonly tours: TourService;
+  readonly changesets: ChangesetPreviewService;
   readonly settings: SettingsService;
   readonly logger: Logger;
 }

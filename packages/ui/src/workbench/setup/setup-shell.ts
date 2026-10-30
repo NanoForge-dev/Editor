@@ -20,6 +20,7 @@ import { BASE_CSS } from '../../theme/base-css';
 import { KIT_CSS } from '../../theme/kit-css';
 import { THEMES, ThemeService } from '../../theme/theme-service';
 import type { ThemeDefinition } from '../../theme/tokens';
+import { ChangesetPreviewService } from '../changeset/changeset-preview-service';
 import { KEYBINDINGS, KeybindingSchema } from '../extension-point/keybinding.extension-point';
 import { MENU_BAR, MENU_ITEMS, MenuItemSchema } from '../extension-point/menu.extension-point';
 import {
@@ -52,6 +53,7 @@ export interface Shell extends Disposable {
   readonly prompts: PromptService;
   readonly keybindings: KeybindingService;
   readonly tours: TourService;
+  readonly changesets: ChangesetPreviewService;
 }
 
 /** Manifest handler registering each declared value on an extension point. */
@@ -82,6 +84,7 @@ export const setupShell = (options: ShellOptions): Shell => {
   const notifications = new NotificationService();
   const prompts = new PromptService();
   const tours = store.add(new TourService(extensions, contextKeys, commands, notifications));
+  const changesets = new ChangesetPreviewService();
   store.add(
     commands.register({
       id: 'tour.start',
@@ -197,6 +200,7 @@ export const setupShell = (options: ShellOptions): Shell => {
     prompts,
     keybindings,
     tours,
+    changesets,
     dispose: () => store.dispose(),
   };
 };

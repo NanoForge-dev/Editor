@@ -12,6 +12,7 @@
   import FloatWindow from './parts/FloatWindow.svelte';
   import { FOCUSABLE } from './parts/panel-focus';
   import PromptHost from './parts/PromptHost.svelte';
+  import ChangesetPreviewHost from './parts/ChangesetPreviewHost.svelte';
   import StatusBar from './parts/StatusBar.svelte';
   import ToolStripe from './parts/ToolStripe.svelte';
   import TopBar from './parts/TopBar.svelte';
@@ -330,6 +331,7 @@
 
   <StatusBar />
   <DragOverlay />
+  <ChangesetPreviewHost />
   <PromptHost />
   <TourOverlay />
   <Toasts notifications={context.notifications} />

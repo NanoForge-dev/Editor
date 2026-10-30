@@ -65,3 +65,27 @@ export const transformRewriteImports = (context: TransformContext, op: unknown):
     context.edit.replace(specifier, `${quote}${context.moduleSpecifier(to)}${quote}`);
   }
 };
+
+/**
+ * The analyzed file's text with its imports and re-exports of `from` (a project file) pointed at
+ * `specifier`: read-only, for a changeset (a component moved to a shared library).
+ */
+export const analyzeRedirectedImports = (context: AnalyzeContext, args: unknown): string => {
+  const { from, specifier } = args as { from: string; specifier: string };
+  const replacements: { start: number; end: number; text: string }[] = [];
+  for (const declaration of moduleDeclarations(context.file)) {
+    const target = declaration.getModuleSpecifierSourceFile();
+    const node = declaration.getModuleSpecifier();
+    if (!target || !node || projectPath(target) !== from) continue;
+    const quote = node.getText()[0];
+    replacements.push({
+      start: node.getStart(),
+      end: node.getEnd(),
+      text: `${quote}${specifier}${quote}`,
+    });
+  }
+  let text = context.text;
+  for (const replacement of replacements.sort((a, b) => b.start - a.start))
+    text = text.slice(0, replacement.start) + replacement.text + text.slice(replacement.end);
+  return text;
+};

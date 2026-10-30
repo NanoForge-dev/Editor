@@ -13,3 +13,4 @@ export {
 export * from './editor-library';
 export * from './app-operations';
 export * from './workspace-io';
+export * from './changeset';

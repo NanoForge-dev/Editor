@@ -65,6 +65,38 @@ From `@nanoforge-dev/editor-sdk/ui`.
 | `VIEWPORT_OVERLAYS` | A component drawn over the running game or the scene (gizmos, debug views).             |
 | `SCENE_EDITORS`     | The content of the Scene screen for a code generation target.                           |
 
+## Project
+
+From `@nanoforge-dev/editor-sdk`.
+
+`PROJECT_CHECKS`: a check of the open project, for the Project screen's **Adapt to the editor** report (see [Bring an existing project](../editor/adapt-a-project)). `run(project)` resolves with suggestions: an `id` (stable, so a dismissed one stays dismissed), a `title`, a `detail` (what the editor can't do, why the change helps) and either a `fix` or an `action`. A fix computes its change without writing anything: `recordChanges` runs workspace operations on the files kept in memory, and the editor shows the result as a diff before applying it as one undo step.
+
+```ts
+import { PROJECT_CHECKS, recordChanges, workspaceIo } from '@nanoforge-dev/editor-sdk';
+
+context.contribute(PROJECT_CHECKS, {
+  id: 'counter.config',
+  run: async (project) => {
+    const io = workspaceIo(project);
+    if (io.exists('counter.json')) return [];
+    return [
+      {
+        id: 'counter.config',
+        title: 'Add a counter config',
+        detail: 'The Counter panel reads counter.json: without it, it starts at 0 every time.',
+        fix: {
+          title: 'Add counter.json',
+          changeset: () =>
+            recordChanges(io, 'Add counter.json', (memory) => memory.write('counter.json', '{ "start": 0 }\n')),
+        },
+      },
+    ];
+  },
+});
+```
+
+Checks run when a project opens, when a check is contributed, and after files change. Run the expensive parts in the code worker (an analyzer), never on the page.
+
 ## Points of other plugins
 
 A plugin can define its own points with `defineExtensionPoint<T>(id)`, and others contribute to them by declaring the same id. The ECS plugin has three:

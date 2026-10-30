@@ -55,6 +55,8 @@ export const app = (root: string, name: string, type: AppModel['type']): AppMode
     scenes: '',
   },
   engineLibs: {},
+  missingEngineLibs: [],
+  availableEngineLibs: [],
   libraries: [],
 });
 export const client = app('apps/client', 'pong-client', 'client');
