@@ -229,6 +229,38 @@ describe('CodeEngine', () => {
     expect(asked).toEqual(['speed', 'speed']);
   });
 
+  it("asks again for a package another app's folder had, once dependencies change", async () => {
+    const installed = new Set(['apps/client']);
+    const asked: string[] = [];
+    const engine = new CodeEngine({
+      resolveTypes: async (_module, from) => {
+        const app = from.split('/').slice(0, 2).join('/');
+        asked.push(app);
+        return installed.has(app)
+          ? [
+              {
+                path: `${app}/node_modules/speed/index.d.ts`,
+                text: 'export declare const max: number;',
+              },
+            ]
+          : [];
+      },
+    });
+    const text = "import { max } from 'speed';\nexport const m: number = max;\n";
+    engine.setFiles([
+      { path: 'apps/client/src/main.ts', text },
+      { path: 'apps/server/src/main.ts', text },
+    ]);
+    const codes = async (path: string) => (await engine.diagnostics([path])).map((d) => d.code);
+    expect(await codes('apps/client/src/main.ts')).toEqual([]);
+    expect(await codes('apps/server/src/main.ts')).toEqual([2307]);
+    installed.add('apps/server');
+    engine.forgetMissingTypes();
+    expect(await codes('apps/server/src/main.ts')).toEqual([]);
+    expect(await codes('apps/client/src/main.ts')).toEqual([]);
+    expect(asked.filter((app) => app === 'apps/client')).toHaveLength(1);
+  });
+
   it('reports syntax and type errors', async () => {
     const engine = new CodeEngine();
     engine.setFiles([{ path: 'src/bad.ts', text: 'const a: number = "x";\nconst b = ;\n' }]);

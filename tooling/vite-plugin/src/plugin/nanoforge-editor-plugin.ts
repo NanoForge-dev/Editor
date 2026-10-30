@@ -35,13 +35,19 @@ export const nanoforgeEditorPlugin = (options: EditorPluginBuildOptions = {}): P
         build: {
           target: 'esnext',
           lib: {
-            entry: lib?.entry ?? options.entries ?? { index: 'src/index.ts' },
-            /** Arrays are merged with the plugin's own config: `['es']` twice built it twice. */
+            /**
+             * Arrays are merged with the plugin's own config: `['es']` twice built it twice. The
+             * user's own `entry` and `formats` are left to them for the same reason.
+             */
+            ...(!lib?.entry && { entry: options.entries ?? { index: 'src/index.ts' } }),
             ...(!lib?.formats && { formats: ['es'] }),
           },
           rollupOptions: {
             external: (id: string) => isHostModule(id),
-            ...(rolldown && user.build?.minify !== false && { output: { minify: true } }),
+            /** Watch builds (dev plugins) stay readable: their stack traces point at real lines. */
+            ...(rolldown &&
+              user.build?.minify !== false &&
+              !user.build?.watch && { output: { minify: true } }),
           },
         },
       };

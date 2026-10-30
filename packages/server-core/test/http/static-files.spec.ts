@@ -24,6 +24,9 @@ describe('pickEncoding', () => {
     expect(pickEncoding('gzip;q=1.0, br;q=0')).toBe('gzip');
     expect(pickEncoding('identity')).toBeUndefined();
     expect(pickEncoding(null)).toBeUndefined();
+    expect(pickEncoding('br;q=0.0, gzip')).toBe('gzip');
+    expect(pickEncoding('br;q=0.000, gzip;q=0')).toBeUndefined();
+    expect(pickEncoding('br;q=0.5')).toBe('br');
   });
 });
 

@@ -13,12 +13,18 @@ const MAX_CACHED_BYTES = 64 * 1024 * 1024;
 
 export type Encoding = 'br' | 'gzip';
 
+/** A quality of zero (`q=0`, `q=0.0`, `q=0.000`) refuses the encoding. */
+const refused = (quality: string | undefined): boolean => {
+  const match = /^q\s*=\s*([\d.]+)$/i.exec(quality?.trim() ?? '');
+  return match !== null && parseFloat(match[1]!) === 0;
+};
+
 /** The encoding to answer with, from the request's `Accept-Encoding`. */
 export const pickEncoding = (accept: string | null | undefined): Encoding | undefined => {
   const offered = (accept ?? '')
     .split(',')
     .map((part) => part.trim().split(';'))
-    .filter(([, quality]) => quality?.trim() !== 'q=0')
+    .filter(([, quality]) => !refused(quality))
     .map(([name]) => name!.trim().toLowerCase());
   if (offered.includes('br')) return 'br';
   if (offered.includes('gzip')) return 'gzip';
