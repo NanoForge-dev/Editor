@@ -25,6 +25,7 @@ import {
   addEditorLibrary,
   createApp,
   createLibrary,
+  nameTaken,
   removeApp,
   removeLibrary,
   renameApp,
@@ -185,9 +186,9 @@ export class WorkspaceActions implements Disposable {
       confirm: 'Rename',
       validate: (value) =>
         validatePackageName(value) ??
-        (value !== app.name && project.model.get().apps.some((other) => other.name === value)
-          ? `${value} is already the name of an app or library.`
-          : undefined),
+        (value === app.name
+          ? undefined
+          : nameTaken(value, project.model.get(), (path) => !!project.fs.entry(path), app.id)),
     });
     if (!name || name === app.name) return false;
     if (app.type === 'lib') {

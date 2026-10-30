@@ -52,4 +52,14 @@ describe('fuzzyMatch', () => {
       { text: 'op', match: false },
     ]);
   });
+
+  it('with word starts, refuses letters picked inside other words', () => {
+    const words = { wordStarts: true };
+    expect(fuzzyMatch('theme', 'Run: Stop the game', words)).toBeUndefined();
+    expect(fuzzyMatch('theme', 'View: Toggle light/dark theme', words)).toBeDefined();
+    expect(fuzzyMatch('reset lay', 'View: Reset layout', words)).toBeDefined();
+    expect(fuzzyMatch('rl', 'View: Reset layout', words)).toBeDefined();
+    expect(fuzzyMatch('rst lay', 'View: Reset layout', words)).toBeDefined();
+    expect(fuzzyMatch('cmpts', 'components.ts')).toBeDefined();
+  });
 });

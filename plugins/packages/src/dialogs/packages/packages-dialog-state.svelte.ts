@@ -27,6 +27,9 @@ export class PackagesDialogState {
   unavailable = $state<string>();
   selected = $state<string>();
   details = $state<RegistryItem>();
+  /** Why the details of a package could not be read; `detailsAttempt` asks again. */
+  detailsError = $state<{ name: string; message: string }>();
+  detailsAttempt = $state(0);
   installed = $state<InstalledPackage[]>([]);
   /** Why the project's packages can't be read or changed here (a hosted editor). */
   readOnly = $state<string>();
@@ -89,7 +92,13 @@ export class PackagesDialogState {
       (item) => {
         if (!stale) this.details = item;
       },
-      () => undefined,
+      (error: unknown) => {
+        if (!stale)
+          this.detailsError = {
+            name,
+            message: error instanceof Error ? error.message : String(error),
+          };
+      },
     );
     return () => {
       stale = true;

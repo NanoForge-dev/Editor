@@ -34,6 +34,14 @@ export const registerAppContributions = (services: Container, session: SessionIn
   );
   store.add(
     commands.register({
+      id: 'project.show',
+      title: 'Show the Project screen',
+      category: 'Project',
+      handler: () => commands.execute('workbench.openWidget', 'core.project'),
+    }),
+  );
+  store.add(
+    commands.register({
       id: 'help.docs',
       title: 'Documentation',
       category: 'Help',
@@ -62,8 +70,8 @@ export const registerAppContributions = (services: Container, session: SessionIn
           ),
           'No project',
         ),
-        tooltip: 'Close the project',
-        command: 'project.close',
+        tooltip: 'Show the Project screen: apps, shared libraries and settings',
+        command: 'project.show',
       },
       { owner: 'core' },
     ),

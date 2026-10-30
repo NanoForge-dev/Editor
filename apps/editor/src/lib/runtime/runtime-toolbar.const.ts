@@ -11,7 +11,7 @@ export const TOOLBAR = [
   {
     id: 'runtime.play',
     icon: 'play',
-    title: 'Play (F5)',
+    title: 'Play',
     command: 'runtime.play',
     order: 0,
     when: '!runtime.active',
@@ -27,7 +27,7 @@ export const TOOLBAR = [
   {
     id: 'runtime.resume',
     icon: 'play',
-    title: 'Resume (F5)',
+    title: 'Resume',
     command: 'runtime.resume',
     order: 1,
     when: "runtime.state == 'paused'",
@@ -43,7 +43,7 @@ export const TOOLBAR = [
   {
     id: 'runtime.restart',
     icon: 'rotate-ccw',
-    title: 'Restart (Ctrl+Shift+F5)',
+    title: 'Restart',
     command: 'runtime.restart',
     order: 3,
     when: 'runtime.active',
@@ -51,7 +51,7 @@ export const TOOLBAR = [
   {
     id: 'runtime.stop',
     icon: 'square',
-    title: 'Stop (Shift+F5)',
+    title: 'Stop',
     command: 'runtime.stop',
     order: 4,
     when: 'runtime.active',

@@ -72,6 +72,7 @@ export {
   portableStroke,
   resolveKeymap,
   strokeFromEvent,
+  blocksTyping,
   type KeybindingService,
   KeybindingServiceToken,
   type LayoutController,

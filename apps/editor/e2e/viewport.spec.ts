@@ -58,6 +58,9 @@ test.describe('while playing', () => {
 
     await stop(page);
     await expect(screenTab(page, 'Project')).toHaveAttribute('aria-selected', 'true');
+    await screenTab(page, 'Game').click();
+    await expect(page.getByText('Play your game here')).toBeVisible();
+    await screenTab(page, 'Project').click();
   });
 
   test('sizes the game, shows stats and saves screenshots', async ({ page }) => {

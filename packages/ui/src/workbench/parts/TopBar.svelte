@@ -6,6 +6,7 @@
   import IconButton from '../../components/icon-button.svelte';
   import { MENU_BAR } from '../extension-point/menu.extension-point';
   import { TOOLBAR_ITEMS } from '../extension-point/toolbar.extension-point';
+  import { formatKeybinding } from '../keybinding/keystroke';
   import { getWorkbenchContext } from '../workbench-context';
   import MenuBarMenu from './MenuBarMenu.svelte';
 
@@ -26,10 +27,15 @@
       .map((contribution) => contribution.value)
       .filter((item) => context.contextKeys.evaluate(item.when))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((item) => ({
-        item,
-        pressed: item.toggled ? context.contextKeys.evaluate(item.toggled) : undefined,
-      }));
+      .map((item) => {
+        /** The shortcut comes from the keymap: a hard-coded one lied once it was changed. */
+        const key = context.keybindings.keyFor(item.command, item.args);
+        return {
+          item,
+          label: key ? `${item.title} (${formatKeybinding(key)})` : item.title,
+          pressed: item.toggled ? context.contextKeys.evaluate(item.toggled) : undefined,
+        };
+      });
   });
 
   const screenTitle = (id: string) => context.workbench.descriptor(id)?.title ?? id;
@@ -77,10 +83,10 @@
   </div>
 
   <div class="end" role="toolbar" aria-label="Run">
-    {#each tools as { item, pressed } (item.id)}
+    {#each tools as { item, label, pressed } (item.id)}
       <IconButton
         icon={item.icon}
-        label={item.title}
+        {label}
         {pressed}
         onclick={() =>
           context.commands

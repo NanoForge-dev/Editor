@@ -41,6 +41,9 @@ export class PluginsPageState {
   unavailable = $state<string>();
   selected = $state<string>();
   details = $state<PluginDetails>();
+  /** Why the details of a plugin could not be read; `detailsAttempt` asks again. */
+  detailsError = $state<{ name: string; message: string }>();
+  detailsAttempt = $state(0);
   /** The plugin being installed, updated or removed. */
   busy = $state<string>();
   failure = $state<string>();
@@ -96,7 +99,13 @@ export class PluginsPageState {
         this.details = item;
         if (item.compatible) this.newest.set(name, item.compatible);
       },
-      () => undefined,
+      (error: unknown) => {
+        if (!stale)
+          this.detailsError = {
+            name,
+            message: error instanceof Error ? error.message : String(error),
+          };
+      },
     );
     return () => {
       stale = true;
