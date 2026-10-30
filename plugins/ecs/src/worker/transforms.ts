@@ -4,7 +4,7 @@ import type { TransformContext } from '@nanoforge-dev/editor-sdk/worker';
 
 import type { ScopedEntryOp } from '../model/ecs-model.type';
 import { scopeName } from '../model/scope-name';
-import { componentCall, setArgs } from './component-args';
+import { setArgs } from './component-args';
 import { ensureImports } from './ensure-imports';
 import { componentExpression, parseEntry } from './entry-file';
 import {
@@ -199,5 +199,3 @@ export const transformEntry = (context: TransformContext, rawOp: unknown): void 
     }
   }
 };
-
-export { componentCall };

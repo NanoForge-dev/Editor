@@ -39,6 +39,24 @@ describe('SettingsService', () => {
     expect(service.get(fontSize)).toBe(12);
   });
 
+  it('counts the saves under way and those held until a debounce writes', async () => {
+    const { service, stores } = await setup();
+    let finish: () => void = () => undefined;
+    vi.spyOn(stores.account, 'write').mockImplementation(
+      () => new Promise<void>((resolve) => (finish = resolve)),
+    );
+    const write = service.set(fontSize, 16, 'account');
+    expect(service.pending.get()).toBe(1);
+    const release = service.hold();
+    expect(service.pending.get()).toBe(2);
+    finish();
+    await write;
+    expect(service.pending.get()).toBe(1);
+    release();
+    release();
+    expect(service.pending.get()).toBe(0);
+  });
+
   it('applies scope precedence', async () => {
     const { service } = await setup();
     expect(service.get(fontSize)).toBe(13);

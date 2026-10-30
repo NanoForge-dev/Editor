@@ -26,7 +26,6 @@ catalogs:
     '@fontsource/instrument-sans': ^5.3.0
     '@fontsource/jetbrains-mono': ^5.3.0
     bits-ui: ^2.19.3
-    paneforge: ^1.0.2
     monaco-editor: ^0.55.1
   config:
     '@nanoforge-dev/config': ^2.3.0
@@ -54,6 +53,7 @@ catalogs:
     eslint: ^10.6.0
     eslint-plugin-svelte: ^3.20.0
     globals: ^17.7.0
+    knip: ^6.38.0
     prettier: ^3.9.4
     prettier-plugin-svelte: ^4.1.1
     typescript-eslint: ^8.62.1

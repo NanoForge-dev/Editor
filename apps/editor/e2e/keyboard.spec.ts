@@ -1,4 +1,4 @@
-import { expandFolders, openProject, resetLayout } from './helpers';
+import { expandFolders, openProject, resetLayout, saved } from './helpers';
 import { expect, test } from './test';
 
 test.beforeEach(async ({ page }) => {
@@ -9,8 +9,7 @@ test.beforeEach(async ({ page }) => {
 
 test.afterEach(async ({ page }) => {
   await resetLayout(page);
-  /** The layout and the Files panel's state are saved after 500 ms. */
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test('moves between tool window icons with the arrow keys', async ({ page }) => {

@@ -9,7 +9,7 @@ const IGNORED = new Set(['Canceled']);
  * The `test` of every spec: it fails when a page of the test throws an uncaught error
  * (a Svelte effect loop or a rejected promise doesn't break what the test looks at).
  */
-export const test = base.extend<{ pageErrors: string[] }>({
+export const test = base.extend<{ pageErrors: string[]; stopsTheGame: undefined }>({
   pageErrors: [
     async ({ context }, use) => {
       const errors: string[] = [];
@@ -25,6 +25,24 @@ export const test = base.extend<{ pageErrors: string[] }>({
       });
       await use(errors);
       base.expect(errors, 'uncaught errors in the page').toEqual([]);
+    },
+    { auto: true },
+  ],
+  /**
+   * A game still playing when a test ends keeps its server running on the editor's server, and
+   * the next test's game then fails to start: every test stops the game it left playing.
+   */
+  stopsTheGame: [
+    async ({ page }, use) => {
+      await use(undefined);
+      const run = page.getByRole('toolbar', { name: 'Run' });
+      const stop = run.getByRole('button', { name: /^Stop/ });
+      if (!(await stop.isVisible().catch(() => false))) return;
+      await stop.click({ timeout: 5_000 }).catch(() => undefined);
+      await base
+        .expect(run.getByRole('button', { name: /^Play/ }))
+        .toBeVisible({ timeout: 15_000 })
+        .catch(() => undefined);
     },
     { auto: true },
   ],

@@ -1,6 +1,6 @@
 import type { GitChange, GitFile, GitStatus } from '@nanoforge-dev/editor-protocol';
 
-export const CHANGES: Record<string, GitChange> = {
+const CHANGES: Record<string, GitChange> = {
   M: 'M',
   T: 'M',
   A: 'A',

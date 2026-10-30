@@ -2,6 +2,8 @@ import { playwright } from '@vitest/browser-playwright';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
+import { coverage } from '../../vitest.coverage.ts';
+
 const root = (path: string) => fileURLToPath(new URL(`../../${path}`, import.meta.url));
 
 /**
@@ -12,6 +14,8 @@ const root = (path: string) => fileURLToPath(new URL(`../../${path}`, import.met
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    testTimeout: 20_000,
+    coverage: coverage(),
     setupFiles: [root('vitest.setup.ts')],
     projects: [
       {

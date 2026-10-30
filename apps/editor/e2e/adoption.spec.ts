@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout } from './helpers';
+import { openProject, resetLayout, saved } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -26,8 +26,7 @@ test.beforeEach(() => {
 test.afterEach(async ({ page }) => {
   for (const path of snapshot().keys()) if (!original.has(path)) rmSync(path);
   for (const [path, bytes] of original) writeFileSync(path, Buffer.from(bytes, 'base64'));
-  /** The saved layout outlives the test. */
-  await page.waitForTimeout(600);
+  await saved(page);
 });
 
 const report = (page: Page) => page.getByRole('region', { name: 'Adapt to the editor' });
@@ -87,7 +86,7 @@ test('a suggestion is dismissed for the project', async ({ page }) => {
   await expect(install).toBeVisible({ timeout: 30_000 });
   await install.getByRole('button', { name: 'Dismiss' }).click();
   await expect(install).toHaveCount(0);
-  await page.waitForTimeout(900);
+  await saved(page);
   await page.reload();
   await page.getByRole('tab', { name: 'Project', exact: true }).click();
   await expand(page);

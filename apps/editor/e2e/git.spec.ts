@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG, WORKSPACE } from './workspace';
 
@@ -51,6 +51,12 @@ const cleanup = () => {
   rmSync(join(PONG, NEW_FILE), { force: true });
 };
 test.beforeEach(cleanup);
+/** The shown panels are saved with the layout: put Files and Console back. */
+test.afterEach(async ({ page }) => {
+  await showPanel(page, 'Files').catch(() => undefined);
+  await showPanel(page, 'Console').catch(() => undefined);
+  await saved(page).catch(() => undefined);
+});
 test.afterEach(async () => {
   for (let clean = 0, attempt = 0; clean < 2 && attempt < 20; attempt++) {
     clean = existsSync(join(PONG, '.git')) ? 0 : clean + 1;
@@ -59,22 +65,33 @@ test.afterEach(async () => {
   }
 });
 
-test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash', async ({
-  page,
-}) => {
-  test.setTimeout(150_000);
+/** A repository with every file of the project in one commit, as `git` makes it. */
+const initRepository = () => {
+  git(PONG, 'init', '--quiet', '-b', 'main');
+  git(PONG, 'config', 'user.name', 'E2E');
+  git(PONG, 'config', 'user.email', 'e2e@example.com');
+  git(PONG, 'add', '-A');
+  git(PONG, 'commit', '--quiet', '-m', 'first commit');
+};
+/** Opens pong on the full layout, with the Commit panel shown. */
+const open = async (page: Page) => {
   await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await resetLayout(page);
-  const commitButton = commitPanel(page).getByRole('button', { name: 'Commit', exact: true });
-  const push = async () => {
-    const dialog = page.getByRole('dialog', { name: 'Push commits' });
-    await expect(dialog).toBeVisible();
-    return dialog;
-  };
-
   await showPanel(page, 'Commit');
+};
+const commitButton = (page: Page) =>
+  commitPanel(page).getByRole('button', { name: 'Commit', exact: true });
+const pushDialog = async (page: Page) => {
+  const dialog = page.getByRole('dialog', { name: 'Push commits' });
+  await expect(dialog).toBeVisible();
+  return dialog;
+};
+const changed = (page: Page) => row(page, 'Changes', FILE);
+
+test('initializes a repository, commits what is checked and shows the log', async ({ page }) => {
+  await open(page);
   await expect(commitPanel(page).getByText('This project is not a git repository')).toBeVisible();
   await vcs(page, 'Initialize repository');
   await expect(group(page, 'Unversioned files')).toBeVisible();
@@ -85,7 +102,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await expect(nested).toContainText('main.ts');
   await expect(nested).toContainText('apps/client/src');
   await message(page).fill('first commit');
-  await expect(commitButton).toBeDisabled();
+  await expect(commitButton(page)).toBeDisabled();
   const includeAll = group(page, 'Unversioned files').getByRole('checkbox', {
     name: 'Include all: Unversioned files',
     includeHidden: true,
@@ -105,11 +122,16 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   const details = logPanel(page).getByRole('complementary', { name: 'Commit details' });
   await expect(details.getByRole('heading', { name: 'first commit' })).toBeVisible();
   await expect(details.getByRole('button', { name: 'package.json', exact: true })).toBeVisible();
+});
 
+test('shows a change in the Files panel and as a diff, and keeps the panel state', async ({
+  page,
+}) => {
+  initRepository();
+  await open(page);
   writeFileSync(join(PONG, FILE), 'renamed\n');
-  const changed = row(page, 'Changes', FILE);
-  await expect(changed).toContainText('rename-me.txt');
-  await expect(changed.getByRole('checkbox', { name: `Include ${FILE}` })).toBeChecked();
+  await expect(changed(page)).toContainText('rename-me.txt');
+  await expect(changed(page).getByRole('checkbox', { name: `Include ${FILE}` })).toBeChecked();
   await showPanel(page, 'Files');
   const files = page.getByRole('tree', { name: 'Project files' });
   const folder = files.getByRole('treeitem', { name: /^scratch/ });
@@ -119,7 +141,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await expect(files.getByRole('treeitem', { name: /^rename-me\.txt/ })).toContainText('M');
   await showPanel(page, 'Commit');
 
-  await changed.dblclick();
+  await changed(page).dblclick();
   await expect(page.getByLabel('Last commit and the file')).toBeVisible();
   await expect(
     page.getByRole('status').filter({ hasText: 'compared with: Last commit' }),
@@ -131,24 +153,32 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await group(page, 'Changes')
     .getByRole('button', { name: 'Collapse Changes', includeHidden: true })
     .click();
-  await expect(changed).toHaveCount(0);
+  await expect(changed(page)).toHaveCount(0);
   await expect(group(page, 'Changes')).toContainText('1 file');
   await group(page, 'Changes')
     .getByRole('button', { name: 'Expand Changes', includeHidden: true })
     .click();
-  await expect(changed).toBeVisible();
+  await expect(changed(page)).toBeVisible();
 
-  await changed.getByRole('checkbox', { name: `Include ${FILE}` }).uncheck();
+  await changed(page)
+    .getByRole('checkbox', { name: `Include ${FILE}` })
+    .uncheck();
   await message(page).fill('nothing');
   await commitPanel(page)
     .getByRole('tab', { name: /^Stash/ })
     .click();
   await commitPanel(page).getByRole('tab', { name: 'Commit', exact: true }).click();
   await expect(message(page)).toHaveValue('nothing');
-  await expect(changed.getByRole('checkbox', { name: `Include ${FILE}` })).not.toBeChecked();
-  await expect(commitButton).toBeDisabled();
+  await expect(changed(page).getByRole('checkbox', { name: `Include ${FILE}` })).not.toBeChecked();
+  await expect(commitButton(page)).toBeDisabled();
   await message(page).fill('');
-  await changed.getByRole('checkbox', { name: `Include ${FILE}` }).check();
+});
+
+test('selects changes, rolls them back, adds and deletes an unversioned file', async ({ page }) => {
+  initRepository();
+  await open(page);
+  writeFileSync(join(PONG, FILE), 'renamed\n');
+  await expect(changed(page)).toBeVisible();
 
   const rollBack = commitPanel(page).getByRole('button', { name: 'Rollback' });
   await commitPanel(page)
@@ -156,13 +186,13 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
     .click({
       position: { x: 100, y: 200 },
     });
-  await expect(changed).toHaveAttribute('aria-selected', 'false');
+  await expect(changed(page)).toHaveAttribute('aria-selected', 'false');
   await expect(rollBack).toBeDisabled();
   writeFileSync(join(PONG, OTHER_FILE), 'moved\n');
   const alsoChanged = row(page, 'Changes', OTHER_FILE);
   await expect(alsoChanged).toBeVisible();
   await group(page, 'Changes').getByText('Changes', { exact: true }).click();
-  await expect(changed).toHaveAttribute('aria-selected', 'true');
+  await expect(changed(page)).toHaveAttribute('aria-selected', 'true');
   await expect(alsoChanged).toHaveAttribute('aria-selected', 'true');
   await alsoChanged.click({ modifiers: ['Control'] });
   await expect(alsoChanged).toHaveAttribute('aria-selected', 'false');
@@ -170,23 +200,25 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await rollBack.click();
   await expect(page.getByRole('heading', { name: 'Rollback the 2 selected files?' })).toBeVisible();
   await page.getByRole('button', { name: 'Rollback', exact: true }).last().click();
-  await expect(changed).toHaveCount(0);
+  await expect(changed(page)).toHaveCount(0);
   await expect(alsoChanged).toHaveCount(0);
   expect(readFileSync(join(PONG, FILE), 'utf8')).toBe(original);
   expect(readFileSync(join(PONG, OTHER_FILE), 'utf8')).toBe(otherOriginal);
+
   writeFileSync(join(PONG, FILE), 'again\n');
-  await changed.click();
+  await changed(page).click();
   await page.keyboard.press('Space');
-  await expect(changed.getByRole('checkbox')).not.toBeChecked();
+  await expect(changed(page).getByRole('checkbox')).not.toBeChecked();
   await page.keyboard.press('Space');
-  await expect(changed.getByRole('checkbox')).toBeChecked();
-  await changed.click({ button: 'right' });
+  await expect(changed(page).getByRole('checkbox')).toBeChecked();
+  await changed(page).click({ button: 'right' });
   await expect(page.getByRole('menuitem', { name: /^Show diff/ })).toBeVisible();
   await expect(page.getByRole('menuitem', { name: /^Jump to source/ })).toBeVisible();
   await page.getByRole('menuitem', { name: /^Rollback…/ }).click();
   await expect(page.getByRole('heading', { name: `Rollback ${FILE}?` })).toBeVisible();
   await page.getByRole('button', { name: 'Rollback', exact: true }).last().click();
-  await expect(changed).toHaveCount(0);
+  await expect(changed(page)).toHaveCount(0);
+
   writeFileSync(join(PONG, NEW_FILE), 'new\n');
   await row(page, 'Unversioned files', NEW_FILE).click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Add to VCS' }).click();
@@ -198,7 +230,12 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await page.keyboard.press('Delete');
   await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
   await expect(row(page, 'Unversioned files', NEW_FILE)).toHaveCount(0);
+});
 
+test('creates, checks out and deletes a branch', async ({ page }) => {
+  initRepository();
+  await open(page);
+  await showPanel(page, 'Git');
   await vcs(page, 'New branch…');
   await page.getByRole('textbox', { name: 'Branch name' }).fill('feature');
   await page.getByRole('button', { name: 'Create branch' }).click();
@@ -211,17 +248,25 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
   await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
   await expect(local.getByRole('button', { name: 'feature', exact: true })).toHaveCount(0);
+});
 
+test('pushes, fetches, filters the log, merges a conflict and pushes the merge', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  initRepository();
+  await open(page);
+  await showPanel(page, 'Git');
   git(WORKSPACE, 'init', '--quiet', '--bare', '-b', 'main', REMOTE);
   git(PONG, 'remote', 'add', 'origin', REMOTE);
   const shown = logPanel(page).getByRole('status', { name: 'Branch shown' });
   await vcs(page, 'Push…');
-  const pushDialog = await push();
-  await expect(pushDialog).toContainText('main → origin/main');
-  await expect(pushDialog.getByRole('list', { name: 'Commits to push' })).toContainText(
+  const firstPush = await pushDialog(page);
+  await expect(firstPush).toContainText('main → origin/main');
+  await expect(firstPush.getByRole('list', { name: 'Commits to push' })).toContainText(
     'first commit',
   );
-  await pushDialog.getByRole('button', { name: 'Push', exact: true }).click();
+  await firstPush.getByRole('button', { name: 'Push', exact: true }).click();
   await expect(shown).toHaveText('Branch: main ↑0 ↓0');
   git(WORKSPACE, 'clone', '--quiet', REMOTE, OTHER);
   git(OTHER, 'config', 'user.name', 'Other');
@@ -243,7 +288,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await expect(commits(page).getByRole('row', { name: /their change/ })).toHaveCount(0);
 
   writeFileSync(join(PONG, FILE), 'mine\n');
-  await expect(changed).toBeVisible();
+  await expect(changed(page)).toBeVisible();
   await commit(page, 'my change');
   await expect(branchStatus(page, 'main ↑1 ↓1')).toBeVisible();
   await vcs(page, 'Update project');
@@ -254,31 +299,43 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await conflict.getByRole('button', { name: 'Mark resolved' }).click();
   await expect(group(page, 'Merge conflicts')).toHaveCount(0);
   await commit(page, 'merge', 'Commit and push…');
-  const afterMerge = await push();
+  const afterMerge = await pushDialog(page);
   await expect(afterMerge.getByRole('list', { name: 'Commits to push' })).toContainText('merge');
   await afterMerge.getByRole('button', { name: 'Push', exact: true }).click();
   await expect(branchStatus(page, 'main')).toBeVisible();
   await expect(commits(page).getByRole('row').first()).toContainText('merge');
+});
 
-  writeFileSync(join(PONG, FILE), 'both, amended\n');
-  await expect(changed).toBeVisible();
+test('amends the last commit from its message, and offers earlier messages', async ({ page }) => {
+  initRepository();
+  await open(page);
+  await showPanel(page, 'Git');
+  writeFileSync(join(PONG, FILE), 'mine\n');
+  await expect(changed(page)).toBeVisible();
+  await commit(page, 'my change');
+  writeFileSync(join(PONG, FILE), 'mine, amended\n');
+  await expect(changed(page)).toBeVisible();
   await commitPanel(page).getByRole('checkbox', { name: 'Amend' }).check();
-  await expect(message(page)).toHaveValue('merge');
-  await commit(page, 'merge, amended');
-  await expect(commits(page).getByRole('row').first()).toContainText('merge, amended');
-  await expect(changed).toHaveCount(0);
+  await expect(message(page)).toHaveValue('my change');
+  await commit(page, 'my change, amended');
+  await expect(commits(page).getByRole('row').first()).toContainText('my change, amended');
+  await expect(changed(page)).toHaveCount(0);
   await commitPanel(page).getByRole('button', { name: 'Commit message history' }).click();
-  await page.getByRole('menuitem', { name: 'my change' }).click();
+  await page.getByRole('menuitem', { name: 'my change', exact: true }).click();
   await expect(message(page)).toHaveValue('my change');
   await message(page).fill('');
+});
 
+test('stashes changes and pops them back', async ({ page }) => {
+  initRepository();
+  await open(page);
   writeFileSync(join(PONG, FILE), 'work in progress\n');
-  await expect(changed).toBeVisible();
+  await expect(changed(page)).toBeVisible();
   await vcs(page, 'Stash changes…');
   await page.getByRole('textbox', { name: 'Message (optional)' }).fill('wip');
   await page.getByRole('button', { name: 'Stash', exact: true }).click();
-  await expect(changed).toHaveCount(0);
-  expect(readFileSync(join(PONG, FILE), 'utf8')).toBe('both, amended\n');
+  await expect(changed(page)).toHaveCount(0);
+  expect(readFileSync(join(PONG, FILE), 'utf8')).toBe(original);
   await commitPanel(page)
     .getByRole('tab', { name: /^Stash/ })
     .click();
@@ -286,10 +343,6 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await stashed.getByRole('button', { name: 'Pop' }).click();
   await expect(commitPanel(page).getByText('No stash.')).toBeVisible();
   expect(readFileSync(join(PONG, FILE), 'utf8')).toBe('work in progress\n');
-
-  await showPanel(page, 'Files');
-  await showPanel(page, 'Console');
-  await page.waitForTimeout(900);
 });
 
 test('browses, folds and includes changes from the keyboard', async ({ page }) => {
@@ -331,6 +384,5 @@ test('browses, folds and includes changes from the keyboard', async ({ page }) =
   await page.keyboard.press('ArrowLeft');
   await expect.poll(active).toMatch(/^Unversioned files, /);
   await resetLayout(page);
-  /** The layout is saved after 500 ms. */
-  await page.waitForTimeout(900);
+  await saved(page);
 });

@@ -1,7 +1,7 @@
 import { existsSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { expandFolders, openProject, panelTab, resetLayout, showPanel } from './helpers';
+import { expandFolders, openProject, panelTab, resetLayout, saved, showPanel } from './helpers';
 import { expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -19,7 +19,7 @@ test.afterEach(async ({ page }) => {
   rmSync(NOTES, { force: true });
   rmSync(TODO, { force: true });
   await resetLayout(page);
-  await page.waitForTimeout(1500);
+  await saved(page);
 });
 
 test('an image opens in a preview, not as text in the code editor', async ({ page }) => {

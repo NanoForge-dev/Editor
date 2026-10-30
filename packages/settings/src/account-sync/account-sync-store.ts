@@ -108,6 +108,8 @@ export class AccountSyncStore implements ScopeStore {
     this._edits++;
     this._state = { ...this._state, local: applyPatch(this._state.local, patch), dirty: true };
     this._values.set(this._state.local);
+    /** Waiting for its push from now on: the debounce is part of the wait. */
+    if (this._status.get() !== 'syncing') this._status.set('pending');
     await this._persist();
     this._schedule(this._options.debounceMs ?? 500);
   }

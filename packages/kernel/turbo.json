@@ -11,6 +11,16 @@
         "../ui/src/theme/theme-contribution.ts",
         "../ui/src/theme/tokens.ts"
       ]
+    },
+    "test:coverage": {
+      "inputs": [
+        "$TURBO_EXTENDS$",
+        "scripts/**",
+        "schemas/**",
+        "../ui/src/theme/icon-theme.schema.ts",
+        "../ui/src/theme/theme-contribution.ts",
+        "../ui/src/theme/tokens.ts"
+      ]
     }
   }
 }

@@ -16,6 +16,7 @@
   import type { CodeEditorService } from '../../service/code-editor-service';
   import type { EditorGroup } from '../../service/code-editor.type';
   import { SETTING } from '../../service/code-editor-settings.const';
+  import { disposeDiffEditor } from '../../monaco/dispose-diff-editor';
   import type { Monaco } from '../../monaco/monaco';
 
   interface Props {
@@ -139,14 +140,8 @@
     return !current || current === window.document.body || !!groupElement?.contains(current);
   };
 
-  /**
-   * Detaches the diff editor's models before disposing it: a diff still being computed would
-   * otherwise make widgets through its disposed services ("InstantiationService has been
-   * disposed").
-   */
   const disposeDiff = () => {
-    diff?.setModel(null);
-    diff?.dispose();
+    if (diff) disposeDiffEditor(monaco, diff);
     diff = undefined;
   };
 

@@ -2,7 +2,7 @@
  * The editor's IndexedDB database of cached projects. Every store is created here, with one
  * version: opening it elsewhere at another version would fail (`VersionError`).
  */
-export const CACHE_DB = 'nanoforge-editor';
+const CACHE_DB = 'nanoforge-editor';
 const VERSION = 2;
 
 /** `user\0projectId` → the project's file tree. */
@@ -33,7 +33,7 @@ export const blobKey = (user: string, hash: string) => `${user}\0${hash}`;
 export const isCacheDbSupported = (): boolean => typeof indexedDB !== 'undefined';
 
 /** Opens the database; version 1 (trees by project id only) is dropped on upgrade. */
-export const openCacheDb = (): Promise<IDBDatabase> =>
+const openCacheDb = (): Promise<IDBDatabase> =>
   new Promise((resolve, reject) => {
     const request = indexedDB.open(CACHE_DB, VERSION);
     request.onupgradeneeded = (event) => {

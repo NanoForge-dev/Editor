@@ -15,7 +15,7 @@ const splitName = (name: string): [string, string] => {
 };
 
 /** A free name in a folder: `name`, else `name copy`, `name copy 2`… */
-export const freeName = (
+const freeName = (
   exists: (path: string) => boolean,
   folder: string,
   name: string,
@@ -30,11 +30,11 @@ export const freeName = (
 };
 
 /** Whether `path` is `folder` or inside it. */
-export const isInside = (path: string, folder: string): boolean =>
+const isInside = (path: string, folder: string): boolean =>
   folder === '' || path === folder || path.startsWith(`${folder}/`);
 
 /** The entries of a selection that are not inside another selected entry. */
-export const selectionRoots = (paths: readonly string[]): string[] =>
+const selectionRoots = (paths: readonly string[]): string[] =>
   paths.filter((path) => !paths.some((other) => other !== path && isInside(path, other)));
 
 interface Step {
@@ -46,7 +46,7 @@ interface Step {
  * Runs steps in order, all or nothing: when one fails, those already done are undone (newest
  * first) and the error is rethrown, so a failed operation leaves no half-done change behind.
  */
-export const runSteps = async (steps: readonly Step[]): Promise<void> => {
+const runSteps = async (steps: readonly Step[]): Promise<void> => {
   const done: Step[] = [];
   try {
     for (const step of steps) {

@@ -37,7 +37,7 @@ export const initialArgs = (params: readonly Element[]): ArgValue[] => {
 };
 
 /** `@nanoforge-dev/input#InputEnum` → the enum's name and module. */
-export const splitRef = (ref: string): { module: string; name: string } => {
+const splitRef = (ref: string): { module: string; name: string } => {
   const index = ref.lastIndexOf('#');
   return { module: ref.slice(0, index), name: ref.slice(index + 1) };
 };

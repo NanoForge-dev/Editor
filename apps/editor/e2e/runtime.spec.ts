@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject } from './helpers';
+import { openProject, saved } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -60,7 +60,7 @@ test('plays pong-network server and client, pauses, resumes and stops, three tim
   await expect(output.getByText('did not stop')).toHaveCount(0);
   expect(errors).toEqual([]);
   await page.getByRole('button', { name: /^Editor/ }).click();
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test('offers to add the editor library to a game that does not register it', async ({ page }) => {

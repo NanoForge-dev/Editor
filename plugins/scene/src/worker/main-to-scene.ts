@@ -7,7 +7,7 @@ import { projectPath } from './scenes';
 import { applyEdits, dedent, ownStart, removalStart, trailingEnd } from './source-edits';
 
 /** Where the scene goes, and its class. */
-export interface MainToSceneArgs {
+interface MainToSceneArgs {
   readonly scenePath: string;
   readonly className: string;
   readonly side: 'client' | 'server';

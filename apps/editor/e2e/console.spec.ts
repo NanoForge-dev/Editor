@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME, PONG } from './workspace';
 
@@ -87,7 +87,7 @@ test('console: groups, levels, search, repeats, values and file links', async ({
   await chip(page, 'Plugins').click();
   await expect(chip(page, 'Plugins')).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('tab', { name: 'main.ts' }).click({ button: 'middle' });
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test('problems: a file that is not open, grouped by file, opens at its position', async ({
@@ -136,7 +136,7 @@ test('problems: a file that is not open, grouped by file, opens at its position'
   await page.getByRole('tab', { name: 'broken.ts' }).click({ button: 'middle' });
   rmSync(BROKEN);
   await expect(file).toHaveCount(0, { timeout: 15_000 });
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test.describe('with the engine', () => {
@@ -171,7 +171,7 @@ test.describe('with the engine', () => {
       await showPanel(page, 'Problems');
       await expect(build).toHaveCount(0, { timeout: 30_000 });
       await showPanel(page, 'Console');
-      await page.waitForTimeout(900);
+      await saved(page);
     } finally {
       writeFileSync(MAIN, original);
     }
@@ -219,7 +219,7 @@ test.describe('with the engine', () => {
         await run.getByRole('button', { name: 'Stop' }).click();
         await expect(run.getByRole('button', { name: 'Play' })).toBeVisible({ timeout: 15_000 });
       }
-      await page.waitForTimeout(900);
+      await saved(page);
     } finally {
       writeFileSync(MAIN, original);
     }

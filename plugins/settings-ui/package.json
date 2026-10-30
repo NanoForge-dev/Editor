@@ -35,6 +35,7 @@
     "lint": "prettier --check . && eslint --format=pretty .",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
     "test:unit": "vitest run --config ../../vitest.config.ts",
+    "test:coverage": "vitest run --config ../../vitest.config.ts --coverage",
     "format": "prettier --write . && eslint --fix --format=pretty src"
   },
   "devDependencies": {

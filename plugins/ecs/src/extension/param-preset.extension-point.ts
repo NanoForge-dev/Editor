@@ -5,7 +5,7 @@ import { defineExtensionPoint } from '@nanoforge-dev/editor-sdk';
 import type { PresetDefinition, PresetRow } from '../layout/param-layout';
 import type { ArgValue } from '../model/ecs-model.type';
 
-export interface PresetEditorProps {
+interface PresetEditorProps {
   readonly row: PresetRow;
   /** The value of each slot (same order as `row.slots`). */
   readonly values: readonly unknown[];

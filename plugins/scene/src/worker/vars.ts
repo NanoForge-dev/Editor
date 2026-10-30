@@ -25,7 +25,7 @@ const METHODS = new Set(['init', 'set', 'get', 'has', 'remove']);
 const MODULE = '@nanoforge-dev/scene';
 
 /** `interface SceneVars` of a `declare module "@nanoforge-dev/scene"` block of a file. */
-export const sceneVarsOf = (file: SourceFile): InterfaceDeclaration | undefined => {
+const sceneVarsOf = (file: SourceFile): InterfaceDeclaration | undefined => {
   for (const module of file.getModules()) {
     const name = module.getName().replace(/^['"]|['"]$/g, '');
     if (name === MODULE) return module.getInterface('SceneVars');

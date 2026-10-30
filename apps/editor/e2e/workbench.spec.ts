@@ -1,4 +1,4 @@
-import { expandFolders, openProject, panelTab, resetLayout, showPanel } from './helpers';
+import { expandFolders, openProject, panelTab, resetLayout, saved, showPanel } from './helpers';
 import { type Locator, type Page, expect, test } from './test';
 
 const openPong = async (page: Page) => {
@@ -90,8 +90,7 @@ test('moves, resizes and floats docks, undoes, and restores the layout after rel
 
   await drag(page, panelTab(page, 'Console'), { x: 700, y: 300 });
   await expect(page.getByRole('dialog', { name: 'Floating panel' })).toBeVisible();
-  /** Layout saves are debounced. */
-  await page.waitForTimeout(900);
+  await saved(page);
   await page.reload();
   await expect(page.getByRole('tab', { name: 'Files' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Floating panel' })).toBeVisible();
@@ -139,8 +138,7 @@ test('shows and hides panels from the tool window stripes, and docks one bottom 
   await expect(page.getByRole('region', { name: 'Console' })).toBeVisible();
 
   await resetLayout(page);
-  /** Layout saves are debounced. */
-  await page.waitForTimeout(900);
+  await saved(page);
 });
 
 test('runs a local plugin built against the shared runtime', async ({ page }) => {
@@ -219,7 +217,7 @@ test('a simple layout shows the main panels only, all panels come back from the 
     await expect(stripes.getByRole('tab', { name: 'Commit', exact: true })).toBeVisible();
   } finally {
     await resetLayout(page);
-    await page.waitForTimeout(900);
+    await saved(page);
   }
 });
 

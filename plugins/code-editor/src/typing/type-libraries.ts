@@ -8,13 +8,13 @@ const BARE_IMPORT =
   /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)['"]([^'"./][^'"]*)['"]/g;
 
 /** Package name of a bare import (`@scope/name/sub` → `@scope/name`). */
-export const packageOf = (specifier: string): string => {
+const packageOf = (specifier: string): string => {
   const parts = specifier.split('/');
   return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0]!;
 };
 
 /** Bare imports of a source text. */
-export const bareImports = (text: string): string[] =>
+const bareImports = (text: string): string[] =>
   [...new Set([...text.matchAll(BARE_IMPORT)].map((match) => packageOf(match[1]!)))].filter(
     (name) => !name.startsWith('node:'),
   );

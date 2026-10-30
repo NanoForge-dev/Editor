@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG, REGISTRY, WORKSPACE } from './workspace';
 
@@ -199,5 +199,5 @@ test('installs a package with its dependency, updates it and uninstalls it', asy
   await showPanel(page, 'Components');
   await expect(components.getByRole('button', { name: 'C Hull', exact: true })).toHaveCount(0);
   await resetLayout(page);
-  await page.waitForTimeout(1500);
+  await saved(page);
 });
