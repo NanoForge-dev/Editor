@@ -1261,6 +1261,8 @@ importers:
         specifier: catalog:core
         version: 8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1)
 
+  tooling/example-theme: {}
+
   tooling/vite-plugin:
     dependencies:
       es-module-lexer:

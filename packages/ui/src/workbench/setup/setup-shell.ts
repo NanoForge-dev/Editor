@@ -100,7 +100,7 @@ export const setupShell = (options: ShellOptions): Shell => {
     ),
   );
   const iconThemes = store.add(
-    new IconThemeService(extensions, settings.observe(CoreSettings.iconTheme)),
+    new IconThemeService(extensions, settings.observe(CoreSettings.iconTheme), logger),
   );
   const notifications = new NotificationService();
   const prompts = new PromptService();

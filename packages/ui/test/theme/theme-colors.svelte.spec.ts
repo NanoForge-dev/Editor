@@ -14,6 +14,18 @@ describe('theme colors', () => {
     expect(parseColor('not a color')).toBeUndefined();
   });
 
+  it('takes no color the canvas cannot draw on its own', () => {
+    for (const value of [
+      'var(--nf-color-bg)',
+      'var(--missing, #fff)',
+      'color-mix(in srgb, var(--nf-color-bg) 50%, #fff)',
+      'env(--x, #000)',
+      'currentColor',
+      'currentcolor',
+    ])
+      expect(parseColor(value), value).toBeUndefined();
+  });
+
   it('measures contrast as WCAG does', () => {
     expect(contrast(parseColor('#000')!, parseColor('#fff')!)).toBeCloseTo(21, 0);
     expect(contrast(parseColor('#777')!, parseColor('#fff')!)).toBeCloseTo(4.48, 1);

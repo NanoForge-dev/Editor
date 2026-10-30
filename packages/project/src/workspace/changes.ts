@@ -70,11 +70,13 @@ export class Changes {
    */
   private async _undo(check: boolean): Promise<void> {
     if (check) {
+      /** Unsaved edits count: the undo would write over them. */
+      const read = (path: string) => (this._io.readEdited ?? this._io.read).call(this._io, path);
       const last = new Map<string, string>();
       for (const { written } of this._steps) if (written) last.set(written.path, written.text);
       const changed: string[] = [];
       for (const [path, text] of last) {
-        if (!this._io.exists(path) || (await this._io.read(path)) !== text) changed.push(path);
+        if (!this._io.exists(path) || (await read(path)) !== text) changed.push(path);
       }
       for (const { edit } of this._steps) {
         if (edit && !(await edit.edit.isValid())) changed.push(edit.path);

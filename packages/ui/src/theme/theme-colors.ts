@@ -10,18 +10,28 @@ export interface Rgba {
 
 let context: CanvasRenderingContext2D | null | undefined;
 
+/** The pixel `value` draws over a canvas filled with `fallback` (kept when it is not drawn). */
+const draw = (context: CanvasRenderingContext2D, value: string, fallback: string) => {
+  context.clearRect(0, 0, 1, 1);
+  context.fillStyle = fallback;
+  context.fillStyle = value;
+  context.fillRect(0, 0, 1, 1);
+  return context.getImageData(0, 0, 1, 1).data;
+};
+
 /**
  * Any CSS color (hex, `rgb()`, `oklch()`, `color-mix()` of literals…) in sRGB, as the browser
- * draws it; undefined when it is not a color.
+ * draws it; undefined when it is not a color, or one that depends on the page (`var()`, `env()`,
+ * `currentColor`). The canvas skips a `var()` it can't resolve and keeps its fill: the value is
+ * drawn over black then white, and taken only when both agree.
  */
 export const parseColor = (value: string): Rgba | undefined => {
   context ??= document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-  if (!context || !CSS.supports('color', value)) return undefined;
-  context.clearRect(0, 0, 1, 1);
-  context.fillStyle = '#000';
-  context.fillStyle = value;
-  context.fillRect(0, 0, 1, 1);
-  const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
+  if (!context || !CSS.supports('color', value) || /\bcurrentcolor\b/i.test(value))
+    return undefined;
+  const [r, g, b, a] = draw(context, value, '#000');
+  const [r2, g2, b2, a2] = draw(context, value, '#fff');
+  if (r !== r2 || g !== g2 || b !== b2 || a !== a2) return undefined;
   return { r: r!, g: g!, b: b!, a: a! / 255 };
 };
 

@@ -115,6 +115,7 @@ export {
   createLibrary,
   librariesOf,
   libraryImporters,
+  nameTaken,
   recordChanges,
   removeApp,
   removeLibrary,

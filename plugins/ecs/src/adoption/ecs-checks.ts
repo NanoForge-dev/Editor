@@ -63,15 +63,19 @@ export const registerEcsChecks = (
       planned.add(path);
       return path;
     };
-    const split = (title: string, file: string, items: { name: string; to: string }[]) => () =>
-      code.analyze<SplitItemsResult>(file, SPLIT_ITEMS_ANALYZER, { items }).then((result) =>
-        recordChanges(io, title, async (memory) => {
-          for (const { path, text } of [...result.files, ...result.importers])
-            await memory.write(path, text);
-          if (result.source === null) await memory.remove(file);
-          else await memory.write(file, result.source);
-        }),
-      );
+    const split =
+      (title: string, file: string, items: { name: string; to: string }[], entry = false) =>
+      () =>
+        code
+          .analyze<SplitItemsResult>(file, SPLIT_ITEMS_ANALYZER, { items, entry })
+          .then((result) =>
+            recordChanges(io, title, async (memory) => {
+              for (const { path, text } of [...result.files, ...result.importers])
+                await memory.write(path, text);
+              if (result.source === null) await memory.remove(file);
+              else await memory.write(file, result.source);
+            }),
+          );
 
     for (const app of apps.filter((candidate) => candidate.type !== 'lib')) {
       const entry = app.entryFile;
@@ -90,7 +94,7 @@ export const registerEcsChecks = (
           detail: `${list(names)} ${names.length === 1 ? 'is' : 'are'} defined in ${entry}. The editor finds components and systems in their own files: it can't list ${names.length === 1 ? 'it' : 'them'} in the Components panel, document ${names.length === 1 ? 'it' : 'them'} in the Inspector, nor move ${names.length === 1 ? 'it' : 'them'} to a shared library. This gives each a file of its own.`,
           fix: {
             title: 'Move to files of their own',
-            changeset: split(`Move ${list(names)} out of ${basename(entry)}`, entry, items),
+            changeset: split(`Move ${list(names)} out of ${basename(entry)}`, entry, items, true),
           },
         });
       }

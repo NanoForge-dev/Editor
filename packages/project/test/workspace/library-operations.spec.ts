@@ -180,6 +180,31 @@ describe('shared libraries', () => {
     expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/shared');
   });
 
+  it('does not undo over unsaved edits of a file it wrote', async () => {
+    const { io, files } = project();
+    await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });
+    files.set('apps/client/src/main.ts', 'import { a } from "@pong/shared/a";\n');
+    const library = app('libs/shared', '@pong/shared', 'lib');
+    let unsaved: string | undefined;
+    const base = reading(io, files);
+    const edited = {
+      ...base,
+      readEdited: async (path: string) => unsaved ?? base.read(path),
+    };
+    const undo = await renameLibrary(
+      edited,
+      model(client, server, library),
+      library,
+      '@pong/common',
+    );
+    unsaved = 'import { a } from "@pong/common/a";\nedited();\n';
+    await expect(undo()).rejects.toThrow(/changed since/);
+    expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/common');
+    unsaved = undefined;
+    await undo();
+    expect(JSON.parse(files.get('libs/shared/package.json')!).name).toBe('@pong/shared');
+  });
+
   it('rewrites imports through renameImports when the io reads code', async () => {
     const { io, files } = project();
     await createLibrary(io, { folder: 'shared', packageName: '@pong/shared', usedBy: [client] });

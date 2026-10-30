@@ -47,9 +47,9 @@ export const PluginManifestSchema = z.object({
     .object({ required: NpmRanges, optional: NpmRanges })
     .default({ required: {}, optional: {} }),
 
-  /** None for a plugin that only contributes from its manifest (a theme, icons). */
+  /** None for a plugin that only contributes from its manifest (a theme, icons). Unknown keys are refused. */
   entry: z
-    .object({
+    .strictObject({
       client: EntryPath.optional(),
       server: EntryPath.optional(),
       worker: EntryPath.optional(),

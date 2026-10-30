@@ -75,10 +75,10 @@ export class ThemeService implements Disposable {
     const owners = new Map(
       this._extensions
         .getContributions(THEMES)
-        .map((contribution) => [contribution.value.id, contribution.owner]),
+        .map((contribution) => [contribution.value, contribution.owner]),
     );
-    return resolveThemes(this._extensions.getValues(THEMES), (id, error) => {
-      const message = `Theme "${id}" of ${owners.get(id) ?? 'a plugin'} ${error.message}`;
+    return resolveThemes(this._extensions.getValues(THEMES), (id, error, theme) => {
+      const message = `Theme "${id}" of ${owners.get(theme) ?? 'a plugin'} ${error.message}`;
       if (this._reported.has(message)) return;
       this._reported.add(message);
       this._options.logger?.warn(message);

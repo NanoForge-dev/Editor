@@ -6,7 +6,8 @@ import { CodeEngine } from '@nanoforge-dev/editor-code/engine';
 
 import { type MainToSceneResult, analyzeMainToScene } from '../../src/worker/main-to-scene';
 
-const FIXTURE = join(import.meta.dirname, '../fixtures/adoption/scene');
+const FIXTURES = join(import.meta.dirname, '../fixtures/adoption');
+const FIXTURE = join(FIXTURES, 'scene');
 const MAIN = 'apps/client/src/main.ts';
 const SCENE = 'apps/client/src/scenes/game.ts';
 
@@ -35,23 +36,58 @@ const convert = (files: Map<string, string>) => {
 };
 
 describe("main's entities into a scene", () => {
-  it('moves the spawns and systems to a scene that main registers', () => {
-    const files = readTree(join(FIXTURE, 'input'));
+  /** Converts a tree and compares it with the fixture's `expected` (`UPDATE_GOLDEN=1` writes it). */
+  const expectConverted = (fixture: string, files: Map<string, string>) => {
     const result = convert(files);
-    expect(result).toMatchObject({ entities: ['circle'], systems: ['draw2D'] });
     files.set(SCENE, result.scene);
     files.set(MAIN, result.main);
-    const expected = join(FIXTURE, 'expected');
+    const expected = join(FIXTURES, fixture, 'expected');
     if (process.env.UPDATE_GOLDEN) {
       rmSync(expected, { recursive: true, force: true });
       for (const [path, text] of files) {
         mkdirSync(dirname(join(expected, path)), { recursive: true });
         writeFileSync(join(expected, path), text);
       }
-      return;
+      return result;
     }
     expect(Object.fromEntries([...files].sort())).toEqual(
       Object.fromEntries([...readTree(expected)].sort()),
+    );
+    return result;
+  };
+
+  it('moves the spawns and systems to a scene that main registers', () => {
+    const result = expectConverted('scene', readTree(join(FIXTURE, 'input')));
+    expect(result).toMatchObject({ entities: ['circle'], systems: ['draw2D'] });
+  });
+
+  it("keeps the registry's own name, and the comments of the statements it moves", () => {
+    expectConverted('registry-alias', readTree(join(FIXTURES, 'registry-alias', 'input')));
+  });
+
+  it('replaces a registry used without a variable where it occurs', () => {
+    const files = readTree(join(FIXTURE, 'input'));
+    files.set(
+      MAIN,
+      files
+        .get(MAIN)!
+        .replace('  const registry = ecs.registry;\n\n', '')
+        .replaceAll('registry.', 'ecs.registry.'),
+    );
+    expectConverted('scene', files);
+  });
+
+  it('refuses entities that use what main exports: main imports the scene', () => {
+    const files = readTree(join(FIXTURE, 'input'));
+    files.set(
+      MAIN,
+      files
+        .get(MAIN)!
+        .replace('export const main', 'export const SIZE = 500;\n\nexport const main')
+        .replace('new Position2D(500, 500)', 'new Position2D(SIZE, 500)'),
+    );
+    expect(() => convert(files)).toThrow(
+      /use SIZE of apps\/client\/src\/main.ts, which imports the scene/,
     );
   });
 

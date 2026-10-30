@@ -39,11 +39,12 @@ Choose it in _Settings › Editor › Appearance_. While `--watch` runs, each sa
 }
 ```
 
+- `id`: unique among installed themes. The built-in `nanoforge-dark` and `nanoforge-light` can't be replaced: a theme whose id is already taken is left out, and named in the Console.
 - `extends`: the theme it starts from, `nanoforge-dark`, `nanoforge-light` or another plugin's theme. Give only what changes. A theme that extends none gives `kind` (`dark` or `light`) and every color.
 - No `entry`: a theme has no code.
 - `keywords: ["theme"]` lists it under _Get more themes_ once it is in the registry.
 
-A color is any CSS color: `#rrggbb`, `rgb()`, `oklch()`. A value never holds `;`, `{`, `}`, `\`, `<`, `>`, `@`, `url()` or an image: a theme brings no files but its icons. An unknown token is refused, by name, in the Console (`Invalid contributes.themes of "@acme/forest"`).
+A color is any CSS color: `#rrggbb`, `rgb()`, `oklch()`. A value never holds `;`, `{`, `}`, `\`, `<`, `>`, `@`, `/*`, `url()` or an image, and closes its brackets and quotes: a theme brings no files but its icons. A `var()` works in the editor's own UI, but the code editor and the contrast check can't read it: give the code editor's colors (`surface`, `raised`, `text`, `accent`, `selection`…) as plain colors, or it keeps its own for them. An unknown token is refused, by name, in the Console (`Invalid contributes.themes of "@acme/forest"`).
 
 ### Colors
 
@@ -85,7 +86,7 @@ Theme "forest" of @acme/forest has text too faint to read (WCAG AA): on-accent o
 "icons": [{ "id": "forest-leaf", "path": "icons/leaf.svg" }]
 ```
 
-An icon theme replaces the editor's icons while it is chosen (_Settings › Editor › Appearance › Icons_):
+An icon theme replaces the editor's icons while it is chosen (_Settings › Editor › Appearance › Icons_). Its id is unique too: the built-in `nanoforge` can't be replaced.
 
 ```json
 "iconThemes": [

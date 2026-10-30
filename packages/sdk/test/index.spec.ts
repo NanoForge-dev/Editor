@@ -103,6 +103,7 @@ describe('public API', () => {
         "libraryImporters",
         "matchesGlob",
         "missingEngineLibs",
+        "nameTaken",
         "observe",
         "ownerObjects",
         "parseWhen",

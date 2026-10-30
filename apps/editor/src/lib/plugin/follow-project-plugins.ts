@@ -104,9 +104,16 @@ export const followProjectPlugins = (options: {
     return listings.filter((listing) => listing.source !== 'project');
   };
 
+  /**
+   * Install actions only in a trusted folder: the project's manifests choose the names, and a
+   * plugin installed for the user runs in every project. Keyed by trust too, so the actions come
+   * once the folder is trusted (the project reopens with the same id).
+   */
   const suggest = async (project: string) => {
-    if (suggested.has(project)) return;
-    suggested.add(project);
+    const installable = !options.online && trusted(project);
+    const key = `${project}\0${installable}`;
+    if (suggested.has(key)) return;
+    suggested.add(key);
     const missing = (await api.suggestions({ project })).filter(
       (suggestion) => plugins.getPlugin(suggestion.name)?.status.kind !== 'ok',
     );
@@ -154,9 +161,11 @@ export const followProjectPlugins = (options: {
         .join(', ')}.${
         options.online
           ? ' Install them from a local editor, or ask who runs this one.'
-          : ' Install them in this project (.nanoforge/plugins), or for you in every project.'
+          : installable
+            ? ' Install them in this project (.nanoforge/plugins), or for you in every project.'
+            : ' Trust this folder to install them.'
       }`,
-      ...(!options.online && {
+      ...(installable && {
         actions: [
           { title: 'Install for this project', run: () => void install('project') },
           { title: 'Install for me', run: () => void install('user') },

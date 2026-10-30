@@ -1,12 +1,10 @@
-import {
-  type ImportDeclaration,
-  Node,
-  type SourceFile,
-  type Statement,
-  SyntaxKind,
-} from 'ts-morph';
+import { Node, type Statement, SyntaxKind } from 'ts-morph';
 
 import { type AnalyzeContext, CodeError } from '@nanoforge-dev/editor-sdk/worker';
+
+import { type Binding, bindingsOf, importLine } from './import-line';
+import { projectPath } from './scenes';
+import { applyEdits, dedent, ownStart, removalStart, trailingEnd } from './source-edits';
 
 /** Where the scene goes, and its class. */
 export interface MainToSceneArgs {
@@ -23,57 +21,7 @@ export interface MainToSceneResult {
   readonly systems: readonly string[];
 }
 
-const ROOT = '/project/';
-const projectPath = (file: SourceFile) => file.getFilePath().replace(ROOT, '');
 const REGISTRY_CALLS = new Set(['spawnEntity', 'addComponent', 'addSystem']);
-
-interface Binding {
-  readonly kind: 'named' | 'default' | 'namespace';
-  readonly imported?: string;
-  readonly local: string;
-  readonly typeOnly: boolean;
-  readonly node: Node;
-}
-
-const bindingsOf = (declaration: ImportDeclaration): Binding[] => {
-  const typeOnly = declaration.isTypeOnly();
-  const bindings: Binding[] = [];
-  const def = declaration.getDefaultImport();
-  if (def) bindings.push({ kind: 'default', local: def.getText(), typeOnly, node: def });
-  const namespace = declaration.getNamespaceImport();
-  if (namespace)
-    bindings.push({ kind: 'namespace', local: namespace.getText(), typeOnly, node: namespace });
-  for (const specifier of declaration.getNamedImports()) {
-    const local = specifier.getAliasNode() ?? specifier.getNameNode();
-    bindings.push({
-      kind: 'named',
-      imported: specifier.getName(),
-      local: local.getText(),
-      typeOnly: typeOnly || specifier.isTypeOnly(),
-      node: local,
-    });
-  }
-  return bindings;
-};
-
-const importLine = (module: string, bindings: readonly Binding[], quote: string): string => {
-  const unique = [...new Map(bindings.map((binding) => [binding.local, binding])).values()];
-  const allTypes = unique.every((binding) => binding.typeOnly);
-  const parts: string[] = [];
-  const def = unique.find((binding) => binding.kind === 'default');
-  const namespace = unique.find((binding) => binding.kind === 'namespace');
-  const named = unique
-    .filter((binding) => binding.kind === 'named')
-    .sort((a, b) => a.local.localeCompare(b.local))
-    .map(
-      (binding) =>
-        `${binding.typeOnly && !allTypes ? 'type ' : ''}${binding.imported === binding.local ? binding.local : `${binding.imported} as ${binding.local}`}`,
-    );
-  if (def) parts.push(def.local);
-  if (namespace) parts.push(`* as ${namespace.local}`);
-  if (named.length) parts.push(`{ ${named.join(', ')} }`);
-  return `import ${allTypes ? 'type ' : ''}${parts.join(', ')} from ${quote}${module}${quote};`;
-};
 
 /** The registry call a statement makes (`registry.addSystem(…)`), with the registry's text. */
 const registryCall = (statement: Statement) => {
@@ -89,29 +37,6 @@ const registryCall = (statement: Statement) => {
     return undefined;
   if (Node.isVariableStatement(statement) && callee.getName() !== 'spawnEntity') return undefined;
   return { method: callee.getName(), registry: callee.getExpression(), call };
-};
-
-/** Text without the indentation its lines share. */
-const dedent = (text: string) => {
-  const lines = text.split('\n');
-  const indents = lines
-    .slice(1)
-    .filter((line) => line.trim())
-    .map((line) => line.match(/^\s*/)![0].length);
-  const cut = indents.length ? Math.min(...indents) : 0;
-  return [lines[0]!, ...lines.slice(1).map((line) => line.slice(Math.min(cut, line.length)))].join(
-    '\n',
-  );
-};
-
-const applyEdits = (
-  text: string,
-  edits: readonly { start: number; end: number; text: string }[],
-) => {
-  let result = text;
-  for (const edit of [...edits].sort((a, b) => b.start - a.start))
-    result = result.slice(0, edit.start) + edit.text + result.slice(edit.end);
-  return result;
 };
 
 /**
@@ -141,6 +66,25 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
   const registryDeclaration = Node.isIdentifier(registryNode)
     ? registryNode.getSymbol()?.getDeclarations()[0]
     : undefined;
+  /**
+   * A registry named by a variable becomes setup's parameter, under the same name: the moved
+   * code is kept as it is. Another expression (`ecs.registry`) is replaced where it occurs.
+   */
+  const registryParam = Node.isIdentifier(registryNode) ? registryText : 'registry';
+  const occurrences = Node.isIdentifier(registryNode)
+    ? []
+    : moved.flatMap((statement) =>
+        statement
+          .getDescendants()
+          .filter(
+            (node) =>
+              node.getKind() === registryNode.getKind() &&
+              node.getText() === registryText &&
+              node.getSymbol() === registryNode.getSymbol(),
+          ),
+      );
+  const inRegistry = (node: Node) =>
+    occurrences.some((occurrence) => occurrence.containsRange(node.getPos(), node.getEnd()));
 
   const quote = file.getImportDeclarations()[0]?.getModuleSpecifier().getText()[0] ?? '"';
   const needs = new Map<string, Binding[]>();
@@ -149,8 +93,10 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
   const locals = new Set<string>();
   const insideMoved = (node: Node) =>
     moved.some((statement) => statement.containsRange(node.getPos(), node.getEnd()));
+  const fromMain = new Set<string>();
   for (const statement of moved)
     for (const identifier of statement.getDescendantsOfKind(SyntaxKind.Identifier)) {
+      if (inRegistry(identifier)) continue;
       const declaration = identifier.getSymbol()?.getDeclarations()[0];
       if (!declaration || declaration.getSourceFile() !== file) continue;
       if (declaration === registryDeclaration) continue;
@@ -176,14 +122,7 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
         continue;
       }
       const top = declaration.getFirstAncestor((node) => Node.isSourceFile(node.getParent()));
-      if (top && Node.isExportable(top) && top.isExported())
-        need(context.moduleSpecifier(context.path, scenePath), {
-          kind: 'named',
-          imported: identifier.getText(),
-          local: identifier.getText(),
-          typeOnly: false,
-          node: identifier,
-        });
+      if (top && Node.isExportable(top) && top.isExported()) fromMain.add(identifier.getText());
       else locals.add(identifier.getText());
     }
   locals.delete(registryText);
@@ -198,6 +137,10 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
     throw new CodeError(
       `main still uses ${[...stillUsed].join(', ')} after making ${stillUsed.size === 1 ? 'it' : 'them'}: move that code into the scene by hand, or keep these entities in main.`,
     );
+  if (fromMain.size)
+    throw new CodeError(
+      `main's entities use ${[...fromMain].sort().join(', ')} of ${context.path}, which imports the scene: move ${fromMain.size === 1 ? 'it' : 'them'} to a module of ${fromMain.size === 1 ? 'its' : 'their'} own first.`,
+    );
   if (locals.size)
     throw new CodeError(
       `main's entities use ${[...locals].join(', ')}, made in main itself: move ${locals.size === 1 ? 'it' : 'them'} out of main (or into the scene by hand) first.`,
@@ -208,15 +151,19 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
   const relative = lines.filter((line) => / from ["']\./.test(line));
   const setup = moved
     .map((statement) => {
-      const text = dedent(
-        statement
-          .getFullText()
-          .replace(/^(?:[ \t]*\r?\n)+/, '')
-          .replace(/^[ \t]+/, ''),
+      const start = ownStart(statements, statement);
+      const raw = applyEdits(
+        context.text.slice(start, trailingEnd(statement)),
+        occurrences
+          .filter((node) => statement.containsRange(node.getPos(), node.getEnd()))
+          .map((node) => ({
+            start: node.getStart() - start,
+            end: node.getEnd() - start,
+            text: registryParam,
+          })),
       );
-      const renamed =
-        registryText === 'registry' ? text : text.split(`${registryText}.`).join('registry.');
-      return renamed
+      const text = dedent(raw.replace(/^(?:[ \t]*\r?\n)+/, '').replace(/^[ \t]+/, ''));
+      return text
         .split('\n')
         .map((line) => (line ? `    ${line}` : line))
         .join('\n');
@@ -235,7 +182,7 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
     ` * @side ${side}`,
     ' */',
     `export class ${className} extends EcsScene {`,
-    '  override setup(registry: Registry) {',
+    `  override setup(${registryParam}: Registry) {`,
     setup,
     '  }',
     '}',
@@ -246,8 +193,8 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
 
   /** main without the moved statements (nor `const registry = …` once unused), with SceneLibrary. */
   const edits: { start: number; end: number; text: string }[] = moved.map((statement) => ({
-    start: statement.getFullStart(),
-    end: statement.getEnd(),
+    start: ownStart(statements, statement),
+    end: trailingEnd(statement),
     text: '',
   }));
   const registryStatement = registryDeclaration?.getFirstAncestorByKind(
@@ -266,8 +213,8 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
     )
   )
     edits.push({
-      start: registryStatement.getFullStart(),
-      end: registryStatement.getEnd(),
+      start: ownStart(statements, registryStatement),
+      end: trailingEnd(registryStatement),
       text: '',
     });
   const kept = file.getStatements().filter((statement) => !Node.isImportDeclaration(statement));
@@ -288,11 +235,11 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
     const used = bindings.filter((binding) => usedOutside(binding.node));
     if (used.length === bindings.length) continue;
     edits.push({
-      start: declaration.getFullStart(),
+      start: used.length
+        ? declaration.getStart()
+        : removalStart(context.text, declaration.getStart()),
       end: declaration.getEnd(),
-      text: used.length
-        ? `\n${importLine(declaration.getModuleSpecifierValue(), used, quote)}`
-        : '',
+      text: used.length ? importLine(declaration.getModuleSpecifierValue(), used, quote) : '',
     });
   }
   const uses = statements.filter(
@@ -305,8 +252,8 @@ export const analyzeMainToScene = (context: AnalyzeContext, args: unknown): Main
   const lineStart = context.text.lastIndexOf('\n', lastUse.getStart()) + 1;
   const indent = context.text.slice(lineStart, lastUse.getStart());
   edits.push({
-    start: lastUse.getEnd(),
-    end: lastUse.getEnd(),
+    start: trailingEnd(lastUse),
+    end: trailingEnd(lastUse),
     text: `\n${indent}app.use(new SceneLibrary({ initial: ${className}, scenes: { ${className} } }));`,
   });
   const imports = file.getImportDeclarations();
