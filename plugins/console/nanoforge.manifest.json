@@ -12,6 +12,10 @@
     "widgets": [
       {
         "id": "console.console",
+        "tip": {
+          "text": "What your game, its builds and the editor print. The buttons above filter it by group and level, and the search by text.",
+          "docs": "editor/play"
+        },
         "essential": true,
         "title": "Console",
         "icon": "square-terminal",
@@ -20,6 +24,10 @@
       },
       {
         "id": "console.problems",
+        "tip": {
+          "text": "Errors and warnings in your code, found as you type. Click one to open its line.",
+          "docs": "editor/code-editor"
+        },
         "title": "Problems",
         "icon": "circle-alert",
         "defaultSlot": "bottom",

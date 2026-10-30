@@ -9,5 +9,7 @@ export const PONG = join(WORKSPACE, 'pong');
 export const GAME = join(WORKSPACE, 'game');
 /** The breakout example (scenes), when the engine has the scene module. */
 export const BREAKOUT = join(WORKSPACE, 'breakout');
+/** The tutorial's project (`my-first-game`), when `NANOFORGE_CLI` has a built CLI. */
+export const TUTORIAL = join(WORKSPACE, 'my-first-game');
 /** The folder the editor server uses as the registry of plugins and packages. */
 export const REGISTRY = join(WORKSPACE, '.registry');

@@ -118,4 +118,54 @@ describe('2D scene', () => {
     ]);
     expect([live[1]!.x, live[1]!.y]).toEqual([900, 5]);
   });
+
+  it("draws components that take a shape's size as params (nf new's DrawableCircle2D)", () => {
+    const arg = (value: unknown) => ({ code: JSON.stringify(value), start: 0, end: 0, value });
+    const params = (...names: string[]) => ({
+      meta: {
+        params: names.map((name) => ({ name, type: name === 'fillColor' ? 'string' : 'number' })),
+      },
+    });
+    const items: Record<string, unknown> = {
+      position: params('x', 'y'),
+      circle: params('radius', 'visible', 'fillColor'),
+      box: params('width', 'height'),
+    };
+    const model = {
+      entities: [
+        {
+          name: 'ball',
+          components: [
+            { item: 'position', className: 'Position2D', args: [arg(300), arg(200)] },
+            {
+              item: 'circle',
+              className: 'DrawableCircle2D',
+              args: [arg(40), arg(true), arg('orange')],
+            },
+          ],
+        },
+        {
+          name: 'wall',
+          components: [{ item: 'box', className: 'Box', args: [arg(10), arg(80)] }],
+        },
+      ],
+    } as unknown as EntryModel;
+    const shapes = buildScene(
+      model,
+      (ref) => items[ref ?? ''] as never,
+      (_item, name) => name ?? '',
+    );
+    expect(shapes).toMatchObject([
+      {
+        entity: 'ball',
+        kind: 'circle',
+        x: 300,
+        y: 200,
+        radius: 40,
+        fill: 'orange',
+        position: { component: 0 },
+      },
+      { entity: 'wall', kind: 'rect', x: 0, y: 0, width: 10, height: 80 },
+    ]);
+  });
 });

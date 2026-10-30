@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { onDestroy } from 'svelte';
   import { CoreServices, type Disposable } from '@nanoforge-dev/editor-kernel';
@@ -28,6 +28,16 @@
   onDestroy(() => editor.projects.close());
   let workbench = $state<WorkbenchContext & Disposable>();
   let error = $state<ErrorDescription>();
+
+  /** `?tour=<id>` (the tutorial): starts that tour once the workbench is up, then forgets it. */
+  $effect(() => {
+    const tour = page.url.searchParams.get('tour');
+    if (!workbench || !tour) return;
+    const url = new URL(page.url);
+    url.searchParams.delete('tour');
+    replaceState(url, page.state);
+    workbench.tours.start(tour);
+  });
   let stage = $state({
     step: 'Opening project',
     description: 'Connecting to the project on the editor server.',

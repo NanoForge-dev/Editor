@@ -9,4 +9,6 @@ export * from './workbench-context';
 export * from './menu';
 export * from './prompt';
 export * from './setup';
+export * from './tour';
+export * from './tip';
 export { default as Workbench } from './workbench.svelte';

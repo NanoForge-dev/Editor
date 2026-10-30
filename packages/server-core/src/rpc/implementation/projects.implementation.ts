@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { realpath } from 'node:fs/promises';
+import { cp, readFile, realpath, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { type Disposable, observe } from '@nanoforge-dev/editor-kernel';
@@ -17,6 +17,49 @@ export const implementProjectsRpc = (
   deps: CoreRpcDependencies,
 ): Disposable => {
   const { env, projects } = deps;
+
+  /** `nf new` in the root folder, given every option: the server has no terminal to answer. */
+  const newProject = async (options: {
+    name: string;
+    language: 'ts' | 'js';
+    server: boolean;
+    install: boolean;
+    packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun';
+    /** Strict TypeScript (default): the tutorial's beginners get the lenient one. */
+    strict?: boolean;
+  }) => {
+    const run = deps.cli.run(
+      [
+        'new',
+        '--name',
+        options.name,
+        '--path',
+        options.name,
+        '--language',
+        options.language,
+        '--package-manager',
+        options.packageManager,
+        options.strict === false ? '--no-strict' : '--strict',
+        options.server ? '--server' : '--no-server',
+        '--no-git',
+        '--no-docker',
+        options.install ? '--no-skip-install' : '--skip-install',
+      ],
+      { cwd: env.fsRoot },
+    );
+    const result = await run.done;
+    if (result.exitCode === 0) return;
+    const output = (result.stderr || result.stdout).slice(-2000);
+    const reason = output
+      // eslint-disable-next-line no-control-regex
+      .replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .at(-1);
+    throw new RpcError('INTERNAL', `nf new failed${reason ? `: ${reason}` : ''}`, { output });
+  };
+
   return router.implement(ProjectsContract, {
     methods: {
       open: async (ref, { session }) => {
@@ -50,40 +93,44 @@ export const implementProjectsRpc = (
           throw new RpcError('FORBIDDEN', 'Create projects from the NanoForge website');
         if (existsSync(join(env.fsRoot, name)))
           throw new RpcError('CONFLICT', `A folder named ${name} already exists`);
-        const run = deps.cli.run(
-          [
-            'new',
-            '--name',
-            name,
-            '--path',
-            name,
-            '--language',
-            language,
-            '--package-manager',
-            packageManager,
-            '--strict',
-            server ? '--server' : '--no-server',
-            '--no-git',
-            '--no-docker',
-            install ? '--no-skip-install' : '--skip-install',
-          ],
-          { cwd: env.fsRoot },
-        );
-        const result = await run.done;
-        if (result.exitCode !== 0) {
-          const output = (result.stderr || result.stdout).slice(-2000);
-          const reason = output
-            // eslint-disable-next-line no-control-regex
-            .replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '')
-            .split('\n')
-            .map((line) => line.trim())
-            .filter(Boolean)
-            .at(-1);
-          throw new RpcError('INTERNAL', `nf new failed${reason ? `: ${reason}` : ''}`, {
-            output,
-          });
-        }
+        await newProject({ name, language, server, install, packageManager });
         await projects.trust.trust(await realpath(join(env.fsRoot, name)));
+        const project = await projects.open(session, { path: name });
+        return { id: project.id, name: project.name, trusted: project.trusted };
+      },
+      createTutorial: async ({ name, install }, { session }) => {
+        if (env.mode !== 'OFFLINE')
+          throw new RpcError('FORBIDDEN', 'The tutorial project is made by local editors');
+        const root = join(env.fsRoot, name);
+        if (existsSync(root) && !existsSync(join(root, 'nanoforge.config.ts')))
+          throw new RpcError(
+            'CONFLICT',
+            `A folder named ${name} already exists and is not a NanoForge project: move it away to make the tutorial's project`,
+          );
+        if (!existsSync(root)) {
+          if (!env.tutorialDir || !existsSync(env.tutorialDir))
+            throw new RpcError('INTERNAL', 'This editor was built without the tutorial files');
+          await newProject({
+            name,
+            language: 'ts',
+            server: false,
+            install: false,
+            packageManager: 'npm',
+            strict: false,
+          });
+          await cp(env.tutorialDir, root, { recursive: true, force: true });
+          await addEditorLibraryDependency(join(root, 'package.json'));
+          await ignoreBuildOutput(join(root, '.gitignore'));
+          await projects.trust.trust(await realpath(root));
+          if (install) {
+            const result = await deps.cli.exec('npm', ['install'], { cwd: root }).done;
+            if (result.exitCode !== 0)
+              throw new RpcError(
+                'INTERNAL',
+                'The tutorial project was made, but installing its dependencies failed: open it and use Install dependencies on the Project screen',
+              );
+          }
+        }
         const project = await projects.open(session, { path: name });
         return { id: project.id, name: project.name, trusted: project.trusted };
       },
@@ -101,4 +148,28 @@ export const implementProjectsRpc = (
         observe(projects.get(session, id).model, (model) => sink.emit(model)),
     },
   });
+};
+
+/**
+ * Adds `@nanoforge-dev/editor-lib` to a game's dependencies, in the range of its core library
+ * (the tutorial's game registers the editor library).
+ */
+const addEditorLibraryDependency = async (file: string): Promise<void> => {
+  const json = JSON.parse(await readFile(file, 'utf8')) as Record<
+    string,
+    Record<string, string> | undefined
+  >;
+  const field = json.dependencies?.['@nanoforge-dev/core'] ? 'dependencies' : 'devDependencies';
+  const deps = { ...json[field] };
+  deps['@nanoforge-dev/editor-lib'] ??= deps['@nanoforge-dev/core'] ?? '^2.0.0';
+  json[field] = Object.fromEntries(Object.entries(deps).sort(([a], [b]) => a.localeCompare(b)));
+  await writeFile(file, `${JSON.stringify(json, null, 2)}\n`);
+};
+
+/** Keeps the game's build (`dist/`) out of the tutorial's first commit. */
+const ignoreBuildOutput = async (file: string): Promise<void> => {
+  const text = existsSync(file) ? await readFile(file, 'utf8') : '';
+  if (text.split('\n').some((line) => ['dist', 'dist/', '/dist', '/dist/'].includes(line.trim())))
+    return;
+  await writeFile(file, `${text}${text && !text.endsWith('\n') ? '\n' : ''}dist/\n`);
 };

@@ -45,6 +45,21 @@ export const ProjectsContract = defineContract('projects', {
       }),
       output: OpenedProject,
     },
+    /**
+     * Local editors: the tutorial's project, made with `nf new` and the tutorial's own files
+     * (a moving ball, a mistake to fix, the editor library), then opened. An existing folder of
+     * that name is opened as it is.
+     */
+    createTutorial: {
+      input: z.object({
+        name: z
+          .string()
+          .regex(/^[a-z0-9][a-z0-9-]{0,63}$/, 'lowercase letters, digits and dashes')
+          .default('my-first-game'),
+        install: z.boolean().default(true),
+      }),
+      output: OpenedProject,
+    },
     /** Online editors: projects of the signed-in account. */
     gateways: {
       input: z.null(),
