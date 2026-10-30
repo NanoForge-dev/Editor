@@ -15,13 +15,6 @@ const isBoundary = (text: string, index: number): boolean => {
   );
 };
 
-/** Whether a piece starting at `start` lands inside a word after the one that ended at `end`. */
-const jumpsWord = (text: string, end: number, start: number): boolean => {
-  if (isBoundary(text, start)) return false;
-  for (let index = end; index <= start; index++) if (isBoundary(text, index)) return true;
-  return false;
-};
-
 /**
  * Matches the letters of a query in order in a text, not necessarily adjacent (spaces of the
  * query are ignored). Letters at the start of words and runs of adjacent letters score higher,
@@ -48,10 +41,16 @@ export const fuzzyMatch = (
     const from = new Array<number>(haystack.length).fill(-1);
     let bestBefore = NONE;
     let bestBeforeAt = -1;
+    let inWord = NONE;
+    let inWordAt = -1;
     for (let j = i; j < haystack.length; j++) {
       if (i > 0 && j > 0 && previous[j - 1]! > bestBefore) {
         bestBefore = previous[j - 1]!;
         bestBeforeAt = j - 1;
+      }
+      if (i > 0 && j > 0 && (isBoundary(text, j - 1) || previous[j - 1]! > inWord)) {
+        inWord = previous[j - 1]!;
+        inWordAt = j - 1;
       }
       if (haystack[j] !== needle[i]) continue;
       let score = 1;
@@ -62,13 +61,15 @@ export const fuzzyMatch = (
       }
       const adjacent = j > 0 ? previous[j - 1]! : NONE;
       const run = adjacent === NONE ? NONE : adjacent + score + 5;
-      const jump = bestBefore === NONE ? NONE : bestBefore + score;
+      const anyWord = !options.wordStarts || isBoundary(text, j);
+      const base = anyWord ? bestBefore : inWord;
+      const jump = base === NONE ? NONE : base + score;
       if (run >= jump && run !== NONE) {
         current[j] = run;
         from[j] = j - 1;
       } else if (jump !== NONE) {
         current[j] = jump;
-        from[j] = bestBeforeAt;
+        from[j] = anyWord ? bestBeforeAt : inWordAt;
       }
     }
     back.push(from);
@@ -92,11 +93,6 @@ export const fuzzyMatch = (
     if (last && last[1] === position) last[1] = position + 1;
     else ranges.push([position, position + 1]);
   }
-  if (
-    options.wordStarts &&
-    ranges.some((range, index) => index > 0 && jumpsWord(text, ranges[index - 1]![1], range[0]))
-  )
-    return undefined;
   const whole = ranges.length === 1 ? 10 : 0;
   return { score: previous[end]! + whole - text.length * 0.01, ranges };
 };

@@ -62,4 +62,15 @@ describe('fuzzyMatch', () => {
     expect(fuzzyMatch('rst lay', 'View: Reset layout', words)).toBeDefined();
     expect(fuzzyMatch('cmpts', 'components.ts')).toBeDefined();
   });
+
+  it('with word starts, finds an abbreviation whose first letter also starts the category', () => {
+    const words = { wordStarts: true };
+    expect(fuzzyMatch('rst', 'Run: Restart', words)?.ranges).toEqual([
+      [5, 6],
+      [7, 9],
+    ]);
+    expect(fuzzyMatch('fnd', 'File: Find in files', words)).toBeDefined();
+    expect(fuzzyMatch('rsm', 'Run: Resume', words)).toBeDefined();
+    expect(fuzzyMatch('rsx', 'Run: Resume', words)).toBeUndefined();
+  });
 });

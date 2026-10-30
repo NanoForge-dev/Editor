@@ -9,6 +9,7 @@
     portableStroke,
     strokeFromEvent,
     blocksTyping,
+    outsideTyping,
   } from '@nanoforge-dev/editor-sdk/ui';
 
   export interface RecordedShortcut {
@@ -60,8 +61,11 @@
   const conflicts = $derived(
     key && !invalidWhen ? conflictsFor(key, when.trim() || undefined) : [],
   );
-  /** A shortcut that starts with a plain key would take that key from typing. */
-  const typing = $derived(strokes.length > 0 && blocksTyping(strokes[0]!));
+  /**
+   * A shortcut that starts with a plain key would take that key from typing, unless its condition
+   * keeps it out of text fields.
+   */
+  const typing = $derived(strokes.length > 0 && !outsideTyping(when) && blocksTyping(strokes[0]!));
   const ready = $derived(strokes.length > 0 && !invalidWhen && !typing);
 
   const save = (replace: boolean) => {
@@ -120,9 +124,8 @@
     </label>
     {#if typing}
       <p class="problem" role="alert">
-        Start with Ctrl, Alt or ⌘, or use a function key (F1 to F12): {formatKeybinding(
-          strokes[0]!,
-        )} alone would no longer work while typing.
+        Start with Ctrl, Alt or ⌘, use a function key (F1 to F12), or add !textInputFocus to the
+        condition: {formatKeybinding(strokes[0]!)} alone would no longer work while typing.
       </p>
     {/if}
     {#if invalidWhen}
