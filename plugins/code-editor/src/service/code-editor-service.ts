@@ -53,6 +53,9 @@ export class CodeEditorService implements Disposable {
   /** A document was loaded or released. */
   readonly onDidChangeDocuments: Event<void> = this._onDidChangeDocuments.event;
 
+  /** The code font of the theme last applied: Monaco measures again only when it changes. */
+  private _codeFont: string | undefined;
+
   constructor(private readonly _options: CodeEditorServiceOptions) {
     const { monaco, project } = _options;
     this._unsaved = createUnsavedStore(project.id);
@@ -295,6 +298,12 @@ export class CodeEditorService implements Disposable {
   applyTheme(theme: ThemeDefinition): void {
     this._options.monaco.editor.defineTheme('nanoforge', monacoThemeOf(theme));
     this._options.monaco.editor.setTheme('nanoforge');
+    /** A theme's code font (`font-code`) changes the glyph widths Monaco measured. */
+    const font = theme.tokens?.['font-code'];
+    if (font !== this._codeFont) {
+      this._codeFont = font;
+      this._options.monaco.editor.remeasureFonts();
+    }
   }
 
   /** Runs an editor command, when the editor gave a way to. */

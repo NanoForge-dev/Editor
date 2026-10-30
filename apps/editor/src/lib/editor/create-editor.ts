@@ -35,6 +35,7 @@ import {
 } from '@nanoforge-dev/editor-settings';
 import {
   ChangesetPreviewServiceToken,
+  IconThemeServiceToken,
   KeybindingServiceToken,
   LAYOUT_HISTORY_CONTEXT,
   NotificationServiceToken,
@@ -194,6 +195,7 @@ export const createEditor = async (
   services.provide(KeybindingServiceToken, shell.keybindings);
   services.provide(StyleServiceToken, shell.styles);
   services.provide(ThemeServiceToken, shell.themes);
+  services.provide(IconThemeServiceToken, shell.iconThemes);
   services.provide(TourServiceToken, shell.tours);
   /** `editor.local`: games, git and installs work here (tour steps, menus). */
   services.get(CoreServices.ContextKeys).set('editor.local', session.mode === 'OFFLINE');

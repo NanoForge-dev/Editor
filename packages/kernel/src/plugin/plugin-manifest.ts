@@ -34,6 +34,8 @@ export const PluginManifestSchema = z.object({
   displayName: z.string().min(1).optional(),
   description: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  /** Words the registry searches (`keywords:theme`): a theme plugin says `theme`. */
+  keywords: z.array(z.string()).default([]),
   icon: EntryPath.optional(),
   license: z.string().optional(),
   repository: z.string().optional(),
@@ -45,15 +47,14 @@ export const PluginManifestSchema = z.object({
     .object({ required: NpmRanges, optional: NpmRanges })
     .default({ required: {}, optional: {} }),
 
+  /** None for a plugin that only contributes from its manifest (a theme, icons). */
   entry: z
     .object({
       client: EntryPath.optional(),
       server: EntryPath.optional(),
       worker: EntryPath.optional(),
     })
-    .refine((entry) => entry.client || entry.server || entry.worker, {
-      message: 'at least one of client, server or worker is required',
-    }),
+    .default({}),
   /** Defaults to `["onStartup"]`. */
   activation: z.array(ActivationEvent).default(['onStartup']),
   contributes: z
@@ -88,6 +89,23 @@ export const parsePluginManifest = (value: unknown, location?: string): PluginMa
   );
 };
 
-/** JSON Schema of the manifest, for editor completion (`$schema` in manifests). */
-export const pluginManifestJsonSchema = (): unknown =>
-  z.toJSONSchema(PluginManifestSchema, { io: 'input', unrepresentable: 'any' });
+/**
+ * JSON Schema of the manifest, for editor completion (`$schema` in manifests). `contributes`
+ * gives the schemas of contribution keys handled above the kernel (`themes`, `iconThemes`…).
+ */
+export const pluginManifestJsonSchema = (contributes: Record<string, z.ZodType> = {}): unknown => {
+  const schema = z.toJSONSchema(PluginManifestSchema, {
+    io: 'input',
+    unrepresentable: 'any',
+  }) as unknown as {
+    properties: { contributes: { properties: Record<string, unknown> } };
+  };
+  for (const [key, value] of Object.entries(contributes)) {
+    const part: Record<string, unknown> = {
+      ...z.toJSONSchema(value, { io: 'input', unrepresentable: 'any' }),
+    };
+    delete part.$schema;
+    schema.properties.contributes.properties[key] = part;
+  }
+  return schema;
+};

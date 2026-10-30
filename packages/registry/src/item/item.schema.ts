@@ -36,6 +36,8 @@ export const RegistrySummary = z.object({
   /** The newest version. */
   version: ItemVersion,
   description: z.string().default(''),
+  /** Words the manifest gives (`keywords:theme` searches them). */
+  keywords: z.array(z.string()).default([]),
   author: z.string().default(''),
   downloads: z.number().int().nonnegative().default(0),
   /** ISO date of the newest version. */
@@ -109,6 +111,7 @@ export const ItemManifest = z
     name: ItemName,
     version: ItemVersion,
     description: z.string().optional(),
+    keywords: z.array(z.string()).optional(),
     dependencies: ManifestDependencies.optional(),
     engines: z.record(z.string(), z.string()).optional(),
     suggestedPlugins: ManifestDependencies.optional(),

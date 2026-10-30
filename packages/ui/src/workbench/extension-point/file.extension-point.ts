@@ -55,6 +55,10 @@ export interface FileIcon {
   readonly pattern: string;
   readonly icon: string;
   readonly priority?: number;
+  /** For folders (their path matches `pattern`), not files. */
+  readonly folder?: boolean;
+  /** A folder's icon while it is expanded. */
+  readonly iconOpen?: string;
 }
 
 export const FILE_ICONS: ExtensionPoint<FileIcon> = defineExtensionPoint<FileIcon>('ui.fileIcons');

@@ -67,7 +67,12 @@ describe('parsePluginManifest', () => {
     }
   });
 
-  it('requires at least one entry', () => {
-    expect(() => parsePluginManifest({ ...base, entry: {} })).toThrow(/at least one/);
+  it('takes a plugin with no code, only contributions (a theme)', () => {
+    const withoutEntry: Record<string, unknown> = { ...base };
+    delete withoutEntry.entry;
+    expect(parsePluginManifest({ ...withoutEntry, keywords: ['theme'] })).toMatchObject({
+      entry: {},
+      keywords: ['theme'],
+    });
   });
 });
