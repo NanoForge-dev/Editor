@@ -16,6 +16,7 @@
         "static/**",
         "server/**",
         "scripts/**",
+        "tutorial/**",
         "package.json",
         "tsconfig.json",
         "*.config.{js,ts}",

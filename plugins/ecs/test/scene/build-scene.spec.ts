@@ -168,4 +168,67 @@ describe('2D scene', () => {
       { entity: 'wall', kind: 'rect', x: 0, y: 0, width: 10, height: 80 },
     ]);
   });
+
+  it('draws an entity with a Rect or Circle once, not its hitbox too', () => {
+    const arg = (value: unknown) => ({ code: JSON.stringify(value), start: 0, end: 0, value });
+    const items: Record<string, unknown> = {
+      position: {
+        meta: {
+          params: [
+            { name: 'x', type: 'number' },
+            { name: 'y', type: 'number' },
+          ],
+        },
+      },
+      box: {
+        meta: {
+          params: [
+            { name: 'width', type: 'number' },
+            { name: 'height', type: 'number' },
+          ],
+        },
+      },
+      visual: { meta: { params: [{ name: 'shape', type: 'object' }] } },
+    };
+    const model = {
+      entities: [
+        {
+          name: 'ball',
+          components: [
+            { item: 'position', className: 'Position', args: [arg(100), arg(50)] },
+            { item: 'box', className: 'Box', args: [arg(18), arg(18)] },
+            {
+              item: 'visual',
+              className: 'Visual',
+              args: [
+                {
+                  code: 'new Rect({ width: 18, height: 18, cornerRadius: 9 })',
+                  start: 0,
+                  end: 0,
+                  construct: {
+                    className: 'Rect',
+                    args: [{ width: 18, height: 18, cornerRadius: 9, fill: 'orange' }],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'flat',
+          components: [{ item: 'box', className: 'Box', args: [arg(0), arg(30)] }],
+        },
+      ],
+    } as unknown as EntryModel;
+    const shapes = buildScene(
+      model,
+      (ref) => items[ref ?? ''] as never,
+      (_item, name) => name ?? '',
+    );
+    expect(shapes).toMatchObject([
+      { entity: 'ball', kind: 'rect', x: 100, y: 50, width: 18, height: 18, fill: 'orange' },
+      { entity: 'flat', kind: 'rect', width: 0, height: 30 },
+    ]);
+    expect(shapes).toHaveLength(2);
+  });
 });

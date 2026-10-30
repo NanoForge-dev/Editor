@@ -19,11 +19,13 @@ import { createLoopbackClient } from '../../src/testing';
 
 /** A stand-in for `nf new`: the files the real one writes that the tutorial keeps. */
 const FAKE_NF = `#!/usr/bin/env node
-const { mkdirSync, writeFileSync } = require('node:fs');
+const { appendFileSync, mkdirSync, writeFileSync } = require('node:fs');
 const { join } = require('node:path');
 const args = process.argv.slice(2);
 if (args[0] !== 'new') process.exit(1);
-const root = join(process.cwd(), args[args.indexOf('--path') + 1]);
+const name = args[args.indexOf('--path') + 1];
+appendFileSync(join(process.cwd(), 'nf-new.log'), name + '\\n');
+const root = join(process.cwd(), name);
 mkdirSync(join(root, 'src/components'), { recursive: true });
 mkdirSync(join(root, 'src/systems'), { recursive: true });
 writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'game', devDependencies: { '@nanoforge-dev/core': '^2.0.0', '@nanoforge-dev/ecs': '^2.0.0' } }));
@@ -85,10 +87,27 @@ describe('projects.createTutorial', () => {
     expect(readFileSync(join(root, 'notes.txt'), 'utf8')).toBe('kept');
   });
 
-  it('refuses a folder of that name that is not a project', async () => {
+  it('refuses a folder of that name that is not the tutorial, even a NanoForge project', async () => {
     mkdirSync(join(workspace, 'other-game'));
     await expect(
       client.api(ProjectsContract).createTutorial({ name: 'other-game', install: false }),
-    ).rejects.toThrow(/not a NanoForge project/);
+    ).rejects.toThrow(/not the tutorial's project/);
+    writeFileSync(join(workspace, 'other-game/nanoforge.config.ts'), 'export default {};\n');
+    await expect(
+      client.api(ProjectsContract).createTutorial({ name: 'other-game', install: false }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+  });
+
+  it('makes the project once when asked twice at the same time', async () => {
+    const api = client.api(ProjectsContract);
+    const [first, second] = await Promise.all([
+      api.createTutorial({ name: 'race-game', install: false }),
+      api.createTutorial({ name: 'race-game', install: false }),
+    ]);
+    expect(second.id).toBe(first.id);
+    const made = readFileSync(join(workspace, 'nf-new.log'), 'utf8')
+      .split('\n')
+      .filter((name) => name === 'race-game');
+    expect(made).toHaveLength(1);
   });
 });

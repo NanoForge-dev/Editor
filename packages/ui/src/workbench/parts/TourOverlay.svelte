@@ -133,7 +133,7 @@
 <style>
   .ring {
     position: fixed;
-    z-index: 2400;
+    z-index: var(--nf-z-tour);
     border: 2px solid var(--nf-color-accent);
     border-radius: var(--nf-radius-control);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--nf-color-accent) 30%, transparent);
@@ -146,7 +146,7 @@
   }
   .bubble {
     position: fixed;
-    z-index: 2400;
+    z-index: var(--nf-z-tour);
     width: min(360px, calc(100vw - 32px));
     padding: var(--nf-space-3);
     border: 1px solid var(--nf-color-border-strong);

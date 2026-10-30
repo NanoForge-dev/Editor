@@ -9,6 +9,8 @@ import {
   createToken,
 } from '@nanoforge-dev/editor-kernel';
 
+import { notifyError } from '../notification/describe-error';
+import type { NotificationService } from '../notification/notification-service';
 import { TOURS, type Tour, type TourStep } from './tour.extension-point';
 
 /** The tour shown, and its step. */
@@ -36,11 +38,17 @@ export class TourService implements Disposable {
   private _counted = new Set<TourStep>();
   /** The value of the step's `advanceWhenChanged` key when the step began. */
   private _initial: unknown;
+  /**
+   * The step's `advanceWhen` held when Back reached it: it goes on only once the condition
+   * turns false then true again, or Back would bounce straight forward.
+   */
+  private _metOnArrival = false;
 
   constructor(
     private readonly _extensions: ExtensionRegistry,
     private readonly _contextKeys: ContextKeyService,
     private readonly _commands: CommandRegistry,
+    private readonly _notifications?: NotificationService,
   ) {
     this._store.add(this._contextKeys.onDidChange(() => this._check()));
   }
@@ -76,10 +84,15 @@ export class TourService implements Disposable {
     this._state.set(undefined);
   }
 
-  /** Runs the step's action (its command). */
+  /** Runs the step's action (its command); a failure is shown as a notification. */
   async act(): Promise<void> {
     const action = this._state.get()?.step.action;
-    if (action) await this._commands.execute(action.command, ...action.args);
+    if (!action) return;
+    try {
+      await this._commands.execute(action.command, ...action.args);
+    } catch (error) {
+      notifyError(this._notifications, `${action.title} failed`, error);
+    }
   }
 
   dispose(): void {
@@ -97,6 +110,10 @@ export class TourService implements Disposable {
       this._initial = step.advanceWhenChanged
         ? this._contextKeys.get(step.advanceWhenChanged)
         : undefined;
+      this._metOnArrival =
+        direction < 0 &&
+        step.advanceWhen !== undefined &&
+        this._contextKeys.evaluate(step.advanceWhen);
       const counted = tour.steps.filter((candidate) => this._counted.has(candidate));
       const position = tour.steps
         .slice(0, i + 1)
@@ -122,7 +139,9 @@ export class TourService implements Disposable {
     /** A key not set yet when the step began (its plugin was not up): its first value is the start. */
     if (key !== undefined && this._initial === undefined) this._initial = value;
     const changed = key !== undefined && value !== this._initial;
-    const met = step.advanceWhen !== undefined && this._contextKeys.evaluate(step.advanceWhen);
+    const holds = step.advanceWhen !== undefined && this._contextKeys.evaluate(step.advanceWhen);
+    const met = holds && !this._metOnArrival;
+    if (!holds) this._metOnArrival = false;
     if (changed || met) queueMicrotask(() => this._state.get()?.step === step && this.next());
   }
 }

@@ -1,5 +1,20 @@
-import { openProject, resetLayout, showPanel } from './helpers';
+import {
+  accountSetting,
+  openProject,
+  putBackAccountSetting,
+  resetLayout,
+  showPanel,
+} from './helpers';
 import { expect, test } from './test';
+
+/** The tips put away are an account setting, which outlives tests (and the CI retry). */
+let dismissed: unknown;
+test.beforeEach(async ({ page }) => {
+  dismissed = await accountSetting(page, 'tips.dismissed');
+});
+test.afterEach(async ({ page }) => {
+  await putBackAccountSetting(page, 'tips.dismissed', dismissed);
+});
 
 test('a panel tip shows until put away, and stays away', async ({ page }) => {
   await openProject(page, 'pong');

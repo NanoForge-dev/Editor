@@ -131,7 +131,7 @@ export const TUTORIAL_TOUR: z.input<typeof TourSchema> = {
     },
     {
       id: 'commit',
-      when: LOCAL,
+      when: `${LOCAL} && git.repository`,
       title: 'Commit',
       text: 'A commit saves the current version. Tick the files to keep (Unversioned files: all of them), write a message such as "my first game", then Commit.',
       action: { title: 'Show Commit', command: 'git.commit' },

@@ -86,15 +86,22 @@ export const buildScene = (
           },
         }),
       });
+    /** An entity drawn by a `Rect` or `Circle` is not guessed from params too (a hitbox's size). */
+    const drawn = entity.components.some((use) =>
+      use.args.some((arg) => arg.construct && SHAPES[arg.construct.className]),
+    );
     for (const use of entity.components) {
-      if (!use.args.some((arg) => arg.construct && SHAPES[arg.construct.className])) {
+      if (!drawn) {
         const params = itemOf(use.item)?.meta.params ?? [];
         const index = (...names: string[]) =>
           params.findIndex((param) => names.includes(param.name));
-        const value = (at: number, fallback: number) =>
-          at < 0
-            ? undefined
-            : argNumber(use.args[at], (params[at] as { default?: unknown }).default) || fallback;
+        const value = (at: number, fallback: number) => {
+          if (at < 0) return undefined;
+          const arg = use.args[at];
+          const raw =
+            arg?.value !== undefined ? arg.value : (params[at] as { default?: unknown }).default;
+          return typeof raw === 'number' ? raw : fallback;
+        };
         const fill = index('fillColor', 'fill', 'color');
         const colors = {
           ...(fill >= 0 && str(use.args[fill]?.value) && { fill: str(use.args[fill]?.value) }),

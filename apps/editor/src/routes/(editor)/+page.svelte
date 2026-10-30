@@ -16,6 +16,7 @@
 
   import { getEditor } from '$lib/editor/editor-context';
   import Welcome from '$lib/tutorial/Welcome.svelte';
+  import { TUTORIAL_TOUR_ID } from '$lib/tutorial/tutorial-tour.const';
 
   const editor = getEditor();
   const session = editor.session;
@@ -102,7 +103,7 @@
   const tutorial = () =>
     run('Making the tutorial project (nf new, then npm install: a minute or so)', async () => {
       const { id } = await projectsApi.createTutorial({});
-      return `${id}?tour=tutorial`;
+      return `${id}?tour=${TUTORIAL_TOUR_ID}`;
     });
 
   const opened = (date: Date) =>
