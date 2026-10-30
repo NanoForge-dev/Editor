@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-/** Hashes kept at most; the oldest are forgotten first. */
+/** Hashes kept at most; the least recently used are forgotten first. */
 const MAX_ENTRIES = 50_000;
 /** Saving waits this long after the last new hash. */
 const SAVE_DELAY_MS = 2000;
@@ -28,12 +28,16 @@ export interface FileHashesOptions {
 }
 
 /**
- * sha1 of files, kept by path and version (size, mtime, ctime, inode): a listing hashes each
- * file once, and again only after it changed. Files are read as streams, so memory stays small
- * whatever their size. Clients compare the hash with the copy they cached.
+ * sha1 of files, one per path, valid for one version (size, mtime, ctime, inode): a listing
+ * hashes each file once, and again only after it changed. Files are read as streams, so memory
+ * stays small whatever their size. Clients compare the hash with the copy they cached.
+ *
+ * A file written between its stat and the end of its read gets the new content's hash under the
+ * old version: the next write changes the version again, and reads hash what they send anyway.
  */
 export class FileHashes {
-  private readonly _hashes = new Map<string, string>();
+  /** By absolute path, least recently used first. */
+  private readonly _hashes = new Map<string, { version: string; hash: string }>();
   private _loaded: Promise<void> | undefined;
   private _saveTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -43,9 +47,12 @@ export class FileHashes {
   async of(absolute: string, info: FileVersion): Promise<string | undefined> {
     if (info.size > this._options.maxBytes) return undefined;
     await this._load();
-    const key = keyOf(absolute, info);
-    const known = this._hashes.get(key);
-    if (known) return known;
+    const known = this._hashes.get(absolute);
+    if (known?.version === versionOf(info)) {
+      this._hashes.delete(absolute);
+      this._hashes.set(absolute, known);
+      return known.hash;
+    }
     const hash = await streamSha1(absolute);
     this.remember(absolute, info, hash);
     return hash;
@@ -53,9 +60,11 @@ export class FileHashes {
 
   /** Records a hash computed elsewhere (a read or a write of the file). */
   remember(absolute: string, info: FileVersion, hash: string): void {
-    const key = keyOf(absolute, info);
-    this._hashes.delete(key);
-    this._hashes.set(key, hash);
+    const version = versionOf(info);
+    const known = this._hashes.get(absolute);
+    this._hashes.delete(absolute);
+    this._hashes.set(absolute, { version, hash });
+    if (known?.version === version && known.hash === hash) return;
     if (this._hashes.size > MAX_ENTRIES)
       this._hashes.delete(this._hashes.keys().next().value as string);
     this._scheduleSave();
@@ -74,8 +83,10 @@ export class FileHashes {
     this._loaded ??= file
       ? readFile(file, 'utf8')
           .then((text) => {
-            for (const [key, hash] of JSON.parse(text) as [string, string][])
-              if (!this._hashes.has(key)) this._hashes.set(key, hash);
+            for (const [path, value] of JSON.parse(text) as [string, unknown][]) {
+              if (this._hashes.has(path) || !isSaved(value)) continue;
+              this._hashes.set(path, { version: value.version, hash: value.hash });
+            }
           })
           .catch(() => undefined)
       : Promise.resolve();
@@ -103,8 +114,15 @@ export class FileHashes {
   }
 }
 
-const keyOf = (absolute: string, info: FileVersion) =>
-  `${absolute}\0${info.size}\0${info.mtimeMs}\0${info.ctimeMs}\0${info.ino}`;
+const versionOf = (info: FileVersion) =>
+  `${info.size}\0${info.mtimeMs}\0${info.ctimeMs}\0${info.ino}`;
+
+/** An entry of the saved file (older files, keyed by version, are dropped). */
+const isSaved = (value: unknown): value is { version: string; hash: string } =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as { version?: unknown }).version === 'string' &&
+  typeof (value as { hash?: unknown }).hash === 'string';
 
 const streamSha1 = (absolute: string): Promise<string> =>
   new Promise((resolve, reject) => {

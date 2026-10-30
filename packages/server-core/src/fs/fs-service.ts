@@ -120,7 +120,10 @@ export class ProjectFileSystem {
     try {
       const info = await stat(absolute);
       const kind = info.isDirectory() ? 'directory' : 'file';
-      const hash = kind === 'file' ? await this._hashes.of(absolute, info) : undefined;
+      /** A file that can't be read (permissions, a lock) or a pipe gets no hash, not an error. */
+      const hash = info.isFile()
+        ? await this._hashes.of(absolute, info).catch(() => undefined)
+        : undefined;
       return { path, kind, size: info.size, mtime: info.mtimeMs, ...(hash && { hash }) };
     } catch (error) {
       if (errno(error) === 'ENOENT') return null;
@@ -149,7 +152,8 @@ export class ProjectFileSystem {
         if (!info) continue;
         const kind = info.isDirectory() ? 'directory' : 'file';
         if (this.isIgnored(childRel, kind === 'directory')) continue;
-        if (kind === 'file')
+        /** Pipes would block the read; the trash is never read, so its files cost nothing. */
+        if (info.isFile() && !inTrash(childRel))
           files.push({ index: entries.length, absolute: join(dir, entry.name), info });
         entries.push({ path: childRel, kind, size: info.size, mtime: info.mtimeMs });
         if (recursive && kind === 'directory' && !SKIPPED_IN_RECURSIVE_LIST.has(entry.name)) {
@@ -299,7 +303,7 @@ export class ProjectFileSystem {
    * place in the trash, for `restore`.
    */
   async delete(path: string): Promise<{ trashPath: string }> {
-    if (path === '' || path === TRASH_DIR || path.startsWith(`${TRASH_DIR}/`)) {
+    if (path === '' || inTrash(path)) {
       throw new RpcError('BAD_REQUEST', `Cannot delete ${path || 'the project root'}`);
     }
     assertWritable(path);
@@ -360,3 +364,5 @@ export class ProjectFileSystem {
 
 /** Heavy folders a recursive listing does not descend into. */
 const SKIPPED_IN_RECURSIVE_LIST = new Set(['node_modules']);
+
+const inTrash = (path: string) => path === TRASH_DIR || path.startsWith(`${TRASH_DIR}/`);
