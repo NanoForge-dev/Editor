@@ -22,7 +22,10 @@ export interface Session {
   readonly mode: 'OFFLINE' | 'ONLINE';
   user: User | null;
   tokens: AuthTokens | null;
-  /** Projects this session's user opened (ONLINE access control): cleared when the user changes. */
+  /**
+   * Projects this session's user opened (ONLINE access control). They were granted to its user: a
+   * session whose user changes or signs out loses them.
+   */
   readonly projects: Set<string>;
   lastSeen: number;
   /** Open WebSockets of this session: its projects stay open while there is one. */
@@ -46,6 +49,8 @@ export interface SessionStoreOptions {
 }
 
 const IDLE_TTL_MS = 7 * 24 * 3600 * 1000;
+/** Tokens the API refused are not asked about again for this long (each check costs two calls). */
+const REJECTED_TTL_MS = 60_000;
 const MAX_SESSIONS = 10_000;
 
 /** What the store remembers of the tokens it checked, per session. */
@@ -55,6 +60,8 @@ interface Verification {
   /** The token a refresh replaced: requests sent before the new cookie arrived still carry it. */
   replaced?: string;
   pending?: Promise<void>;
+  /** The API refused these tokens: until then, the same cookies are refused without asking. */
+  rejectedUntil?: number;
 }
 
 /**
@@ -132,6 +139,11 @@ export class SessionStore {
     }
     const known = this._verifications.get(session.id);
     if (known?.pending) return known.pending;
+    if (known?.rejectedUntil !== undefined) {
+      if (known.token === `${accessToken}\0${refreshToken}` && Date.now() < known.rejectedUntil)
+        return;
+      this._verifications.delete(session.id);
+    }
     if (known && (accessToken === known.token || (accessToken && accessToken === known.replaced)))
       return;
     session.tokens = { accessToken: accessToken ?? '', refreshToken: refreshToken ?? '' };
@@ -143,7 +155,10 @@ export class SessionStore {
         this._setUser(session, user);
         delete verification.pending;
         if (!user || !session.tokens) {
-          this._verifications.delete(session.id);
+          this._verifications.set(session.id, {
+            token: `${accessToken}\0${refreshToken}`,
+            rejectedUntil: Date.now() + REJECTED_TTL_MS,
+          });
           return;
         }
         verification.token = session.tokens.accessToken;
@@ -175,12 +190,19 @@ export class SessionStore {
     };
   }
 
+  /**
+   * Keeps a new session within the cap, dropping the least recently seen ones without a user
+   * first: requests without cookies can't push signed-in users out.
+   */
   private _store(session: Session): void {
     this._sessions.set(session.id, session);
     const max = this._options.maxSessions ?? MAX_SESSIONS;
-    for (const oldest of this._sessions.values()) {
-      if (this._sessions.size <= max) break;
-      if (oldest !== session && !oldest.sockets) this._drop(oldest);
+    for (const anonymousOnly of [true, false]) {
+      for (const oldest of this._sessions.values()) {
+        if (this._sessions.size <= max) return;
+        if (oldest === session || oldest.sockets || (anonymousOnly && oldest.user)) continue;
+        this._drop(oldest);
+      }
     }
   }
 

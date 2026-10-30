@@ -14,6 +14,7 @@ import { GameOver } from "./game-over";
 import { Pause } from "./pause";
 import { Run } from "./run";
 import { Victory } from "./victory";
+import { Ball } from "../components/ball";
 
 /**
  * What every level has: its parent, `Run`, and the level after it. Levels are siblings under
@@ -120,7 +121,7 @@ export class Level1 extends Level {
       new Visual(new Rect({ width: 141, height: 26, fill: "#eb4d4b", cornerRadius: 4 })),
     );
     const brick6 = registry.spawnEntity();
-    registry.addComponent(brick6, new Position(793, 130));
+    registry.addComponent(brick6, new Position(795, 132));
     registry.addComponent(brick6, new Box(141, 26));
     registry.addComponent(brick6, new Brick(1, 10));
     registry.addComponent(

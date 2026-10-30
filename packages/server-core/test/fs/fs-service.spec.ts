@@ -1,3 +1,4 @@
+import { unzipSync } from 'fflate';
 import { execFileSync } from 'node:child_process';
 import {
   chmodSync,
@@ -17,7 +18,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { FileChange } from '@nanoforge-dev/editor-protocol';
 
-import { ProjectFileSystem } from '../../src/fs/fs-service';
+import { archiveFolder } from '../../src/fs/archive';
+import { ProjectFileSystem, TRASH_TTL_MS } from '../../src/fs/fs-service';
 import { ProjectWatcher } from '../../src/fs/watcher';
 import { sha1 } from '../../src/util/hash';
 
@@ -238,6 +240,33 @@ describe('ProjectFileSystem packages, ignore and trash', () => {
     await fs.restore(trashPath, 'src/main.ts');
     expect(readFileSync(join(root, 'src/main.ts'), 'utf8')).toBe('export {};\n');
     await expect(fs.restore('src/main.ts', 'src/other.ts')).rejects.toThrow('Not in the trash');
+  });
+
+  it('empties the trash of entries deleted over a month ago', async () => {
+    const { root, fs } = project();
+    const { trashPath } = await fs.delete('src/main.ts');
+    const deletedAt = Number(/trash\/(\d+)-/.exec(trashPath)![1]);
+    expect(await fs.purgeTrash(deletedAt + TRASH_TTL_MS)).toBe(0);
+    expect(existsSync(join(root, trashPath))).toBe(true);
+    expect(await fs.purgeTrash(deletedAt + TRASH_TTL_MS + 1)).toBe(1);
+    expect(existsSync(join(root, trashPath))).toBe(false);
+  });
+});
+
+describe('archiveFolder', () => {
+  it('streams a folder without the trash and packages, and refuses one too large', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, 'nf_modules/@acme/ball'), { recursive: true });
+    writeFileSync(join(root, 'nf_modules/@acme/ball/ball.ts'), 'export {};\n');
+    await fs.delete('src/main.ts');
+    writeFileSync(join(root, 'kept.txt'), 'kept\n');
+    const stream = await archiveFolder(fs, '');
+    const files = unzipSync(new Uint8Array(await new Response(stream).arrayBuffer()));
+    expect(Object.keys(files).sort()).toEqual(expect.arrayContaining(['kept.txt']));
+    expect(Object.keys(files).some((name) => name.includes('trash/'))).toBe(false);
+    expect(Object.keys(files).some((name) => name.startsWith('nf_modules/'))).toBe(false);
+    expect(new TextDecoder().decode(files['kept.txt'])).toBe('kept\n');
+    await expect(archiveFolder(fs, '', 3)).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
   });
 });
 

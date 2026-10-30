@@ -7,7 +7,8 @@ const IGNORED = new Set(['Canceled']);
 
 /**
  * The `test` of every spec: it fails when a page of the test throws an uncaught error
- * (a Svelte effect loop or a rejected promise doesn't break what the test looks at).
+ * (a Svelte effect loop or a rejected promise doesn't break what the test looks at), or when its
+ * Content Security Policy blocks something.
  */
 export const test = base.extend<{ pageErrors: string[]; stopsTheGame: undefined }>({
   pageErrors: [
@@ -17,6 +18,11 @@ export const test = base.extend<{ pageErrors: string[]; stopsTheGame: undefined 
         context.on('console', (message) =>
           console.log(`[page ${message.type()}] ${message.text()}`),
         );
+      /** The page's Content Security Policy blocked something the editor or a game needed. */
+      context.on('console', (message) => {
+        if (message.type() === 'error' && /Content Security Policy/.test(message.text()))
+          errors.push(message.text());
+      });
       context.on('weberror', (webError) => {
         const { message, stack } = webError.error();
         if (IGNORED.has(message)) return;

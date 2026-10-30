@@ -8,7 +8,7 @@ export class Position {
   name = "Position";
 
   constructor(
-    /** From the left. */
+    /** From the left. @color #f66151 */
     public x = 0,
     /** From the top. */
     public y = 0,

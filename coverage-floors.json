@@ -120,10 +120,10 @@
     "branches": 93
   },
   "@nanoforge-dev/editor-rpc": {
-    "lines": 86,
-    "statements": 81,
-    "functions": 82,
-    "branches": 69
+    "lines": 89,
+    "statements": 84,
+    "functions": 85,
+    "branches": 73
   },
   "@nanoforge-dev/editor-runtime": {
     "lines": 87,
@@ -141,7 +141,7 @@
     "lines": 85,
     "statements": 82,
     "functions": 78,
-    "branches": 72
+    "branches": 73
   },
   "@nanoforge-dev/editor-settings": {
     "lines": 76,

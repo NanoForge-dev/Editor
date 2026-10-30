@@ -5,7 +5,12 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { type SocketData, createEditorServer, loadEnv } from '@nanoforge-dev/editor-server-core';
+import {
+  type SocketData,
+  createEditorServer,
+  linkWithToken,
+  loadEnv,
+} from '@nanoforge-dev/editor-server-core';
 
 import pkg from '../package.json' with { type: 'json' };
 
@@ -42,7 +47,11 @@ const server = Bun.serve<SocketData>({
 
 editor.logs
   .getLogger('server')
-  .info(`NanoForge editor ${pkg.version} (${env.mode}) on ${server.url.href}`);
+  .info(
+    `NanoForge editor ${pkg.version} (${env.mode}) on ${
+      env.launchToken ? linkWithToken(server.url.href, env.launchToken) : server.url.href
+    }`,
+  );
 
 const shutdown = () => {
   editor.dispose();
