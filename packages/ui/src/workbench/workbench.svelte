@@ -10,6 +10,7 @@
   import DockStack from './parts/DockStack.svelte';
   import DragOverlay from './parts/DragOverlay.svelte';
   import FloatWindow from './parts/FloatWindow.svelte';
+  import { FOCUSABLE } from './parts/panel-focus';
   import PromptHost from './parts/PromptHost.svelte';
   import StatusBar from './parts/StatusBar.svelte';
   import ToolStripe from './parts/ToolStripe.svelte';
@@ -65,11 +66,13 @@
   const resizeColumn = (side: 'left' | 'right', delta: number, final: boolean) => {
     const base = layout.slots[side === 'left' ? 'leftTop' : 'rightTop'].size;
     const size = Math.max(120, base + (side === 'left' ? delta : -delta));
+    const applied = side === 'left' ? size - base : base - size;
     if (!final) {
       preview = { ...preview, [side]: size };
-      return;
+      return applied;
     }
     preview = { ...preview, [side]: undefined };
+    if (!applied) return 0;
     const [top, low]: [SlotId, SlotId] =
       side === 'left' ? ['leftTop', 'leftBottom'] : ['rightTop', 'rightBottom'];
     void commit('Resize', () =>
@@ -84,15 +87,18 @@
         'Resize panel',
       ),
     );
+    return applied;
   };
 
   const resizeBottom = (delta: number, final: boolean) => {
     const size = Math.max(120, layout.slots.bottom.size - delta);
+    const applied = layout.slots.bottom.size - size;
     if (!final) {
       preview = { ...preview, bottom: size };
-      return;
+      return applied;
     }
     preview = { ...preview, bottom: undefined };
+    if (!applied) return 0;
     void commit('Resize', () =>
       controller.apply(
         {
@@ -105,21 +111,25 @@
         'Resize panel',
       ),
     );
+    return applied;
   };
 
   const resizeSplit = (side: 'left' | 'right' | 'bottom', delta: number, final: boolean) => {
     const length = { left: leftHeight, right: rightHeight, bottom: bottomWidth }[side];
-    if (!length) return;
+    if (!length) return delta;
     const ratio = Math.min(0.85, Math.max(0.15, layout.split[side] + delta / length));
     const key = ({ left: 'splitLeft', right: 'splitRight', bottom: 'splitBottom' } as const)[side];
+    const applied = (ratio - layout.split[side]) * length;
     if (!final) {
       preview = { ...preview, [key]: ratio };
-      return;
+      return applied;
     }
     preview = { ...preview, [key]: undefined };
+    if (!applied) return 0;
     void commit('Resize', () =>
       controller.apply({ type: 'setSplit', side, ratio }, 'Resize panels'),
     );
+    return applied;
   };
 
   /** F6 / Shift+F6: moves focus between the parts of the workbench. */
@@ -129,9 +139,7 @@
     if (!parts.length) return;
     const current = parts.findIndex((part) => part.contains(document.activeElement));
     const next = parts[(current + direction + parts.length) % parts.length]!;
-    const focusable = next.querySelector<HTMLElement>(
-      '[tabindex="0"], button:not([tabindex="-1"]), input, textarea, select, [href]',
-    );
+    const focusable = next.querySelector<HTMLElement>(FOCUSABLE);
     (focusable ?? next).focus();
   };
 

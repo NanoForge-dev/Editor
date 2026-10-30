@@ -1,5 +1,14 @@
-const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+/** What the keyboard can reach: enabled controls, links and tab stops, but not roving rows. */
+export const FOCUSABLE = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]',
+]
+  .map((selector) => `${selector}:not([tabindex="-1"])`)
+  .join(', ');
 
 const byInstance = (selector: string, instanceId: string) =>
   document.querySelector<HTMLElement>(selector.replace('$', CSS.escape(instanceId)));
@@ -30,7 +39,7 @@ export const focusAfterPanel = (instanceId: string): void => {
     const active = document.activeElement;
     if (active && active !== document.body && active.isConnected) return;
     const target =
-      byInstance('[data-nf-part="stripe"] [role="tab"][data-instance="$"]', instanceId) ??
+      byInstance('[data-nf-stripe] [role="tab"][data-instance="$"]', instanceId) ??
       document.querySelector<HTMLElement>('[data-nf-part="screen"]');
     if (target) focus(target);
   });

@@ -2,17 +2,19 @@
   interface Props {
     /** `vertical`: a vertical bar resizing horizontally (between columns). */
     orientation: 'vertical' | 'horizontal';
-    /** Pixel delta since the drag started; `final` on release. */
-    onresize: (delta: number, final: boolean) => void;
+    /**
+     * Pixel delta since the drag started; `final` on release. Returns the delta it applied, when
+     * a limit cut it, so arrow keys pressed past the limit don't build up.
+     */
+    onresize: (delta: number, final: boolean) => number | undefined;
     label: string;
     /** Current size in px (for assistive technologies). */
     value?: number;
-    /** Smallest and largest sizes in px, when known (for assistive technologies). */
+    /** Smallest size in px, when known (for assistive technologies). */
     min?: number;
-    max?: number;
   }
 
-  const { orientation, onresize, label, value, min, max }: Props = $props();
+  const { orientation, onresize, label, value, min }: Props = $props();
   let dragging = $state(false);
 
   const start = (event: PointerEvent) => {
@@ -44,16 +46,18 @@
    * step (one undo) once the keys rest for a moment or the focus leaves.
    */
   let keyDelta = 0;
+  let keyPending = false;
   let keyTimer: ReturnType<typeof setTimeout> | undefined;
   const commitKeys = () => {
     clearTimeout(keyTimer);
     keyTimer = undefined;
-    if (!keyDelta) return;
+    if (!keyPending) return;
+    keyPending = false;
     const delta = keyDelta;
     keyDelta = 0;
     onresize(delta, true);
   };
-  $effect(() => () => clearTimeout(keyTimer));
+  $effect(() => () => commitKeys());
   const onkeydown = (event: KeyboardEvent) => {
     const step = event.shiftKey ? 40 : 10;
     const keys =
@@ -61,8 +65,10 @@
     const index = keys.indexOf(event.key);
     if (index < 0) return;
     event.preventDefault();
+    keyPending = true;
     keyDelta += index === 0 ? -step : step;
-    onresize(keyDelta, false);
+    const applied = onresize(keyDelta, false);
+    if (typeof applied === 'number') keyDelta = applied;
     clearTimeout(keyTimer);
     keyTimer = setTimeout(commitKeys, 600);
   };
@@ -77,7 +83,6 @@
   aria-label={label}
   aria-valuenow={value}
   aria-valuemin={min}
-  aria-valuemax={max}
   aria-valuetext={value === undefined ? undefined : `${Math.round(value)} pixels`}
   tabindex="0"
   onpointerdown={start}

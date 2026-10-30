@@ -115,7 +115,7 @@
 
 <nav
   class="stripe {side}"
-  data-nf-part="stripe"
+  data-nf-stripe
   aria-label="{side === 'left' ? 'Left' : 'Right'} tool windows"
 >
   {@render group(groups[0]!)}

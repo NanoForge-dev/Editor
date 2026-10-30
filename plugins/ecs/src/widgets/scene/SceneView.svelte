@@ -198,7 +198,7 @@
     const shape = current && shapes.find((candidate) => candidate.entity === current.entity);
     if (current && shape) moveShape(moveContext(), shape, current.dx, current.dy);
   };
-  $effect(() => () => clearTimeout(keyTimer));
+  $effect(() => () => commitKeys());
   const nudge = (event: KeyboardEvent) => {
     const step = STEPS[event.key];
     if (!step || event.altKey || event.ctrlKey || event.metaKey) return;

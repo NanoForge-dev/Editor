@@ -16,6 +16,7 @@
   import { EcsServiceToken } from '../../service/ecs-service';
   import { ecsData } from '../../service/ecs-data';
   import { LiveServiceToken } from '../../live/live-service';
+  import { MoveGuard } from '../move-guard';
 
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
@@ -93,24 +94,17 @@
       }));
   });
 
-  /**
-   * True from a reorder until the model shows it (2 s at most): a key pressed again before that
-   * would read the old order, so it waits for the next press.
-   */
-  let moving = false;
-  let movingTimer: ReturnType<typeof setTimeout> | undefined;
+  const moving = new MoveGuard();
   $effect(() => {
     void $model;
-    moving = false;
+    moving.done();
   });
-  $effect(() => () => clearTimeout(movingTimer));
+  $effect(() => () => moving.done());
   const reorder = (from: number, to: number) => {
-    if (moving || from === to) return;
-    moving = true;
-    clearTimeout(movingTimer);
-    movingTimer = setTimeout(() => (moving = false), 2000);
+    if (moving.busy || from === to) return;
+    moving.start();
     void ecs.apply({ kind: 'moveSystem', from, to }, 'Reorder systems').then((done) => {
-      if (!done) moving = false;
+      if (!done) moving.done();
     });
   };
   const move = (moved: string[], target: string, position: DropPosition) => {

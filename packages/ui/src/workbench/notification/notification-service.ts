@@ -78,6 +78,7 @@ export class NotificationService {
     clearTimeout(this._timers.get(id)?.handle);
     this._timers.delete(id);
     this._active.update((list) => list.filter((notification) => notification.id !== id));
+    if (!this._active.get().length) this.release();
   }
 
   /** Stops the toasts' countdowns until `release` (the pointer or the focus is on them). */

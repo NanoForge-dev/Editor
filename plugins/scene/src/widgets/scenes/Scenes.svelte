@@ -6,6 +6,7 @@
     type DropPosition,
     EmptyState,
     IconButton,
+    isKeyboardMenu,
     type MenuEntry,
     PromptServiceToken,
     Tree,
@@ -215,7 +216,9 @@
         class="list"
         role="presentation"
         oncontextmenu={(event) => {
-          if (!(event.target as HTMLElement).closest('[data-id]')) menuTarget = undefined;
+          if (!isKeyboardMenu(event) && !(event.target as HTMLElement).closest('[data-id]')) {
+            menuTarget = undefined;
+          }
         }}
       >
         <Tree

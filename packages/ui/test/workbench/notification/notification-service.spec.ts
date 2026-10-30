@@ -50,4 +50,14 @@ describe('NotificationService', () => {
     vi.advanceTimersByTime(3000);
     expect(service.active.get()).toHaveLength(0);
   });
+
+  it('stops holding once the last toast is dismissed', () => {
+    const service = new NotificationService();
+    const first = service.notify('info', 'Saved');
+    service.hold();
+    first.dismiss();
+    service.notify('info', 'Built');
+    vi.advanceTimersByTime(5000);
+    expect(service.active.get()).toHaveLength(0);
+  });
 });

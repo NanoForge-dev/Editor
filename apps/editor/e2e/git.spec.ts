@@ -88,6 +88,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await expect(commitButton).toBeDisabled();
   const includeAll = group(page, 'Unversioned Files').getByRole('checkbox', {
     name: 'Include all: Unversioned Files',
+    includeHidden: true,
   });
   await nested.getByRole('checkbox').check();
   expect(await includeAll.evaluate((box: HTMLInputElement) => box.indeterminate)).toBe(true);
@@ -127,10 +128,14 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await page.getByRole('tab', { name: 'rename-me.txt' }).click({ button: 'middle' });
   await page.getByRole('tab', { name: 'Project', exact: true }).click();
 
-  await group(page, 'Changes').getByRole('button', { name: 'Collapse Changes' }).click();
+  await group(page, 'Changes')
+    .getByRole('button', { name: 'Collapse Changes', includeHidden: true })
+    .click();
   await expect(changed).toHaveCount(0);
   await expect(group(page, 'Changes')).toContainText('1 file');
-  await group(page, 'Changes').getByRole('button', { name: 'Expand Changes' }).click();
+  await group(page, 'Changes')
+    .getByRole('button', { name: 'Expand Changes', includeHidden: true })
+    .click();
   await expect(changed).toBeVisible();
 
   await changed.getByRole('checkbox', { name: `Include ${FILE}` }).uncheck();
@@ -297,6 +302,7 @@ test('browses, folds and includes changes from the keyboard', async ({ page }) =
   const node = commitPanel(page).getByRole('button', { name: /^Unversioned Files, / });
   const includeAll = commitPanel(page).getByRole('checkbox', {
     name: 'Include all: Unversioned Files',
+    includeHidden: true,
   });
   const active = () =>
     files.evaluate(
