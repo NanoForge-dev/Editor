@@ -13,20 +13,25 @@ export interface ErrorExplanation {
 /**
  * Codes whose raw message is technical. The others (CONFLICT, FORBIDDEN, NOT_FOUND…) carry the
  * server's own words, already plain and more precise than a hint per code would be ("Already
- * exists: a.ts", "Permission denied: b.ts"): they are shown as they are.
+ * exists: a.ts", "Permission denied: b.ts"): they are shown as they are. A TIMEOUT says what
+ * timed out and what to do (git's "no answer from the remote"), so it has no hint either.
  */
-const HINTS: Record<string, { hint: string; retryable: boolean }> = {
+const HINTS: Record<string, { hint?: string; retryable: boolean }> = {
   UNAVAILABLE: {
     hint: "The editor server can't be reached. Your changes are kept: try again once it is back.",
     retryable: true,
   },
-  TIMEOUT: { hint: 'The editor server took too long to answer.', retryable: true },
+  TIMEOUT: { retryable: true },
   UNAUTHORIZED: { hint: 'Your session expired: sign in again.', retryable: false },
-  INTERNAL: {
-    hint: 'Something went wrong in the editor server. Show details tells what.',
-    retryable: false,
-  },
+  INTERNAL: { retryable: false },
 };
+
+/**
+ * The editor server's message for an error it did not expect (`toRpcError`). An INTERNAL error
+ * with another message carries its own words (git's stderr): those are shown as they are.
+ */
+const UNEXPECTED_MESSAGE = 'Internal error';
+const UNEXPECTED_HINT = 'Something went wrong in the editor server. Show details tells what.';
 
 /** The code of an editor error (an RPC error, or anything with a `code`). */
 export const errorCodeOf = (error: unknown): string | undefined => {
@@ -36,8 +41,11 @@ export const errorCodeOf = (error: unknown): string | undefined => {
 
 export const describeError = (error: unknown): ErrorExplanation => {
   const technical = error instanceof Error ? error.message : String(error);
-  const known = HINTS[errorCodeOf(error) ?? ''];
-  return { hint: known?.hint, technical, retryable: known?.retryable ?? false };
+  const code = errorCodeOf(error);
+  const known = HINTS[code ?? ''];
+  const hint =
+    code === 'INTERNAL' && technical === UNEXPECTED_MESSAGE ? UNEXPECTED_HINT : known?.hint;
+  return { hint, technical, retryable: known?.retryable ?? false };
 };
 
 /**
