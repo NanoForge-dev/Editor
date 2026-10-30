@@ -238,14 +238,17 @@ test('drags an entity in the 2D scene: its position is written to main.ts', asyn
   const scene = page.getByRole('application', { name: '2D scene' });
   await expect(scene).toBeVisible();
   const line = scene.getByRole('button', { name: 'terrainLine (rect)' });
-  const box = (await line.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2 + 20, { steps: 5 });
-  await page.mouse.up();
-  await expect
-    .poll(main)
-    .not.toContain('registry.addComponent(terrainLine, new Position(955, 0));');
+  /** Shapes show before the catalog knows their position component: until then a drag selects. */
+  await expect(async () => {
+    const box = (await line.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 40, box.y + box.height / 2 + 20, { steps: 5 });
+    await page.mouse.up();
+    await expect
+      .poll(main, { timeout: 2000 })
+      .not.toContain('registry.addComponent(terrainLine, new Position(955, 0));');
+  }).toPass();
   expect(main()).toMatch(/registry\.addComponent\(terrainLine, new Position\(\d+, \d+\)\);/);
   await expect(line).toHaveAttribute('aria-pressed', 'true');
 

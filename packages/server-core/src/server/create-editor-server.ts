@@ -157,7 +157,11 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       installed: 'public, max-age=31536000, immutable',
       bundled: 'public, max-age=31536000, immutable',
     }[resolved.plugin.source];
-    const response = await fileResponse(resolved.file, cache);
+    const response = await fileResponse(
+      resolved.file,
+      cache,
+      request.headers.get('accept-encoding'),
+    );
     if (!response) return json(404, { error: 'Not found' });
     /** A project's page or image opened on its own runs nothing on the editor's origin. */
     if (resolved.plugin.source === 'project' && !SCRIPT.test(resolved.file))
@@ -188,7 +192,10 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       version && version === (await output.hash(file))
         ? 'public, max-age=31536000, immutable'
         : 'no-store';
-    return (await fileResponse(file, cache)) ?? json(404, { error: 'Not found' });
+    return (
+      (await fileResponse(file, cache, request.headers.get('accept-encoding'))) ??
+      json(404, { error: 'Not found' })
+    );
   };
 
   /**
@@ -241,7 +248,8 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
     return response;
   };
 
-  const handleStatic = async (pathname: string): Promise<Response> => {
+  const handleStatic = async (request: Request, pathname: string): Promise<Response> => {
+    const accept = request.headers.get('accept-encoding');
     if (!staticJail) return json(404, { error: 'Not found' });
     let rel: string;
     try {
@@ -253,11 +261,15 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
     const immutable = rel.startsWith('_app/immutable/');
     const asset =
       file &&
-      (await fileResponse(file, immutable ? 'public, max-age=31536000, immutable' : 'no-cache'));
+      (await fileResponse(
+        file,
+        immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
+        accept,
+      ));
     if (asset) return notFramed(asset)!;
     if (/\.[a-z0-9]+$/i.test(rel)) return json(404, { error: 'Not found' });
     return (
-      notFramed(await fileResponse(join(staticJail.root, 'index.html'), 'no-cache')) ??
+      notFramed(await fileResponse(join(staticJail.root, 'index.html'), 'no-cache', accept)) ??
       json(404, { error: 'Not found' })
     );
   };
@@ -302,7 +314,7 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
         if (pathname.startsWith('/plugins/')) return await handlePlugin(request, pathname);
         if (pathname.startsWith('/runtime/')) return await handleRuntime(request, url);
         if (pathname.startsWith('/files/')) return await handleFiles(request, url);
-        return await handleStatic(pathname);
+        return await handleStatic(request, pathname);
       } catch (error) {
         logger.error(`${request.method} ${pathname} failed`, error);
         return json(500, { error: 'Internal error' });

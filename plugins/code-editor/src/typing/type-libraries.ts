@@ -42,9 +42,11 @@ export class TypeLibraries implements Disposable {
         else void this._load(change.path);
       }
     });
-    for (const entry of _project.fs.entries) {
-      if (entry.kind === 'file' && this._isCode(entry.path)) void this._load(entry.path);
-    }
+    void this._loadAll(
+      _project.fs.entries
+        .filter((entry) => entry.kind === 'file' && this._isCode(entry.path))
+        .map((entry) => entry.path),
+    );
   }
 
   /** Text of a type declaration file (read-only tabs from "go to definition"). */
@@ -85,6 +87,16 @@ export class TypeLibraries implements Disposable {
     this._subscription.dispose();
     for (const file of this._files.values()) file.dispose();
     this._files.clear();
+  }
+
+  /** The project's code files, a few reads at a time: a big project sent them all at once. */
+  private async _loadAll(paths: readonly string[]): Promise<void> {
+    const queue = [...paths];
+    const worker = async () => {
+      for (let path = queue.shift(); path !== undefined; path = queue.shift())
+        await this._load(path).catch(() => undefined);
+    };
+    await Promise.all(Array.from({ length: Math.min(8, queue.length) }, worker));
   }
 
   private _isCode(path: string): boolean {

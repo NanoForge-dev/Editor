@@ -151,6 +151,7 @@ describe('CatalogService', () => {
     const client = project.model.get().apps.find((app) => app.type === 'client')!;
     expect(catalog.forApp(client).some((item) => item.ref.startsWith('app:server#'))).toBe(false);
 
+    await catalog.flush();
     const cache = join(
       workspace,
       'pong/.nanoforge/editor/cache/meta/modules/@nanoforge/motion.json',
@@ -185,9 +186,42 @@ describe('CatalogService', () => {
     expect(catalog.get('app:client#Health')!.meta.params).toEqual([
       { name: 'points', type: 'number', default: 3, optional: true },
     ]);
+    await catalog.flush();
     expect(existsSync(join(workspace, 'pong/.nanoforge/editor/cache/meta/apps/client.json'))).toBe(
       true,
     );
+    catalog.dispose();
+    code.dispose();
+  });
+});
+
+describe('CatalogService (cache writes)', () => {
+  it("writes a source's cache at its first change, then once after a burst", async () => {
+    const { code, catalog } = await setup();
+    await catalog.refresh();
+    await catalog.flush();
+    const cachePath = '.nanoforge/editor/cache/meta/apps/client.json';
+    const writes = vi.spyOn(project.fs, 'write');
+    const path = 'apps/client/src/components/components.ts';
+    const { text } = await project.fs.readText(path);
+    for (const points of [1, 2, 3]) {
+      await project.fs.write(
+        path,
+        `${text}\nexport class Armor {\n  name = "Armor";\n  constructor(public points = ${points}) {}\n}\n`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await catalog.whenIdle();
+    }
+    expect(catalog.get('app:client#Armor')!.meta.params[0]).toMatchObject({ default: 3 });
+    const cacheWrites = () => writes.mock.calls.filter(([written]) => written === cachePath);
+    /** The first extraction of the session is written at once, the next ones at the end. */
+    expect(cacheWrites()).toHaveLength(1);
+    await catalog.flush();
+    expect(cacheWrites()).toHaveLength(2);
+    await catalog.flush();
+    expect(cacheWrites()).toHaveLength(2);
+    await project.fs.write(path, text);
+    writes.mockRestore();
     catalog.dispose();
     code.dispose();
   });

@@ -16,6 +16,12 @@ export const DEFAULT_IGNORED_SEGMENTS = [
 ];
 
 /**
+ * Folders the editor writes for itself: the trash, and the meta cache (written while the user
+ * types; the client that writes it already knows).
+ */
+const EDITOR_OWN = ['.nanoforge/editor/trash', '.nanoforge/editor/cache'];
+
+/**
  * Temporary names (`<name>.nf-<hex>`): atomic write files, and the folder a package reinstall
  * moves aside (`writeFolder`), with everything in it.
  */
@@ -68,8 +74,7 @@ export class ProjectWatcher {
     const segments = rel.split('/');
     if (segments.some((segment) => DEFAULT_IGNORED_SEGMENTS.includes(segment))) return true;
     if (this._leavesProject(absolute)) return true;
-    if (rel === '.nanoforge/editor/trash' || rel.startsWith('.nanoforge/editor/trash/'))
-      return true;
+    if (EDITOR_OWN.some((folder) => rel === folder || rel.startsWith(`${folder}/`))) return true;
     if (segments.some((segment) => TEMP_SEGMENT.test(segment))) return true;
     return (this._options.ignoredPaths?.() ?? []).some(
       (path) => rel === path || rel.startsWith(`${path}/`),

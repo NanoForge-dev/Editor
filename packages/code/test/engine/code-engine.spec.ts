@@ -171,6 +171,64 @@ describe('CodeEngine', () => {
     );
   });
 
+  it('lists the files that import a file, directly or through others', () => {
+    const engine = new CodeEngine();
+    engine.setFiles([
+      { path: 'src/a.ts', text: 'export const a = 1;\n' },
+      { path: 'src/b.ts', text: "import { a } from './a';\nexport const b = a;\n" },
+      { path: 'src/c.ts', text: "export { b } from './b';\n" },
+      { path: 'src/d.ts', text: 'export const d = 1;\n' },
+    ]);
+    expect(engine.dependents(['src/a.ts'])).toEqual(['src/b.ts', 'src/c.ts']);
+    expect(engine.dependents(['src/d.ts'])).toEqual([]);
+  });
+
+  it('lists the importers of a shared library file imported by package name', () => {
+    const engine = new CodeEngine();
+    engine.setTsconfig(
+      JSON.stringify({
+        compilerOptions: { baseUrl: '.', paths: { '@pong/shared/*': ['libs/shared/src/*'] } },
+      }),
+    );
+    engine.setFiles([
+      { path: 'libs/shared/src/components/speed.ts', text: 'export class Speed {}\n' },
+      {
+        path: 'apps/client/src/main.ts',
+        text: "import { Speed } from '@pong/shared/components/speed';\nexport const s = new Speed();\n",
+      },
+    ]);
+    expect(engine.dependents(['libs/shared/src/components/speed.ts'])).toEqual([
+      'apps/client/src/main.ts',
+    ]);
+  });
+
+  it('asks again for the types of a package missing before, once dependencies change', async () => {
+    let installed = false;
+    const asked: string[] = [];
+    const engine = new CodeEngine({
+      resolveTypes: async (module) => {
+        asked.push(module);
+        return installed
+          ? [{ path: 'node_modules/speed/index.d.ts', text: 'export declare const max: number;' }]
+          : [];
+      },
+    });
+    engine.setFiles([
+      {
+        path: 'src/main.ts',
+        text: "import { max } from 'speed';\nexport const m: number = max;\n",
+      },
+    ]);
+    const codes = async () => (await engine.diagnostics(['src/main.ts'])).map((d) => d.code);
+    expect(await codes()).toEqual([2307]);
+    installed = true;
+    expect(await codes()).toEqual([2307]);
+    expect(asked).toEqual(['speed']);
+    engine.forgetMissingTypes();
+    expect(await codes()).toEqual([]);
+    expect(asked).toEqual(['speed', 'speed']);
+  });
+
   it('reports syntax and type errors', async () => {
     const engine = new CodeEngine();
     engine.setFiles([{ path: 'src/bad.ts', text: 'const a: number = "x";\nconst b = ;\n' }]);
