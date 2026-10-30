@@ -14,19 +14,23 @@ const project = {
     app('shared', '@pong/shared', 'lib'),
   ],
 };
-const installed = (path: string) => path === 'nf_modules/@acme/physics';
+const exists = (path: string) => path === 'nf_modules/@acme/physics' || path === 'package.json';
 
 describe('nameTaken', () => {
   it('names what a new package name would clash with', () => {
-    expect(nameTaken('pong', project, installed)).toMatch(/project's own name/);
-    expect(nameTaken('@pong/shared', project, installed)).toMatch(/a shared library/);
-    expect(nameTaken('@pong/client', project, installed)).toMatch(/the client app/);
-    expect(nameTaken('@nanoforge-dev/ecs', project, installed)).toMatch(/engine library/);
-    expect(nameTaken('@acme/physics', project, installed)).toMatch(/installed package/);
-    expect(nameTaken('@pong/server', project, installed)).toBeUndefined();
+    expect(nameTaken('pong', project, exists)).toMatch(/project's own name/);
+    expect(nameTaken('@pong/shared', project, exists)).toMatch(/a shared library/);
+    expect(nameTaken('@pong/client', project, exists)).toMatch(/the client app/);
+    expect(nameTaken('@nanoforge-dev/ecs', project, exists)).toMatch(/engine library/);
+    expect(nameTaken('@acme/physics', project, exists)).toMatch(/installed package/);
+    expect(nameTaken('@pong/server', project, exists)).toBeUndefined();
+  });
+
+  it("takes a folder's name when the project has no root package.json", () => {
+    expect(nameTaken('pong', project, () => false)).toBeUndefined();
   });
 
   it('lets an app keep its own name when renamed', () => {
-    expect(nameTaken('@pong/shared', project, installed, 'shared')).toBeUndefined();
+    expect(nameTaken('@pong/shared', project, exists, 'shared')).toBeUndefined();
   });
 });

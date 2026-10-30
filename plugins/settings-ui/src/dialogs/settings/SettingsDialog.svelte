@@ -155,11 +155,7 @@
   const cancel = () => {
     if (beforeclose()) close();
   };
-  const discard = () => {
-    for (const key of [...$changes.keys()]) draft.discard(key);
-    discarding = false;
-    close();
-  };
+  const discard = () => close();
 
   const editJson = (): MenuEntry[] => [
     ...(settings.hasStore('project')

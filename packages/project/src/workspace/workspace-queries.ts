@@ -17,7 +17,8 @@ export const nameTaken = (
   exists: (path: string) => boolean,
   except?: string,
 ): string | undefined => {
-  if (name === project.name) return `${name} is the project's own name.`;
+  /** Without a root package.json, the project's name is only its folder's: nothing to clash. */
+  if (name === project.name && exists('package.json')) return `${name} is the project's own name.`;
   const other = project.apps.find((app) => app.name === name && app.id !== except);
   if (other)
     return `${name} is already the name of ${other.type === 'lib' ? 'a shared library' : `the ${other.type} app`}.`;

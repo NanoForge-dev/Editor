@@ -1,3 +1,5 @@
+import { parseWhen, tokenizeWhen } from '@nanoforge-dev/editor-kernel';
+
 const MODIFIERS = ['Ctrl', 'Alt', 'Shift', 'Meta'] as const;
 
 export const isMac = (): boolean =>
@@ -109,6 +111,53 @@ export const blocksTyping = (stroke: string): boolean => {
   const modifiers = parts.slice(0, parts.at(-1) === '' ? -2 : -1);
   if (modifiers.some((modifier) => modifier !== 'Shift')) return false;
   return !/^F\d{1,2}$/.test(key);
+};
+
+type WhenToken = ReturnType<typeof tokenizeWhen>[number];
+
+const isOp = (token: WhenToken | undefined, value: string): boolean =>
+  token?.kind === 'op' && token.value === value;
+
+/** The conditions a clause needs all of: its top-level `&&` parts, parentheses opened. */
+const conjuncts = (tokens: readonly WhenToken[]): WhenToken[][] => {
+  const parts: WhenToken[][] = [[]];
+  let depth = 0;
+  for (const token of tokens) {
+    if (isOp(token, '(')) depth++;
+    if (isOp(token, ')')) depth--;
+    if (depth === 0 && isOp(token, '||')) return [];
+    if (depth === 0 && isOp(token, '&&')) parts.push([]);
+    else parts.at(-1)!.push(token);
+  }
+  return parts.flatMap((part) => {
+    if (!isOp(part[0], '(') || !isOp(part.at(-1), ')')) return [part];
+    let level = 0;
+    const closes = part.findIndex((token) => {
+      if (isOp(token, '(')) level++;
+      if (isOp(token, ')')) level--;
+      return level === 0;
+    });
+    return closes === part.length - 1 ? conjuncts(part.slice(1, -1)) : [part];
+  });
+};
+
+/**
+ * Whether a `when` clause keeps a shortcut away from typing: `!textInputFocus` is one of the
+ * conditions it needs all of (not under `||`), so a plain key bound with it still types in text
+ * fields and the code editor. A clause that does not parse keeps nothing away.
+ */
+export const outsideTyping = (when: string | undefined): boolean => {
+  if (!when?.trim()) return false;
+  try {
+    parseWhen(when);
+  } catch {
+    return false;
+  }
+  const tokens = tokenizeWhen(when).filter((token) => token.kind !== 'end');
+  return conjuncts(tokens).some(
+    ([not, key, ...rest]) =>
+      isOp(not, '!') && key?.kind === 'key' && key.value === 'textInputFocus' && !rest.length,
+  );
 };
 
 export const startsWith = (strokes: readonly string[], prefix: readonly string[]) =>

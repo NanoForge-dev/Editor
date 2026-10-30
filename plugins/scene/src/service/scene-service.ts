@@ -552,18 +552,14 @@ export class SceneService implements Disposable {
     const generation = ++this._generation;
     const app = this.app;
     const code = this._context.services.tryGet(CodeServiceToken);
-    if (!app) {
+    if (!app?.entryFile) {
       this._model.set(undefined);
       return;
     }
-    if (!app.entryFile || !code) {
+    if (!code) {
       this._model.set({
         scenes: [],
-        problems: [
-          app.entryFile
-            ? 'This editor cannot read code, so it cannot list scenes.'
-            : `${app.name} has no entry file (its nanoforge.config names none).`,
-        ],
+        problems: ['This editor cannot read code, so it cannot list scenes.'],
       });
       return;
     }
