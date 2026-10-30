@@ -9,7 +9,14 @@
   import type { Confirmation } from '../confirmation.type';
   import ChangeGroupNode from './ChangeGroupNode.svelte';
   import CommitMessage from './CommitMessage.svelte';
-  import { type ChangeGroup, MAX_ROWS, pathsOf } from './change-group';
+  import {
+    type ChangeGroup,
+    GROUP_STOP,
+    MAX_ROWS,
+    groupOfStop,
+    keyStops,
+    pathsOf,
+  } from './change-group';
   import type { CommitPanelState } from './commit-panel-state.svelte';
 
   interface Props {
@@ -39,8 +46,6 @@
   ]);
   const busy = $derived($git.busy);
 
-  let tree = $state<HTMLElement>();
-
   const included = $derived(
     [...lists.changes, ...lists.unversioned]
       .filter((row) => panel.checked.has(row.file.path))
@@ -51,6 +56,13 @@
     groups.flatMap((group) => (panel.isFolded(group) ? [] : group.rows.slice(0, MAX_ROWS))),
   );
   const visiblePaths = $derived(visibleRows.map((row) => row.file.path));
+  const stops = $derived(keyStops(groups, (group) => panel.isFolded(group)));
+  const current = $derived(
+    panel.selectedGroup ? `${GROUP_STOP}${panel.selectedGroup}` : panel.cursor,
+  );
+  const uid = $props.id();
+  /** Id of a stop's element, for `aria-activedescendant` (screen readers say the one focused). */
+  const idOf = (stop: string) => `${uid}-${encodeURIComponent(stop)}`;
   const allRows = $derived(groups.flatMap((group) => [...group.rows]));
   $effect(() => {
     const listed = new Set(allRows.map((row) => row.file.path));
@@ -63,6 +75,7 @@
   const selectedRows = $derived(allRows.filter((row) => panel.selected.includes(row.file.path)));
   const rollbackRows = $derived(selectedRows.filter((row) => row.letter !== 'C'));
   const unversionedSelected = $derived(selectedRows.filter((row) => row.letter === 'U'));
+  const conflictedSelected = $derived(selectedRows.filter((row) => row.letter === 'C'));
 
   const showDiff = (row: FileRow) => {
     if (row.letter === 'D') act.info(`${row.file.path} was deleted: there is nothing to compare`);
@@ -108,6 +121,19 @@
       disabled: selectedRows.length !== 1 || selectedRows[0]?.letter === 'D',
       onSelect: () => selectedRows[0] && jumpToSource(selectedRows[0]),
     },
+    ...(conflictedSelected.length
+      ? ([
+          { kind: 'separator' },
+          {
+            kind: 'item',
+            id: 'resolved',
+            label: 'Mark resolved',
+            onSelect: async () => {
+              for (const row of conflictedSelected) await act.markResolved(row.file.path);
+            },
+          },
+        ] satisfies MenuEntry[])
+      : []),
     { kind: 'separator' },
     {
       kind: 'item',
@@ -144,22 +170,49 @@
     { kind: 'item', id: 'refresh', label: 'Refresh', onSelect: () => void store.refresh() },
   ];
 
+  const groupOf = (stop: string | undefined) => groupOfStop(groups, stop);
+  const goTo = (stop: string, shiftKey = false) => {
+    const group = stop.startsWith(GROUP_STOP) ? groupOf(stop) : undefined;
+    if (group) panel.selectGroup(group);
+    else select({ shiftKey, ctrlKey: false, metaKey: false }, stop);
+    document.getElementById(idOf(stop))?.scrollIntoView({ block: 'nearest' });
+  };
+
+  /**
+   * Keys of the list (it keeps the focus; the row at the cursor is its active descendant): Up and
+   * Down go through group nodes and files, Left folds a group or goes up to it, Right unfolds,
+   * Space includes the selection (or a group's files) in the commit, Enter shows the diff or
+   * folds a group.
+   */
   const onkeydown = (event: KeyboardEvent) => {
-    if ((event.target as HTMLElement).tagName === 'INPUT') return;
-    const order = visiblePaths;
+    if (event.target !== event.currentTarget) return;
     const mod = event.ctrlKey || event.metaKey;
     const first = selectedRows[0];
+    const group = current?.startsWith(GROUP_STOP) ? groupOf(current) : undefined;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      if (!order.length) return;
-      const at = panel.cursor ? order.indexOf(panel.cursor) : -1;
+      if (!stops.length) return;
+      const at = current ? stops.indexOf(current) : -1;
       const next =
-        order[Math.min(Math.max(at + (event.key === 'ArrowDown' ? 1 : -1), 0), order.length - 1)]!;
-      select({ shiftKey: event.shiftKey, ctrlKey: false, metaKey: false }, next);
-      tree
-        ?.querySelector(`[data-path="${CSS.escape(next)}"]`)
-        ?.scrollIntoView({ block: 'nearest' });
+        stops[Math.min(Math.max(at + (event.key === 'ArrowDown' ? 1 : -1), 0), stops.length - 1)]!;
+      goTo(next, event.shiftKey && !next.startsWith(GROUP_STOP) && !group);
+    } else if (event.key === 'ArrowLeft') {
+      if (group) panel.setFolded(group, true);
+      else if (current) {
+        const parent = groupOf(current);
+        if (parent) goTo(`${GROUP_STOP}${parent.id}`);
+      }
+    } else if (event.key === 'ArrowRight') {
+      if (!group) return;
+      if (panel.isFolded(group)) panel.setFolded(group, false);
+      else if (group.rows[0]) goTo(group.rows[0].file.path);
+    } else if (event.key === ' ' && group) {
+      if (!group.checkable || !group.rows.length) return;
+      const paths = group.rows.map((row) => row.file.path);
+      panel.setChecked(paths, !paths.every((path) => panel.checked.has(path)));
+    } else if (event.key === 'Enter' && group) {
+      panel.setFolded(group, !panel.isFolded(group));
     } else if (mod && event.key.toLowerCase() === 'a') {
-      panel.selected = order;
+      panel.selected = visiblePaths;
       panel.selectedGroup = undefined;
     } else if (event.key === ' ') {
       const paths = selectedRows.filter((row) => row.letter !== 'C').map((row) => row.file.path);
@@ -218,26 +271,28 @@
     onclick={() => (panel.folded = groups.map((group) => group.id))}
   />
 </div>
-<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-<div
-  class="scroll"
-  role="group"
-  aria-label="Changed files"
-  tabindex="0"
-  bind:this={tree}
-  {onkeydown}
-  onclick={(event) => {
-    const target = event.target as HTMLElement;
-    if (!target.closest('li') && !target.closest('.group')) {
-      panel.selected = [];
-      panel.selectedGroup = undefined;
-    }
-  }}
->
-  <ContextMenu items={rowMenu}>
+<ContextMenu items={rowMenu}>
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+  <div
+    class="scroll"
+    role="group"
+    aria-label="Changed files"
+    aria-activedescendant={current ? idOf(current) : undefined}
+    aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Space Enter"
+    tabindex="0"
+    {onkeydown}
+    onclick={(event) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('li') && !target.closest('.group')) {
+        panel.selected = [];
+        panel.selectedGroup = undefined;
+      }
+    }}
+  >
     {#each groups as group (group.id)}
       <ChangeGroupNode
         {group}
+        {idOf}
         folded={panel.isFolded(group)}
         active={panel.selectedGroup === group.id}
         selected={panel.selected}
@@ -249,8 +304,8 @@
         ondiff={showDiff}
       />
     {/each}
-  </ContextMenu>
-</div>
+  </div>
+</ContextMenu>
 <CommitMessage {status} {included} conflicted={lists.conflicts.length > 0} {panel} />
 
 <style>

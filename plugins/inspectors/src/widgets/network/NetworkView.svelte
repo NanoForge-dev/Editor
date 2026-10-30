@@ -1,10 +1,16 @@
 <script lang="ts">
   import { tick, untrack } from 'svelte';
 
-  import { EmptyState, Input, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
+  import {
+    EmptyState,
+    Input,
+    type WidgetInstance,
+    moveRowFocus,
+  } from '@nanoforge-dev/editor-sdk/ui';
 
   import SourcePicker from '../SourcePicker.svelte';
   import { follow } from '../follow.svelte';
+  import { settledStatus } from '../settled-status.svelte';
   import { formatBytes, hexDump, hexToBytes, readPacket } from '../../network/packets';
   import type { Packet } from '../../recorder/recorder';
   import { getRecorder } from '../../session/recorder-session';
@@ -88,6 +94,9 @@
     const { text } = detailOf(packet);
     return text ? text.replace(/\s+/g, ' ').slice(0, 80) : packet.head;
   };
+  const countText = () =>
+    `${shown.length} of ${packets.length} packets${record?.untraced ? `, ${record.untraced} more not listed` : ''}`;
+  const status = settledStatus(() => [query, transport, direction], countText);
 </script>
 
 {#snippet choice(
@@ -141,16 +150,13 @@
         (value) => (transport = value as typeof transport),
       )}
       <Input bind:value={query} placeholder="Search payloads" aria-label="Search payloads" />
-      <span class="count" role="status">
-        {shown.length} of {packets.length} packets{record.untraced
-          ? `, ${record.untraced} more not listed`
-          : ''}
-      </span>
+      <span class="count">{countText()}</span>
+      <span class="nf-visually-hidden" role="status">{status.text}</span>
     </div>
     <ThroughputCharts {totals} />
     <div class="body">
       <div class="list" bind:this={list} {onscroll}>
-        <table aria-label="Packets">
+        <table role="grid" aria-readonly="true" aria-label="Packets">
           <thead>
             <tr>
               <th>Time</th><th>Direction</th><th>Transport</th><th>Client</th><th>Size</th>
@@ -161,9 +167,16 @@
             {#each shown as packet (packet.id)}
               <tr
                 aria-selected={packet.id === selectedId}
-                tabindex="0"
+                tabindex={packet.id === (selectedId ?? shown[0]?.id) ? 0 : -1}
                 onclick={() => (selectedId = packet.id)}
-                onkeydown={(event) => event.key === 'Enter' && (selectedId = packet.id)}
+                onkeydown={(event) => {
+                  const row = moveRowFocus(event);
+                  if (row) selectedId = shown[row.index]?.id;
+                  else if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectedId = packet.id;
+                  }
+                }}
               >
                 <td>{time(packet.time)}</td>
                 <td>{packet.direction === 'in' ? '← in' : '→ out'}</td>

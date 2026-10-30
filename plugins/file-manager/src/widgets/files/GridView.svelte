@@ -47,6 +47,57 @@
   };
   $effect(() => () => audio?.pause());
 
+  /**
+   * Keyboard of the grid: the arrows move between tiles (Up and Down by a row), Home and End to
+   * the ends; Enter opens, Space selects (Ctrl adds), Backspace or Alt+Up goes to the parent.
+   */
+  const onGridKey = (event: KeyboardEvent) => {
+    const grid = event.currentTarget as HTMLElement;
+    const tiles = [...grid.querySelectorAll<HTMLElement>('[role="option"]')];
+    if ((event.key === 'Backspace' || (event.altKey && event.key === 'ArrowUp')) && folder) {
+      event.preventDefault();
+      service.showFolder(dirname(folder));
+      return;
+    }
+    if (!tiles.length) return;
+    const index = tiles.indexOf(document.activeElement as HTMLElement);
+    const columns = Math.max(
+      1,
+      tiles.filter((tile) => tile.offsetTop === tiles[0]!.offsetTop).length,
+    );
+    const step: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -columns,
+      ArrowDown: columns,
+    };
+    let next: number | undefined;
+    if (event.key in step) next = index < 0 ? 0 : index + step[event.key]!;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = tiles.length - 1;
+    if (next !== undefined) {
+      event.preventDefault();
+      tiles[Math.min(tiles.length - 1, Math.max(0, next))]!.focus();
+      return;
+    }
+    const path = tiles[index]?.dataset.path;
+    if (!path) return;
+    if (event.key === ' ') {
+      event.preventDefault();
+      service.select(
+        event.ctrlKey || event.metaKey
+          ? selection.includes(path)
+            ? selection.filter((item) => item !== path)
+            : [...selection, path]
+          : [path],
+      );
+      service.showFolder(folder);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      void service.open(path);
+    }
+  };
+
   const dragStart = (event: DragEvent, path: string) => {
     const paths = selection.includes(path) ? selection : [path];
     event.dataTransfer?.setData('application/x-nanoforge-paths', JSON.stringify(paths));
@@ -77,7 +128,9 @@
   aria-label={`Files in ${folder || 'the project'}`}
   aria-multiselectable="true"
   tabindex="0"
+  aria-keyshortcuts="Backspace Alt+ArrowUp"
   style:--tile={`${size}px`}
+  onkeydown={onGridKey}
   class:drop={dropTarget === folder}
   oncontextmenu={(event) => {
     if (event.target === event.currentTarget) oncontext(undefined);
@@ -91,6 +144,12 @@
       type="button"
       class="tile up"
       ondblclick={() => service.showFolder(dirname(folder))}
+      onkeydown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        event.stopPropagation();
+        service.showFolder(dirname(folder));
+      }}
       ondragover={(event) => dragOver(event, dirname(folder))}
       ondrop={(event) => drop(event, dirname(folder))}
       title="Parent folder"
@@ -101,6 +160,7 @@
   {/if}
   {#each entries as entry (entry.path)}
     {@const selected = selection.includes(entry.path)}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="tile"
       class:selected
@@ -108,11 +168,11 @@
       role="option"
       aria-selected={selected}
       tabindex="-1"
+      data-path={entry.path}
       title={entry.path}
       draggable={!service.readOnly(entry.path)}
       onclick={(event) => select(event, entry.path)}
       ondblclick={() => void service.open(entry.path)}
-      onkeydown={(event) => event.key === 'Enter' && void service.open(entry.path)}
       oncontextmenu={() => {
         if (!selected) service.select([entry.path]);
         oncontext(entry.path);

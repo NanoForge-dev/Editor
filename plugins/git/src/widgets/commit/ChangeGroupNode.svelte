@@ -19,6 +19,8 @@
     onselectgroup: () => void;
     oncheck: (paths: readonly string[], on: boolean) => void;
     ondiff: (row: FileRow) => void;
+    /** Id of a row or of the group node (`group:<id>`), for the list's active descendant. */
+    idOf: (stop: string) => string;
   }
 
   const {
@@ -32,6 +34,7 @@
     onselectgroup,
     oncheck,
     ondiff,
+    idOf,
   }: Props = $props();
   const { actions: act } = getSession();
   const count = $derived(group.rows.filter((row) => checked.has(row.file.path)).length);
@@ -39,8 +42,10 @@
 
 {#snippet fileRow(row: FileRow, checkable: boolean)}
   <li
+    id={idOf(row.file.path)}
     role="option"
     aria-label={row.file.path}
+    aria-describedby={`${idOf(row.file.path)}-status`}
     aria-selected={selected.includes(row.file.path)}
     class:selected={selected.includes(row.file.path)}
     data-path={row.file.path}
@@ -62,6 +67,13 @@
         onchange={(event) => oncheck([row.file.path], event.currentTarget.checked)}
       />
     {/if}
+    <span id={`${idOf(row.file.path)}-status`} class="nf-visually-hidden"
+      >{row.title}{checkable
+        ? checked.has(row.file.path)
+          ? ', included'
+          : ', not included'
+        : ''}</span
+    >
     <Icon name="file-code" size={13} />
     <span class="name" data-letter={row.letter}>{row.name}</span>
     {#if row.folder}<span class="folder">{row.folder}</span>{/if}
@@ -79,8 +91,17 @@
 {/snippet}
 
 <section aria-label={group.title}>
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="group" class:selected={active} onclick={onselectgroup}>
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus -->
+  <div
+    id={idOf(`group:${group.id}`)}
+    class="group"
+    class:selected={active}
+    role="button"
+    aria-expanded={!folded}
+    aria-pressed={active}
+    aria-label={`${group.title}, ${group.rows.length} ${group.rows.length === 1 ? 'file' : 'files'}${group.checkable ? `, ${count} included` : ''}`}
+    onclick={onselectgroup}
+  >
     <button
       type="button"
       class="chevron"

@@ -96,10 +96,11 @@ test.describe('with the engine', () => {
     await showPanel(page, 'Network');
     await play(page);
 
-    const packets = page.getByRole('table', { name: 'Packets' }).locator('tbody tr');
+    const packets = page.getByRole('grid', { name: 'Packets' }).locator('tbody tr');
     await expect(packets.first()).toBeVisible({ timeout: 15_000 });
 
-    const count = page.getByRole('status').filter({ hasText: /of \d+ packets/ });
+    /** The count shown; screen readers get it only once a search has settled. */
+    const count = page.getByText(/of \d+ packets/).first();
     await showPanel(page, 'Console');
     await page.waitForTimeout(1500);
     await showPanel(page, 'Network');

@@ -94,16 +94,35 @@
     if ($model) void ecs.openInCode($model.path, lineOf(id));
   };
 
+  /**
+   * True from a move until the model shows it (2 s at most): a key pressed again before that
+   * would read the old order, so it waits for the next press.
+   */
+  let moving = false;
+  let movingTimer: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    void $model;
+    moving = false;
+  });
+  $effect(() => () => clearTimeout(movingTimer));
   const move = (ids: string[], target: string, position: DropPosition) => {
     const [entity] = ids;
-    if (!entity || entity === target || target.startsWith(CODE_PREFIX)) return;
+    if (moving || !entity || entity === target || target.startsWith(CODE_PREFIX)) return;
     const names = ($model?.entities ?? []).map((candidate) => candidate.name);
     const before =
       position === 'after' || position === 'inside' ? names[names.indexOf(target) + 1] : target;
-    void ecs.apply(
-      { kind: 'moveEntity', entity, ...(before && before !== entity && { before }) },
-      `Move ${entity}`,
-    );
+    if (names[names.indexOf(entity) + 1] === before || before === entity) return;
+    moving = true;
+    clearTimeout(movingTimer);
+    movingTimer = setTimeout(() => (moving = false), 2000);
+    void ecs
+      .apply(
+        { kind: 'moveEntity', entity, ...(before && before !== entity && { before }) },
+        `Move ${entity}`,
+      )
+      .then((done) => {
+        if (!done) moving = false;
+      });
   };
 
   const menu = (): MenuEntry[] => {
@@ -111,6 +130,8 @@
     if (!id) return [{ kind: 'item', id: 'add', label: 'Add entity', onSelect: add }];
     if (id.startsWith(CODE_PREFIX))
       return [{ kind: 'item', id: 'open', label: 'Open in code', onSelect: () => openInCode(id) }];
+    const names = ($model?.entities ?? []).map((entity) => entity.name);
+    const at = names.indexOf(id);
     return [
       {
         kind: 'item',
@@ -126,6 +147,23 @@
         onSelect: () => setTimeout(() => tree?.rename(id), 150),
       },
       { kind: 'item', id: 'open', label: 'Open in code', onSelect: () => openInCode(id) },
+      { kind: 'separator' },
+      {
+        kind: 'item',
+        id: 'up',
+        label: 'Move up',
+        shortcut: 'Alt+Up',
+        disabled: at <= 0,
+        onSelect: () => move([id], names[at - 1]!, 'before'),
+      },
+      {
+        kind: 'item',
+        id: 'down',
+        label: 'Move down',
+        shortcut: 'Alt+Down',
+        disabled: at < 0 || at >= names.length - 1,
+        onSelect: () => move([id], names[at + 1]!, 'after'),
+      },
       { kind: 'separator' },
       {
         kind: 'item',
@@ -225,6 +263,7 @@
               !id.startsWith(CODE_PREFIX) &&
               ecs.apply({ kind: 'renameEntity', entity: id, name }, `Rename ${id}`)}
             ondrop={move}
+            reorderable={!filter}
             oncontextmenu={(id) => (menuTarget = id)}
           />
         {:else}

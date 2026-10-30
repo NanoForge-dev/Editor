@@ -14,7 +14,24 @@
   } as const;
 </script>
 
-<section class="toasts" aria-live="polite" aria-label="Notifications">
+<section
+  class="toasts"
+  aria-live="polite"
+  aria-label="Notifications"
+  onpointermove={(event) => {
+    if (event.movementX || event.movementY) notifications.hold();
+  }}
+  onpointerleave={(event) => {
+    if (!event.currentTarget.contains(document.activeElement)) notifications.release();
+  }}
+  onfocusin={() => notifications.hold()}
+  onfocusout={(event) => {
+    const next = event.relatedTarget as Node | null;
+    if (!next || !event.currentTarget.contains(next)) {
+      if (!event.currentTarget.matches(':hover')) notifications.release();
+    }
+  }}
+>
   {#each $active as notification (notification.id)}
     <div
       class="toast {notification.severity}"

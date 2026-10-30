@@ -2,6 +2,7 @@ import { SLOT_IDS, type SlotId, findWidget } from '@nanoforge-dev/editor-layout'
 
 import type { MenuEntry } from '../../components/menu-entry.type';
 import type { LayoutController } from '../layout/layout-controller';
+import { focusAfterPanel } from './panel-focus';
 
 export const SLOT_LABELS: Record<SlotId, string> = {
   leftTop: 'Left top',
@@ -35,11 +36,22 @@ export const tabMenu = (
             kind: 'item' as const,
             id: 'hide',
             label: 'Hide',
-            onSelect: () => layout.showSlot(slot, false),
+            onSelect: () => {
+              layout.showSlot(slot, false);
+              focusAfterPanel(instanceId);
+            },
           },
         ]
       : []),
-    { kind: 'item', id: 'close', label: 'Close', onSelect: () => run(layout.close(instanceId)) },
+    {
+      kind: 'item',
+      id: 'close',
+      label: 'Close',
+      onSelect: () => {
+        run(layout.close(instanceId));
+        focusAfterPanel(instanceId);
+      },
+    },
     {
       kind: 'item',
       id: 'close-others',

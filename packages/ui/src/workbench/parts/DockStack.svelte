@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { moveTabFocus } from '../../components/tab-focus';
+  import { focusAfterPanel } from './panel-focus';
   import type { SlotId, TabStack } from '@nanoforge-dev/editor-layout';
   import type { Snippet } from 'svelte';
 
@@ -120,7 +122,10 @@
           icon="minus"
           label="Hide {title(activeTab.widgetId)}"
           size={14}
-          onclick={() => layout.showSlot(slot, false)}
+          onclick={() => {
+            layout.showSlot(slot, false);
+            focusAfterPanel(activeTab.instanceId);
+          }}
         />
       {/if}
     </div>
@@ -161,9 +166,16 @@
               }}
               onclick={() => layout.focusTab(tab.instanceId)}
               onauxclick={(event) => event.button === 1 && run(layout.close(tab.instanceId))}
+              aria-keyshortcuts="Delete"
               onkeydown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') layout.focusTab(tab.instanceId);
-                else if (event.key === 'Delete') run(layout.close(tab.instanceId));
+                if (moveTabFocus(event)) return;
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  layout.focusTab(tab.instanceId);
+                } else if (event.key === 'Delete') {
+                  run(layout.close(tab.instanceId));
+                  focusAfterPanel(tab.instanceId);
+                }
               }}
             >
               {#if icon(tab.widgetId)}<Icon name={icon(tab.widgetId)} size={14} />{/if}
@@ -176,6 +188,7 @@
                 onclick={(event) => {
                   event.stopPropagation();
                   run(layout.close(tab.instanceId));
+                  focusAfterPanel(tab.instanceId);
                 }}
               >
                 <Icon name="x" size={12} />

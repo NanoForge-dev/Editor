@@ -204,6 +204,7 @@
           orientation="vertical"
           label="Resize left column"
           value={leftWidth}
+          min={120}
           onresize={(delta, final) => resizeColumn('left', delta, final)}
         />
       {/if}
@@ -229,6 +230,7 @@
             orientation="horizontal"
             label="Resize bottom panel"
             value={bottomHeight}
+            min={120}
             onresize={resizeBottom}
           />
           <div
@@ -263,6 +265,7 @@
           orientation="vertical"
           label="Resize right column"
           value={rightWidth}
+          min={120}
           onresize={(delta, final) => resizeColumn('right', delta, final)}
         />
         <div

@@ -342,3 +342,52 @@ test('shows a hidden param when chosen, and keeps it shown after a reload', asyn
     writeFileSync(COMPONENTS, before);
   }
 });
+
+test('reorders entities and systems and moves an entity from the keyboard', async ({ page }) => {
+  const order = () => main().indexOf('const terrain =') < main().indexOf('const terrainLine =');
+  await entity(page, 'terrain').click();
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect.poll(order).toBe(false);
+  /** A press is taken once the panel shows the previous move. */
+  await expect
+    .poll(async () => (await entities(page).getByRole('treeitem').allInnerTexts())[1])
+    .toMatch(/^terrain\b(?!Line)/);
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect.poll(order).toBe(true);
+
+  await showPanel(page, 'Systems');
+  const systems = page.getByRole('tree', { name: 'Systems in run order' });
+  await systems.getByRole('treeitem', { name: /^move/ }).click();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect
+    .poll(main)
+    .toContain('registry.addSystem(move);\n  registry.addSystem(packetHandler);');
+  const systemOrder = () => systems.getByRole('treeitem').allInnerTexts();
+  await expect
+    .poll(systemOrder)
+    .toEqual([
+      expect.stringMatching(/^move/),
+      expect.stringMatching(/^packetHandler/),
+      expect.stringMatching(/^controlPlayer/),
+      expect.stringMatching(/^draw/),
+    ]);
+  await page.keyboard.press('Alt+ArrowDown');
+  /** A press is taken once the panel shows the previous move. */
+  await expect.poll(async () => (await systemOrder())[1]).toMatch(/^move/);
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect
+    .poll(main)
+    .toContain('registry.addSystem(controlPlayer);\n  registry.addSystem(move);');
+  await showPanel(page, 'Hierarchy');
+
+  await page.getByRole('tab', { name: 'Scene', exact: true }).click();
+  const scene = page.getByRole('application', { name: '2D scene' });
+  await scene.getByRole('button', { name: 'terrainLine (rect)' }).click();
+  await scene.focus();
+  await page.keyboard.press('Shift+ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  await expect.poll(main).toContain('registry.addComponent(terrainLine, new Position(965, 1));');
+  await page.keyboard.press('Control+z');
+  await expect.poll(main).toContain('registry.addComponent(terrainLine, new Position(955, 0));');
+  await page.getByRole('tab', { name: 'Project' }).click();
+});

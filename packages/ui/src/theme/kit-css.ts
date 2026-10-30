@@ -31,6 +31,7 @@ export const KIT_CSS = `
 .nf-menu-check { display: inline-grid; place-items: center; width: 14px; flex: none; color: var(--nf-color-text-muted); }
 .nf-menu-label { flex: 1; white-space: nowrap; }
 .nf-menu-shortcut, .nf-menu-detail { color: var(--nf-color-text-faint); font: inherit; font-size: var(--nf-font-size-sm); }
+.nf-menu-item[data-highlighted] :is(.nf-menu-shortcut, .nf-menu-detail, .nf-menu-check) { color: inherit; }
 .nf-menu-separator { height: 1px; margin: var(--nf-space-1) calc(-1 * var(--nf-space-1)); background: var(--nf-color-border); }
 .nf-menu-empty { margin: 0; padding: var(--nf-space-2); color: var(--nf-color-text-muted); }
 .nf-select-trigger, .nf-combobox {
@@ -38,12 +39,12 @@ export const KIT_CSS = `
   align-items: center;
   width: 100%;
   height: var(--nf-control-height);
-  border: 1px solid var(--nf-color-border);
+  border: 1px solid var(--nf-color-border-strong);
   border-radius: var(--nf-radius-control);
   background: var(--nf-color-sunken);
 }
 .nf-select-trigger { justify-content: space-between; gap: var(--nf-space-2); padding: 0 var(--nf-space-2); cursor: pointer; }
-.nf-select-trigger:hover, .nf-combobox:hover { border-color: var(--nf-color-border-strong); }
+.nf-select-trigger:hover, .nf-combobox:hover { border-color: var(--nf-color-text-faint); }
 .nf-select-trigger:focus-visible, .nf-combobox:focus-within { border-color: var(--nf-color-focus); outline: none; }
 .nf-combobox-input { flex: 1; min-width: 0; height: 100%; padding: 0 var(--nf-space-2); border: 0; background: transparent; outline: none; }
 .nf-combobox-trigger { display: grid; place-items: center; width: var(--nf-control-height); height: 100%; border: 0; background: transparent; color: var(--nf-color-text-muted); cursor: pointer; }

@@ -125,18 +125,23 @@ describe('controls', () => {
     expect(onchange).toHaveBeenLastCalledWith('scene');
   });
 
-  it('Splitter resizes with the keyboard', async () => {
+  it('Splitter resizes with the keyboard, as one step once the keys rest', async () => {
     const onresize = vi.fn();
     const screen = render(Splitter, {
       orientation: 'vertical',
       label: 'Resize left panel',
       onresize,
     });
-    (screen.getByRole('separator').element() as HTMLElement).focus();
+    const handle = screen.getByRole('separator').element() as HTMLElement;
+    handle.focus();
     await userEvent.keyboard('{ArrowRight}{Shift>}{ArrowLeft}{/Shift}');
-    expect(onresize.mock.calls.filter(([, final]) => final).map(([delta]) => delta)).toEqual(
-      expect.arrayContaining([10, -40]),
-    );
+    expect(onresize.mock.calls).toEqual([
+      [10, false],
+      [-30, false],
+    ]);
+    handle.blur();
+    expect(onresize).toHaveBeenLastCalledWith(-30, true);
+    expect(onresize.mock.calls.filter(([, final]) => final)).toHaveLength(1);
   });
 
   it('ColorPicker normalizes hex input', async () => {
