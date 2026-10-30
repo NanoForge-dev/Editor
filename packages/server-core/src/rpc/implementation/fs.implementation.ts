@@ -18,6 +18,8 @@ export const implementFsRpc = (
       list: ({ project, path, recursive }, { session }) =>
         projects.get(session, project).fs.list(path, recursive),
       read: ({ project, path }, { session }) => projects.get(session, project).fs.read(path),
+      readMany: ({ project, files }, { session }) =>
+        projects.get(session, project).fs.readMany(files),
       write: ({ project, path, content, expectedHash, createParents }, { session }) =>
         projects.get(session, project).fs.write(path, content, {
           ...(expectedHash !== undefined && { expectedHash }),

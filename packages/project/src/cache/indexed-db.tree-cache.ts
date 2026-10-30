@@ -1,22 +1,24 @@
 import type { FileEntry } from '@nanoforge-dev/editor-protocol';
 
+import { TREES, isCacheDbSupported, projectKey, transact } from './cache-db';
 import type { TreeCache } from './cache.type';
 
-export const DB_NAME = 'nanoforge-editor';
-export const STORE = 'trees';
-
-/** IndexedDB tree cache (one record per project). */
+/** IndexedDB tree cache (one record per user and project). Failures degrade to misses. */
 export class IndexedDbTreeCache implements TreeCache {
+  private readonly _key: string;
+
   static isSupported(): boolean {
-    return typeof indexedDB !== 'undefined';
+    return isCacheDbSupported();
   }
 
-  constructor(private readonly _projectId: string) {}
+  constructor(user: string, projectId: string) {
+    this._key = projectKey(user, projectId);
+  }
 
   async load(): Promise<FileEntry[] | undefined> {
     try {
-      return await this._run<FileEntry[] | undefined>('readonly', (store) =>
-        store.get(this._projectId),
+      return await transact<FileEntry[] | undefined>(TREES, 'readonly', (transaction) =>
+        transaction.objectStore(TREES).get(this._key),
       );
     } catch {
       return undefined;
@@ -25,28 +27,9 @@ export class IndexedDbTreeCache implements TreeCache {
 
   async save(entries: readonly FileEntry[]): Promise<void> {
     try {
-      await this._run('readwrite', (store) => store.put(entries, this._projectId));
+      await transact(TREES, 'readwrite', (transaction) =>
+        transaction.objectStore(TREES).put(entries, this._key),
+      );
     } catch {}
-  }
-
-  private async _run<T>(
-    mode: IDBTransactionMode,
-    action: (store: IDBObjectStore) => IDBRequest,
-  ): Promise<T> {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, 1);
-      request.onupgradeneeded = () => request.result.createObjectStore(STORE);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error ?? new Error('IndexedDB unavailable'));
-    });
-    try {
-      return await new Promise<T>((resolve, reject) => {
-        const request = action(db.transaction(STORE, mode).objectStore(STORE));
-        request.onsuccess = () => resolve(request.result as T);
-        request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'));
-      });
-    } finally {
-      db.close();
-    }
   }
 }

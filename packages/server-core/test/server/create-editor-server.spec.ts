@@ -250,14 +250,19 @@ describe('editor server', () => {
 
   it('serves project files and downloads folders as zip', async () => {
     const { id } = await client.api(ProjectsContract).open({ path: 'pong' });
-    const fetchFile = async (path: string) => {
+    const fetchFile = async (path: string, headers: Record<string, string> = {}) => {
       const response = await editor.fetch(
-        new Request(`${ORIGIN}/files/${id}/${path}`, { headers: { cookie: '' } }),
+        new Request(`${ORIGIN}/files/${id}/${path}`, { headers: { cookie: '', ...headers } }),
       );
       return response!;
     };
     const file = await fetchFile('apps/client/package.json');
     expect(file.status).toBe(200);
+    const etag = file.headers.get('etag');
+    expect(etag).toMatch(/^"[0-9a-f]{40}"$/);
+    const again = await fetchFile('apps/client/package.json', { 'if-none-match': etag! });
+    expect(again.status).toBe(304);
+    expect(await again.text()).toBe('');
     expect(file.headers.get('content-security-policy')).toBe('sandbox');
     expect(file.headers.get('x-content-type-options')).toBe('nosniff');
     expect(await file.json()).toMatchObject({ name: expect.any(String) });

@@ -95,6 +95,8 @@ export class TypeLibraries implements Disposable {
 
   /** The project's code files, a few reads at a time: a big project sent them all at once. */
   private async _loadAll(paths: readonly string[]): Promise<void> {
+    /** Fills the file cache in a few requests; the reads below then cost nothing. */
+    await this._project.fs.readMany(paths).catch(() => undefined);
     const queue = [...paths];
     const worker = async () => {
       for (let path = queue.shift(); path !== undefined && !this._disposed; path = queue.shift())

@@ -27,6 +27,7 @@
 
   import ConflictsPage from './ConflictsPage.svelte';
   import ImportExportPage from './ImportExportPage.svelte';
+  import StoragePanel from './StoragePanel.svelte';
   import PluginsPage from './plugins/PluginsPage.svelte';
   import SettingRow from './SettingRow.svelte';
   import { categoryTree, searchSettings, settingsIn } from '../../settings/setting-categories';
@@ -264,6 +265,7 @@
             onresolve={(key, value) => void account?.resolveConflict(key, value)}
           />
         {:else}
+          {#if page === 'Editor/Storage'}<StoragePanel {services} />{/if}
           {#each shown as definition (definition.key)}
             <SettingRow
               {definition}

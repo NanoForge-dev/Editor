@@ -80,10 +80,14 @@ export {
 } from '@nanoforge-dev/editor-kernel';
 
 export {
+  type CacheUsage,
   type ClientProject,
+  type ProjectCaches,
+  ProjectCachesToken,
   type ProjectFs,
   type ProjectService,
   ProjectServiceToken,
+  type ProjectUsage,
   type WriteOptions,
 } from '@nanoforge-dev/editor-project';
 export type {

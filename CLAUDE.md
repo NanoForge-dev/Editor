@@ -259,6 +259,7 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
   - The server worker exits on `disconnect`.
 - **CLI:** `nf` delegates to the CLI installed in the project (`<cwd>/node_modules/@nanoforge-dev/cli/dist`), so `NF_CLI_PATH` does not change which build code runs for such a project.
 - **Console filters and `e2e`:** the Console's group, source and level filters are widget state (saved server-side). A test that changes them puts them back and waits 900 ms.
+- **Browser file cache (M8):** contents are kept by sha1 (`FileEntry.hash`, computed by the server's `FileHashes`, keyed by path, size, mtime, ctime and inode) in OPFS `nanoforge-editor/v2/<user>/blobs/`, and the cached tree is the path → hash index (`ProjectCaches`, `packages/project/src/cache`). Every OPFS read checks the bytes against their hash; a write is cached only when its hash is the server's. All IndexedDB stores of the cache open through `cache-db.ts` (one version). Several reads go through `fs.readMany` (`notModified` for current copies). Browser tests: `packages/project` `*.browser.spec.ts` (Chromium, Firefox; `BROWSERS=…,webkit`), e2e `cache.spec.ts` on Chromium and Firefox. RPC calls are HTTP POSTs (`/rpc/<contract>.<method>`): watch `request`, not WebSocket frames.
 - **File manager:**
   - Fast repeated commands race: they run through a serialized queue.
   - After a drag and drop, focus goes back to the tree (`refocus`), so Ctrl+Z reaches the Files history rather than the layout.

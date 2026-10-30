@@ -1,83 +1,98 @@
-import type { CachedContent, ContentCache } from './cache.type';
+import type { ContentCache } from './cache.type';
+import { canWriteOpfs, writeOpfsFile } from './opfs-write';
+import { sha1Hex } from './sha1';
+
+/** The folder of the editor in the origin private file system. */
+export const OPFS_ROOT = 'nanoforge-editor';
+/** The layout of this version: `v2/<user>/blobs/<sha1>`. Anything else in the root is older. */
+export const OPFS_LAYOUT = 'v2';
 
 /**
- * OPFS content cache: `nanoforge-editor/<projectId>/<encoded path>` holds the bytes and a
- * small sidecar JSON holds mtime and hash. Failures degrade to cache misses.
+ * OPFS content cache of one user: `nanoforge-editor/v2/<user>/blobs/<sha1>`. Every read checks
+ * the bytes against their hash, so a write cut short (or any mistake) is a miss, never the wrong
+ * content. Failures degrade to misses; `set` throws (`QuotaExceededError`) for the caller to
+ * make room.
  */
 export class OpfsContentCache implements ContentCache {
   private _dir: Promise<FileSystemDirectoryHandle> | undefined;
 
   static isSupported(): boolean {
     return (
-      typeof navigator !== 'undefined' && typeof navigator.storage?.getDirectory === 'function'
+      typeof navigator !== 'undefined' &&
+      typeof navigator.storage?.getDirectory === 'function' &&
+      typeof crypto !== 'undefined' &&
+      typeof crypto.subtle?.digest === 'function' &&
+      canWriteOpfs()
     );
   }
 
-  constructor(private readonly _projectId: string) {}
+  constructor(private readonly _user: string) {}
 
-  async get(path: string): Promise<CachedContent | undefined> {
+  async get(hash: string): Promise<Uint8Array | undefined> {
     try {
-      const dir = await this._directory();
-      const meta = await (await (await dir.getFileHandle(`${key(path)}.meta`)).getFile()).text();
-      const bytes = await (await (await dir.getFileHandle(key(path))).getFile()).arrayBuffer();
-      const { mtime, hash } = JSON.parse(meta) as { mtime: number; hash: string };
-      return { content: new Uint8Array(bytes), mtime, hash };
-    } catch {
-      return undefined;
-    }
+      const file = await (await (await this._directory()).getFileHandle(hash)).getFile();
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if ((await sha1Hex(bytes)) === hash) return bytes;
+      await this.delete(hash);
+    } catch {}
+    return undefined;
   }
 
-  async set(path: string, value: CachedContent): Promise<void> {
+  async set(hash: string, content: Uint8Array): Promise<void> {
+    await writeOpfsFile([OPFS_ROOT, OPFS_LAYOUT, this._folder(), 'blobs', hash], content);
+  }
+
+  async delete(hash: string): Promise<void> {
     try {
-      const dir = await this._directory();
-      await write(dir, key(path), value.content);
-      await write(
-        dir,
-        `${key(path)}.meta`,
-        JSON.stringify({ mtime: value.mtime, hash: value.hash }),
-      );
+      await (await this._directory()).removeEntry(hash);
     } catch {}
   }
 
-  async delete(path: string): Promise<void> {
-    try {
-      const dir = await this._directory();
-      const prefix = key(path);
-      for await (const name of (dir as unknown as { keys(): AsyncIterable<string> }).keys()) {
-        if (name === prefix || name === `${prefix}.meta` || name.startsWith(`${prefix}%2F`)) {
-          await dir.removeEntry(name);
-        }
-      }
-    } catch {}
-  }
-
+  /** Removes every content of this user. */
   async clear(): Promise<void> {
     try {
-      const root = await (
+      const layout = await (
         await navigator.storage.getDirectory()
-      ).getDirectoryHandle('nanoforge-editor', { create: true });
-      await root.removeEntry(this._projectId, { recursive: true });
-      this._dir = undefined;
+      )
+        .getDirectoryHandle(OPFS_ROOT)
+        .then((root) => root.getDirectoryHandle(OPFS_LAYOUT));
+      await layout.removeEntry(this._folder(), { recursive: true });
     } catch {}
+    this._dir = undefined;
+  }
+
+  private _folder(): string {
+    return encodeURIComponent(this._user);
   }
 
   private _directory(): Promise<FileSystemDirectoryHandle> {
     this._dir ??= navigator.storage
       .getDirectory()
-      .then((root) => root.getDirectoryHandle('nanoforge-editor', { create: true }))
-      .then((root) => root.getDirectoryHandle(this._projectId, { create: true }));
+      .then((root) => root.getDirectoryHandle(OPFS_ROOT, { create: true }))
+      .then((root) => root.getDirectoryHandle(OPFS_LAYOUT, { create: true }))
+      .then((root) => root.getDirectoryHandle(this._folder(), { create: true }))
+      .then((root) => root.getDirectoryHandle('blobs', { create: true }));
     return this._dir;
   }
 }
 
-export const key = (path: string) => encodeURIComponent(path);
-
-export const write = async (
-  dir: FileSystemDirectoryHandle,
-  name: string,
-  data: Uint8Array | string,
-) => {
-  const writable = await (await dir.getFileHandle(name, { create: true })).createWritable();
-  await writable.write(typeof data === 'string' ? data : new Blob([data as BlobPart]));
-  await writable.close();
+/**
+ * Removes what older versions left in the editor's OPFS folder (`<projectId>/` folders of
+ * per-path copies), and the folders of other users when `keepUser` is given.
+ */
+export const removeStaleOpfs = async (keepUser?: string): Promise<void> => {
+  try {
+    const root = await (
+      await navigator.storage.getDirectory()
+    ).getDirectoryHandle(OPFS_ROOT, {
+      create: true,
+    });
+    for await (const name of (root as unknown as { keys(): AsyncIterable<string> }).keys())
+      if (name !== OPFS_LAYOUT) await root.removeEntry(name, { recursive: true }).catch(() => {});
+    if (keepUser === undefined) return;
+    const layout = await root.getDirectoryHandle(OPFS_LAYOUT, { create: true });
+    for await (const name of (layout as unknown as { keys(): AsyncIterable<string> }).keys())
+      if (name !== encodeURIComponent(keepUser))
+        await layout.removeEntry(name, { recursive: true }).catch(() => {});
+  } catch {}
 };

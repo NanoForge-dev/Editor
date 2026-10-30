@@ -1,20 +1,16 @@
 import type { FileEntry } from '@nanoforge-dev/editor-protocol';
 
-export interface CachedContent {
-  readonly content: Uint8Array;
-  readonly mtime: number;
-  readonly hash: string;
-}
-
-/** File contents cache (OPFS in browsers). Keys are project-relative paths. */
+/**
+ * File contents by the sha1 of their bytes (OPFS in browsers): each content is kept once, for
+ * every project and branch that has it; the tree (`FileEntry.hash`) says which one a path holds.
+ */
 export interface ContentCache {
-  get(path: string): Promise<CachedContent | undefined>;
-  set(path: string, value: CachedContent): Promise<void>;
-  delete(path: string): Promise<void>;
-  clear(): Promise<void>;
+  /** The bytes of a content, or undefined when they are not kept (or do not match the hash). */
+  get(hash: string): Promise<Uint8Array | undefined>;
+  set(hash: string, content: Uint8Array): Promise<void>;
 }
 
-/** Last known file tree (IndexedDB in browsers), for fast startup before revalidation. */
+/** Last known file tree of a project (IndexedDB in browsers), for a fast start and as the index. */
 export interface TreeCache {
   load(): Promise<FileEntry[] | undefined>;
   save(entries: readonly FileEntry[]): Promise<void>;
