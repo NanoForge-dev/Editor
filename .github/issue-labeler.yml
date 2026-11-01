@@ -82,5 +82,8 @@ plugins:viewport:
 tooling:example-plugin:
   - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nexample-plugin\\n"
 
+tooling:example-theme:
+  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nexample-theme\\n"
+
 tooling:vite-plugin:
   - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nvite-plugin\\n"

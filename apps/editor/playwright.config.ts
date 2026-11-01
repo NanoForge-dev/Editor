@@ -63,7 +63,11 @@ export default defineConfig({
       DATA_DIR: join(root, 'e2e', WORKSPACE, '.data'),
       E2E_WORKSPACE: WORKSPACE,
       REGISTRY_DIR: join(root, 'e2e', WORKSPACE, '.registry'),
-      DEV_PLUGINS: [join(root, '../../tooling/example-plugin'), process.env.E2E_EXTRA_PLUGINS]
+      DEV_PLUGINS: [
+        join(root, '../../tooling/example-plugin'),
+        join(root, '../../tooling/example-theme'),
+        process.env.E2E_EXTRA_PLUGINS,
+      ]
         .filter(Boolean)
         .join(','),
       ...(process.env.NANOFORGE_ENGINE && { NANOFORGE_ENGINE: process.env.NANOFORGE_ENGINE }),

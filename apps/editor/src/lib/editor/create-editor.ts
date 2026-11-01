@@ -34,6 +34,8 @@ import {
   setupSettings,
 } from '@nanoforge-dev/editor-settings';
 import {
+  ChangesetPreviewServiceToken,
+  IconThemeServiceToken,
   KeybindingServiceToken,
   LAYOUT_HISTORY_CONTEXT,
   NotificationServiceToken,
@@ -48,6 +50,8 @@ import {
 import { installSharedModules } from '$lib/plugin/shared-modules';
 import { registerCorePanels } from '$lib/project/register-core-panels';
 
+import { AdoptionService, AdoptionServiceToken } from '../adoption/adoption-service';
+import { registerCoreChecks } from '../adoption/core-checks';
 import { followProjectCode } from '../code/follow-project-code';
 import { followProjectPlugins, toDescriptor } from '../plugin/follow-project-plugins';
 import { followProjectCaches } from '../project/follow-project-caches';
@@ -191,6 +195,7 @@ export const createEditor = async (
   services.provide(KeybindingServiceToken, shell.keybindings);
   services.provide(StyleServiceToken, shell.styles);
   services.provide(ThemeServiceToken, shell.themes);
+  services.provide(IconThemeServiceToken, shell.iconThemes);
   services.provide(TourServiceToken, shell.tours);
   /** `editor.local`: games, git and installs work here (tour steps, menus). */
   services.get(CoreServices.ContextKeys).set('editor.local', session.mode === 'OFFLINE');
@@ -229,6 +234,22 @@ export const createEditor = async (
     }),
   );
   services.provide(WorkspaceActionsToken, workspace);
+  services.provide(ChangesetPreviewServiceToken, shell.changesets);
+  store.add(registerCoreChecks(services, session, workspace));
+  services.provide(
+    AdoptionServiceToken,
+    store.add(
+      new AdoptionService({
+        services,
+        projects,
+        settings,
+        workspace,
+        previews: shell.changesets,
+        notifications: shell.notifications,
+        logger: services.get(CoreServices.Logger).getLogger('adoption'),
+      }),
+    ),
+  );
   store.add(registerAppContributions(services, session));
   store.add(
     history.onDidInvalidate(({ contextId, reason }) => {

@@ -11,4 +11,5 @@ export * from './prompt';
 export * from './setup';
 export * from './tour';
 export * from './tip';
+export * from './changeset';
 export { default as Workbench } from './workbench.svelte';

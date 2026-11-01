@@ -10,14 +10,24 @@ import {
   ENTRY_TRANSFORMER,
   IMPORTERS_ANALYZER,
   ITEM_DOCS_TRANSFORMER,
+  LOCAL_ITEMS_ANALYZER,
+  REDIRECTED_IMPORTS_ANALYZER,
   RELOCATED_TEXT_ANALYZER,
   REWRITE_IMPORTS_TRANSFORMER,
+  SPLIT_ITEMS_ANALYZER,
 } from '../model/ecs.const';
 import { analyzeBundleSpawns } from './bundle-spawns';
 import { analyzeEntry } from './entry-file';
 import { transformItemDocs } from './item-docs';
+import { analyzeLocalItems } from './local-items';
 import { ecsOwner } from './owner';
-import { analyzeImporters, analyzeRelocatedText, transformRewriteImports } from './refactor';
+import {
+  analyzeImporters,
+  analyzeRedirectedImports,
+  analyzeRelocatedText,
+  transformRewriteImports,
+} from './refactor';
+import { analyzeSplitItems } from './split-items';
 import { transformEntry } from './transforms';
 
 export default defineWorkerPlugin({
@@ -30,5 +40,8 @@ export default defineWorkerPlugin({
     sdk.registerAnalyzer(RELOCATED_TEXT_ANALYZER, analyzeRelocatedText);
     sdk.registerTransformer(REWRITE_IMPORTS_TRANSFORMER, transformRewriteImports);
     sdk.registerAnalyzer(BUNDLE_SPAWNS_ANALYZER, analyzeBundleSpawns);
+    sdk.registerAnalyzer(LOCAL_ITEMS_ANALYZER, analyzeLocalItems);
+    sdk.registerAnalyzer(SPLIT_ITEMS_ANALYZER, analyzeSplitItems);
+    sdk.registerAnalyzer(REDIRECTED_IMPORTS_ANALYZER, analyzeRedirectedImports);
   },
 });

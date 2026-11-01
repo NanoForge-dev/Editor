@@ -73,6 +73,23 @@ test("loads the project's plugins and names the plugins its packages suggest", a
   await page.keyboard.press('Escape');
 });
 
+test('installs a suggested plugin for the project from the notification', async ({ page }) => {
+  write(join(PACKAGES, '@acme/motion/nanoforge.manifest.json'), {
+    type: 'package',
+    name: '@acme/motion',
+    version: '1.0.0',
+    suggestedPlugins: ['@acme/badge'],
+  });
+  await openProject(page, 'pong');
+  await page.waitForURL(/\/project\//);
+  await expect(page.getByText('Packages in this project suggest a plugin')).toBeVisible();
+  await page.getByRole('button', { name: 'Install for this project' }).click();
+  await expect
+    .poll(() => existsSync(join(PROJECT_PLUGINS, '@acme/badge/nanoforge.manifest.json')))
+    .toBe(true);
+  await expect(page.getByText('Plugins installed: reload the editor to finish')).toBeVisible();
+});
+
 test("runs a project plugin's server entry while the project is open", async ({ page }) => {
   const closeProject = async () => {
     await page.getByRole('button', { name: 'File', exact: true }).click();

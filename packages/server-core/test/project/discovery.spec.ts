@@ -1,4 +1,12 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -183,7 +191,35 @@ describe('discoverProject diagnostics', () => {
         language: 'js',
         entryFile: 'src/main.ts',
         engineLibs: { '@nanoforge-dev/ecs': '^1.4.0' },
+        /** Declared, not installed (no node_modules): the editor can say so. */
+        missingEngineLibs: ['@nanoforge-dev/ecs'],
+        availableEngineLibs: [],
       },
+    ]);
+  });
+
+  it('lists the engine libraries installed for an app, linked ones too', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'nf-linked-'));
+    const engine = mkdtempSync(join(tmpdir(), 'nf-engine-'));
+    temporary.push(root, engine);
+    writeFileSync(join(root, 'nanoforge.config.ts'), 'export default { type: "client" };');
+    writeFileSync(join(root, 'package.json'), '{"name":"solo","dependencies":{}}');
+    writeFileSync(
+      join(engine, 'package.json'),
+      '{"name":"@nanoforge-dev/scene","version":"2.0.0"}',
+    );
+    mkdirSync(join(root, 'node_modules/@nanoforge-dev/ecs'), { recursive: true });
+    symlinkSync(engine, join(root, 'node_modules/@nanoforge-dev/scene'));
+    mkdirSync(join(root, 'node_modules/@nanoforge-dev/cli'), { recursive: true });
+    const model = await discoverProject({
+      id: 'solo-5678',
+      root,
+      location: root,
+      loader: staticConfigLoader,
+    });
+    expect(model.apps[0]!.availableEngineLibs).toEqual([
+      '@nanoforge-dev/ecs',
+      '@nanoforge-dev/scene',
     ]);
   });
 });

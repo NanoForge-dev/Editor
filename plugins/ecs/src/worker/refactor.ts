@@ -3,7 +3,8 @@ import type { ExportDeclaration, ImportDeclaration, SourceFile } from 'ts-morph'
 import type { AnalyzeContext, TransformContext } from '@nanoforge-dev/editor-sdk/worker';
 
 const ROOT = '/project/';
-const projectPath = (file: SourceFile) => file.getFilePath().replace(ROOT, '');
+/** A file's path in the project (the worker's files live under `/project/`). */
+export const projectPath = (file: SourceFile): string => file.getFilePath().replace(ROOT, '');
 
 const moduleDeclarations = (file: SourceFile): (ImportDeclaration | ExportDeclaration)[] => [
   ...file.getImportDeclarations(),
@@ -64,4 +65,28 @@ export const transformRewriteImports = (context: TransformContext, op: unknown):
     const quote = specifier.getText()[0];
     context.edit.replace(specifier, `${quote}${context.moduleSpecifier(to)}${quote}`);
   }
+};
+
+/**
+ * The analyzed file's text with its imports and re-exports of `from` (a project file) pointed at
+ * `specifier`: read-only, for a changeset (a component moved to a shared library).
+ */
+export const analyzeRedirectedImports = (context: AnalyzeContext, args: unknown): string => {
+  const { from, specifier } = args as { from: string; specifier: string };
+  const replacements: { start: number; end: number; text: string }[] = [];
+  for (const declaration of moduleDeclarations(context.file)) {
+    const target = declaration.getModuleSpecifierSourceFile();
+    const node = declaration.getModuleSpecifier();
+    if (!target || !node || projectPath(target) !== from) continue;
+    const quote = node.getText()[0];
+    replacements.push({
+      start: node.getStart(),
+      end: node.getEnd(),
+      text: `${quote}${specifier}${quote}`,
+    });
+  }
+  let text = context.text;
+  for (const replacement of replacements.sort((a, b) => b.start - a.start))
+    text = text.slice(0, replacement.start) + replacement.text + text.slice(replacement.end);
+  return text;
 };

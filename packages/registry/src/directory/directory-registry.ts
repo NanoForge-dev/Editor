@@ -45,13 +45,19 @@ export class DirectoryRegistry implements Registry {
 
   async search(query: SearchQuery = {}): Promise<SearchResult> {
     const { type, q, page, limit } = SearchQuery.parse(query);
-    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    /** `keywords:a,b` (the API's qualifier): items with every one of them. */
+    const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const keywords = tokens
+      .filter((token) => token.startsWith('keywords:'))
+      .flatMap((token) => token.slice('keywords:'.length).split(',').filter(Boolean));
+    const words = tokens.filter((token) => !token.startsWith('keywords:'));
     const all = [...(await this._load()).values()]
       .map(({ item }): RegistrySummary => ({
         name: item.name,
         type: item.type,
         version: item.version,
         description: item.description,
+        keywords: item.keywords,
         author: item.author,
         downloads: item.downloads,
         updatedAt: item.updatedAt,
@@ -60,7 +66,14 @@ export class DirectoryRegistry implements Registry {
       .filter(
         (item) =>
           (!type || item.type === type) &&
-          words.every((word) => `${item.name} ${item.description}`.toLowerCase().includes(word)),
+          keywords.every((keyword) =>
+            item.keywords.some((candidate) => candidate.toLowerCase() === keyword),
+          ) &&
+          words.every((word) =>
+            `${item.name} ${item.description} ${item.keywords.join(' ')}`
+              .toLowerCase()
+              .includes(word),
+          ),
       )
       .sort((a, b) => b.downloads - a.downloads || a.name.localeCompare(b.name));
     return { items: all.slice((page - 1) * limit, page * limit), total: all.length };
@@ -160,6 +173,7 @@ export class DirectoryRegistry implements Registry {
             type: latest.manifest.type,
             version: latest.version,
             description: latest.manifest.description ?? '',
+            keywords: latest.manifest.keywords ?? [],
             author: extra.author ?? '',
             downloads: extra.downloads ?? 0,
             updatedAt: latest.publishedAt,

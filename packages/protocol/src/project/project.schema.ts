@@ -27,6 +27,10 @@ export const AppModel = z.object({
   outDir: ProjectPath.optional(),
   /** Engine libraries (`@nanoforge-dev/*` runtime packages) and their version or range. */
   engineLibs: z.record(z.string(), z.string()),
+  /** Engine libraries its package.json declares that are not installed (their range above). */
+  missingEngineLibs: z.array(z.string()).default([]),
+  /** Engine libraries installed for it (its node_modules or the project's), declared or not. */
+  availableEngineLibs: z.array(z.string()).default([]),
   /**
    * The shared libraries (ADR 0004) the app uses, by package name: those its `nanoforge.config`
    * lists in `libs` (a library: those its package.json depends on). A library nothing mentions is

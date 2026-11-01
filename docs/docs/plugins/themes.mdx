@@ -1,0 +1,106 @@
+---
+title: 'Make a theme'
+icon: 'palette'
+description: 'Color themes, code colors, fonts and icons, from a manifest with no code'
+---
+
+A theme is a plugin with no code: everything is in its `nanoforge.manifest.json`. Start one with the CLI:
+
+```sh
+nf create plugin --name @acme/forest --template theme
+cd forest
+node build.mjs --watch                    # copies the manifest and icons to dist/ on every change
+DEV_PLUGINS=$(pwd) nf editor ../my-game   # in another terminal
+```
+
+Choose it in _Settings › Editor › Appearance_. While `--watch` runs, each save of the manifest changes the editor at once. `tooling/example-theme` in the editor's repository is a complete example: a theme, an icon and an icon theme.
+
+## A theme
+
+```json
+{
+  "type": "plugin",
+  "name": "@acme/forest",
+  "version": "0.1.0",
+  "keywords": ["theme"],
+  "engines": { "editor": ">=0.1.0" },
+  "contributes": {
+    "themes": [
+      {
+        "id": "forest",
+        "label": "Forest",
+        "extends": "nanoforge-dark",
+        "colors": { "accent": "#2f7d6d", "accent-hover": "#286a5d", "accent-text": "#7fd6c2" },
+        "syntax": { "keyword": "#7fd6c2", "string": "#e6c07b" },
+        "tokens": { "radius-control": "4px" }
+      }
+    ]
+  }
+}
+```
+
+- `id`: unique among installed themes. The built-in `nanoforge-dark` and `nanoforge-light` can't be replaced: a theme whose id is already taken is left out, and named in the Console.
+- `extends`: the theme it starts from, `nanoforge-dark`, `nanoforge-light` or another plugin's theme. Give only what changes. A theme that extends none gives `kind` (`dark` or `light`) and every color.
+- No `entry`: a theme has no code.
+- `keywords: ["theme"]` lists it under _Get more themes_ once it is in the registry.
+
+A color is any CSS color: `#rrggbb`, `rgb()`, `oklch()`. A value never holds `;`, `{`, `}`, `\`, `<`, `>`, `@`, `/*`, `url()` or an image, and closes its brackets and quotes: a theme brings no files but its icons. A `var()` works in the editor's own UI, but the code editor and the contrast check can't read it: give the code editor's colors (`surface`, `raised`, `text`, `accent`, `selection`…) as plain colors, or it keeps its own for them. An unknown token is refused, by name, in the Console (`Invalid contributes.themes of "@acme/forest"`).
+
+### Colors
+
+| Token                                          | For                                                  |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| `bg`, `surface`, `raised`, `sunken`            | Behind panels, panels, menus and dialogs, inputs     |
+| `hover`, `pressed`                             | Rows and buttons under the pointer, pressed          |
+| `border`, `border-strong`                      | Lines, edges of controls                             |
+| `text`, `text-muted`, `text-faint`             | Text, from the most to the least important           |
+| `accent`, `accent-hover`, `on-accent`          | Primary buttons and their text                       |
+| `accent-text`                                  | The accent used as text (links, active markers)      |
+| `focus`, `selection`, `selection-text`         | Keyboard focus, selected rows and text               |
+| `danger`, `warning`, `success`                 | Status                                               |
+| `scrim`                                        | Behind dialogs                                       |
+
+### Code colors (`syntax`)
+
+`keyword`, `string`, `number`, `comment`, `type`, `variable`, `regexp`, `delimiter`. Those you leave out keep the code editor's own.
+
+### Tokens
+
+`font-ui`, `font-code`, `radius-control`, `radius-float`. A font must be one the computer has, or a web font loaded another way: the editor loads only its own.
+
+The _Density_ setting (compact, normal, comfortable) is the user's, not the theme's.
+
+## Contrast
+
+When a theme is applied, the editor checks it as WCAG does: the three text colors need 4.5:1 on each background (`bg`, `surface`, `raised`, `sunken`), `border-strong` 3:1, `on-accent` 4.5:1 on `accent`, and `selection-text` on `selection`. What falls under is named once in the Console:
+
+```text
+Theme "forest" of @acme/forest has text too faint to read (WCAG AA): on-accent on accent is 4.29:1 (needs 4.5:1).
+```
+
+## Icons
+
+`contributes.icons` adds icons by name, as SVG files of the plugin. Panels, menus and file icons use them by their name.
+
+```json
+"icons": [{ "id": "forest-leaf", "path": "icons/leaf.svg" }]
+```
+
+An icon theme replaces the editor's icons while it is chosen (_Settings › Editor › Appearance › Icons_). Its id is unique too: the built-in `nanoforge` can't be replaced.
+
+```json
+"iconThemes": [
+  {
+    "id": "forest-icons",
+    "label": "Forest icons",
+    "icons": { "folder": "icons/folder.svg", "folder-open": "icons/folder-open.svg", "forest-code": "icons/code.svg" },
+    "files": [{ "pattern": "**/*.{ts,js}", "icon": "forest-code" }],
+    "folders": [{ "pattern": "**/assets", "icon": "folder", "iconOpen": "folder-open" }]
+  }
+]
+```
+
+- `icons`: any icon of the editor by its name (`folder`, `play`, `settings`, the panels' icons…), or new names for `files` and `folders`.
+- `files` and `folders`: patterns of the Files panel, ahead of every other plugin's while the icon theme is chosen.
+- A path is a relative `.svg` file inside the plugin: never `..`, an absolute path or another site.
+- An SVG is drawn in the color of the text around it (a CSS mask): draw it in one color, its shape only. It is never put in the page, so it can't run scripts.

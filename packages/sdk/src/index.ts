@@ -100,8 +100,13 @@ export type {
 export { basename, dirname, joinPath, runtimeOutputPath } from '@nanoforge-dev/editor-protocol';
 
 export {
+  type Changeset,
+  type ChangesetFile,
   type NewApp,
   type NewLibrary,
+  PROJECT_CHECKS,
+  type ProjectCheck,
+  type ProjectSuggestion,
   type Undo,
   WorkspaceError,
   type WorkspaceIo,
@@ -109,6 +114,8 @@ export {
   createLibrary,
   librariesOf,
   libraryImporters,
+  nameTaken,
+  recordChanges,
   removeApp,
   removeLibrary,
   renameApp,

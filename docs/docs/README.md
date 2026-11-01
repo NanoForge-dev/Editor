@@ -12,6 +12,7 @@ The pages of the documentation site for the editor (Mintlify `.mdx`). The site i
       "group": "Using the editor",
       "pages": [
         "docs/editor/overview",
+        "docs/editor/adapt-a-project",
         "docs/editor/layout",
         "docs/editor/files",
         "docs/editor/code-editor",
@@ -34,6 +35,7 @@ The pages of the documentation site for the editor (Mintlify `.mdx`). The site i
         "docs/plugins/sdk",
         "docs/plugins/extension-points",
         "docs/plugins/widgets-and-styles",
+        "docs/plugins/themes",
         "docs/plugins/settings",
         "docs/plugins/history",
         "docs/plugins/code-and-codegen",

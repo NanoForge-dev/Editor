@@ -22,6 +22,24 @@ export const CoreSettings = {
     category: 'Editor/Appearance',
     scopes: ['account', 'machine'],
   }),
+  iconTheme: defineSetting({
+    key: 'appearance.iconTheme',
+    schema: z.string().min(1),
+    default: 'nanoforge',
+    title: 'Icon theme',
+    description: 'Icons of the editor: panels, menus and files.',
+    category: 'Editor/Appearance',
+    scopes: ['account', 'machine'],
+  }),
+  density: defineSetting({
+    key: 'appearance.density',
+    schema: z.enum(['compact', 'normal', 'comfortable']),
+    default: 'normal',
+    title: 'Density',
+    description: 'How much room the panels, rows and buttons take.',
+    category: 'Editor/Appearance',
+    scopes: ['account', 'machine'],
+  }),
   cacheBudget: defineSetting({
     key: 'storage.cacheBudgetMb',
     schema: z.number().int().min(50).max(100_000),
@@ -76,6 +94,16 @@ export const CoreSettings = {
       'Panels whose first-time tip was put away. Remove one (or empty the list) to see its tip again.',
     category: 'Editor/Appearance',
     scopes: ['account', 'machine'],
+  }),
+  adoptionDismissed: defineSetting({
+    key: 'adoption.dismissed',
+    schema: z.array(z.string()),
+    default: [],
+    title: 'Dismissed suggestions',
+    description:
+      'Suggestions of the Project screen\'s "Adapt to the editor" report that were put away in this project.',
+    category: 'Editor/Project',
+    scopes: ['projectLocal'],
   }),
   layoutPreset: defineSetting({
     key: 'layout.preset',

@@ -15,6 +15,7 @@ description: 'Every field of a plugin nanoforge.manifest.json'
 | `version`                               | yes      | Semver.                                                                     |
 | `displayName`                           |          | The name shown in the editor.                                               |
 | `description`                           |          | One sentence, shown in _Settings › Plugins_ and the marketplace.            |
+| `keywords`                              |          | Words the registry searches. A theme says `["theme"]`.                      |
 | `icon`, `tags`, `license`, `repository` |          | Shown by the registry.                                                      |
 
 ## Compatibility
@@ -30,7 +31,7 @@ description: 'Every field of a plugin nanoforge.manifest.json'
 
 ## Entries
 
-Paths relative to the built folder.
+Paths relative to the built folder. A plugin that only contributes from its manifest (a theme, icons) has no `entry`. Any other key is refused: a typo (`clinet`) keeps the plugin from loading, and the error names the key.
 
 | Field          | Runs in             | Used for                                                                                                |
 | -------------- | ------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -145,7 +146,11 @@ The key is prefixed with the plugin's name: `@acme/counter.step`. See [settings]
 
 ### `themes`
 
-A color theme: `id`, `label`, `kind` (`dark` or `light`) and `colors`, a value for every color token. See [widgets and styles](./widgets-and-styles#theme-tokens).
+A color theme: `id`, `label`, and either `extends` (another theme's id) with the colors it changes, or `kind` (`dark` or `light`) with every color. Also `syntax` (code colors) and `tokens` (fonts and corners). See [make a theme](./themes).
+
+### `icons`, `iconThemes`
+
+Icons as SVG files of the plugin, by name, and icon themes that replace the editor's icons and give file and folder icons. See [make a theme](./themes#icons).
 
 ### `tours`
 
