@@ -40,5 +40,11 @@ export const loadEnv = (
     devPlugins: env.DEV_PLUGINS.map(absolute),
     bundledPluginsDir: env.BUNDLED_PLUGINS_DIR && absolute(env.BUNDLED_PLUGINS_DIR),
     tutorialDir: env.TUTORIAL_DIR && absolute(env.TUTORIAL_DIR),
+    launchToken:
+      env.PUBLIC_MODE !== 'OFFLINE' || !env.EDITOR_TOKEN
+        ? undefined
+        : env.EDITOR_TOKEN === 'random'
+          ? randomBytes(24).toString('base64url')
+          : env.EDITOR_TOKEN,
   };
 };

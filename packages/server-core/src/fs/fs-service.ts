@@ -24,6 +24,8 @@ export const NFIGNORE_FILE = '.nfignore';
 /** Installed bundles: usable, never modified (copy an entry into the project to change it). */
 export const PACKAGES_DIR = 'nf_modules';
 const EDITOR_GITIGNORE = 'trash/\nlocal.json\n';
+/** Deleted entries are kept this long in the trash (their name starts with when they went). */
+export const TRASH_TTL_MS = 30 * 24 * 3600 * 1000;
 
 export const MAX_READ_BYTES = 64 * 1024 * 1024;
 /** Bytes `readMany` sends in one answer (a file larger than this still goes, alone). */
@@ -318,6 +320,23 @@ export class ProjectFileSystem {
     );
     await rename(source, target).catch((error: unknown) => mapError(error, path));
     return { trashPath: `${TRASH_DIR}/${basename(target)}` };
+  }
+
+  /**
+   * Empties the trash of entries deleted more than `TRASH_TTL_MS` ago (their undo can no longer
+   * bring them back). Returns how many went.
+   */
+  async purgeTrash(now = Date.now()): Promise<number> {
+    const trash = await this.jail.resolve(TRASH_DIR);
+    const names = await readdir(trash).catch(() => [] as string[]);
+    let purged = 0;
+    for (const name of names) {
+      const deletedAt = Number(/^(\d+)-/.exec(name)?.[1]);
+      if (!Number.isFinite(deletedAt) || now - deletedAt <= TRASH_TTL_MS) continue;
+      await rm(join(trash, name), { recursive: true, force: true });
+      purged++;
+    }
+    return purged;
   }
 
   /** Brings a deleted entry back from the trash (undo of `delete`). */

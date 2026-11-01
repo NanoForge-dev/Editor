@@ -217,7 +217,10 @@ describe('editor server', () => {
     ).toBe(404);
     const shell = await get('/project/abc');
     expect(await shell.text()).toBe('<html>editor</html>');
-    expect(shell.headers.get('content-security-policy')).toBe("frame-ancestors 'self'");
+    const policy = shell.headers.get('content-security-policy')!;
+    expect(policy).toContain("frame-ancestors 'self'");
+    expect(policy).toMatch(/script-src 'self' '(unsafe-eval|wasm-unsafe-eval)'/);
+    expect(policy).toContain("object-src 'none'");
     expect(shell.headers.get('x-frame-options')).toBe('SAMEORIGIN');
     expect((await get('/_app/missing.js')).status).toBe(404);
 

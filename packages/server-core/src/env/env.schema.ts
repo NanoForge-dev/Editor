@@ -80,6 +80,12 @@ export const EnvSchema = z
     /** Files of the tutorial's project (_Help › Tutorial_), when not next to the editor build. */
     TUTORIAL_DIR: optionalString,
     /**
+     * A local editor answers only to a browser that opened its link with this token once (other
+     * users of a shared machine can reach its loopback port). `random`: a new token at each
+     * start, printed with the link. Unset: no token (a machine of your own).
+     */
+    EDITOR_TOKEN: optionalString,
+    /**
      * Lets a local (OFFLINE) editor listen on a non-loopback `HOST`. It has no sign-in and runs
      * project code: only set it behind something that restricts who can connect.
      */

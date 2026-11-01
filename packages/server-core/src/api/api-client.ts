@@ -6,6 +6,9 @@ import { RpcError, type RpcErrorCode } from '@nanoforge-dev/editor-rpc';
 import type { EditorEnv } from '../env/editor-env.type';
 import type { AuthTokens, Session } from '../session/session-store';
 
+/** How long a call to the NanoForge API may take: a request waiting on it waits no longer. */
+const API_TIMEOUT_MS = 15_000;
+
 const API_STATUS_CODES: Record<number, RpcErrorCode> = {
   400: 'BAD_REQUEST',
   401: 'UNAUTHORIZED',
@@ -97,6 +100,7 @@ export class ApiClient {
   constructor(
     private readonly _env: EditorEnv,
     private readonly _fetch: typeof fetch = globalThis.fetch.bind(globalThis),
+    private readonly _timeoutMs = API_TIMEOUT_MS,
   ) {}
 
   async request<T>(session: Session | null, path: string, request: ApiRequest = {}): Promise<T> {
@@ -179,20 +183,34 @@ export class ApiClient {
     return session.tokens;
   }
 
-  private _send(path: string, request: ApiRequest, accessToken: string | null): Promise<Response> {
+  private async _send(
+    path: string,
+    request: ApiRequest,
+    accessToken: string | null,
+  ): Promise<Response> {
     const url = new URL(path, this._env.apiUrl);
     for (const [key, value] of Object.entries(request.query ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
-    return this._fetch(url, {
-      method: request.method ?? 'GET',
-      headers: {
-        'content-type': 'application/json',
-        ...(this._env.apiKey && { 'api-key': this._env.apiKey }),
-        ...(accessToken && { authorization: `Bearer ${accessToken}` }),
-      },
-      ...(request.body !== undefined && { body: JSON.stringify(request.body) }),
-      ...(request.signal && { signal: request.signal }),
-    });
+    const timeout = AbortSignal.timeout(this._timeoutMs);
+    try {
+      return await this._fetch(url, {
+        method: request.method ?? 'GET',
+        headers: {
+          'content-type': 'application/json',
+          ...(this._env.apiKey && { 'api-key': this._env.apiKey }),
+          ...(accessToken && { authorization: `Bearer ${accessToken}` }),
+        },
+        ...(request.body !== undefined && { body: JSON.stringify(request.body) }),
+        signal: request.signal ? AbortSignal.any([request.signal, timeout]) : timeout,
+      });
+    } catch (error) {
+      if (timeout.aborted)
+        throw new RpcError(
+          'UNAVAILABLE',
+          `NanoForge API ${request.method ?? 'GET'} ${path} did not answer in ${Math.round(this._timeoutMs / 1000)} s`,
+        );
+      throw error;
+    }
   }
 }

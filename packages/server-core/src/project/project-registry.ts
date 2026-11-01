@@ -63,6 +63,9 @@ export class OpenProject implements Disposable {
       isIgnored: (path, directory) => this.fs.isIgnored(path, directory),
     });
     void this.fs.refreshIgnore();
+    void this.fs
+      .purgeTrash()
+      .catch((error: unknown) => this._logger.warn('Could not empty the old trash', error));
     this._store.add(
       this.watcher.onDidChange((changes) => {
         if (changes.some((change) => CONFIG_CHANGE.test(change.path))) this._scheduleRediscovery();
@@ -182,7 +185,8 @@ export class ProjectRegistry implements Disposable {
   /** Returns an opened project the session may access, else throws NOT_FOUND. */
   get(session: Session, id: string): OpenProject {
     const project = this._projects.get(id);
-    const allowed = session.mode === 'OFFLINE' || session.projects.has(id);
+    const allowed =
+      session.mode === 'OFFLINE' || (session.user !== null && session.projects.has(id));
     if (!project || !allowed) throw new RpcError('NOT_FOUND', `Project ${id} is not open`);
     this._lastUsed.set(id, Date.now());
     return project;
