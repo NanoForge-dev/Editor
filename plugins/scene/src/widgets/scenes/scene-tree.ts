@@ -6,7 +6,7 @@ import type { AppScenesModel, SceneModel } from '../../model/scene-model.type';
 export const MAIN_ID = '#main';
 
 /** What a scene's row says of it: initial, its params, what it lacks. */
-export const sceneDetail = (model: AppScenesModel | undefined, scene: SceneModel): string =>
+const sceneDetail = (model: AppScenesModel | undefined, scene: SceneModel): string =>
   [
     scene.className === model?.library?.initial ? 'initial' : '',
     scene.paramsType ?? '',

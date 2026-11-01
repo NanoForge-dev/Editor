@@ -5,6 +5,7 @@ import {
   type Event,
   type Logger,
   type Observable,
+  ObservableValue,
   createToken,
   toDisposable,
 } from '@nanoforge-dev/editor-kernel';
@@ -30,6 +31,7 @@ export class SettingsService implements Disposable {
   private readonly _observables = new Map<string, Observable<unknown>>();
   private readonly _warned = new Set<string>();
   private readonly _store = new DisposableStore();
+  private readonly _pending = new ObservableValue(0);
 
   readonly onDidChange: Event<SettingsChange> = this._onDidChange.event;
 
@@ -149,19 +151,23 @@ export class SettingsService implements Disposable {
     }
     if (definition.deprecated)
       this._logger?.warn(`"${definition.key}" is deprecated: ${definition.deprecated}`);
-    await this._storeOf(scope).write({
-      ...this._aliasRemoval(definition),
-      [definition.key]: parsed.data,
-    });
+    await this._track(
+      this._storeOf(scope).write({
+        ...this._aliasRemoval(definition),
+        [definition.key]: parsed.data,
+      }),
+    );
   }
 
   /** Removes the value of a scope (falls back to lower scopes). */
   async reset(key: KeyOrDefinition<unknown>, scope: WritableScope): Promise<void> {
     const definition = this._definition(key);
-    await this._storeOf(scope).write({
-      ...this._aliasRemoval(definition),
-      [definition.key]: undefined,
-    });
+    await this._track(
+      this._storeOf(scope).write({
+        ...this._aliasRemoval(definition),
+        [definition.key]: undefined,
+      }),
+    );
   }
 
   /** The raw values of a scope as formatted JSON. */
@@ -218,12 +224,40 @@ export class SettingsService implements Disposable {
   }
 
   async applyImport(preview: ImportPreview): Promise<void> {
-    await this._storeOf(preview.scope).write(preview.patch);
+    await this._track(this._storeOf(preview.scope).write(preview.patch));
+  }
+
+  /**
+   * Saves waiting or under way: writes, and what callers {@link hold} while they wait to write
+   * (debounced layout saves). The e2e tests wait for none instead of sleeping.
+   */
+  get pending(): Observable<number> {
+    return this._pending.readonly();
+  }
+
+  /** Counts a save that will come (a debounce running): call the result once it is written. */
+  hold(): () => void {
+    this._pending.set(this._pending.get() + 1);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this._pending.set(this._pending.get() - 1);
+    };
   }
 
   dispose(): void {
     this._store.dispose();
     this._onDidChange.dispose();
+  }
+
+  private async _track<T>(write: Promise<T>): Promise<T> {
+    const release = this.hold();
+    try {
+      return await write;
+    } finally {
+      release();
+    }
   }
 
   private _definition<T>(key: KeyOrDefinition<T>): SettingDefinition<T> {

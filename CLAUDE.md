@@ -42,9 +42,13 @@ The NanoForge editor, rewritten from scratch. The full plan, with status per pha
 ```sh
 pnpm install
 pnpm turbo build --filter=@nanoforge-dev/editor...   # editor + every package and plugin it bundles
-pnpm lint          # prettier --check . + eslint in every package
+pnpm setup:check   # Node, pnpm, Bun, git, Chrome, a built engine and CLI: what is missing and how to get it
+pnpm setup:engine  # clones and builds the engine and CLI CI pins (scripts/pinned-refs.json) into .engine/
+pnpm lint          # prettier --check . + workspace standards (scripts/check-workspaces.mjs) + knip + eslint in every package
 pnpm typecheck
 CHROME=/usr/bin/google-chrome-stable pnpm test       # unit + Vitest browser tests (packages/ui needs CHROME)
+CHROME=/usr/bin/google-chrome-stable pnpm test:coverage   # the same with coverage, failing under coverage-floors.json
+node scripts/coverage-floors.mjs [--write]           # coverage per workspace; --write raises the floors
 pnpm dev           # editor + built-in plugins in watch mode (hot reload)
 
 # E2E: against the production build. Build first, and rebuild after every change.
@@ -53,9 +57,12 @@ CHROME=/usr/bin/google-chrome-stable \
 NANOFORGE_ENGINE=/home/exelo/workspace/epitech/G6/G-EIP-600/engine \
 NANOFORGE_CLI=/home/exelo/workspace/epitech/G6/G-EIP-600/cli \
 npx playwright test [spec…] --reporter=line
+pnpm e2e:last-failure   # error-context.md of the last failed test, its last frame in test-results/last-failure.jpeg
 ```
 
 - **Run e2e with `E2E_WORKSPACE=.workspace-agent`** (`.workspace` or `.workspace-<name>`: anything else is refused, since the folder is wiped). The default `e2e/.workspace` is wiped at each run, and the user's dev server (`FS_ROOT=apps/editor`) may have its projects open. Specs take their paths from `e2e/workspace.ts`.
+- The e2e run refuses a build older than the code (`e2e/check-build.ts`, names the newer file); `E2E_ALLOW_STALE=1` runs the old build anyway.
+- `E2E_REQUIRE_ENGINE=1` (CI) fails the run when the `game`, `my-first-game` or `breakout` copy is missing, instead of skipping their tests. Without `NANOFORGE_ENGINE`/`NANOFORGE_CLI`, the e2e prep and `pnpm example` use `.engine/` when `pnpm setup:engine` made it, else `../engine`.
 - Without `NANOFORGE_ENGINE`, the tests that play the game (runtime, the viewport's "while playing", some code-editor tests) are **skipped**, not failed. Check the skipped count.
 - `NANOFORGE_CLI` (a built CLI checkout) is linked into the played game as its own CLI. Without it, the console test skips its source-map check (the game's published CLI writes no source maps).
 - Contract tests (`test/contract` in `server-core` and `registry`) run in `pnpm test` against the stand-ins, and against a real API with `CONTRACT_*` variables (`docs/api/README.md`). Never run them against a real API yourself.
@@ -63,11 +70,13 @@ npx playwright test [spec…] --reporter=line
 - `E2E_EXTRA_PLUGINS=<built plugin folder>` adds a dev plugin to the e2e editor.
 - Unit tests fail on an unexpected `console.error` (`vitest.setup.ts`): a test that expects one spies on it (`vi.spyOn(console, 'error').mockImplementation(() => {})`).
 - SDK public API snapshot: after adding SDK exports, run `cd packages/sdk && npx vitest run -u`, and check that the diff shows only what you added.
-- E2E specs import `test` and `expect` from `./test` (`e2e/test.ts`), not from `@playwright/test`: its fixture fails a test when a page throws an uncaught error. Known noise goes in its `IGNORED` list.
+- E2E specs import `test` and `expect` from `./test` (`e2e/test.ts`), not from `@playwright/test`: its fixture fails a test when a page throws an uncaught error (known noise goes in its `IGNORED` list), and another stops the game a test leaves playing.
+- **Never sleep to wait for a save:** `await saved(page)` (`e2e/helpers.ts`) waits for `data-nf-saved` on the page, set while no layout, panel state, settings write or account push is pending (`SettingsService.pending`; a debounce holds a pending save with `settings.hold()`).
+- `/kit` (dev server only, 404 in a build) shows every kit component in both themes, and the floating layers' order over a dialog.
 - E2E specs open projects with `openProject(page, path)` (`e2e/helpers.ts`): `/load?path=` asks before opening a folder that is not an exact recent path (a relative path always asks), and the helper answers **Trust and open**. Server and runtime unit tests open projects with `openTrustedProject` (`@nanoforge-dev/editor-server-core/testing`): a fresh data folder trusts nothing.
 - The editor server answers only to loopback host names and `ALLOWED_HOSTS` (DNS rebinding guard): a dev server reached by another name needs it.
-- To debug a failed e2e test, read `test-results/<test>/error-context.md`. For a screenshot, unzip `trace.zip` and open the last frame in `screencast/`.
-- The CLI repo needs `pnpm --filter @nanoforge-dev/config build` before `pnpm build`.
+- To debug a failed e2e test, `pnpm e2e:last-failure` (or read `test-results/<test>/error-context.md`, and the last frame of `trace.zip`). A minified Monaco stack: rebuild code-editor with `npx vite build --sourcemap --outDir <scratch>` (same file hashes) and map the frames with `@jridgewell/trace-mapping`.
+- The CLI repo needs `pnpm --filter @nanoforge-dev/config build` before `pnpm build`, and `pnpm --filter @nanoforge-dev/schematics build` for `nf new` (its root build leaves the schematics out).
 
 ## Architecture in one screen
 

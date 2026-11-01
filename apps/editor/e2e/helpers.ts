@@ -1,6 +1,18 @@
 import { type Page, expect } from '@playwright/test';
 
 /**
+ * Waits until the editor has saved everything that outlives the test (the layout, panel states,
+ * settings and their account push): the page's `data-nf-saved`. Two frames first, so a save the
+ * last action starts is counted.
+ */
+export const saved = async (page: Page): Promise<void> => {
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  await expect(page.locator('html[data-nf-saved="true"]')).toHaveCount(1, { timeout: 15_000 });
+};
+
+/**
  * Puts the saved layout of the project back to the default with every panel (tests reuse
  * projects, and expect the panels of the full layout).
  */

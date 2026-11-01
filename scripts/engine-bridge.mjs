@@ -12,11 +12,22 @@ import {
 import { dirname, join, resolve } from 'node:path';
 
 /**
- * The engine checkout the scripts link games to: `NANOFORGE_ENGINE`, or `engine` next to the
- * editor repository (`root`).
+ * The engine checkout the scripts link games to: `NANOFORGE_ENGINE`, else the one
+ * `pnpm setup:engine` built in `.engine/engine`, else `engine` next to the editor repository
+ * (`root` is the editor repository).
  */
-export const engineRoot = (root) =>
-  resolve(process.env.NANOFORGE_ENGINE ?? join(root, '../engine'));
+export const engineRoot = (root) => {
+  if (process.env.NANOFORGE_ENGINE) return resolve(process.env.NANOFORGE_ENGINE);
+  const pinned = join(root, '.engine/engine');
+  return existsSync(join(pinned, 'package.json')) ? pinned : resolve(join(root, '../engine'));
+};
+
+/** The CLI build the tests link: `NANOFORGE_CLI`, else the one `pnpm setup:engine` built. */
+export const cliRoot = (root) => {
+  if (process.env.NANOFORGE_CLI) return resolve(process.env.NANOFORGE_CLI);
+  const pinned = join(root, '.engine/cli');
+  return existsSync(join(pinned, 'package.json')) ? pinned : undefined;
+};
 
 const speaks = (file) =>
   existsSync(file) && readFileSync(file, 'utf8').includes('EDITOR_PROTOCOL_VERSION');

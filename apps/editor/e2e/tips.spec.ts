@@ -3,6 +3,7 @@ import {
   openProject,
   putBackAccountSetting,
   resetLayout,
+  saved,
   showPanel,
 } from './helpers';
 import { expect, test } from './test';
@@ -30,8 +31,7 @@ test('a panel tip shows until put away, and stays away', async ({ page }) => {
   );
   await tip.getByRole('button', { name: 'Got it' }).click();
   await expect(tip).toHaveCount(0);
-  /** Account settings are pushed after 500 ms. */
-  await page.waitForTimeout(900);
+  await saved(page);
   await page.reload();
   await showPanel(page, 'History');
   await expect(page.getByRole('region', { name: 'History', exact: true })).toBeVisible();

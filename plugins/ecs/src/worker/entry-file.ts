@@ -25,7 +25,7 @@ import type {
 import { scopeName } from '../model/scope-name';
 
 /** The body of `export const main = async (…) => { … }` or `export function main(…) { … }`. */
-export const findMain = (file: SourceFile): Block | undefined => {
+const findMain = (file: SourceFile): Block | undefined => {
   const fn = file.getFunction('main');
   if (fn?.isExported()) return fn.getBody() as Block | undefined;
   const variable = file.getVariableDeclaration('main');
@@ -42,7 +42,7 @@ export const findMain = (file: SourceFile): Block | undefined => {
 };
 
 /** The body of a scope: `main`, or a method of a class of the file (`Level1.setup`). */
-export const findBody = (file: SourceFile, scope: EntryScope | undefined): Block | undefined => {
+const findBody = (file: SourceFile, scope: EntryScope | undefined): Block | undefined => {
   if (scope?.kind !== 'method') return findMain(file);
   const body = file.getClass(scope.class)?.getMethod(scope.method)?.getBody();
   return body && Node.isBlock(body) ? body : undefined;

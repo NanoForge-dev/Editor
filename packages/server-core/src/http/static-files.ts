@@ -22,7 +22,7 @@ const CONTENT_TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
-export const contentType = (file: string) =>
+const contentType = (file: string) =>
   CONTENT_TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream';
 
 /**

@@ -25,8 +25,8 @@ import type {
 import { minimalEdit, toMarker } from './editor-edits';
 import { pairRenames } from './pair-renames';
 
-export const SCRIPT_LIKE = /\.[cm]?[jt]sx?$/;
-export const EMPTY: EditorLayout = { groups: [{ tabs: [], active: undefined }], focused: 0 };
+const SCRIPT_LIKE = /\.[cm]?[jt]sx?$/;
+const EMPTY: EditorLayout = { groups: [{ tabs: [], active: undefined }], focused: 0 };
 
 /**
  * State of the Script screen for the open project: open documents, editor groups and tabs,

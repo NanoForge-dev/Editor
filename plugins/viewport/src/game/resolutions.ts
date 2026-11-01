@@ -15,7 +15,7 @@ export const RESOLUTIONS: readonly Resolution[] = [
   { id: 'tablet', label: 'Tablet (820 × 1180)', width: 1180, height: 820, device: true },
 ];
 
-export const ZOOMS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] as const;
+const ZOOMS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] as const;
 
 /**
  * Size of the game container: undefined to fill the screen (`fit`), else the preset or custom

@@ -1,6 +1,8 @@
 import { defineConfig } from '@playwright/test';
 import { join } from 'node:path';
 
+import { checkBuild } from './e2e/check-build';
+
 const PORT = 4790;
 const root = import.meta.dirname;
 /** Folder of `e2e/` holding the test projects (`E2E_WORKSPACE`, see `e2e/workspace.ts`). */
@@ -23,6 +25,12 @@ const others = (process.env.BROWSERS ?? 'chromium,firefox')
   .filter(
     (browser): browser is 'firefox' | 'webkit' => browser === 'firefox' || browser === 'webkit',
   );
+
+/**
+ * Before the server starts, in the main process of `playwright test` only: workers load the
+ * config too, and so do tools that read it (knip, editors).
+ */
+if (!process.env.TEST_WORKER_INDEX && process.argv.includes('test')) checkBuild();
 
 export default defineConfig({
   testDir: 'e2e',

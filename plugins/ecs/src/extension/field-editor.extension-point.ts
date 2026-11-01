@@ -9,7 +9,7 @@ import type { ArgModel, ArgValue, ImportNeed } from '../model/ecs-model.type';
  * `@nanoforge/ecs` as a dependency): `defineExtensionPoint('ecs.fieldEditors')`.
  */
 
-export interface FieldEditorProps {
+interface FieldEditorProps {
   readonly element: Element;
   readonly arg: ArgModel | undefined;
   readonly label: string;

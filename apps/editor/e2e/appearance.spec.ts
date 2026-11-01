@@ -1,4 +1,4 @@
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 
 const openSettings = async (page: Page) => {
@@ -27,7 +27,7 @@ const restore = async (page: Page) => {
   await page.getByRole('option', { name: 'NanoForge', exact: true }).click();
   await dialog.getByRole('button', { name: 'OK' }).click();
   await expect(dialog).toBeHidden();
-  await page.waitForTimeout(900);
+  await saved(page);
 };
 
 test('themes, density and icons from a plugin, chosen in Settings › Appearance', async ({

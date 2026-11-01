@@ -1,0 +1,33 @@
+{
+  "name": "NanoForge editor",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "26"
+    },
+    "ghcr.io/devcontainers-extra/features/bun:1": {
+      "version": "1.3.14"
+    }
+  },
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@12.0.0 --activate && pnpm install && pnpm --filter @nanoforge-dev/editor exec playwright install --with-deps chromium firefox && pnpm setup:check",
+  "forwardPorts": [5174, 4800],
+  "portsAttributes": {
+    "4800": {
+      "label": "Example (pnpm example)"
+    },
+    "5174": {
+      "label": "Editor (pnpm dev)"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "svelte.svelte-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "vitest.explorer",
+        "ms-playwright.playwright"
+      ]
+    }
+  }
+}

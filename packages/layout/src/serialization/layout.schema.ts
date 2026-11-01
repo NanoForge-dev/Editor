@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const Ref = z.object({ instanceId: z.string().min(1), widgetId: z.string().min(1) });
-export const Stack = z.object({
+const Ref = z.object({ instanceId: z.string().min(1), widgetId: z.string().min(1) });
+const Stack = z.object({
   tabs: z.array(Ref).catch([]),
   active: z.string().nullable().catch(null),
 });

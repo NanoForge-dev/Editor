@@ -55,7 +55,7 @@ export const sceneApps = (model: ProjectModel | undefined): AppModel[] =>
   );
 
 /** Where a scene's entities are: its class's `setup`. */
-export const locationOf = (scene: SceneModel): EcsLocation => ({
+const locationOf = (scene: SceneModel): EcsLocation => ({
   path: scene.path,
   scope: { kind: 'method', class: scene.className, method: 'setup' },
   label: scene.id,
@@ -66,11 +66,11 @@ export const locationOf = (scene: SceneModel): EcsLocation => ({
 export const MAIN_LABEL = 'main.ts';
 
 /** Where the app's own entities are: its entry file's `main`. */
-export const mainLocation = (app: AppModel): EcsLocation | undefined =>
+const mainLocation = (app: AppModel): EcsLocation | undefined =>
   app.entryFile ? { path: app.entryFile, label: MAIN_LABEL } : undefined;
 
 /** A scene's parents, outermost first (stops at a cycle or an unknown parent). */
-export const parentsOf = (scenes: readonly SceneModel[], scene: SceneModel): SceneModel[] => {
+const parentsOf = (scenes: readonly SceneModel[], scene: SceneModel): SceneModel[] => {
   const chain: SceneModel[] = [];
   let parent = scenes.find((candidate) => candidate.className === scene.parent);
   while (parent && !chain.includes(parent) && parent !== scene) {

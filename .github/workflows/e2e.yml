@@ -22,6 +22,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -32,34 +36,83 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
+      # The engine and CLI the tests play and build with: scripts/pinned-refs.json, also read
+      # by pnpm setup:engine. Move them on purpose, after a run against the new commits passes.
+      - name: Read the pinned engine and CLI
+        shell: bash
+        run: |
+          echo "ENGINE_REF=$(jq -r .engine.ref scripts/pinned-refs.json)" >> "$GITHUB_ENV"
+          echo "CLI_REF=$(jq -r .cli.ref scripts/pinned-refs.json)" >> "$GITHUB_ENV"
+
       # The tests that play a game (runtime, inspectors, scene…) need a built engine with the
-      # editor library; without NANOFORGE_ENGINE they are skipped.
+      # editor library, and the tutorial a built CLI. E2E_REQUIRE_ENGINE fails the run when
+      # one is missing instead of skipping them.
+      - name: Cache engine and CLI
+        id: cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            engine
+            cli
+          key: ${{ runner.os }}-engine-${{ env.ENGINE_REF }}-cli-${{ env.CLI_REF }}
+
       - name: Checkout engine
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: actions/checkout@v7
         with:
           repository: NanoForge-dev/Engine
-          ref: main
+          ref: ${{ env.ENGINE_REF }}
           path: engine
 
       - name: Install emsdk
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: ./engine/.github/actions/emsdk-install
 
       - name: Install engine dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         uses: ./.github/actions/pnpm-install
         with:
           path: engine
 
       - name: Build engine
+        if: steps.cache.outputs.cache-hit != 'true'
         run: pnpm run build
         working-directory: engine
 
+      - name: Checkout CLI
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: NanoForge-dev/CLI
+          ref: ${{ env.CLI_REF }}
+          path: cli
+
+      - name: Install CLI dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        uses: ./.github/actions/pnpm-install
+        with:
+          path: cli
+
+      - name: Build CLI
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          pnpm --filter @nanoforge-dev/config build
+          pnpm --filter @nanoforge-dev/schematics build
+          pnpm build
+        working-directory: cli
+
       - name: Install browsers
-        run: pnpm --filter @nanoforge-dev/editor exec playwright install --with-deps chromium firefox
+        uses: ./.github/actions/playwright-install
+        with:
+          browsers: firefox
 
       - name: Run end-to-end tests
         run: pnpm --filter @nanoforge-dev/editor test:e2e
         env:
+          CHROME: /usr/bin/google-chrome
           NANOFORGE_ENGINE: ${{ github.workspace }}/engine
+          NANOFORGE_CLI: ${{ github.workspace }}/cli
+          E2E_REQUIRE_ENGINE: '1'
 
       - name: Upload traces
         if: failure()

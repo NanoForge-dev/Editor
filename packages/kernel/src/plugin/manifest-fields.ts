@@ -2,7 +2,7 @@ import semver from 'semver';
 import { z } from 'zod';
 
 /** Registry package name: `@scope/name`, like a scoped npm package. */
-export const PLUGIN_NAME_PATTERN = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
+const PLUGIN_NAME_PATTERN = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 
 export const PluginName = z
   .string()
@@ -26,7 +26,7 @@ export const PluginDependencies = z
 
 export const NpmRanges = z.record(z.string().min(1), Range).default({});
 
-export const ACTIVATION_EVENT_PATTERN =
+const ACTIVATION_EVENT_PATTERN =
   /^(onStartup|on(Command|Screen|Widget|ProjectType|Language|Uri):.+)$/;
 
 export const ActivationEvent = z

@@ -24,3 +24,4 @@ tooling/
 
 # Written by the editor in a project it opens (the example).
 **/.nanoforge/
+.engine/
