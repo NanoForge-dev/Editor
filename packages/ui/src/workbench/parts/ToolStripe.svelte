@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { moveTabFocus } from '../../components/tab-focus';
+  import { focusAfterPanel, focusPanel } from './panel-focus';
   import { type Layout, type SlotId, isSlotVisible } from '@nanoforge-dev/editor-layout';
 
   import ContextMenu from '../../components/context-menu.svelte';
@@ -88,11 +90,18 @@
                 layout.toggleTool(tab.instanceId);
               }}
               onauxclick={(event) => event.button === 1 && run(layout.close(tab.instanceId))}
+              aria-keyshortcuts="Delete"
               onkeydown={(event) => {
+                if (moveTabFocus(event, 'vertical')) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
+                  const showing = !selected;
                   layout.toggleTool(tab.instanceId);
-                } else if (event.key === 'Delete') run(layout.close(tab.instanceId));
+                  if (showing) focusPanel(tab.instanceId);
+                } else if (event.key === 'Delete') {
+                  run(layout.close(tab.instanceId));
+                  focusAfterPanel(tab.instanceId);
+                }
               }}
             >
               <Icon name={icon(tab.widgetId)} size={18} />
@@ -104,7 +113,11 @@
   </div>
 {/snippet}
 
-<nav class="stripe {side}" aria-label="{side === 'left' ? 'Left' : 'Right'} tool windows">
+<nav
+  class="stripe {side}"
+  data-nf-stripe
+  aria-label="{side === 'left' ? 'Left' : 'Right'} tool windows"
+>
   {@render group(groups[0]!)}
   {#if current.slots[groups[0]!].stack.tabs.length && current.slots[groups[1]!].stack.tabs.length}
     <hr />
@@ -169,5 +182,6 @@
   .selected:hover {
     background: var(--nf-color-pressed);
     color: var(--nf-color-text);
+    box-shadow: inset 0 0 0 1px var(--nf-color-border-strong);
   }
 </style>

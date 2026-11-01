@@ -13,6 +13,7 @@
 
   const { value, items, onchange, label, disabled = false }: Props = $props();
   const selected = $derived(items.find((item) => item.value === value));
+  const id = $props.id();
 </script>
 
 <Select.Root
@@ -26,8 +27,8 @@
   }))}
   onValueChange={(next) => onchange?.(next as T)}
 >
-  <Select.Trigger class="nf-select-trigger" aria-label={label}>
-    <span>{selected?.label ?? ''}</span>
+  <Select.Trigger class="nf-select-trigger" aria-label={label} aria-describedby="{id}-value">
+    <span id="{id}-value">{selected?.label ?? ''}</span>
     <Icon name="chevron-down" size={14} />
   </Select.Trigger>
   <Select.Portal>

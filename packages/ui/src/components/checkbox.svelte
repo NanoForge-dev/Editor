@@ -46,6 +46,10 @@
     border-color: var(--nf-color-accent);
     background: var(--nf-color-accent);
   }
+  input:focus-visible {
+    outline: 2px solid var(--nf-color-focus);
+    outline-offset: 2px;
+  }
   input:checked::after {
     content: '';
     width: 7px;

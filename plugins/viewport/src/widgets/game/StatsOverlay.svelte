@@ -22,7 +22,7 @@
   const ms = (value: number) => `${value.toFixed(value < 10 ? 2 : 1)} ms`;
 </script>
 
-<div class="stats" role="status" aria-label="Game stats">
+<div class="stats" role="group" aria-label="Game stats">
   {#each [...$stats].sort(([a], [b]) => a.localeCompare(b)) as [source, frame] (source)}
     {@const slowest = Object.entries(frame.libraries)
       .sort(([, a], [, b]) => b.avg - a.avg)

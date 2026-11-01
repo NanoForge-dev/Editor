@@ -12,9 +12,40 @@
     warning: 'triangle-alert',
     error: 'circle-alert',
   } as const;
+  let section = $state<HTMLElement>();
+
+  /**
+   * Dismisses a toast. Its focused button leaves the page with it, so no `focusout` may come:
+   * the countdowns start again once neither the focus nor the pointer is on the toasts.
+   */
+  const dismiss = (id: number) => {
+    notifications.dismiss(id);
+    requestAnimationFrame(() => {
+      if (section?.contains(document.activeElement) || section?.matches(':hover')) return;
+      notifications.release();
+    });
+  };
 </script>
 
-<section class="toasts" aria-live="polite" aria-label="Notifications">
+<section
+  bind:this={section}
+  class="toasts"
+  aria-live="polite"
+  aria-label="Notifications"
+  onpointermove={(event) => {
+    if (event.movementX || event.movementY) notifications.hold();
+  }}
+  onpointerleave={(event) => {
+    if (!event.currentTarget.contains(document.activeElement)) notifications.release();
+  }}
+  onfocusin={() => notifications.hold()}
+  onfocusout={(event) => {
+    const next = event.relatedTarget as Node | null;
+    if (!next || !event.currentTarget.contains(next)) {
+      if (!event.currentTarget.matches(':hover')) notifications.release();
+    }
+  }}
+>
   {#each $active as notification (notification.id)}
     <div
       class="toast {notification.severity}"
@@ -31,19 +62,14 @@
                 size="sm"
                 onclick={async () => {
                   await action.run();
-                  notifications.dismiss(notification.id);
+                  dismiss(notification.id);
                 }}>{action.title}</Button
               >
             {/each}
           </div>
         {/if}
       </div>
-      <IconButton
-        icon="x"
-        label="Dismiss"
-        size={14}
-        onclick={() => notifications.dismiss(notification.id)}
-      />
+      <IconButton icon="x" label="Dismiss" size={14} onclick={() => dismiss(notification.id)} />
     </div>
   {/each}
 </section>

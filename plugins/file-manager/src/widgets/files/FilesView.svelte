@@ -20,6 +20,7 @@
     Menu,
     Tree,
     type WidgetInstance,
+    isKeyboardMenu,
   } from '@nanoforge-dev/editor-sdk/ui';
 
   import GridView from './GridView.svelte';
@@ -197,7 +198,7 @@
           class:drop={dropFolder === ''}
           role="presentation"
           oncontextmenu={(event) => {
-            if (!(event.target as HTMLElement).closest('[data-id]')) {
+            if (!isKeyboardMenu(event) && !(event.target as HTMLElement).closest('[data-id]')) {
               menuTarget = [];
               selected = new Set();
             }

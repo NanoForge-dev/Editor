@@ -7,6 +7,7 @@
   import { LiveServiceToken } from '../../live/live-service';
   import { type SceneShape, buildScene, withLivePositions } from '../../scene/build-scene';
   import { panelServices } from '../../session/panel-services';
+  import { moveShape } from './move-shape';
 
   /** The Scene screen hosting this view. */
   const { instance }: { instance?: WidgetInstance } = $props();
@@ -166,38 +167,61 @@
     pan = undefined;
     const current = drag;
     drag = undefined;
-    if (!current || (!current.dx && !current.dy)) return;
+    if (!current) return;
     const shape = shapes.find(
       (candidate) => candidate.entity === current.entity && candidate.position,
     );
-    const position = shape?.position;
-    if (!shape || !position) return;
-    const x = shape.x + current.dx;
-    const y = shape.y + current.dy;
-    if ($playing && client) {
-      const entity = client.entities.find(
-        (candidate) => candidate.code === shape.entity && candidate.scene === $location?.scene,
-      );
-      if (!entity) return;
-      live.setField('client', entity, position.componentName, 'x', x);
-      live.setField('client', entity, position.componentName, 'y', y);
-      return;
-    }
-    const fill = [x, y];
-    void ecs.apply(
-      {
-        kind: 'setArgs',
-        entity: shape.entity,
-        index: position.component,
-        args: { [position.xParam]: { value: fill[0] }, [position.yParam]: { value: fill[1] } },
-        fill: [{ value: 0 }, { value: 0 }],
-      },
-      `Move ${shape.entity}`,
-    );
+    if (shape) moveShape(moveContext(), shape, current.dx, current.dy);
   };
 
-  const offset = (shape: SceneShape) =>
-    drag && drag.entity === shape.entity ? { x: drag.dx, y: drag.dy } : { x: 0, y: 0 };
+  const moveContext = () => ({
+    ecs,
+    live,
+    client: $playing ? client : undefined,
+    scene: $location?.scene,
+  });
+
+  /** The arrow keys move the selected entity by 1 unit, 10 with Shift. */
+  const STEPS: Record<string, [number, number]> = {
+    ArrowLeft: [-1, 0],
+    ArrowRight: [1, 0],
+    ArrowUp: [0, -1],
+    ArrowDown: [0, 1],
+  };
+  /** Presses in a row are shown at once and written as one move once the keys rest. */
+  let keyMove = $state<{ entity: string; dx: number; dy: number }>();
+  let keyTimer: ReturnType<typeof setTimeout> | undefined;
+  const commitKeys = () => {
+    clearTimeout(keyTimer);
+    const current = keyMove;
+    keyMove = undefined;
+    const shape = current && shapes.find((candidate) => candidate.entity === current.entity);
+    if (current && shape) moveShape(moveContext(), shape, current.dx, current.dy);
+  };
+  $effect(() => () => commitKeys());
+  const nudge = (event: KeyboardEvent) => {
+    const step = STEPS[event.key];
+    if (!step || event.altKey || event.ctrlKey || event.metaKey) return;
+    const shape = shapes.find(
+      (candidate) => candidate.entity === selectedEntity && candidate.position,
+    );
+    if (!shape) return;
+    event.preventDefault();
+    if (keyMove && keyMove.entity !== shape.entity) commitKeys();
+    const size = event.shiftKey ? 10 : 1;
+    keyMove = {
+      entity: shape.entity,
+      dx: (keyMove?.dx ?? 0) + step[0] * size,
+      dy: (keyMove?.dy ?? 0) + step[1] * size,
+    };
+    clearTimeout(keyTimer);
+    keyTimer = setTimeout(commitKeys, 400);
+  };
+
+  const offset = (shape: SceneShape) => {
+    const moved = drag ?? keyMove;
+    return moved && moved.entity === shape.entity ? { x: moved.dx, y: moved.dy } : { x: 0, y: 0 };
+  };
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -209,6 +233,7 @@
       description="Apps using the ECS show their entities here, drawn from main.ts."
     />
   {:else}
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
     <svg
       bind:this={svg}
       viewBox="{view.x} {view.y} {view.width} {view.height}"
@@ -218,6 +243,11 @@
       preserveAspectRatio="xMidYMid meet"
       role="application"
       aria-label="2D scene"
+      aria-roledescription="scene"
+      aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+      tabindex="0"
+      onkeydown={nudge}
+      onblur={commitKeys}
       onpointermove={move}
       onpointerup={end}
       onpointercancel={() => {
@@ -278,7 +308,8 @@
       {$playing
         ? 'Dragging moves the entity in the running game.'
         : `Drag an entity to move it in ${$location?.label ?? 'main.ts'}.`}
-      Scroll to zoom; drag the background or use the middle button to pan.
+      Arrow keys move the selected entity (Shift: 10 units). Scroll to zoom; drag the background or use
+      the middle button to pan.
     </p>
   {/if}
 </div>

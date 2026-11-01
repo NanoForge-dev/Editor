@@ -72,7 +72,7 @@ test.describe('while playing', () => {
     await page.getByRole('button', { name: 'Zoom out' }).click();
     await expect.poll(async () => (await frame.boundingBox())?.width).toBe(960);
 
-    await expect(page.getByRole('status', { name: 'Game stats' })).toContainText('tps', {
+    await expect(page.getByRole('group', { name: 'Game stats' })).toContainText('tps', {
       timeout: 10_000,
     });
 

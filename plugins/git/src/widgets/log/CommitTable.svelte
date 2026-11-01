@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { GitCommit, GitStatus } from '@nanoforge-dev/editor-sdk';
-  import { Button, ContextMenu, Input, type MenuEntry, Select } from '@nanoforge-dev/editor-sdk/ui';
+  import {
+    Button,
+    ContextMenu,
+    Input,
+    type MenuEntry,
+    Select,
+    moveRowFocus,
+  } from '@nanoforge-dev/editor-sdk/ui';
 
   import { getSession } from '../../session/git-session';
   import RefLabel from './RefLabel.svelte';
@@ -37,6 +44,11 @@
           commit.subject.toLowerCase().includes(needle) ||
           commit.hash.startsWith(needle)),
     ),
+  );
+
+  /** The row Tab reaches: the selected commit, else the first shown when it is filtered out. */
+  const tabStop = $derived(
+    commits.some((commit) => commit.hash === selectedHash) ? selectedHash : commits[0]?.hash,
   );
 
   let menuCommit: GitCommit | undefined;
@@ -90,18 +102,25 @@
   </div>
   <ContextMenu items={commitMenu}>
     <div class="rows">
-      <table aria-label="Commits">
+      <table role="grid" aria-readonly="true" aria-label="Commits">
         <tbody>
           {#each commits as commit, index (commit.hash)}
             <tr
               aria-selected={commit.hash === selectedHash}
-              tabindex="0"
+              tabindex={commit.hash === tabStop ? 0 : -1}
               onclick={() => (selectedHash = commit.hash)}
               oncontextmenu={() => {
                 menuCommit = commit;
                 selectedHash = commit.hash;
               }}
-              onkeydown={(event) => event.key === 'Enter' && (selectedHash = commit.hash)}
+              onkeydown={(event) => {
+                const row = moveRowFocus(event);
+                if (row) selectedHash = commits[row.index]?.hash;
+                else if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  selectedHash = commit.hash;
+                }
+              }}
             >
               <td class="graph" aria-hidden="true">
                 <span

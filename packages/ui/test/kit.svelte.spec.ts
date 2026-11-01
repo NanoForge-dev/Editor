@@ -125,18 +125,51 @@ describe('controls', () => {
     expect(onchange).toHaveBeenLastCalledWith('scene');
   });
 
-  it('Splitter resizes with the keyboard', async () => {
+  it('Splitter resizes with the keyboard, as one step once the keys rest', async () => {
     const onresize = vi.fn();
     const screen = render(Splitter, {
       orientation: 'vertical',
       label: 'Resize left panel',
       onresize,
     });
-    (screen.getByRole('separator').element() as HTMLElement).focus();
+    const handle = screen.getByRole('separator').element() as HTMLElement;
+    handle.focus();
     await userEvent.keyboard('{ArrowRight}{Shift>}{ArrowLeft}{/Shift}');
-    expect(onresize.mock.calls.filter(([, final]) => final).map(([delta]) => delta)).toEqual(
-      expect.arrayContaining([10, -40]),
-    );
+    expect(onresize.mock.calls).toEqual([
+      [10, false],
+      [-30, false],
+    ]);
+    handle.blur();
+    expect(onresize).toHaveBeenLastCalledWith(-30, true);
+    expect(onresize.mock.calls.filter(([, final]) => final)).toHaveLength(1);
+  });
+
+  it('Splitter keys do not build up past the limit the resize applies', async () => {
+    const onresize = vi.fn((delta: number) => Math.max(-10, delta));
+    const screen = render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
+    const handle = screen.getByRole('separator').element() as HTMLElement;
+    handle.focus();
+    await userEvent.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowRight}');
+    expect(onresize.mock.calls.map(([delta]) => delta)).toEqual([-10, -20, -20, 0]);
+  });
+
+  it('Splitter ends a preview that the limit kept from moving', async () => {
+    const onresize = vi.fn<(delta: number, final: boolean) => number>(() => 0);
+    const screen = render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
+    const handle = screen.getByRole('separator').element() as HTMLElement;
+    handle.focus();
+    await userEvent.keyboard('{ArrowLeft}');
+    handle.blur();
+    expect(onresize.mock.calls.filter(([, final]) => final)).toEqual([[0, true]]);
+  });
+
+  it('Splitter saves pending key presses when it goes away', async () => {
+    const onresize = vi.fn();
+    const screen = render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
+    (screen.getByRole('separator').element() as HTMLElement).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    screen.unmount();
+    expect(onresize).toHaveBeenLastCalledWith(10, true);
   });
 
   it('ColorPicker normalizes hex input', async () => {

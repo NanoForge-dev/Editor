@@ -6,6 +6,7 @@
     EmptyState,
     IconButton,
     Input,
+    isKeyboardMenu,
     type MenuEntry,
     Select,
     Tree,
@@ -16,6 +17,7 @@
   import { EcsServiceToken } from '../../service/ecs-service';
   import type { LiveSource } from '../../live/live.type';
   import { LiveServiceToken } from '../../live/live-service';
+  import { MoveGuard } from '../move-guard';
   import InheritedEntitiesTree from './InheritedEntitiesTree.svelte';
   import LiveEntitiesTree from './LiveEntitiesTree.svelte';
 
@@ -94,16 +96,28 @@
     if ($model) void ecs.openInCode($model.path, lineOf(id));
   };
 
+  const moving = new MoveGuard();
+  $effect(() => {
+    void $model;
+    moving.done();
+  });
+  $effect(() => () => moving.done());
   const move = (ids: string[], target: string, position: DropPosition) => {
     const [entity] = ids;
-    if (!entity || entity === target || target.startsWith(CODE_PREFIX)) return;
+    if (moving.busy || !entity || entity === target || target.startsWith(CODE_PREFIX)) return;
     const names = ($model?.entities ?? []).map((candidate) => candidate.name);
     const before =
       position === 'after' || position === 'inside' ? names[names.indexOf(target) + 1] : target;
-    void ecs.apply(
-      { kind: 'moveEntity', entity, ...(before && before !== entity && { before }) },
-      `Move ${entity}`,
-    );
+    if (names[names.indexOf(entity) + 1] === before || before === entity) return;
+    moving.start();
+    void ecs
+      .apply(
+        { kind: 'moveEntity', entity, ...(before && before !== entity && { before }) },
+        `Move ${entity}`,
+      )
+      .then((done) => {
+        if (!done) moving.done();
+      });
   };
 
   const menu = (): MenuEntry[] => {
@@ -111,6 +125,8 @@
     if (!id) return [{ kind: 'item', id: 'add', label: 'Add entity', onSelect: add }];
     if (id.startsWith(CODE_PREFIX))
       return [{ kind: 'item', id: 'open', label: 'Open in code', onSelect: () => openInCode(id) }];
+    const names = ($model?.entities ?? []).map((entity) => entity.name);
+    const at = names.indexOf(id);
     return [
       {
         kind: 'item',
@@ -126,6 +142,23 @@
         onSelect: () => setTimeout(() => tree?.rename(id), 150),
       },
       { kind: 'item', id: 'open', label: 'Open in code', onSelect: () => openInCode(id) },
+      { kind: 'separator' },
+      {
+        kind: 'item',
+        id: 'up',
+        label: 'Move up',
+        shortcut: 'Alt+Up',
+        disabled: at <= 0,
+        onSelect: () => move([id], names[at - 1]!, 'before'),
+      },
+      {
+        kind: 'item',
+        id: 'down',
+        label: 'Move down',
+        shortcut: 'Alt+Down',
+        disabled: at < 0 || at >= names.length - 1,
+        onSelect: () => move([id], names[at + 1]!, 'after'),
+      },
       { kind: 'separator' },
       {
         kind: 'item',
@@ -207,7 +240,9 @@
         class="list"
         role="presentation"
         oncontextmenu={(event) => {
-          if (!(event.target as HTMLElement).closest('[data-id]')) menuTarget = undefined;
+          if (!isKeyboardMenu(event) && !(event.target as HTMLElement).closest('[data-id]')) {
+            menuTarget = undefined;
+          }
         }}
       >
         {#if nodes.length}
@@ -225,6 +260,7 @@
               !id.startsWith(CODE_PREFIX) &&
               ecs.apply({ kind: 'renameEntity', entity: id, name }, `Rename ${id}`)}
             ondrop={move}
+            reorderable={!filter}
             oncontextmenu={(id) => (menuTarget = id)}
           />
         {:else}

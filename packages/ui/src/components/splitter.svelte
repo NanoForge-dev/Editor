@@ -2,14 +2,19 @@
   interface Props {
     /** `vertical`: a vertical bar resizing horizontally (between columns). */
     orientation: 'vertical' | 'horizontal';
-    /** Pixel delta since the drag started; `final` on release. */
-    onresize: (delta: number, final: boolean) => void;
+    /**
+     * Pixel delta since the drag started; `final` on release. Returns the delta it applied, when
+     * a limit cut it, so arrow keys pressed past the limit don't build up.
+     */
+    onresize: (delta: number, final: boolean) => number | undefined;
     label: string;
     /** Current size in px (for assistive technologies). */
     value?: number;
+    /** Smallest size in px, when known (for assistive technologies). */
+    min?: number;
   }
 
-  const { orientation, onresize, label, value }: Props = $props();
+  const { orientation, onresize, label, value, min }: Props = $props();
   let dragging = $state(false);
 
   const start = (event: PointerEvent) => {
@@ -36,6 +41,23 @@
     handle.addEventListener('pointercancel', up);
   };
 
+  /**
+   * Arrow keys resize by 10 px (40 with Shift). Presses in a row preview the size and become one
+   * step (one undo) once the keys rest for a moment or the focus leaves.
+   */
+  let keyDelta = 0;
+  let keyPending = false;
+  let keyTimer: ReturnType<typeof setTimeout> | undefined;
+  const commitKeys = () => {
+    clearTimeout(keyTimer);
+    keyTimer = undefined;
+    if (!keyPending) return;
+    keyPending = false;
+    const delta = keyDelta;
+    keyDelta = 0;
+    onresize(delta, true);
+  };
+  $effect(() => () => commitKeys());
   const onkeydown = (event: KeyboardEvent) => {
     const step = event.shiftKey ? 40 : 10;
     const keys =
@@ -43,7 +65,12 @@
     const index = keys.indexOf(event.key);
     if (index < 0) return;
     event.preventDefault();
-    onresize(index === 0 ? -step : step, true);
+    keyPending = true;
+    keyDelta += index === 0 ? -step : step;
+    const applied = onresize(keyDelta, false);
+    if (typeof applied === 'number') keyDelta = applied;
+    clearTimeout(keyTimer);
+    keyTimer = setTimeout(commitKeys, 600);
   };
 </script>
 
@@ -55,9 +82,12 @@
   aria-orientation={orientation}
   aria-label={label}
   aria-valuenow={value}
+  aria-valuemin={min}
+  aria-valuetext={value === undefined ? undefined : `${Math.round(value)} pixels`}
   tabindex="0"
   onpointerdown={start}
   {onkeydown}
+  onblur={commitKeys}
 ></div>
 
 <style>
@@ -67,6 +97,18 @@
     z-index: 1;
     background: var(--nf-color-bg);
     touch-action: none;
+  }
+  /** The bar is 4 px; it can be grabbed 4 px on each side of it too. */
+  .splitter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .vertical::before {
+    inset: 0 -4px;
+  }
+  .horizontal::before {
+    inset: -4px 0;
   }
   .vertical {
     width: 4px;

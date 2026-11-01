@@ -39,7 +39,7 @@ const commit = async (page: Page, text: string, button = 'Commit') => {
 };
 const branchStatus = (page: Page, text: string) =>
   page.getByRole('contentinfo').getByRole('button', { name: text, exact: true });
-const commits = (page: Page) => logPanel(page).getByRole('table', { name: 'Commits' });
+const commits = (page: Page) => logPanel(page).getByRole('grid', { name: 'Commits' });
 
 const original = readFileSync(join(PONG, FILE), 'utf8');
 const otherOriginal = readFileSync(join(PONG, OTHER_FILE), 'utf8');
@@ -88,6 +88,7 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await expect(commitButton).toBeDisabled();
   const includeAll = group(page, 'Unversioned Files').getByRole('checkbox', {
     name: 'Include all: Unversioned Files',
+    includeHidden: true,
   });
   await nested.getByRole('checkbox').check();
   expect(await includeAll.evaluate((box: HTMLInputElement) => box.indeterminate)).toBe(true);
@@ -127,10 +128,14 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
   await page.getByRole('tab', { name: 'rename-me.txt' }).click({ button: 'middle' });
   await page.getByRole('tab', { name: 'Project', exact: true }).click();
 
-  await group(page, 'Changes').getByRole('button', { name: 'Collapse Changes' }).click();
+  await group(page, 'Changes')
+    .getByRole('button', { name: 'Collapse Changes', includeHidden: true })
+    .click();
   await expect(changed).toHaveCount(0);
   await expect(group(page, 'Changes')).toContainText('1 file');
-  await group(page, 'Changes').getByRole('button', { name: 'Expand Changes' }).click();
+  await group(page, 'Changes')
+    .getByRole('button', { name: 'Expand Changes', includeHidden: true })
+    .click();
   await expect(changed).toBeVisible();
 
   await changed.getByRole('checkbox', { name: `Include ${FILE}` }).uncheck();
@@ -284,5 +289,48 @@ test('git: VCS menu, commit panel, log, branches, remote, conflict, amend, stash
 
   await showPanel(page, 'Files');
   await showPanel(page, 'Console');
+  await page.waitForTimeout(900);
+});
+
+test('browses, folds and includes changes from the keyboard', async ({ page }) => {
+  await openProject(page, 'pong');
+  await page.waitForURL(/\/project\//);
+  await resetLayout(page);
+  await showPanel(page, 'Commit');
+  await vcs(page, 'Initialize repository');
+  const files = commitPanel(page).getByRole('group', { name: 'Changed files' });
+  const node = commitPanel(page).getByRole('button', { name: /^Unversioned Files, / });
+  const includeAll = commitPanel(page).getByRole('checkbox', {
+    name: 'Include all: Unversioned Files',
+    includeHidden: true,
+  });
+  const active = () =>
+    files.evaluate(
+      (list) =>
+        document.getElementById(list.getAttribute('aria-activedescendant') ?? '')?.ariaLabel ?? '',
+    );
+  await expect(node).toBeVisible();
+  await files.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect.poll(active).toMatch(/^Changes, 0 files/);
+  await page.keyboard.press('ArrowDown');
+  await expect.poll(active).toMatch(/^Unversioned Files, /);
+  await page.keyboard.press('Space');
+  await expect(includeAll).toBeChecked();
+  await page.keyboard.press('Space');
+  await expect(includeAll).not.toBeChecked();
+  await page.keyboard.press('ArrowLeft');
+  await expect(node).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('ArrowRight');
+  await expect(node).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(active).not.toMatch(/^Unversioned Files/);
+  await expect(
+    group(page, 'Unversioned Files').getByRole('option', { selected: true }),
+  ).toHaveCount(1);
+  await page.keyboard.press('ArrowLeft');
+  await expect.poll(active).toMatch(/^Unversioned Files, /);
+  await resetLayout(page);
+  /** The layout is saved after 500 ms. */
   await page.waitForTimeout(900);
 });

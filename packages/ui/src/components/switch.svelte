@@ -52,6 +52,10 @@
     border-color: var(--nf-color-accent);
     background: var(--nf-color-accent);
   }
+  .switch:focus-visible {
+    outline: 2px solid var(--nf-color-focus);
+    outline-offset: 2px;
+  }
   [aria-checked='true'] .thumb {
     translate: 12px 0;
     background: var(--nf-color-on-accent);
