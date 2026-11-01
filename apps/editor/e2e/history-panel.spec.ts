@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -14,6 +14,9 @@ const row = (page: Page, name: string) => files(page).getByRole('treeitem', { na
 const open = async (page: Page) => {
   await openProject(page, 'pong');
   await page.waitForURL(/\/project\//);
+  await resetLayout(page);
+  /** History is not shown by default. */
+  await showPanel(page, 'History');
   await expect(row(page, 'apps')).toBeVisible();
 };
 

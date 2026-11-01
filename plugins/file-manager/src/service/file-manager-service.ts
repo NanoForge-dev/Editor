@@ -10,7 +10,12 @@ import {
   editorsFor,
   matchesGlob,
 } from '@nanoforge-dev/editor-sdk';
-import { FILE_ICONS, FILE_TEMPLATES, type FileTemplate } from '@nanoforge-dev/editor-sdk/ui';
+import {
+  FILE_ICONS,
+  FILE_TEMPLATES,
+  type FileTemplate,
+  notifyError,
+} from '@nanoforge-dev/editor-sdk/ui';
 
 import { isPackagePath } from '../filter/file-filter';
 import type { Clipboard, FileManagerServiceOptions } from './file-manager-service.type';
@@ -303,7 +308,8 @@ export class FileManagerService implements Disposable {
       await task();
       return true;
     } catch (error) {
-      this._report(error instanceof Error ? error.message : String(error));
+      this._options.logger.warn('A file operation failed', error);
+      notifyError(this._options.notifications, 'The file operation failed', error);
       return false;
     }
   }

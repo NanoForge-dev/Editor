@@ -15,6 +15,7 @@ import {
   StyleServiceToken,
   WIDGET_VIEWS,
   type WidgetInstance,
+  notifyError,
   registerIcons,
 } from '@nanoforge-dev/editor-sdk/ui';
 
@@ -41,9 +42,7 @@ export default definePlugin({
     const projects = services.get(ProjectServiceToken);
     const contextKeys = services.get(EditorServices.ContextKeys);
     const store = new GitStore((title, error) =>
-      services.tryGet(NotificationServiceToken)?.notify('error', title, {
-        detail: error instanceof Error ? error.message : String(error),
-      }),
+      notifyError(services.tryGet(NotificationServiceToken), title, error),
     );
     context.subscriptions.add(store);
     const actions = createActions({

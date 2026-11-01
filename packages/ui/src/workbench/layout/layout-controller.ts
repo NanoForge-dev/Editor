@@ -10,6 +10,7 @@ import {
   type Layout,
   LayoutError,
   type LayoutOp,
+  type LayoutPreset,
   type Location,
   type SlotId,
   allWidgets,
@@ -52,6 +53,8 @@ export class LayoutController implements Disposable {
   private readonly _store = new DisposableStore();
   private readonly _history: HistoryContext;
   private _saveTimer: ReturnType<typeof setTimeout> | undefined;
+  /** No layout was saved yet: the preset's default was used (offer the other one). */
+  firstRun = false;
   private _floatCounter = 0;
   private readonly _docksHidden = new ObservableValue(false);
 
@@ -232,9 +235,9 @@ export class LayoutController implements Disposable {
     await this._history.stack.clear();
   }
 
-  /** Back to the default layout of the installed widgets. */
-  async reset(): Promise<void> {
-    this._set(composeDefaultLayout(this._widgets()));
+  /** Back to the default layout of the installed widgets (`layout.preset`, or the one given). */
+  async reset(preset?: LayoutPreset): Promise<void> {
+    this._set(composeDefaultLayout(this._widgets(), preset ?? this._preset()));
     await this._history.stack.clear();
   }
 
@@ -281,7 +284,9 @@ export class LayoutController implements Disposable {
   private _load(): Layout {
     const saved = this._saved()[this._activeName()];
     const layout = saved === undefined ? undefined : deserializeLayout(saved);
-    return layout ? this._reconcile(layout) : composeDefaultLayout(this._widgets());
+    if (layout) return this._reconcile(layout);
+    this.firstRun = true;
+    return composeDefaultLayout(this._widgets(), this._preset());
   }
 
   private _reconcile(layout: Layout): Layout {
@@ -292,6 +297,10 @@ export class LayoutController implements Disposable {
   /** Layouts follow the project when one is open, the user otherwise. */
   private _scope(): WritableScope {
     return this._options.settings.hasStore('projectLocal') ? 'projectLocal' : 'account';
+  }
+
+  private _preset(): LayoutPreset {
+    return this._options.settings.get(CoreSettings.layoutPreset) === 'full' ? 'full' : 'simple';
   }
 
   private _saved(): Record<string, unknown> {

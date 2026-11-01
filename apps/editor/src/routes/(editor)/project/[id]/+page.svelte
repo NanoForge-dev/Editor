@@ -146,6 +146,7 @@
           resolve();
         });
       });
+      const recent = await editor.projects.recent().catch(() => []);
       if (disposed) return;
       created = setupWorkbench({
         shell: editor.shell,
@@ -157,6 +158,7 @@
         history: editor.history,
         logger: editor.services.get(CoreServices.Logger).getLogger('workbench'),
         activate: (event) => editor.plugins.activateByEvent(event),
+        knownUser: recent.some((project) => project.id !== id),
       });
       provided = [
         editor.services.provide(LayoutControllerToken, created.layout),

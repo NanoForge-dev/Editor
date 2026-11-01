@@ -1,4 +1,4 @@
-import { expandFolders, openProject, panelTab, resetLayout } from './helpers';
+import { expandFolders, openProject, panelTab, resetLayout, showPanel } from './helpers';
 import { type Locator, type Page, expect, test } from './test';
 
 const openPong = async (page: Page) => {
@@ -55,6 +55,7 @@ test('moves, resizes and floats docks, undoes, and restores the layout after rel
 }) => {
   await openPong(page);
 
+  await showPanel(page, 'History');
   await drag(page, panelTab(page, 'History'), panelTab(page, 'Console'));
   await expect(stackOf(page, 'Console')).toHaveAttribute('data-slot', 'bottom');
   await expect(page.locator('[data-slot="bottom"][data-nf-drop="stack"]').first()).toHaveAttribute(
@@ -195,4 +196,40 @@ test('the project name in the status bar shows the Project screen, it no longer 
     'true',
   );
   await expect(page).toHaveURL(/\/project\//);
+});
+
+test('a simple layout shows the main panels only, all panels come back from the View menu', async ({
+  page,
+}) => {
+  await openPong(page);
+  const layouts = async (entry: string) => {
+    await page.getByRole('button', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Layouts' }).click();
+    await page.getByRole('menuitem', { name: entry }).click();
+  };
+  const stripes = page.getByRole('navigation', { name: /tool windows$/ });
+  try {
+    await layouts('Simple layout');
+    await expect(page.getByText('Layout reset with the main panels').last()).toBeVisible();
+    for (const name of ['Files', 'Hierarchy', 'Inspector', 'Console'])
+      await expect(stripes.getByRole('tab', { name, exact: true })).toBeVisible();
+    for (const name of ['Commit', 'Profiler', 'History', 'Components'])
+      await expect(stripes.getByRole('tab', { name, exact: true })).toHaveCount(0);
+    await layouts('All panels');
+    await expect(stripes.getByRole('tab', { name: 'Commit', exact: true })).toBeVisible();
+  } finally {
+    await resetLayout(page);
+    await page.waitForTimeout(900);
+  }
+});
+
+test('says what each screen is for', async ({ page }) => {
+  await openPong(page);
+  const screens = page.getByRole('tablist', { name: 'Main screens' });
+  await expect(
+    screens.getByRole('tab', { name: 'Scene', exact: true }),
+  ).toHaveAccessibleDescription('Your entities drawn in 2D: select and move them.');
+  await expect(
+    screens.getByRole('tab', { name: 'Project', exact: true }),
+  ).toHaveAccessibleDescription(/apps and shared libraries/);
 });

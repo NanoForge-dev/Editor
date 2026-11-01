@@ -13,15 +13,31 @@ export interface WidgetPlacement {
   readonly order?: number;
   /** Docks: shown in the default layout (default true). */
   readonly openByDefault?: boolean;
+  /** Docks: shown in the simple layout too (the few panels most work needs). */
+  readonly essential?: boolean;
 }
 
-/** The layout used when nothing is saved: screens in order, docks in their default slots. */
-export const composeDefaultLayout = (widgets: readonly WidgetPlacement[]): Layout => {
+/** `simple`: only the essential docks; `full`: every dock open by default. */
+export type LayoutPreset = 'simple' | 'full';
+
+/**
+ * The layout used when nothing is saved: screens in order, docks in their default slots. With
+ * the `simple` preset, only the docks marked `essential`; the others stay in View › Panels.
+ */
+export const composeDefaultLayout = (
+  widgets: readonly WidgetPlacement[],
+  preset: LayoutPreset = 'full',
+): Layout => {
   const byOrder = (a: WidgetPlacement, b: WidgetPlacement) =>
     (a.order ?? 0) - (b.order ?? 0) || a.id.localeCompare(b.id);
   const screens = widgets.filter((widget) => widget.kind === 'screen').sort(byOrder);
   const docks = widgets
-    .filter((widget) => widget.kind === 'dock' && widget.openByDefault !== false)
+    .filter(
+      (widget) =>
+        widget.kind === 'dock' &&
+        widget.openByDefault !== false &&
+        (preset === 'full' || widget.essential === true),
+    )
     .sort(byOrder);
   const ops: LayoutOp[] = [{ type: 'setScreens', screens: screens.map((screen) => screen.id) }];
   const counts: Partial<Record<SlotId, number>> = {};

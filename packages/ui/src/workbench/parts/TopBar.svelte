@@ -8,6 +8,7 @@
   import { TOOLBAR_ITEMS } from '../extension-point/toolbar.extension-point';
   import { formatKeybinding } from '../keybinding/keystroke';
   import { getWorkbenchContext } from '../workbench-context';
+  import Tooltip from '../../components/tooltip.svelte';
   import MenuBarMenu from './MenuBarMenu.svelte';
 
   const { layout: current, brand }: { layout: Layout; brand?: Snippet } = $props();
@@ -39,6 +40,8 @@
   });
 
   const screenTitle = (id: string) => context.workbench.descriptor(id)?.title ?? id;
+  const screenDescription = (id: string) => context.workbench.descriptor(id)?.description;
+  const uid = $props.id();
   const screenIcon = (id: string) => context.workbench.descriptor(id)?.icon;
 
   const onkeydown = (event: KeyboardEvent) => {
@@ -67,18 +70,31 @@
 
   <div class="screens" role="tablist" aria-label="Main screens" tabindex="-1" {onkeydown}>
     {#each current.screens as screen (screen)}
-      <button
-        type="button"
-        role="tab"
-        class="screen"
-        data-screen={screen}
-        aria-selected={current.activeScreen === screen}
-        tabindex={current.activeScreen === screen ? 0 : -1}
-        onclick={() => context.layout.showScreen(screen)}
-      >
-        {#if screenIcon(screen)}<Icon name={screenIcon(screen)} size={15} />{/if}
-        {screenTitle(screen)}
-      </button>
+      {@const description = screenDescription(screen)}
+      {#snippet tab(props: Record<string, unknown>)}
+        <button
+          {...props}
+          type="button"
+          role="tab"
+          class="screen"
+          data-screen={screen}
+          aria-selected={current.activeScreen === screen}
+          aria-describedby={description ? `${uid}-${screen}` : undefined}
+          tabindex={current.activeScreen === screen ? 0 : -1}
+          onclick={() => context.layout.showScreen(screen)}
+        >
+          {#if screenIcon(screen)}<Icon name={screenIcon(screen)} size={15} />{/if}
+          {screenTitle(screen)}
+        </button>
+      {/snippet}
+      {#if description}
+        <Tooltip text={description} side="bottom">
+          {#snippet children({ props })}{@render tab(props)}{/snippet}
+        </Tooltip>
+        <span id={`${uid}-${screen}`} hidden>{description}</span>
+      {:else}
+        {@render tab({})}
+      {/if}
     {/each}
   </div>
 

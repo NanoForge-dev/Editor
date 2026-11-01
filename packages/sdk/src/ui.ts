@@ -118,5 +118,8 @@ export {
   Vector2Input,
   isKeyboardMenu,
   moveRowFocus,
+  describeError,
+  notifyError,
+  type ErrorExplanation,
   moveTabFocus,
 } from '@nanoforge-dev/editor-ui';

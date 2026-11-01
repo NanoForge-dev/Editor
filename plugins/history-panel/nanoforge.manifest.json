@@ -12,6 +12,7 @@
     "widgets": [
       {
         "id": "history-panel.history",
+        "openByDefault": false,
         "title": "History",
         "icon": "history",
         "defaultSlot": "rightTop",

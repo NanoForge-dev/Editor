@@ -6,7 +6,7 @@ import {
   type Observable,
   ObservableValue,
 } from '@nanoforge-dev/editor-sdk';
-import type { ThemeDefinition } from '@nanoforge-dev/editor-sdk/ui';
+import { type ThemeDefinition, notifyError } from '@nanoforge-dev/editor-sdk/ui';
 
 import { EditorDocument } from '../document/editor-document';
 import { createUnsavedStore } from '../document/unsaved-store';
@@ -297,6 +297,11 @@ export class CodeEditorService implements Disposable {
     this._options.monaco.editor.setTheme('nanoforge');
   }
 
+  /** Runs an editor command, when the editor gave a way to. */
+  runCommand(id: string): void {
+    this._options.runCommand?.(id);
+  }
+
   dispose(): void {
     for (const timer of this._autoSaveTimers.values()) clearTimeout(timer);
     for (const path of [...this._documents.keys()]) this._release(path);
@@ -463,8 +468,6 @@ export class CodeEditorService implements Disposable {
 
   private _report(title: string, error: unknown): void {
     this._options.logger.warn(title, error);
-    this._options.notifications?.notify('error', title, {
-      detail: error instanceof Error ? error.message : String(error),
-    });
+    notifyError(this._options.notifications, title, error);
   }
 }

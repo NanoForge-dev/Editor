@@ -35,14 +35,14 @@
       ? [
           {
             id: 'conflicts',
-            title: 'Merge Conflicts',
+            title: 'Merge conflicts',
             rows: lists.conflicts,
             checkable: false,
           } as const,
         ]
       : []),
     { id: 'changes', title: 'Changes', rows: lists.changes, checkable: true },
-    { id: 'unversioned', title: 'Unversioned Files', rows: lists.unversioned, checkable: true },
+    { id: 'unversioned', title: 'Unversioned files', rows: lists.unversioned, checkable: true },
   ]);
   const busy = $derived($git.busy);
 
@@ -108,7 +108,7 @@
     {
       kind: 'item',
       id: 'diff',
-      label: 'Show Diff',
+      label: 'Show diff',
       shortcut: 'Ctrl+D',
       disabled: selectedRows.length !== 1,
       onSelect: () => selectedRows[0] && showDiff(selectedRows[0]),
@@ -116,7 +116,7 @@
     {
       kind: 'item',
       id: 'source',
-      label: 'Jump to Source',
+      label: 'Jump to source',
       shortcut: 'F4',
       disabled: selectedRows.length !== 1 || selectedRows[0]?.letter === 'D',
       onSelect: () => selectedRows[0] && jumpToSource(selectedRows[0]),
@@ -246,14 +246,14 @@
   <IconButton
     icon="file-diff"
     size={14}
-    label="Show Diff"
+    label="Show diff"
     disabled={selectedRows.length !== 1}
     onclick={() => selectedRows[0] && showDiff(selectedRows[0])}
   />
   <IconButton
     icon="archive"
     size={14}
-    label="Stash Changes"
+    label="Stash changes"
     disabled={busy || (!lists.changes.length && !lists.unversioned.length)}
     onclick={() => void act.stash()}
   />
@@ -261,13 +261,13 @@
   <IconButton
     icon="chevrons-up-down"
     size={14}
-    label="Expand All"
+    label="Expand all"
     onclick={() => (panel.folded = [])}
   />
   <IconButton
     icon="chevrons-down-up"
     size={14}
-    label="Collapse All"
+    label="Collapse all"
     onclick={() => (panel.folded = groups.map((group) => group.id))}
   />
 </div>

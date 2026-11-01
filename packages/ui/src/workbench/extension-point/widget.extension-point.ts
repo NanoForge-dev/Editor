@@ -17,11 +17,15 @@ export const WidgetDescriptorSchema = z.object({
   title: z.string().min(1),
   /** Lucide icon name, e.g. `folder-tree`. */
   icon: z.string().optional(),
+  /** One line on what it is for (screens: shown when the pointer or the focus is on its tab). */
+  description: z.string().optional(),
   /** `screen`: main screen in the center; `dock`: panel in a dock slot or floating window. */
   kind: z.enum(['dock', 'screen']).default('dock'),
   defaultSlot: SLOT.optional(),
   order: z.number().default(0),
   openByDefault: z.boolean().default(true),
+  /** Docks: part of the simple layout, the few panels most work needs. */
+  essential: z.boolean().default(false),
   /** Only one instance at a time (default). */
   singleton: z.boolean().default(true),
   /** Offered in menus only when true. */
