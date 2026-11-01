@@ -55,6 +55,10 @@ export interface CodeServiceOptions {
   readonly diagnosticsDelayMs?: number;
 }
 
+/** Files that change when dependencies are installed. */
+const DEPENDENCIES =
+  /(^|\/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|bun\.lockb?)$/;
+
 /**
  * TypeScript services of the open project, computed in a worker started on first use. The
  * worker mirrors the project's code files and the unsaved text of open documents.
@@ -70,6 +74,13 @@ export class CodeService implements Disposable {
   private _projectChecks = 0;
   private _projectCheckRun = 0;
   private _projectCheckTimer: ReturnType<typeof setTimeout> | undefined;
+  private _disposed = false;
+  /**
+   * What the next project check covers: files whose text changed (then only what imports them),
+   * or everything (the first check, a file created or deleted).
+   */
+  private readonly _changedSinceCheck = new Set<string>();
+  private _fullCheck = true;
   private readonly _onDidChangeOwners = new Emitter<void>();
 
   /** A worker plugin was loaded or unloaded (item owners may have changed). */
@@ -156,13 +167,9 @@ export class CodeService implements Disposable {
 
   async refreshDiagnostics(paths: readonly string[]): Promise<readonly CodeDiagnostic[]> {
     const diagnostics = await (await this.engine()).diagnostics(paths);
-    for (const path of paths) {
-      this._options.diagnostics.set(
-        'typescript',
-        path,
-        diagnostics.filter((diagnostic) => diagnostic.path === path),
-      );
-    }
+    const byPath = new Map<string, CodeDiagnostic[]>(paths.map((path) => [path, []]));
+    for (const diagnostic of diagnostics) byPath.get(diagnostic.path)?.push(diagnostic);
+    this._options.diagnostics.setMany('typescript', byPath);
     return diagnostics;
   }
 
@@ -184,7 +191,10 @@ export class CodeService implements Disposable {
    * again after changes: a change in one file can break another.
    */
   checkProject(): Disposable {
-    if (this._projectChecks++ === 0) this._scheduleProjectCheck(0);
+    if (this._projectChecks++ === 0) {
+      this._fullCheck = true;
+      this._scheduleProjectCheck(0);
+    }
     let disposed = false;
     return {
       dispose: () => {
@@ -230,6 +240,7 @@ export class CodeService implements Disposable {
   }
 
   dispose(): void {
+    this._disposed = true;
     clearTimeout(this._diagnosticsTimer);
     clearTimeout(this._projectCheckTimer);
     this._projectCheckRun++;
@@ -288,8 +299,23 @@ export class CodeService implements Disposable {
     mark('nf:code:ready', 'nf:code:created');
     started.add(
       this._options.fs.onDidChange((changes) => {
-        if (changes.some((change) => change.path === TSCONFIG))
-          void syncTsconfig().catch((error: unknown) =>
+        if (changes.some((change) => DEPENDENCIES.test(change.path))) {
+          void engine
+            .forgetMissingTypes()
+            .then(() => {
+              this._fullCheck = true;
+              this._scheduleProjectCheck();
+              for (const path of this._watched) this._scheduleDiagnostics(path, false);
+            })
+            .catch(() => undefined);
+        }
+        if (!changes.some((change) => change.path === TSCONFIG)) return;
+        void syncTsconfig()
+          .then(() => {
+            this._fullCheck = true;
+            this._scheduleProjectCheck();
+          })
+          .catch((error: unknown) =>
             this._options.logger?.warn('tsconfig.json could not be applied', error),
           );
       }),
@@ -332,8 +358,9 @@ export class CodeService implements Disposable {
               ),
             );
           }
-          for (const change of [...deleted.map((path) => ({ path })), ...updated])
-            this._scheduleDiagnostics(change.path);
+          for (const path of deleted) this._scheduleDiagnostics(path, true, true);
+          for (const change of updated)
+            this._scheduleDiagnostics(change.path, true, change.type === 'created');
         })().catch((error: unknown) =>
           this._options.logger?.warn('Code mirror update failed', error),
         );
@@ -363,7 +390,7 @@ export class CodeService implements Disposable {
   }
 
   private _scheduleProjectCheck(delayMs = 1500): void {
-    if (!this._projectChecks) return;
+    if (!this._projectChecks || this._disposed) return;
     clearTimeout(this._projectCheckTimer);
     this._projectCheckTimer = setTimeout(() => {
       this._checkProject().catch((error: unknown) =>
@@ -374,25 +401,59 @@ export class CodeService implements Disposable {
 
   private async _checkProject(): Promise<void> {
     const run = ++this._projectCheckRun;
-    await this.engine();
-    const paths = this._options.fs.entries
+    const engine = await this.engine();
+    const all = this._options.fs.entries
       .filter(
         (entry) => entry.kind === 'file' && isCodeFile(entry.path) && !NOT_CHECKED.test(entry.path),
       )
       .map((entry) => entry.path);
-    const checked = new Set(paths);
-    for (const path of this._options.diagnostics.uris('typescript')) {
-      if (!checked.has(path) && !this._watched.has(path))
-        this._options.diagnostics.clear('typescript', path);
+    const changed = [...this._changedSinceCheck];
+    /** Declarations that reach files without imports (augmentations, globals) can break any. */
+    const wasFull = this._fullCheck;
+    /** Reset before awaiting: changes recorded meanwhile belong to the next check. */
+    this._fullCheck = false;
+    this._changedSinceCheck.clear();
+    const full = wasFull || (await this._declaresGlobally(changed));
+    /** A newer run cut this one short: it takes over what was left. */
+    const handOver = () => {
+      if (full) this._fullCheck = true;
+      else for (const path of changed) this._changedSinceCheck.add(path);
+      this._scheduleProjectCheck();
+    };
+    if (run !== this._projectCheckRun) return handOver();
+    let paths = all;
+    if (!full) {
+      const affected = new Set([...changed, ...(await engine.dependents(changed))]);
+      paths = all.filter((path) => affected.has(path));
+    } else {
+      const checked = new Set(all);
+      for (const path of this._options.diagnostics.uris('typescript')) {
+        if (!checked.has(path) && !this._watched.has(path))
+          this._options.diagnostics.clear('typescript', path);
+      }
     }
     for (let index = 0; index < paths.length; index += CHECK_BATCH) {
-      if (run !== this._projectCheckRun) return;
+      if (run !== this._projectCheckRun) return handOver();
       await this.refreshDiagnostics(paths.slice(index, index + CHECK_BATCH));
     }
   }
 
-  private _scheduleDiagnostics(path: string, changed = true): void {
-    if (changed) this._scheduleProjectCheck();
+  private async _declaresGlobally(paths: readonly string[]): Promise<boolean> {
+    for (const path of paths) {
+      if (path.endsWith('.d.ts')) return true;
+      const text = await this._options.documents.getText(path).catch(() => '');
+      if (/\bdeclare\s+(module|global)\b/.test(text)) return true;
+    }
+    return false;
+  }
+
+  /** `structural`: the file was created or deleted, which can change what any file resolves. */
+  private _scheduleDiagnostics(path: string, changed = true, structural = false): void {
+    if (changed && this._projectChecks) {
+      if (structural) this._fullCheck = true;
+      else this._changedSinceCheck.add(path);
+      this._scheduleProjectCheck();
+    }
     if (!this._watched.has(path) && !(this._projectChecks && !NOT_CHECKED.test(path))) return;
     this._pendingDiagnostics.add(path);
     clearTimeout(this._diagnosticsTimer);

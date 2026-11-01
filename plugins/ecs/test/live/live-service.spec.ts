@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { ObservableValue } from '@nanoforge-dev/editor-sdk';
+import {
+  DocumentServiceToken,
+  Emitter,
+  ObservableValue,
+  RuntimeServiceToken,
+} from '@nanoforge-dev/editor-sdk';
 
 import { LiveService, type Pending, withoutApplied } from '../../src/live/live-service';
 
@@ -95,5 +100,97 @@ describe('LiveService.applyToCode', () => {
     expect(results).toEqual([true, true]);
     expect(calls).toEqual(['Apply live Position of ball', 'Apply live Velocity of ball']);
     expect(service.hasPending('client', 'ball')).toBe(false);
+  });
+});
+
+describe('LiveService worlds', () => {
+  const setup = () => {
+    const app = { id: 'client', entryFile: 'apps/client/src/main.ts' };
+    const fsChanges = new Emitter<readonly { path: string }[]>();
+    const documentChanges = new Emitter<{ uri: string }>();
+    const project = {
+      model: new ObservableValue({ apps: [app] }),
+      fs: { onDidChange: fsChanges.event },
+    };
+    const events = new Emitter<{ event: string; source: string; app: string; args: unknown[] }>();
+    const session = new ObservableValue({ state: 'idle' });
+    const runtime = {
+      session,
+      onEvent: events.event,
+      useFeatures: () => ({ dispose: () => undefined }),
+    };
+    const services = new Map<unknown, unknown>([
+      [RuntimeServiceToken, runtime],
+      [DocumentServiceToken, { onDidChange: documentChanges.event }],
+    ]);
+    const context = {
+      services: {
+        tryGet: (token: unknown) => services.get(token),
+        get: () => ({ current: new ObservableValue(project) }),
+      },
+    };
+    /** Analyses resolve when the test says, to send a newer world first. */
+    const analyses: { path: string; resolve: (model: unknown) => void }[] = [];
+    const ecs = {
+      analyzeLocation: (location: { path: string }) =>
+        new Promise((resolve) => analyses.push({ path: location.path, resolve })),
+      sceneLocation: () => undefined,
+    };
+    const service = new LiveService(context as never, ecs as never);
+    session.set({ state: 'running' });
+    const world = (id: number) => ({
+      event: 'ecs-world',
+      source: 'client',
+      app: 'client',
+      args: [{ systems: [], entities: [{ id, components: [] }] }],
+    });
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+    return { service, events, world, analyses, documentChanges, fsChanges, settle };
+  };
+
+  it('analyzes the entry file once per session, again after it changes', async () => {
+    const { service, events, world, analyses, documentChanges, settle } = setup();
+    events.fire(world(1));
+    events.fire(world(2));
+    expect(analyses).toHaveLength(1);
+    analyses[0]!.resolve({ entities: [] });
+    await settle();
+    events.fire(world(3));
+    await settle();
+    expect(analyses).toHaveLength(1);
+    expect(service.instance('client')!.entities.map((entity) => entity.id)).toEqual([3]);
+
+    documentChanges.fire({ uri: 'apps/client/src/main.ts' });
+    events.fire(world(4));
+    expect(analyses).toHaveLength(2);
+    service.dispose();
+  });
+
+  it('asks again when an analysis gave no model', async () => {
+    const { service, events, world, analyses, settle } = setup();
+    events.fire(world(1));
+    analyses[0]!.resolve(undefined);
+    await settle();
+    events.fire(world(2));
+    expect(analyses).toHaveLength(2);
+    analyses[1]!.resolve({ entities: [] });
+    await settle();
+    events.fire(world(3));
+    expect(analyses).toHaveLength(2);
+    service.dispose();
+  });
+
+  it('never shows a world over a newer one', async () => {
+    const { service, events, world, analyses, fsChanges, settle } = setup();
+    events.fire(world(1));
+    fsChanges.fire([{ path: 'apps/client/src/main.ts' }]);
+    events.fire(world(2));
+    expect(analyses).toHaveLength(2);
+    analyses[1]!.resolve({ entities: [] });
+    await settle();
+    analyses[0]!.resolve({ entities: [] });
+    await settle();
+    expect(service.instance('client')!.entities.map((entity) => entity.id)).toEqual([2]);
+    service.dispose();
   });
 });

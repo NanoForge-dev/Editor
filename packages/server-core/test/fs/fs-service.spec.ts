@@ -172,6 +172,7 @@ describe('ProjectFileSystem packages, ignore and trash', () => {
 describe('ProjectWatcher', () => {
   it('reports batched changes within 200 ms and ignores noise', async () => {
     const { root, fs } = project();
+    mkdirSync(join(root, '.nanoforge/editor'), { recursive: true });
     mkdirSync(join(root, 'node_modules'));
     mkdirSync(join(root, 'dist'));
     const watcher = new ProjectWatcher(fs.jail, { ignoredPaths: () => ['dist'] });
@@ -183,6 +184,8 @@ describe('ProjectWatcher', () => {
     writeFileSync(join(root, 'src/new.ts'), 'x');
     writeFileSync(join(root, 'node_modules/ignored.js'), 'x');
     writeFileSync(join(root, 'dist/main.js'), 'x');
+    mkdirSync(join(root, '.nanoforge/editor/cache/meta/apps'), { recursive: true });
+    writeFileSync(join(root, '.nanoforge/editor/cache/meta/apps/client.json'), '{}');
     await fs.write('src/main.ts', 'changed');
     while (!batches.length && Date.now() - start < 1000) await new Promise((r) => setTimeout(r, 5));
     const elapsed = Date.now() - start;

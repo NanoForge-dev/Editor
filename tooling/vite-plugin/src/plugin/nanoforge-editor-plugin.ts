@@ -26,19 +26,32 @@ export const nanoforgeEditorPlugin = (options: EditorPluginBuildOptions = {}): P
     configResolved(config) {
       root = config.root;
     },
-    config: () => ({
-      base: './',
-      build: {
-        target: 'esnext',
-        lib: {
-          entry: options.entries ?? { index: 'src/index.ts' },
-          formats: ['es'],
+    config(user) {
+      const lib = user.build?.lib || undefined;
+      /** Vite 8 (Rolldown) can minify library output fully; library mode keeps whitespace. */
+      const rolldown = 'rolldownVersion' in this.meta;
+      return {
+        base: './',
+        build: {
+          target: 'esnext',
+          lib: {
+            /**
+             * Arrays are merged with the plugin's own config: `['es']` twice built it twice. The
+             * user's own `entry` and `formats` are left to them for the same reason.
+             */
+            ...(!lib?.entry && { entry: options.entries ?? { index: 'src/index.ts' } }),
+            ...(!lib?.formats && { formats: ['es'] }),
+          },
+          rollupOptions: {
+            external: (id: string) => isHostModule(id),
+            /** Watch builds (dev plugins) stay readable: their stack traces point at real lines. */
+            ...(rolldown &&
+              user.build?.minify !== false &&
+              !user.build?.watch && { output: { minify: true } }),
+          },
         },
-        rollupOptions: {
-          external: (id: string) => isHostModule(id),
-        },
-      },
-    }),
+      };
+    },
     async renderChunk(code) {
       const result = await rewriteSharedImports(code);
       return result === null ? null : { code: result, map: null };

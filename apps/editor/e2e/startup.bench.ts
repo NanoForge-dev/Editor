@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 
-import { openProject, resetLayout } from './helpers';
+import { openProject, resetLayout, showPanel } from './helpers';
 import { expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -19,7 +19,7 @@ test('startup of a project: scripts loaded, code worker cold start, components l
   const project = existsSync(GAME) ? 'game' : 'pong';
   const rows: Record<string, number[]> = {};
   const add = (name: string, value: number) => (rows[name] ??= []).push(Math.round(value));
-  let scripts: { name: string; kb: number }[] = [];
+  let scripts: { name: string; kb: number; sentKb: number }[] = [];
 
   for (let run = 0; run < RUNS; run++) {
     const context = await browser.newContext();
@@ -31,7 +31,7 @@ test('startup of a project: scripts loaded, code worker cold start, components l
     add('workbench shown (ms)', Date.now() - started);
     if (run === 0) await resetLayout(page);
 
-    await page.getByRole('tab', { name: /^Components\b/ }).click();
+    await showPanel(page, 'Components');
     const components = page.getByRole('region', { name: 'Components', exact: true });
     await expect(components.getByRole('button', { name: /^C Position\b/ }).first()).toBeVisible({
       timeout: 60_000,
@@ -67,6 +67,7 @@ test('startup of a project: scripts loaded, code worker cold start, components l
         .map((entry) => ({
           name: new URL(entry.name).pathname.replace(/^\/_app\/immutable\//, ''),
           kb: Math.round(entry.decodedBodySize / 1024),
+          sentKb: Math.round(entry.transferSize / 1024),
         })),
     );
     await context.close();
@@ -75,14 +76,15 @@ test('startup of a project: scripts loaded, code worker cold start, components l
   const plugins = scripts.filter((script) => script.name.startsWith('/plugins/'));
   const app = scripts.filter((script) => !script.name.startsWith('/plugins/'));
   const total = (list: typeof scripts) => list.reduce((sum, script) => sum + script.kb, 0);
+  const sent = (list: typeof scripts) => list.reduce((sum, script) => sum + script.sentKb, 0);
   const lines = [
     `project: ${project}, ${RUNS} runs, median (min-max)`,
     ...Object.entries(rows).map(
       ([name, values]) =>
         `${name.padEnd(30)} ${median(values)} (${Math.min(...values)}-${Math.max(...values)})`,
     ),
-    `app scripts: ${app.length} files, ${total(app)} KiB`,
-    `plugin scripts: ${plugins.length} files, ${total(plugins)} KiB`,
+    `app scripts: ${app.length} files, ${total(app)} KiB (${sent(app)} KiB sent)`,
+    `plugin scripts: ${plugins.length} files, ${total(plugins)} KiB (${sent(plugins)} KiB sent)`,
     ...scripts
       .filter((script) => script.kb >= 100)
       .sort((a, b) => b.kb - a.kb)

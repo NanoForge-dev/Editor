@@ -35,6 +35,26 @@ The benchmarks are not part of the test suite: they print numbers and do not fai
 - `ANALYZE=1` prints the import chain if the compiler ever gets back into a page chunk.
 - What remains at startup: the kit and workbench (299 KiB), the kernel and services (156 KiB), and the code worker (6.9 MiB, loaded in the background when something first asks for code analysis).
 
+### Compression and minified plugins (2026-10-11)
+
+The server sent every script as is, and each plugin was built twice (Vite merged our `formats: ['es']` with the plugin config's) with its whitespace kept. Text files of 1 KiB and more now go out with Brotli (gzip when the browser does not take it), compressed once per file version; plugins are built once and fully minified on Vite 8.
+
+Measured with `BENCH=1` on the `game` copy, 5 runs, before (M3) and after:
+
+| At startup         | Before                    | After                       |
+| ------------------ | ------------------------- | --------------------------- |
+| App scripts        | 7 649 KiB, 7 658 KiB sent | 7 652 KiB, 1 484 KiB sent   |
+| Plugin scripts     | 480 KiB, 483 KiB sent     | 367 KiB, 115 KiB sent       |
+| Monaco (on demand) | 4.44 MB, sent as is       | 3.63 MB, about 0.82 MB sent |
+
+Times do not move on a loopback connection (workbench shown 588 → 545 ms, components listed 1 667 → 1 674 ms, within the spread): the gain is for editors reached over a network.
+
+## Typing and live mode (2026-10-11)
+
+- The meta cache is kept in memory and written once a source rests (2 s), only when it changed; the first extraction of a source in a session is written at once. The server's watcher ignores `.nanoforge/editor/cache`.
+- While Problems is open, an edit checks the edited files and the files that import them, not the whole project; problems are published once per check, and not at all when unchanged.
+- Live mode analyzes the entry file and scenes once per play session, again only after they change (it was every world, 10 times a second).
+
 ## Lazy loading of plugins
 
 Each plugin is its own bundle, fetched when one of its activation events fires.
@@ -79,3 +99,6 @@ The model is nowhere near a frame's budget: layout cost is rendering, not comput
 
 - The code worker script is 6.9 MiB (ts-morph and the compiler). Shrinking it means replacing ts-morph with the bare compiler API, a rewrite of the engine.
 - No budget is enforced in CI: the numbers depend on the machine.
+- The Console is not virtualized (2 000 lines by default): its re-render measured under 1 ms per frame, and `content-visibility` would make the stick-to-bottom scroll guess row heights.
+- Monaco ships all its editor features; trimming them means listing each contribution the code editor needs.
+- Each app with its own `node_modules` has a TypeScript program of its own in the code worker, with a copy of the shared files.
