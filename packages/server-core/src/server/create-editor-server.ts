@@ -228,8 +228,16 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
           },
         });
       }
+      /** The content hash is the ETag: a thumbnail asked again with it comes back empty. */
+      const etag = entry.hash ? `"${entry.hash}"` : undefined;
+      if (etag && !download && request.headers.get('if-none-match') === etag)
+        return new Response(null, {
+          status: 304,
+          headers: { etag, 'cache-control': 'no-cache', 'content-security-policy': 'sandbox' },
+        });
       const response = await fileResponse(await project.fs.jail.resolve(path), 'no-cache');
       if (!response) return json(404, { error: 'Not found' });
+      if (etag) response.headers.set('etag', etag);
       response.headers.set('content-security-policy', 'sandbox');
       if (download) response.headers.set('content-disposition', disposition(name));
       return response;

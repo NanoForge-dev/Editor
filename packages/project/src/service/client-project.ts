@@ -11,23 +11,22 @@ import { type ProjectModel, ProjectsContract } from '@nanoforge-dev/editor-proto
 import type { RpcClient } from '@nanoforge-dev/editor-rpc';
 
 import type { ContentCache, TreeCache } from '../cache/cache.type';
-import { IndexedDbTreeCache } from '../cache/indexed-db.tree-cache';
 import { MemoryContentCache } from '../cache/memory.content-cache';
 import { MemoryTreeCache } from '../cache/memory.tree-cache';
-import { OpfsContentCache } from '../cache/opfs.content-cache';
 import { ProjectFs } from '../fs/project-fs';
 
+/** Where a project's files are cached (`ProjectCaches` in browsers that can keep them). */
 export interface CacheFactory {
   contents(projectId: string): ContentCache;
   tree(projectId: string): TreeCache;
+  /** Called when a project opens; the lease is disposed when it closes. */
+  opened?(projectId: string): Disposable;
 }
 
-/** Browser caches when available, memory otherwise. */
-export const defaultCacheFactory: CacheFactory = {
-  contents: (id) =>
-    OpfsContentCache.isSupported() ? new OpfsContentCache(id) : new MemoryContentCache(),
-  tree: (id) =>
-    IndexedDbTreeCache.isSupported() ? new IndexedDbTreeCache(id) : new MemoryTreeCache(),
+/** Caches that live as long as the page (tests, browsers without storage). */
+export const memoryCacheFactory = (): CacheFactory => {
+  const contents = new MemoryContentCache();
+  return { contents: () => contents, tree: () => new MemoryTreeCache() };
 };
 
 /** A project opened in this editor window. */
@@ -53,6 +52,8 @@ export class ClientProject implements Disposable, EngineLibProvider {
     this.fs = this._store.add(
       new ProjectFs(initial.id, rpc, caches.contents(initial.id), caches.tree(initial.id)),
     );
+    const lease = caches.opened?.(initial.id);
+    if (lease) this._store.add(lease);
     this._store.add(
       rpc.subscribe(ProjectsContract, 'model', { id: initial.id }, (model) =>
         this._model.set(model),

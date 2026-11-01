@@ -49,6 +49,7 @@ import { registerCorePanels } from '$lib/project/register-core-panels';
 
 import { followProjectCode } from '../code/follow-project-code';
 import { followProjectPlugins, toDescriptor } from '../plugin/follow-project-plugins';
+import { followProjectCaches } from '../project/follow-project-caches';
 import { followProjectTrust } from '../project/follow-project-trust';
 import { followProjectRuntime } from '../runtime/follow-project-runtime';
 import { WorkspaceActions, WorkspaceActionsToken } from '../workspace/workspace-actions';
@@ -136,6 +137,7 @@ export const createEditor = async (
   );
   const { settings } = settingsSetup;
   services.provide(AccountSyncToken, settingsSetup.account);
+  store.add(followProjectCaches({ services, projects, settings, session }));
 
   const history = store.add(
     new HistoryService({

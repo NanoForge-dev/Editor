@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -6,6 +8,7 @@ import {
   readdirSync,
   rmSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -31,6 +34,75 @@ afterEach(() => {
 });
 
 describe('ProjectFileSystem', () => {
+  it('gives files their content hash, the same after a touch, another after an edit', async () => {
+    const { root, fs } = project();
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === 'src')?.hash).toBeUndefined();
+    expect(listed.find((entry) => entry.path === 'src/main.ts')?.hash).toBe(sha1('export {};\n'));
+    const later = new Date(Date.now() + 60_000);
+    utimesSync(join(root, 'src/main.ts'), later, later);
+    expect((await fs.stat('src/main.ts'))?.hash).toBe(sha1('export {};\n'));
+    writeFileSync(join(root, 'src/main.ts'), 'export [];\n');
+    utimesSync(join(root, 'src/main.ts'), later, later);
+    expect((await fs.stat('src/main.ts'))?.hash).toBe(sha1('export [];\n'));
+  });
+
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'gives no hash to a file it cannot read, and still stats it after a rename',
+    async () => {
+      const { root, fs } = project();
+      writeFileSync(join(root, 'src/locked.ts'), 'x');
+      chmodSync(join(root, 'src/locked.ts'), 0o000);
+      try {
+        expect(await fs.stat('src/locked.ts')).toMatchObject({
+          path: 'src/locked.ts',
+          kind: 'file',
+        });
+        expect((await fs.stat('src/locked.ts'))?.hash).toBeUndefined();
+        expect(await fs.rename('src/locked.ts', 'src/moved.ts')).toMatchObject({
+          path: 'src/moved.ts',
+        });
+        const listed = await fs.list('', true);
+        expect(listed.find((entry) => entry.path === 'src/moved.ts')?.hash).toBeUndefined();
+      } finally {
+        for (const name of ['locked.ts', 'moved.ts']) {
+          if (existsSync(join(root, 'src', name))) chmodSync(join(root, 'src', name), 0o644);
+        }
+      }
+    },
+  );
+
+  it.skipIf(process.platform === 'win32')('lists a named pipe without reading it', async () => {
+    const { root, fs } = project();
+    execFileSync('mkfifo', [join(root, 'src/pipe')]);
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === 'src/pipe')?.hash).toBeUndefined();
+    expect((await fs.stat('src/pipe'))?.hash).toBeUndefined();
+  });
+
+  it('gives no hash to the files in the trash', async () => {
+    const { fs } = project();
+    const { trashPath } = await fs.delete('src/main.ts');
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === trashPath)).toBeDefined();
+    expect(listed.find((entry) => entry.path === trashPath)?.hash).toBeUndefined();
+  });
+
+  it('answers readMany within 8 MiB, the rest for the next call', async () => {
+    const { root, fs } = project();
+    const big = new Uint8Array(5 * 1024 * 1024);
+    for (const name of ['a', 'b', 'c']) writeFileSync(join(root, `src/${name}.bin`), big);
+    const first = await fs.readMany(['a', 'b', 'c'].map((name) => ({ path: `src/${name}.bin` })));
+    expect(first.files.map((file) => file.path)).toEqual(['src/a.bin']);
+    expect(first.rest).toEqual(['src/b.bin', 'src/c.bin']);
+    const known = (await fs.stat('src/a.bin'))!.hash!;
+    const again = await fs.readMany([{ path: 'src/a.bin', knownHash: known }, { path: 'nope' }]);
+    expect(again.files).toMatchObject([
+      { path: 'src/a.bin', notModified: true },
+      { path: 'nope', error: { code: 'NOT_FOUND' } },
+    ]);
+  });
+
   it('reads, stats and lists', async () => {
     const { fs } = project();
     const file = await fs.read('src/main.ts');

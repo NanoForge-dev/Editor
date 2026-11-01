@@ -17,7 +17,8 @@ import { RpcError } from '@nanoforge-dev/editor-rpc';
 
 import type { ApiClient } from '../api/api-client';
 import type { EditorEnv } from '../env/editor-env.type';
-import { NFIGNORE_FILE, ProjectFileSystem } from '../fs/fs-service';
+import { FileHashes } from '../fs/file-hashes';
+import { MAX_READ_BYTES, NFIGNORE_FILE, ProjectFileSystem } from '../fs/fs-service';
 import { PathJail } from '../fs/path-jail';
 import { ProjectWatcher } from '../fs/watcher';
 import type { GitService } from '../git/git-service';
@@ -53,8 +54,9 @@ export class OpenProject implements Disposable {
     initial: ProjectModel,
     private readonly _loader: ConfigLoader,
     private readonly _logger: Logger,
+    hashes?: FileHashes,
   ) {
-    this.fs = new ProjectFileSystem(root);
+    this.fs = new ProjectFileSystem(root, hashes);
     this._model = new ObservableValue(initial);
     this.watcher = new ProjectWatcher(this.fs.jail, {
       ignoredPaths: () => this._model.get().apps.flatMap((app) => (app.outDir ? [app.outDir] : [])),
@@ -118,6 +120,8 @@ export class ProjectRegistry implements Disposable {
   private readonly _lastUsed = new Map<string, number>();
   private readonly _opening = new KeyedMutex();
   private readonly _recentLock = new KeyedMutex();
+  /** File hashes of every project, kept between runs (`DATA_DIR/file-hashes.json`). */
+  private readonly _hashes: FileHashes;
   private readonly _onDidClose = new Emitter<string>();
   /** The folders whose code a local editor may run. */
   readonly trust: TrustStore;
@@ -131,6 +135,10 @@ export class ProjectRegistry implements Disposable {
     private readonly _api: ApiClient,
     private readonly _logger: Logger,
   ) {
+    this._hashes = new FileHashes({
+      maxBytes: MAX_READ_BYTES,
+      file: join(_env.dataDir, 'file-hashes.json'),
+    });
     this.trust = new TrustStore(_env.dataDir, async () =>
       Object.values(await this._readRecent()).flatMap((entries) =>
         entries.flatMap((entry) => ('path' in entry.ref ? [entry.ref.path] : [])),
@@ -220,6 +228,7 @@ export class ProjectRegistry implements Disposable {
   }
 
   dispose(): void {
+    void this._hashes.flush();
     for (const project of this._projects.values()) project.dispose();
     this._projects.clear();
     this._onDidClose.dispose();
@@ -286,6 +295,7 @@ export class ProjectRegistry implements Disposable {
         model,
         loader,
         this._logger,
+        this._hashes,
       );
       this._projects.set(id, project);
       this._logger.info(`Opened project ${model.name} (${id}) at ${root}`);

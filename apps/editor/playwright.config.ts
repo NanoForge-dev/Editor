@@ -13,7 +13,17 @@ if (!/^\.workspace(-[\w-]+)?$/.test(WORKSPACE))
  * fresh workspace holding a copy of pong-network, with the example plugin as a dev plugin.
  * Set CHROME to use an installed Chromium instead of Playwright's, NANOFORGE_ENGINE to play the
  * pong-network example of another engine checkout (default: ../engine next to the editor).
+ * Everything runs on Chromium; the browser cache spec also on Firefox, and on WebKit with
+ * `BROWSERS=…,webkit` where it starts (it needs system libraries some distributions lack).
  */
+const CROSS_BROWSER = 'cache.spec.ts';
+const others = (process.env.BROWSERS ?? 'chromium,firefox')
+  .split(',')
+  .map((browser) => browser.trim())
+  .filter(
+    (browser): browser is 'firefox' | 'webkit' => browser === 'firefox' || browser === 'webkit',
+  );
+
 export default defineConfig({
   testDir: 'e2e',
   testMatch: process.env.BENCH ? '*.bench.ts' : '*.spec.ts',
@@ -24,9 +34,24 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     viewport: { width: 1440, height: 860 },
-    launchOptions: process.env.CHROME ? { executablePath: process.env.CHROME } : {},
     trace: 'retain-on-failure',
   },
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        browserName: 'chromium',
+        launchOptions: process.env.CHROME ? { executablePath: process.env.CHROME } : {},
+      },
+    },
+    ...(process.env.BENCH
+      ? []
+      : others.map((browser) => ({
+          name: browser,
+          testMatch: CROSS_BROWSER,
+          use: { browserName: browser },
+        }))),
+  ],
   webServer: {
     command: 'node e2e/prepare-workspace.mjs && bun ./dist/index.js',
     url: `http://127.0.0.1:${PORT}/healthz`,

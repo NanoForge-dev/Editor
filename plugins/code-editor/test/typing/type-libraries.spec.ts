@@ -18,6 +18,7 @@ const setup = (count: number) => {
     fs: {
       entries: paths.map((path) => ({ kind: 'file', path })),
       onDidChange: () => ({ dispose: () => undefined }),
+      readMany: async () => undefined,
       readText: (path: string) => {
         const read = deferred<{ text: string }>();
         reads.set(path, read);
@@ -47,6 +48,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 describe('TypeLibraries', () => {
   it("adds none of the old project's files once disposed", async () => {
     const { reads, added, libraries } = setup(20);
+    await settle();
     expect(reads.size).toBe(8);
     libraries.dispose();
     for (const read of reads.values()) read.resolve({ text: 'export const a = 1;\n' });
@@ -57,6 +59,7 @@ describe('TypeLibraries', () => {
 
   it('adds no package declarations that arrive after dispose', async () => {
     const { reads, added, libraries, types } = setup(1);
+    await settle();
     reads.get('apps/client/src/file-0.ts')!.resolve({ text: "import { a } from 'speed';\n" });
     await settle();
     expect(added).toEqual(['file:///apps/client/src/file-0.ts']);

@@ -4,11 +4,17 @@ import { existsSync } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 
-import type { FileContent, FileEntry } from '@nanoforge-dev/editor-protocol';
+import type {
+  FileContent,
+  FileEntry,
+  ReadRequest,
+  ReadResult,
+} from '@nanoforge-dev/editor-protocol';
 import { RpcError } from '@nanoforge-dev/editor-rpc';
 
 import { sha1 } from '../util/hash';
 import { KeyedMutex } from '../util/keyed-mutex';
+import { FileHashes, type FileVersion } from './file-hashes';
 import { PathJail } from './path-jail';
 
 export const EDITOR_DIR = '.nanoforge/editor';
@@ -19,7 +25,9 @@ export const NFIGNORE_FILE = '.nfignore';
 export const PACKAGES_DIR = 'nf_modules';
 const EDITOR_GITIGNORE = 'trash/\nlocal.json\n';
 
-const MAX_READ_BYTES = 64 * 1024 * 1024;
+export const MAX_READ_BYTES = 64 * 1024 * 1024;
+/** Bytes `readMany` sends in one answer (a file larger than this still goes, alone). */
+const MAX_BATCH_BYTES = 8 * 1024 * 1024;
 
 const notFound = (path: string) => new RpcError('NOT_FOUND', `No such file or directory: ${path}`);
 
@@ -73,9 +81,15 @@ const assertWritable = (path: string) => {
 export class ProjectFileSystem {
   readonly jail: PathJail;
   private readonly _writes = new KeyedMutex();
+  private readonly _hashes: FileHashes;
   private _ignore: { mtime: number; rules: Ignore } | undefined;
 
-  constructor(readonly root: string) {
+  constructor(
+    readonly root: string,
+    /** Hashes shared by the server's projects (kept between runs); its own otherwise. */
+    hashes?: FileHashes,
+  ) {
+    this._hashes = hashes ?? new FileHashes({ maxBytes: MAX_READ_BYTES });
     this.jail = new PathJail(root, gitReason);
   }
 
@@ -105,12 +119,12 @@ export class ProjectFileSystem {
     const absolute = await this.jail.resolve(path);
     try {
       const info = await stat(absolute);
-      return {
-        path,
-        kind: info.isDirectory() ? 'directory' : 'file',
-        size: info.size,
-        mtime: info.mtimeMs,
-      };
+      const kind = info.isDirectory() ? 'directory' : 'file';
+      /** A file that can't be read (permissions, a lock) or a pipe gets no hash, not an error. */
+      const hash = info.isFile()
+        ? await this._hashes.of(absolute, info).catch(() => undefined)
+        : undefined;
+      return { path, kind, size: info.size, mtime: info.mtimeMs, ...(hash && { hash }) };
     } catch (error) {
       if (errno(error) === 'ENOENT') return null;
       return mapError(error, path);
@@ -122,6 +136,8 @@ export class ProjectFileSystem {
     const absolute = await this.jail.resolve(path);
     await this.refreshIgnore();
     const entries: FileEntry[] = [];
+    /** Files to hash once the walk is done, a few at a time. */
+    const files: { index: number; absolute: string; info: FileVersion }[] = [];
     const walk = async (dir: string, rel: string) => {
       let names;
       try {
@@ -136,6 +152,9 @@ export class ProjectFileSystem {
         if (!info) continue;
         const kind = info.isDirectory() ? 'directory' : 'file';
         if (this.isIgnored(childRel, kind === 'directory')) continue;
+        /** Pipes would block the read; the trash is never read, so its files cost nothing. */
+        if (info.isFile() && !inTrash(childRel))
+          files.push({ index: entries.length, absolute: join(dir, entry.name), info });
         entries.push({ path: childRel, kind, size: info.size, mtime: info.mtimeMs });
         if (recursive && kind === 'directory' && !SKIPPED_IN_RECURSIVE_LIST.has(entry.name)) {
           await walk(join(dir, entry.name), childRel);
@@ -143,6 +162,14 @@ export class ProjectFileSystem {
       }
     };
     await walk(absolute, path);
+    const queue = [...files];
+    const hashNext = async () => {
+      for (let file = queue.shift(); file; file = queue.shift()) {
+        const hash = await this._hashes.of(file.absolute, file.info).catch(() => undefined);
+        if (hash) entries[file.index] = { ...entries[file.index]!, hash };
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(8, queue.length) }, hashNext));
     return entries;
   }
 
@@ -155,18 +182,48 @@ export class ProjectFileSystem {
       if (info.size > MAX_READ_BYTES)
         throw new RpcError('PAYLOAD_TOO_LARGE', `File too large: ${path}`);
       const content = new Uint8Array(await readFile(absolute));
-      return {
-        path,
-        kind: 'file',
-        size: info.size,
-        mtime: info.mtimeMs,
-        content,
-        hash: sha1(content),
-      };
+      const hash = sha1(content);
+      this._hashes.remember(absolute, info, hash);
+      return { path, kind: 'file', size: info.size, mtime: info.mtimeMs, content, hash };
     } catch (error) {
       if (error instanceof RpcError) throw error;
       return mapError(error, path);
     }
+  }
+
+  /**
+   * Several files at once: a file whose `knownHash` is current comes back `notModified`, without
+   * its bytes. Answers stop past {@link MAX_BATCH_BYTES}; `rest` holds the paths not read yet.
+   */
+  async readMany(files: readonly ReadRequest[]): Promise<{ files: ReadResult[]; rest: string[] }> {
+    const results: ReadResult[] = [];
+    let bytes = 0;
+    /** Eight files at a time, as separate reads would run; sizes are known before reading. */
+    for (let start = 0; start < files.length;) {
+      const window = files.slice(start, start + 8);
+      const sizes = await Promise.all(
+        window.map(async (file) => {
+          try {
+            return (await stat(await this.jail.resolve(file.path))).size;
+          } catch {
+            return 0;
+          }
+        }),
+      );
+      let take = 0;
+      for (const size of sizes) {
+        /** A file that would cross the cap waits for the next answer, unless it comes alone. */
+        if (bytes + size > MAX_BATCH_BYTES && (results.length || take)) break;
+        bytes += size;
+        take++;
+      }
+      const batch = await Promise.all(window.slice(0, take).map((file) => this._readOne(file)));
+      results.push(...batch);
+      start += take;
+      if (take < window.length)
+        return { files: results, rest: files.slice(start).map((rest) => rest.path) };
+    }
+    return { files: results, rest: [] };
   }
 
   /**
@@ -204,7 +261,9 @@ export class ProjectFileSystem {
         return mapError(error, path);
       }
       const info = await stat(absolute);
-      return { path, kind: 'file', size: info.size, mtime: info.mtimeMs, hash: sha1(content) };
+      const hash = sha1(content);
+      this._hashes.remember(absolute, info, hash);
+      return { path, kind: 'file', size: info.size, mtime: info.mtimeMs, hash };
     });
   }
 
@@ -244,7 +303,7 @@ export class ProjectFileSystem {
    * place in the trash, for `restore`.
    */
   async delete(path: string): Promise<{ trashPath: string }> {
-    if (path === '' || path === TRASH_DIR || path.startsWith(`${TRASH_DIR}/`)) {
+    if (path === '' || inTrash(path)) {
       throw new RpcError('BAD_REQUEST', `Cannot delete ${path || 'the project root'}`);
     }
     assertWritable(path);
@@ -279,6 +338,24 @@ export class ProjectFileSystem {
     return (await this.stat(to))!;
   }
 
+  private async _readOne(file: ReadRequest): Promise<ReadResult> {
+    try {
+      const entry = file.knownHash ? await this.stat(file.path) : undefined;
+      if (entry === null) throw notFound(file.path);
+      if (entry?.hash && entry.hash === file.knownHash)
+        return { ...entry, hash: entry.hash, notModified: true };
+      return await this.read(file.path);
+    } catch (error) {
+      return {
+        path: file.path,
+        error: {
+          code: error instanceof RpcError ? error.code : 'INTERNAL',
+          message: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+  }
+
   private async _ensureEditorGitignore(): Promise<void> {
     const file = await this.jail.resolve(`${EDITOR_DIR}/.gitignore`);
     if (!existsSync(file)) await writeFile(file, EDITOR_GITIGNORE);
@@ -287,3 +364,5 @@ export class ProjectFileSystem {
 
 /** Heavy folders a recursive listing does not descend into. */
 const SKIPPED_IN_RECURSIVE_LIST = new Set(['node_modules']);
+
+const inTrash = (path: string) => path === TRASH_DIR || path.startsWith(`${TRASH_DIR}/`);
