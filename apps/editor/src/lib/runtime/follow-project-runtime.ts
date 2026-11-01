@@ -337,8 +337,19 @@ export const followProjectRuntime = (options: {
       }),
     ],
   ] as const) {
-    store.add(commands.register({ id, title, category: 'Run', handler }));
+    store.add(
+      commands.register({
+        id,
+        title,
+        category: 'Run',
+        handler,
+        ...(!options.enabled && { palette: false }),
+      }),
+    );
   }
+
+  /** A hosted editor never runs games: no Play button, Run menu or F5 that can only refuse. */
+  if (!options.enabled) return store;
 
   for (const item of TOOLBAR)
     store.add(extensions.contribute(TOOLBAR_ITEMS, item, { owner: 'core' }));

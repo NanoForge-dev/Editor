@@ -135,6 +135,16 @@
           </li>
         {/each}
       </ul>
+    {:else if page.detailsError && page.detailsError.name === page.selected}
+      <EmptyState
+        icon="circle-alert"
+        title={`Could not read ${page.detailsError.name}`}
+        description={page.detailsError.message}
+      >
+        {#snippet actions()}
+          <Button onclick={() => page.detailsAttempt++}>Try again</Button>
+        {/snippet}
+      </EmptyState>
     {:else if !page.unavailable && page.results.length}
       <EmptyState icon="plug" title={page.selected ? 'Loading…' : 'Select a plugin'} />
     {/if}

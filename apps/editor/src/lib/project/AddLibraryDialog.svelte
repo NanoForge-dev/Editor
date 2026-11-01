@@ -8,11 +8,13 @@
     project: string;
     apps: readonly AppModel[];
     exists: (path: string) => boolean;
+    /** Why a package name is taken in the project (`nameTaken`), if it is. */
+    taken: (name: string) => string | undefined;
     oncreate: (library: { folder: string; packageName: string; usedBy: AppModel[] }) => void;
     onclose: () => void;
   }
 
-  const { project, apps, exists, oncreate, onclose }: Props = $props();
+  const { project, apps, exists, taken, oncreate, onclose }: Props = $props();
   let open = $state(true);
   let folder = $state('shared');
   /** The package name follows the folder until it is typed. */
@@ -22,7 +24,7 @@
   let users = $state(new Set(apps.map((app) => app.id)));
 
   const folderError = $derived(validateFolder({ exists }, 'libs', folder));
-  const nameError = $derived(validatePackageName(packageName));
+  const nameError = $derived(validatePackageName(packageName) ?? taken(packageName));
   const close = () => {
     open = false;
     onclose();

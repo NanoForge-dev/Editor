@@ -14,6 +14,7 @@
   const services = panelServices();
   const ecs = services.get(EcsServiceToken);
   const location = ecs.location;
+  const ecsSource = ecs.source;
   const inherited = ecs.inherited;
   $effect(() => {
     const path = $location?.path;
@@ -226,7 +227,13 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="scene" bind:this={root} tabindex="-1" onpointerdown={focus}>
-  {#if !$model?.found}
+  {#if $ecsSource && !$location}
+    <EmptyState
+      icon="layers"
+      title="No scene selected"
+      description={$ecsSource.emptyMessage ?? 'Choose what to edit.'}
+    />
+  {:else if !$model?.found}
     <EmptyState
       icon="layers"
       title="No scene to show"
@@ -304,10 +311,20 @@
         >Fit</Button
       >
     </div>
+    {#if !shapes.length && !inheritedShapes.length && !$catalog?.loading}
+      <p class="nothing" role="status">
+        Nothing to draw in {$location?.label ?? 'main.ts'}: entities show here when they have a
+        position and a shape (a rectangle or a circle).{$ecsSource && !$location?.scene
+          ? ' This app keeps its entities in scenes: pick one in the Scenes panel.'
+          : ''}
+      </p>
+    {/if}
     <p class="hint">
-      {$playing
-        ? 'Dragging moves the entity in the running game.'
-        : `Drag an entity to move it in ${$location?.label ?? 'main.ts'}.`}
+      {$catalog?.loading
+        ? 'Reading the components: entities can be moved in a moment.'
+        : $playing
+          ? 'Dragging moves the entity in the running game.'
+          : `Drag an entity to move it in ${$location?.label ?? 'main.ts'}.`}
       Arrow keys move the selected entity (Shift: 10 units). Scroll to zoom; drag the background or use
       the middle button to pan.
     </p>
@@ -323,6 +340,20 @@
     min-height: 0;
     background: var(--nf-color-sunken);
     outline: none;
+  }
+  .nothing {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    max-width: 36ch;
+    margin: 0;
+    padding: var(--nf-space-2) var(--nf-space-3);
+    border-radius: var(--nf-radius-control);
+    background: var(--nf-color-raised);
+    color: var(--nf-color-text-muted);
+    text-align: center;
+    translate: -50% -50%;
+    pointer-events: none;
   }
   svg.panning {
     cursor: grabbing;

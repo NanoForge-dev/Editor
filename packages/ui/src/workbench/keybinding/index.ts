@@ -5,6 +5,8 @@ export {
   strokeFromEvent,
   formatKeybinding,
   portableStroke,
+  blocksTyping,
+  outsideTyping,
 } from './keystroke';
 export * from './keymap.type';
 export * from './keymap-presets';

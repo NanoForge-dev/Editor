@@ -19,9 +19,15 @@ const isBoundary = (text: string, index: number): boolean => {
  * Matches the letters of a query in order in a text, not necessarily adjacent (spaces of the
  * query are ignored). Letters at the start of words and runs of adjacent letters score higher,
  * a query found in one piece higher still, and so do matches near the start and shorter texts.
- * Undefined when a letter is missing.
+ * Undefined when a letter is missing. With `wordStarts`, a piece that does not start a word must
+ * be in the word of the piece before it: "rst" finds "Reset", but "theme" no longer finds "the"
+ * and two letters of "game".
  */
-export const fuzzyMatch = (query: string, text: string): FuzzyMatch | undefined => {
+export const fuzzyMatch = (
+  query: string,
+  text: string,
+  options: { readonly wordStarts?: boolean } = {},
+): FuzzyMatch | undefined => {
   const needle = query.replace(/\s+/g, '').toLowerCase();
   if (!needle) return { score: 0, ranges: [] };
   const haystack = text.toLowerCase();
@@ -35,10 +41,16 @@ export const fuzzyMatch = (query: string, text: string): FuzzyMatch | undefined 
     const from = new Array<number>(haystack.length).fill(-1);
     let bestBefore = NONE;
     let bestBeforeAt = -1;
+    let inWord = NONE;
+    let inWordAt = -1;
     for (let j = i; j < haystack.length; j++) {
       if (i > 0 && j > 0 && previous[j - 1]! > bestBefore) {
         bestBefore = previous[j - 1]!;
         bestBeforeAt = j - 1;
+      }
+      if (i > 0 && j > 0 && (isBoundary(text, j - 1) || previous[j - 1]! > inWord)) {
+        inWord = previous[j - 1]!;
+        inWordAt = j - 1;
       }
       if (haystack[j] !== needle[i]) continue;
       let score = 1;
@@ -49,13 +61,15 @@ export const fuzzyMatch = (query: string, text: string): FuzzyMatch | undefined 
       }
       const adjacent = j > 0 ? previous[j - 1]! : NONE;
       const run = adjacent === NONE ? NONE : adjacent + score + 5;
-      const jump = bestBefore === NONE ? NONE : bestBefore + score;
+      const anyWord = !options.wordStarts || isBoundary(text, j);
+      const base = anyWord ? bestBefore : inWord;
+      const jump = base === NONE ? NONE : base + score;
       if (run >= jump && run !== NONE) {
         current[j] = run;
         from[j] = j - 1;
       } else if (jump !== NONE) {
         current[j] = jump;
-        from[j] = bestBeforeAt;
+        from[j] = anyWord ? bestBeforeAt : inWordAt;
       }
     }
     back.push(from);

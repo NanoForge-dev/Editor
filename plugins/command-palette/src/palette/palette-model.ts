@@ -51,11 +51,12 @@ export const rank = <T>(
   label: (item: T) => string,
   boost: (item: T) => number | undefined = () => undefined,
   limit = MAX_RESULTS,
+  options: { readonly wordStarts?: boolean } = {},
 ): Ranked<T>[] => {
   const ranked: (Ranked<T> & { boost: number; index: number })[] = [];
   items.forEach((item, index) => {
     const text = label(item);
-    const match = fuzzyMatch(query, text);
+    const match = fuzzyMatch(query, text, options);
     if (match) ranked.push({ item, label: text, match, boost: boost(item) ?? Infinity, index });
   });
   return ranked
@@ -70,10 +71,17 @@ export const rankActions = (
   query: string,
   recent: readonly string[],
 ): Ranked<EditorAction>[] =>
-  rank(actions, query, actionLabel, (action) => {
-    const index = recent.indexOf(action.id);
-    return index < 0 ? undefined : index;
-  });
+  rank(
+    actions,
+    query,
+    actionLabel,
+    (action) => {
+      const index = recent.indexOf(action.id);
+      return index < 0 ? undefined : index;
+    },
+    MAX_RESULTS,
+    { wordStarts: true },
+  );
 
 /** Folders whose files are never what "go to file" is after. */
 const NOT_LISTED = /(^|\/)(node_modules|dist|coverage|\.git|\.nanoforge|\.turbo)(\/|$)/;

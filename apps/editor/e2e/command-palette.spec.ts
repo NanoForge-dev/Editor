@@ -130,6 +130,10 @@ test('keymap: chords, conflicts, conditions, removals, presets, kept on this mac
   await find(page, 'reset layout');
   const reset = shortcut(page, 'View: Reset layout');
   await reset.getByRole('button', { name: 'Add shortcut' }).click();
+  await record(page, 'r');
+  await expect(page.getByRole('alert').filter({ hasText: 'would no longer work' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save shortcut' })).toBeDisabled();
+  await page.keyboard.press('Backspace');
   await record(page, 'Control+k', 'Control+l');
   await expect(page.getByRole('textbox', { name: 'Shortcut', exact: true })).toHaveText(
     'Ctrl+K Ctrl+L',

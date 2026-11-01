@@ -96,7 +96,9 @@
 
   $effect(() => {
     const name = page.selected;
+    void page.detailsAttempt;
     page.details = undefined;
+    page.detailsError = undefined;
     if (!name) return;
     return page.loadDetails(name);
   });

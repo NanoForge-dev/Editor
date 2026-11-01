@@ -72,6 +72,11 @@ describe('ranking', () => {
     expect(rankActions(ACTIONS, 'zzz', [])).toEqual([]);
   });
 
+  it('finds abbreviations of titles that start like their category', () => {
+    const run = [...ACTIONS, action('runtime.restart', 'Restart', 'Run')];
+    expect(rankActions(run, 'rst', []).map((entry) => entry.label)).toContain('Run: Restart');
+  });
+
   it('lets a recent action win a tie', () => {
     const twins = [action('a.one', 'Open thing'), action('b.two', 'Open thing')];
     expect(rankActions(twins, 'open', ['b.two'])[0]!.item.id).toBe('b.two');

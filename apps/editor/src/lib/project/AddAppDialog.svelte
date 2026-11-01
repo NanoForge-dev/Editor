@@ -9,6 +9,8 @@
     /** The clients and servers of the project. */
     apps: readonly AppModel[];
     exists: (path: string) => boolean;
+    /** Why a package name is taken in the project (`nameTaken`), if it is. */
+    taken: (name: string) => string | undefined;
     oncreate: (app: {
       type: 'client' | 'server';
       folder: string;
@@ -18,7 +20,7 @@
     onclose: () => void;
   }
 
-  const { type, project, apps, exists, oncreate, onclose }: Props = $props();
+  const { type, project, apps, exists, taken, oncreate, onclose }: Props = $props();
   const sameType = $derived(apps.filter((app) => app.type === type));
   let open = $state(true);
   // svelte-ignore state_referenced_locally
@@ -29,12 +31,7 @@
   let from = $state('');
 
   const folderError = $derived(validateFolder({ exists }, 'apps', folder));
-  const nameError = $derived(
-    validatePackageName(name) ??
-      (apps.some((app) => app.name === name)
-        ? `${name} is already the name of an app.`
-        : undefined),
-  );
+  const nameError = $derived(validatePackageName(name) ?? taken(name));
   const close = () => {
     open = false;
     onclose();

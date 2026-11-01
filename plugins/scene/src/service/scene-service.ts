@@ -81,6 +81,9 @@ export const parentsOf = (scenes: readonly SceneModel[], scene: SceneModel): Sce
   return chain;
 };
 
+/** About 6 s of waiting for the scene analyzers before saying they are missing. */
+const MAX_ANALYZER_WAITS = 20;
+
 /**
  * The scenes of the app the ECS widgets edit (their analysis, the selected one), and what the
  * ECS widgets edit for it (the `ecs.sources` contribution).
@@ -98,6 +101,9 @@ export class SceneService implements Disposable {
   private _generation = 0;
 
   private readonly _steps: SceneSteps;
+
+  /** Retries while the worker's analyzers are not registered yet. */
+  private _analyzerWaits = 0;
 
   constructor(private readonly _context: PluginContext) {
     this._steps = new SceneSteps(_context, () => this._refresh(0));
@@ -546,8 +552,15 @@ export class SceneService implements Disposable {
     const generation = ++this._generation;
     const app = this.app;
     const code = this._context.services.tryGet(CodeServiceToken);
-    if (!app?.entryFile || !code) {
+    if (!app?.entryFile) {
       this._model.set(undefined);
+      return;
+    }
+    if (!code) {
+      this._model.set({
+        scenes: [],
+        problems: ['This editor cannot read code, so it cannot list scenes.'],
+      });
       return;
     }
     try {
@@ -560,7 +573,12 @@ export class SceneService implements Disposable {
       this._vars.set(vars);
     } catch (error) {
       if (generation !== this._generation) return;
-      if (error instanceof Error && error.message.includes('Unknown analyzer')) {
+      /** The plugin's worker part registers its analyzers a moment after activation. */
+      if (
+        error instanceof Error &&
+        error.message.includes('Unknown analyzer') &&
+        this._analyzerWaits++ < MAX_ANALYZER_WAITS
+      ) {
         this._refresh(300);
         return;
       }
@@ -570,6 +588,7 @@ export class SceneService implements Disposable {
         problems: [error instanceof Error ? error.message : String(error)],
       });
     }
+    this._analyzerWaits = 0;
   }
 }
 

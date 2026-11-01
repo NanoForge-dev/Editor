@@ -113,6 +113,16 @@
         <p class="hint">No other package.</p>
       {/if}
       {#if details.readme}<pre class="readme">{details.readme}</pre>{/if}
+    {:else if packages.detailsError && packages.detailsError.name === packages.selected}
+      <EmptyState
+        icon="circle-alert"
+        title={`Could not read ${packages.detailsError.name}`}
+        description={packages.detailsError.message}
+      >
+        {#snippet actions()}
+          <Button onclick={() => packages.detailsAttempt++}>Try again</Button>
+        {/snippet}
+      </EmptyState>
     {:else if !packages.unavailable && packages.results.length}
       <EmptyState icon="box" title={packages.selected ? 'Loading…' : 'Select a package'} />
     {/if}
