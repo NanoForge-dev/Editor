@@ -66,6 +66,7 @@ export const EnvSchema = z
     DEV_PLUGINS: list,
     /** Directory of the plugins bundled with the editor build. */
     BUNDLED_PLUGINS_DIR: optionalString,
+    TUTORIAL_DIR: optionalString,
     /**
      * Lets a local (OFFLINE) editor listen on a non-loopback `HOST`. It has no sign-in and runs
      * project code: only set it behind something that restricts who can connect.

@@ -15,6 +15,7 @@
   import StatusBar from './parts/StatusBar.svelte';
   import ToolStripe from './parts/ToolStripe.svelte';
   import TopBar from './parts/TopBar.svelte';
+  import TourOverlay from './parts/TourOverlay.svelte';
   import WidgetHost from './parts/WidgetHost.svelte';
 
   const { context, brand }: { context: WorkbenchContext; brand?: Snippet } = $props();
@@ -330,6 +331,7 @@
   <StatusBar />
   <DragOverlay />
   <PromptHost />
+  <TourOverlay />
   <Toasts notifications={context.notifications} />
 </div>
 

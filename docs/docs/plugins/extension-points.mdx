@@ -19,7 +19,7 @@ context.subscriptions.add(
 );
 ```
 
-Several points can also be filled from the [manifest](./manifest#contributions), without code: widgets, menus, keybindings, keymap presets, settings, themes and document editors.
+Several points can also be filled from the [manifest](./manifest#contributions), without code: widgets, menus, keybindings, keymap presets, settings, themes, tours and document editors.
 
 ## Workbench
 
@@ -37,6 +37,7 @@ From `@nanoforge-dev/editor-sdk/ui`.
 | `STATUS_BAR_ITEMS` | An item of the status bar: `{ id, alignment, text, tooltip, command, when }`. `text` is an observable.                      |                 |
 | `SETTINGS_PAGES`   | A page of the Settings dialog with its own editor. It names the settings it edits, which then leave the category list.      |                 |
 | `THEMES`           | A color theme.                                                                                                              | `themes`        |
+| `TOURS`            | A guided tour: steps over the editor, ahead on real events. `TourServiceToken` starts one.                                  | `tours`         |
 
 ## Files
 

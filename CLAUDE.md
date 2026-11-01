@@ -188,7 +188,7 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
   - Plain values that change outside Svelte are made reactive with a `revision` counter bumped by subscriptions, read with `void revision` in `$derived.by`.
   - Lint wants `SvelteSet`/`SvelteMap` for mutable collections. For a throwaway copy, disable `svelte/prefer-svelte-reactivity` on that line.
 - **Docks (IntelliJ tool windows):** six slots (`bottom` is the bottom row's left part, `bottomRight` its right part). Their panels are icons in the left and right stripes (`ToolStripe.svelte`), and a docked stack shows only the active panel's header. Clicking the icon of a shown panel **hides its slot**: in e2e, use `showPanel`/`panelTab` (`e2e/helpers.ts`), never a bare click on a panel's tab. Floats keep a tab strip. A dock's icon shows before its plugin activates: built-in widget icons live in the kit (`icons.ts`).
-- **Kit z-order:** dock 10 < float 100 < dialog 2000 < menu 2500 < toast 3000. Menus, selects and tooltips must open above dialogs.
+- **Kit z-order:** dock 10 < float 100 < tour 1500 < dialog 2000 < menu 2500 < toast 3000. Menus, selects and tooltips must open above dialogs.
 - **Menus:** checked menu entries are plain `menuitem`s with a check icon (no `menuitemcheckbox` role).
 - **Actions and shortcuts:**
   - An _action_ is a command with its arguments (`actionId`). The palette and the keymap page list `listActions`: titled commands, plus menu entries that give arguments.

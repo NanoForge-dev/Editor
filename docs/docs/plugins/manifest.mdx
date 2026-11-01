@@ -96,6 +96,7 @@ Panels (docks) and screens.
 | `singleton`      | `true`  | One instance at a time.                                                                |
 | `when`           |         | Offered in menus only while true.                                                      |
 | `historyContext` |         | The history that undo and redo act on while the widget has focus.                      |
+| `tip`            |         | Docks: `{ text, docs? }`, a hint shown above the panel until the user puts it away; `docs` is a page of the documentation (`editor/entities`). |
 
 The code gives the widget its view with the `WIDGET_VIEWS` extension point. See [widgets and styles](./widgets-and-styles).
 
@@ -146,6 +147,35 @@ The key is prefixed with the plugin's name: `@acme/counter.step`. See [settings]
 
 A color theme: `id`, `label`, `kind` (`dark` or `light`) and `colors`, a value for every color token. See [widgets and styles](./widgets-and-styles#theme-tokens).
 
+### `tours`
+
+A guided tour: steps shown one at a time over the editor, each pointing at a control found by its role and accessible name (the way tests find it), optionally inside a panel.
+
+```json
+{
+  "id": "counter.tour",
+  "title": "The counter",
+  "steps": [
+    {
+      "id": "panel",
+      "title": "The counter",
+      "text": "Show the Counter panel.",
+      "action": { "title": "Show it", "command": "workbench.openWidget", "args": ["counter.panel"] },
+      "target": { "role": "region", "name": "Counter" }
+    },
+    {
+      "id": "add",
+      "title": "Count",
+      "text": "Click Add one.",
+      "target": { "role": "button", "name": "Add one", "within": { "role": "region", "name": "Counter" } },
+      "advanceWhenChanged": "counter.value"
+    }
+  ]
+}
+```
+
+A step shows only while its `when` holds, and goes on by itself once `advanceWhen` holds or the key of `advanceWhenChanged` changes. `"exact": false` on a target matches a name that only starts with `name` (a tree row says more than its label). The command `tour.start` with the tour's id starts it.
+
 ### `documentEditors`
 
 Opens files matching a glob with one of your widgets instead of the code editor.
@@ -186,7 +216,11 @@ Operators: `!`, `&&`, `||`, `==`, `!=`, `=~` (regular expression), `in`, and par
 | `engineLib:<name>`                                              | true when the active app has that engine library         |
 | `runtime.active`, `runtime.state`, `runtime.controllable`       | the game is playing, its state, whether it can be paused |
 | `codeEditor.activeFile`                                         | path of the file in the focused code editor              |
-| `git.repository`                                                | the project is a Git repository                          |
+| `git.repository`, `git.head`                                    | the project is a Git repository, its current commit      |
+| `screen`                                                        | id of the screen shown                                   |
+| `editor.local`                                                  | a local editor (games, Git, installs)                    |
+| `ecs.entityCount`, `ecs.revision`                               | entities of the edited code, a count bumped on each edit |
+| `problems.hasErrors`                                            | the project's code has errors (unset until first checked) |
 | `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount` | in file context menus                                    |
 
 A plugin sets its own keys with `context.contextKeys.set(key, value)`.

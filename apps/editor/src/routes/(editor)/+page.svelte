@@ -15,6 +15,8 @@
   import { ProjectCachesToken } from '@nanoforge-dev/editor-project';
 
   import { getEditor } from '$lib/editor/editor-context';
+  import Welcome from '$lib/tutorial/Welcome.svelte';
+  import { TUTORIAL_TOUR_ID } from '$lib/tutorial/tutorial-tour.const';
 
   const editor = getEditor();
   const session = editor.session;
@@ -63,13 +65,16 @@
         .catch(failed);
   });
 
-  const run = async (label: string, task: () => Promise<string>) => {
+  /** Opens the project the task gives; true once it did. */
+  const run = async (label: string, task: () => Promise<string>): Promise<boolean> => {
     error = undefined;
     busy = label;
     try {
       await goto(`/project/${await task()}`);
+      return true;
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason);
+      return false;
     } finally {
       busy = undefined;
     }
@@ -93,6 +98,12 @@
       creating = false;
       const { id } = await projectsApi.create(draft);
       return id;
+    });
+
+  const tutorial = () =>
+    run('Making the tutorial project (nf new, then npm install: a minute or so)', async () => {
+      const { id } = await projectsApi.createTutorial({});
+      return `${id}?tour=${TUTORIAL_TOUR_ID}`;
     });
 
   const opened = (date: Date) =>
@@ -142,6 +153,8 @@
         >
       {/if}
     </section>
+
+    <Welcome disabled={!!busy} onstart={tutorial} />
 
     {#if busy}<p class="status" role="status">{busy}…</p>{/if}
     {#if error}<p class="error" role="alert">{error}</p>{/if}

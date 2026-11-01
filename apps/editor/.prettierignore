@@ -19,3 +19,6 @@ test-results/
 e2e/.workspace*/
 .nanoforge/
 .data/
+
+# The tutorial project's files, written into a game as nf new writes its own.
+tutorial/

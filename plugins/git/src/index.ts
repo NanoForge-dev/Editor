@@ -82,9 +82,10 @@ export default definePlugin({
     context.subscriptions.add({ dispose: () => window.removeEventListener('focus', onFocus) });
 
     context.subscriptions.add({
-      dispose: store.state.subscribe(({ status }) =>
-        contextKeys.set('git.repository', status?.repository === true),
-      ),
+      dispose: store.state.subscribe(({ status }) => {
+        contextKeys.set('git.repository', status?.repository === true);
+        contextKeys.set('git.head', status?.head ?? '');
+      }),
     });
 
     for (const [id, component] of [

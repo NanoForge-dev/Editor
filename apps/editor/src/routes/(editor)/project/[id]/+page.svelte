@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { CoreServices, type Disposable } from '@nanoforge-dev/editor-kernel';
   import {
     LayoutControllerToken,
@@ -28,6 +28,7 @@
   onDestroy(() => editor.projects.close());
   let workbench = $state<WorkbenchContext & Disposable>();
   let error = $state<ErrorDescription>();
+
   let stage = $state({
     step: 'Opening project',
     description: 'Connecting to the project on the editor server.',
@@ -112,6 +113,20 @@
     }
   };
 
+  /**
+   * `?tour=<id>` (the tutorial): starts that tour once the workbench is up, then forgets it. It
+   * runs with the workbench it belongs to, whose disposal stops the tour: a separate effect would
+   * start it before the previous project's workbench is disposed, which would stop it again.
+   */
+  const startTour = (created: WorkbenchContext) => {
+    const tour = untrack(() => page.url.searchParams.get('tour'));
+    if (!tour) return;
+    const url = new URL(page.url);
+    url.searchParams.delete('tour');
+    replaceState(url, page.state);
+    created.tours.start(tour);
+  };
+
   $effect(() => {
     const id = page.params.id!;
     void attempt;
@@ -165,6 +180,7 @@
         editor.services.provide(WorkbenchServiceToken, created.workbench),
       ];
       workbench = created;
+      startTour(created);
     };
     start().catch(async (reason: unknown) => {
       const description = await describe(reason, id);
@@ -172,6 +188,7 @@
     });
     return () => {
       disposed = true;
+      created?.tours.stop();
       for (const registration of provided) registration.dispose();
       created?.dispose();
       workbench = undefined;

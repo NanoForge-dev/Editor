@@ -24,4 +24,6 @@ export interface EditorEnv {
   readonly allowedHosts: readonly string[];
   readonly devPlugins: readonly string[];
   readonly bundledPluginsDir: string | undefined;
+  /** Files the tutorial writes over a new project (`tutorial/` next to the server). */
+  readonly tutorialDir: string | undefined;
 }

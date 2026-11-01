@@ -32,6 +32,8 @@ import { KEYMAP_PRESETS, KeymapPresetSchema } from '../keybinding/keymap-presets
 import type { KeymapOverride } from '../keybinding/keymap.type';
 import { NotificationService } from '../notification/notification-service';
 import { PromptService } from '../prompt/prompt-service';
+import { TourService } from '../tour/tour-service';
+import { TOURS, type Tour, TourSchema } from '../tour/tour.extension-point';
 
 export interface ShellOptions {
   readonly extensions: ExtensionRegistry;
@@ -49,6 +51,7 @@ export interface Shell extends Disposable {
   readonly notifications: NotificationService;
   readonly prompts: PromptService;
   readonly keybindings: KeybindingService;
+  readonly tours: TourService;
 }
 
 /** Manifest handler registering each declared value on an extension point. */
@@ -78,6 +81,16 @@ export const setupShell = (options: ShellOptions): Shell => {
   );
   const notifications = new NotificationService();
   const prompts = new PromptService();
+  const tours = store.add(new TourService(extensions, contextKeys, commands, notifications));
+  store.add(
+    commands.register({
+      id: 'tour.start',
+      title: 'Start a tour',
+      category: 'Help',
+      palette: false,
+      handler: (_services, id: unknown) => typeof id === 'string' && tours.start(id),
+    }),
+  );
   const keybindings = store.add(
     new KeybindingService(
       extensions,
@@ -163,6 +176,13 @@ export const setupShell = (options: ShellOptions): Shell => {
     );
     store.add(
       host.registerContributionHandler(
+        listHandler('tours', TourSchema as unknown as z.ZodType<Tour>, (value, owner) =>
+          extensions.contribute(TOURS, value, { owner }),
+        ),
+      ),
+    );
+    store.add(
+      host.registerContributionHandler(
         listHandler('themes', z.unknown() as z.ZodType<ThemeDefinition>, (value, owner) =>
           extensions.contribute(THEMES, value, { owner }),
         ),
@@ -170,5 +190,13 @@ export const setupShell = (options: ShellOptions): Shell => {
     );
   }
 
-  return { styles, themes, notifications, prompts, keybindings, dispose: () => store.dispose() };
+  return {
+    styles,
+    themes,
+    notifications,
+    prompts,
+    keybindings,
+    tours,
+    dispose: () => store.dispose(),
+  };
 };

@@ -58,6 +58,25 @@ export const CoreSettings = {
     description: 'Consecutive changes of the same value within this delay (ms) are one undo step.',
     category: 'Editor/History',
   }),
+  welcomeShow: defineSetting({
+    key: 'welcome.show',
+    schema: z.boolean(),
+    default: true,
+    title: 'Show the welcome',
+    description: 'Offer the tutorial on the home page. Help › Tutorial starts it at any time.',
+    category: 'Editor/Appearance',
+    scopes: ['account', 'machine'],
+  }),
+  tipsDismissed: defineSetting({
+    key: 'tips.dismissed',
+    schema: z.array(z.string()),
+    default: [],
+    title: 'Dismissed tips',
+    description:
+      'Panels whose first-time tip was put away. Remove one (or empty the list) to see its tip again.',
+    category: 'Editor/Appearance',
+    scopes: ['account', 'machine'],
+  }),
   layoutPreset: defineSetting({
     key: 'layout.preset',
     schema: z.enum(['simple', 'full']),
