@@ -30,6 +30,8 @@ export interface GitState {
   readonly more: boolean;
   /** An operation is running. */
   readonly busy: boolean;
+  /** A read of the repository has been running for a while (a quick one does not show). */
+  readonly reading: boolean;
   /** Why git can't be used here (a hosted editor), if so. */
   readonly unavailable: string | undefined;
   /** Why the last read of the repository failed (git missing, a broken `.git`…), if it did. */
@@ -45,11 +47,14 @@ const EMPTY: GitState = {
   logLimit: 50,
   more: false,
   busy: false,
+  reading: false,
   unavailable: undefined,
   readError: undefined,
 };
 
 const PAGE = 50;
+/** A read shows as running only once it took this long. */
+const READING_MS = 250;
 
 /**
  * What the Git panel, the status bar and the Files marks show: the repository state of the open
@@ -92,7 +97,12 @@ export class GitStore implements Disposable {
    */
   refresh(): Promise<void> {
     if (!this._refreshing) {
-      this._refreshing = this._read().finally(() => (this._refreshing = undefined));
+      const shown = setTimeout(() => this._patch({ reading: true }), READING_MS);
+      this._refreshing = this._read().finally(() => {
+        clearTimeout(shown);
+        this._refreshing = undefined;
+        if (this._state.get().reading) this._patch({ reading: false });
+      });
       return this._refreshing;
     }
     this._queued ??= this._refreshing.then(() => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Combobox } from 'bits-ui';
+  import { Combobox as BitsCombobox } from 'bits-ui';
 
   import Icon from './icon.svelte';
 
@@ -20,7 +20,7 @@
   );
 </script>
 
-<Combobox.Root
+<BitsCombobox.Root
   type="single"
   {value}
   items={items.map((item) => ({ value: item.value, label: item.label }))}
@@ -28,26 +28,26 @@
   onOpenChange={(open) => !open && (search = '')}
 >
   <div class="nf-combobox">
-    <Combobox.Input
+    <BitsCombobox.Input
       class="nf-combobox-input"
       aria-label={label}
       {placeholder}
       oninput={(event) => (search = event.currentTarget.value)}
     />
-    <Combobox.Trigger class="nf-combobox-trigger" aria-label="Show options">
+    <BitsCombobox.Trigger class="nf-combobox-trigger" aria-label="Show options">
       <Icon name="chevron-down" size={14} />
-    </Combobox.Trigger>
+    </BitsCombobox.Trigger>
   </div>
-  <Combobox.Portal>
-    <Combobox.Content class="nf-popover" sideOffset={4}>
+  <BitsCombobox.Portal>
+    <BitsCombobox.Content class="nf-popover" sideOffset={4}>
       {#each filtered as item (item.value)}
-        <Combobox.Item class="nf-menu-item" value={item.value} label={item.label}>
+        <BitsCombobox.Item class="nf-menu-item" value={item.value} label={item.label}>
           <span>{item.label}</span>
           {#if item.detail}<span class="nf-menu-detail">{item.detail}</span>{/if}
-        </Combobox.Item>
+        </BitsCombobox.Item>
       {:else}
         <p class="nf-menu-empty">No match</p>
       {/each}
-    </Combobox.Content>
-  </Combobox.Portal>
-</Combobox.Root>
+    </BitsCombobox.Content>
+  </BitsCombobox.Portal>
+</BitsCombobox.Root>

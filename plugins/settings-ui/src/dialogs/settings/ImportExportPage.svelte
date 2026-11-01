@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ImportPreview, SettingsService, WritableScope } from '@nanoforge-dev/editor-sdk';
-  import { Button, Select } from '@nanoforge-dev/editor-sdk/ui';
+  import { Button, Select, saveAsFile } from '@nanoforge-dev/editor-sdk/ui';
 
   import { SCOPE_LABELS } from '../../settings/setting-categories';
 
@@ -18,16 +18,8 @@
   );
   let preview = $state<ImportPreview>();
 
-  const exportScope = () => {
-    const blob = new Blob([settings.export(scope)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `nanoforge-settings-${scope}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  };
+  const exportScope = () =>
+    saveAsFile(`nanoforge-settings-${scope}.json`, settings.export(scope), 'application/json');
 
   const pick = () => {
     const input = document.createElement('input');

@@ -23,11 +23,14 @@ import {
   type EcsSource,
   type InheritedLocation,
 } from '../extension/ecs-source.extension-point';
+import { ENTITY_ACTIONS, type EntityAction } from '../extension/entity-action.extension-point';
 import { FIELD_EDITORS, type FieldEditor } from '../extension/field-editor.extension-point';
 import { PARAM_PRESETS, type ParamPreset } from '../extension/param-preset.extension-point';
+import { declarationOffset } from '../layout/layout-diagnostics';
 import { checkLibraries } from '../library/check-libraries';
 import { createSharedLibrary } from '../library/create-shared-library';
 import { relocateItem } from '../library/relocate-item';
+import { assetPaths } from '../model/asset-paths';
 import type { EntryModel, EntryOp, ImportNeed, ScopedEntryOp } from '../model/ecs-model.type';
 import {
   BUNDLE_SPAWNS_ANALYZER,
@@ -109,6 +112,11 @@ export class EcsService implements Disposable {
     return values(this._context.contributions(FIELD_EDITORS));
   }
 
+  /** Actions other plugins add to entities of the Hierarchy (`ecs.entityActions`). */
+  get entityActions(): Observable<EntityAction[]> {
+    return values(this._context.contributions(ENTITY_ACTIONS));
+  }
+
   /** Presets contributed by other plugins (`ecs.paramPresets`). */
   get paramPresets(): Observable<ParamPreset[]> {
     return values(this._context.contributions(PARAM_PRESETS));
@@ -144,6 +152,12 @@ export class EcsService implements Disposable {
   }
   get app(): AppModel | undefined {
     return ecsApps(this._projectModel.get()).find((app) => app.id === this._app.get());
+  }
+  /** Assets of the app being edited, as its game loads them (`/textures/hero.png`). */
+  assets(accept: readonly string[] = []): string[] {
+    const app = this.app;
+    const project = this._context.services.get(ProjectServiceToken).current.get();
+    return app && project ? assetPaths(project.fs.entries, app.dirs.assets, accept) : [];
   }
   get model(): Observable<EntryModel | undefined> {
     return this._model.readonly();
@@ -337,18 +351,22 @@ export class EcsService implements Disposable {
   get openedItem(): Observable<string | undefined> {
     return this._openedItem.readonly();
   }
+  /** Opens a component's file with the Component panel, where its layout is edited. */
+  async editLayout(item: CatalogItem): Promise<void> {
+    this._openedItem.set(item.ref);
+    await this._context.executeCommand('codeEditor.open', item.meta.source, {
+      sidePanel: 'ecs.component',
+    });
+  }
+
   /** Opens the source of an item at its declaration. */
   async openItem(item: CatalogItem): Promise<void> {
     this._openedItem.set(item.ref);
     let line: number | undefined;
     try {
       const text = await codeServices(this._context).documents?.getText(item.meta.source);
-      const name = item.meta.export.replace(/[^\w]/g, '');
-      const declaration = new RegExp(
-        `^[ \\t]*export\\s+(?:default\\s+)?(?:abstract\\s+)?(?:async\\s+)?(?:class|function\\*?|const|let|var)\\s+${name}\\b`,
-        'm',
-      ).exec(text ?? '');
-      if (text && declaration) line = text.slice(0, declaration.index).split('\n').length;
+      const at = text === undefined ? undefined : declarationOffset(text, item.meta.export);
+      if (text && at) line = text.slice(0, at.start).split('\n').length;
     } catch {}
     await this.openInCode(item.meta.source, line);
   }

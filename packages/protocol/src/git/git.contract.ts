@@ -13,7 +13,7 @@ const BranchName = z
   .min(1)
   .max(200)
   .regex(/^(?!-)(?!.*\.\.)[^\s~^:?*[\\]+$/, 'not a valid branch name');
-const Hash = z.string().regex(/^[0-9a-f]{7,40}$/);
+const Hash = z.string().regex(/^[0-9a-f]{7,64}$/);
 
 /**
  * Git operations on the repository of a project's folder (local editors only). A repository
@@ -95,9 +95,9 @@ export const GitContract = defineContract('git', {
     stash: { input: Project.extend({ message: z.string().optional() }), output: z.null() },
     /** `pop`: drops the stash once applied. */
     applyStash: {
-      input: Project.extend({ index: z.number().int().min(0), pop: z.boolean().default(false) }),
+      input: Project.extend({ hash: Hash, pop: z.boolean().default(false) }),
       output: z.null(),
     },
-    dropStash: { input: Project.extend({ index: z.number().int().min(0) }), output: z.null() },
+    dropStash: { input: Project.extend({ hash: Hash }), output: z.null() },
   },
 });

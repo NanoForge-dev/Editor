@@ -7,3 +7,6 @@ import type { CodeEditorService } from '../service/code-editor-service';
 export const current = new ObservableValue<
   { service: CodeEditorService; monaco: Monaco } | undefined
 >(undefined);
+
+/** The side panel `codeEditor.open` asked for last (a new object per request). */
+export const sidePanelRequest = new ObservableValue<{ readonly id: string } | undefined>(undefined);

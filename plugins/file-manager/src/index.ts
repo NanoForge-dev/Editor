@@ -62,6 +62,7 @@ export default definePlugin({
             owner: context.name,
           }),
           extensions,
+          contextKeys: services.get(EditorServices.ContextKeys),
           prompts: services.tryGet(PromptServiceToken),
           notifications: services.tryGet(NotificationServiceToken),
           executeCommand: (id, ...args) => context.executeCommand(id, ...args),

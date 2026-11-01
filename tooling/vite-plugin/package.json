@@ -69,7 +69,9 @@
   "engines": {
     "node": "26"
   },
-  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "lint-staged": {
     "**": [
       "prettier --ignore-unknown --write"

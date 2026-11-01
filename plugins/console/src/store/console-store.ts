@@ -1,5 +1,7 @@
 import {
   type Disposable,
+  Emitter,
+  type Event,
   type LogEntry,
   LogLevel,
   type LogLocation,
@@ -75,6 +77,8 @@ export class ConsoleStore implements Disposable {
   private _next = 0;
   private readonly _revision = new ObservableValue(0);
   private readonly _sink: Disposable;
+  private readonly _errorsOnly = new Emitter<void>();
+  private _errorsOnlyAsked = false;
 
   /** Bumped when the lines change. */
   readonly revision = this._revision.readonly();
@@ -113,7 +117,26 @@ export class ConsoleStore implements Disposable {
     this._revision.set(this._revision.get() + 1);
   }
 
+  /** Fired when a command asks the Console to show only errors (or every level again). */
+  get onErrorsOnly(): Event<void> {
+    return this._errorsOnly.event;
+  }
+
+  /** Asks the Console to toggle errors only: now if it is shown, else when it mounts. */
+  askErrorsOnly(): void {
+    this._errorsOnlyAsked = true;
+    this._errorsOnly.fire();
+  }
+
+  /** Whether errors only was asked and not handled yet (it is handled now). */
+  takeErrorsOnly(): boolean {
+    const asked = this._errorsOnlyAsked;
+    this._errorsOnlyAsked = false;
+    return asked;
+  }
+
   dispose(): void {
     this._sink.dispose();
+    this._errorsOnly.dispose();
   }
 }

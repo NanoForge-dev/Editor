@@ -7,7 +7,12 @@ import {
   RuntimeServiceToken,
 } from '@nanoforge-dev/editor-sdk';
 
-import { LiveService, type Pending, withoutApplied } from '../../src/live/live-service';
+import {
+  LiveService,
+  type Pending,
+  pendingCount,
+  withoutApplied,
+} from '../../src/live/live-service';
 
 vi.mock('@nanoforge-dev/editor-sdk/ui', () => ({
   NotificationServiceToken: Symbol('notifications'),
@@ -192,5 +197,15 @@ describe('LiveService worlds', () => {
     await settle();
     expect(service.instance('client')!.entities.map((entity) => entity.id)).toEqual([2]);
     service.dispose();
+  });
+});
+
+describe('pendingCount', () => {
+  it('counts entities, not apps left without any', () => {
+    const pending = new Map([
+      ['apps/client', new Map([['ball', new Map()]])],
+      ['apps/server', new Map()],
+    ]) as never;
+    expect(pendingCount(pending)).toBe(1);
   });
 });

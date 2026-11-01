@@ -32,6 +32,12 @@
         "id": "hello.log",
         "title": "Log hello",
         "category": "Hello"
+      },
+      {
+        "id": "hello.greetEntity",
+        "title": "Say hello to an entity",
+        "category": "Hello",
+        "palette": false
       }
     ],
     "keymapPresets": [

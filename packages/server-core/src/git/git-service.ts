@@ -269,7 +269,7 @@ export class GitService {
         'log',
         `--max-count=${limit}`,
         `--skip=${skip}`,
-        '--format=%H%x00%h%x00%an%x00%at%x00%D%x00%s%x1e',
+        '--format=%H%x00%h%x00%an%x00%at%x00%D%x00%s%x00%b%x1e',
         ...(branch ? [branch, '--'] : []),
       ]);
       return output
@@ -277,7 +277,7 @@ export class GitService {
         .map((record) => record.replace(/^\n/, ''))
         .filter(Boolean)
         .map((record): GitCommit => {
-          const [hash = '', shortHash = '', author = '', time, refs = '', subject = ''] =
+          const [hash = '', shortHash = '', author = '', time, refs = '', subject = '', body = ''] =
             record.split('\0');
           return {
             hash,
@@ -289,6 +289,7 @@ export class GitService {
               .map((ref) => ref.replace(/^HEAD -> /, ''))
               .filter((ref) => ref && ref !== 'HEAD'),
             subject,
+            ...(body.trim() && { body: body.trim().slice(0, 4000) }),
           };
         });
     });
@@ -348,11 +349,14 @@ export class GitService {
 
   stashes(path: string): Promise<GitStash[]> {
     return this._mutex.run(path, async () => {
-      const output = await this._git(path, ['stash', 'list', '--format=%gs']);
+      const output = await this._git(path, ['stash', 'list', '--format=%H%x00%gs']);
       return output
         .split('\n')
         .filter(Boolean)
-        .map((message, index) => ({ index, message }));
+        .map((line) => {
+          const [hash = '', message = ''] = line.split('\0');
+          return { hash, message };
+        });
     });
   }
 
@@ -366,12 +370,26 @@ export class GitService {
     ]);
   }
 
-  applyStash(path: string, index: number, pop = false): Promise<void> {
-    return this._run(path, ['stash', pop ? 'pop' : 'apply', '--quiet', `stash@{${index}}`]);
+  /** Stashes are named by hash: `stash@{n}` moves when another stash is made or dropped. */
+  applyStash(path: string, hash: string, pop = false): Promise<void> {
+    return this._mutex.run(path, async () => {
+      const ref = await this._stashRef(path, hash);
+      await this._git(path, ['stash', pop ? 'pop' : 'apply', '--quiet', ref]);
+    });
   }
 
-  dropStash(path: string, index: number): Promise<void> {
-    return this._run(path, ['stash', 'drop', '--quiet', `stash@{${index}}`]);
+  dropStash(path: string, hash: string): Promise<void> {
+    return this._mutex.run(path, async () => {
+      await this._git(path, ['stash', 'drop', '--quiet', await this._stashRef(path, hash)]);
+    });
+  }
+
+  /** `stash@{n}` of the stash with this hash now, inside the repository's lock. */
+  private async _stashRef(path: string, hash: string): Promise<string> {
+    const hashes = (await this._git(path, ['stash', 'list', '--format=%H'])).split('\n');
+    const index = hashes.findIndex((candidate) => candidate && candidate.startsWith(hash));
+    if (index < 0) throw new RpcError('NOT_FOUND', 'This stash no longer exists.');
+    return `stash@{${index}}`;
   }
 
   private _run(path: string, args: string[]): Promise<void> {

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ExtensionRegistry, ObservableValue } from '@nanoforge-dev/editor-kernel';
 
 import { StyleService } from '../src/style/style-service';
-import { ThemeService } from '../src/theme/theme-service';
+import { SYSTEM_THEME, ThemeService } from '../src/theme/theme-service';
 
 const element = (html: string) => {
   const host = document.createElement('div');
@@ -56,6 +56,26 @@ describe('ThemeService', () => {
     expect(getComputedStyle(root).getPropertyValue('--nf-color-surface').trim()).toBe('#eef1f5');
     selected.set('missing-theme');
     expect(root.dataset.nfTheme).toBe('nanoforge-dark');
+    themes.dispose();
+  });
+
+  it('follows the light or dark mode of the system while the setting is system', () => {
+    const selected = new ObservableValue(SYSTEM_THEME);
+    const prefersLight = new ObservableValue(true);
+    const themes = new ThemeService(
+      new ExtensionRegistry(),
+      new StyleService(),
+      selected,
+      document.documentElement,
+      { prefersLight },
+    );
+    const root = document.documentElement;
+    expect(root.dataset.nfTheme).toBe('nanoforge-light');
+    prefersLight.set(false);
+    expect(root.dataset.nfTheme).toBe('nanoforge-dark');
+    expect(themes.resolve(SYSTEM_THEME).id).toBe('nanoforge-dark');
+    selected.set('nanoforge-light');
+    expect(root.dataset.nfTheme).toBe('nanoforge-light');
     themes.dispose();
   });
 });

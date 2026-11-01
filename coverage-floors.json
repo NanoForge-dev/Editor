@@ -48,26 +48,26 @@
     "branches": 75
   },
   "@nanoforge-dev/editor-plugin-console": {
-    "lines": 66,
-    "statements": 65,
-    "functions": 55,
-    "branches": 74
+    "lines": 70,
+    "statements": 69,
+    "functions": 61,
+    "branches": 75
   },
   "@nanoforge-dev/editor-plugin-ecs": {
     "lines": 62,
     "statements": 59,
-    "functions": 52,
+    "functions": 53,
     "branches": 54
   },
   "@nanoforge-dev/editor-plugin-file-manager": {
     "lines": 63,
     "statements": 60,
     "functions": 52,
-    "branches": 62
+    "branches": 63
   },
   "@nanoforge-dev/editor-plugin-git": {
     "lines": 39,
-    "statements": 37,
+    "statements": 38,
     "functions": 25,
     "branches": 43
   },
@@ -78,10 +78,10 @@
     "branches": 99
   },
   "@nanoforge-dev/editor-plugin-inspectors": {
-    "lines": 74,
-    "statements": 74,
-    "functions": 66,
-    "branches": 82
+    "lines": 77,
+    "statements": 77,
+    "functions": 71,
+    "branches": 83
   },
   "@nanoforge-dev/editor-plugin-packages": {
     "lines": 13,
@@ -114,10 +114,10 @@
     "branches": 70
   },
   "@nanoforge-dev/editor-protocol": {
-    "lines": 18,
-    "statements": 20,
-    "functions": 87,
-    "branches": 92
+    "lines": 22,
+    "statements": 24,
+    "functions": 90,
+    "branches": 93
   },
   "@nanoforge-dev/editor-rpc": {
     "lines": 86,
@@ -146,14 +146,14 @@
   "@nanoforge-dev/editor-settings": {
     "lines": 76,
     "statements": 73,
-    "functions": 64,
+    "functions": 65,
     "branches": 70
   },
   "@nanoforge-dev/editor-ui": {
     "lines": 47,
     "statements": 47,
     "functions": 43,
-    "branches": 39
+    "branches": 40
   },
   "@nanoforge-dev/editor-vite-plugin": {
     "lines": 83,

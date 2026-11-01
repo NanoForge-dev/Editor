@@ -1,6 +1,6 @@
 import type { MenuEntry } from '@nanoforge-dev/editor-sdk/ui';
 
-import type { ConsoleLine } from '../../store/console-store';
+import type { ConsoleLine, LineLevel } from '../../store/console-store';
 import { GROUPS, type GroupId, sourceLabel } from '../../store/log-sources';
 
 export interface GroupStats {
@@ -58,3 +58,11 @@ export const sourcesMenu = (
     ? entries
     : [{ kind: 'item', id: 'none', label: 'No sources yet', disabled: true, onSelect: () => {} }];
 };
+
+/** _Show only errors_: errors only, or the usual levels again when only errors are shown. */
+export const toggledErrorsOnly = (
+  levels: Readonly<Record<LineLevel, boolean>>,
+): Record<LineLevel, boolean> =>
+  levels.error && !levels.debug && !levels.info && !levels.warn
+    ? { debug: false, info: true, warn: true, error: true }
+    : { debug: false, info: false, warn: false, error: true };

@@ -21,7 +21,7 @@ const restore = async (page: Page) => {
   await expect(open).toBeHidden();
   const dialog = await openSettings(page);
   const panel = dialog.getByRole('region', { name: 'Appearance' });
-  await panel.getByRole('radio', { name: 'NanoForge Dark' }).click();
+  await panel.getByRole('radio', { name: 'Match the system' }).click();
   await panel.getByRole('radio', { name: 'Normal' }).click();
   await panel.getByRole('button', { name: 'Icon theme' }).click();
   await page.getByRole('option', { name: 'NanoForge', exact: true }).click();
@@ -41,7 +41,7 @@ test('themes, density and icons from a plugin, chosen in Settings › Appearance
     const dialog = await openSettings(page);
     const panel = dialog.getByRole('region', { name: 'Appearance' });
     const themes = panel.getByRole('radiogroup', { name: 'Theme' });
-    await expect(themes.getByRole('radio', { name: 'NanoForge Dark' })).toHaveAttribute(
+    await expect(themes.getByRole('radio', { name: 'Match the system' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
@@ -79,8 +79,13 @@ test('themes, density and icons from a plugin, chosen in Settings › Appearance
   } finally {
     await restore(page);
   }
-  await expect
-    .poll(() => page.evaluate(() => document.documentElement.dataset.nfTheme))
-    .toBe('nanoforge-dark');
+  const theme = () => page.evaluate(() => document.documentElement.dataset.nfTheme);
+  await expect.poll(theme).toBe('nanoforge-dark');
   expect(await variable(page, '--nf-control-height')).toBe('26px');
+
+  /** Match the system (the default) follows the light or dark mode of the system as it changes. */
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect.poll(theme).toBe('nanoforge-light');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(theme).toBe('nanoforge-dark');
 });

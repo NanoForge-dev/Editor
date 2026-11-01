@@ -2,15 +2,20 @@
   import { tick, untrack } from 'svelte';
 
   import {
+    Button,
     EmptyState,
     Input,
+    Menu,
+    type MenuEntry,
     type WidgetInstance,
     moveRowFocus,
+    saveAsFile,
   } from '@nanoforge-dev/editor-sdk/ui';
 
   import SourcePicker from '../SourcePicker.svelte';
   import { follow } from '../follow.svelte';
   import { settledStatus } from '../settled-status.svelte';
+  import { exportName, packetsCsv } from '../../export/inspector-export';
   import { formatBytes, hexDump, hexToBytes, readPacket } from '../../network/packets';
   import type { Packet } from '../../recorder/recorder';
   import { getRecorder } from '../../session/recorder-session';
@@ -21,7 +26,9 @@
 
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
-  const view = follow(getRecorder(), 'network', instance.visible);
+  const recorder = getRecorder();
+  // svelte-ignore state_referenced_locally
+  const view = follow(recorder, 'network', instance.visible);
 
   let direction = $state<Choice<'in' | 'out'>>('all');
   let transport = $state<Choice<'tcp' | 'udp'>>('all');
@@ -31,7 +38,9 @@
   let stick = $state(true);
 
   const record = $derived(view.record);
-  const packets = $derived(record?.packets ?? []);
+  /** While paused, the list keeps the packets it had (the recorder goes on). */
+  let frozen = $state<readonly Packet[]>();
+  const packets = $derived(frozen ?? record?.packets ?? []);
   const totals = $derived(record?.network ?? []);
 
   /** Payload bytes the editor has, and how people read them (computed once per packet). */
@@ -101,6 +110,41 @@
   const countText = () =>
     `${shown.length} of ${packets.length} packets${record?.untraced ? `, ${record.untraced} more not listed` : ''}`;
   const status = settledStatus(() => [query, transport, direction], countText);
+
+  const clear = () => {
+    recorder.clear(view.source ?? 'client');
+    frozen = undefined;
+    selectedId = undefined;
+  };
+  /** Saves the packets shown (filtered, and frozen while paused). */
+  const exportItems = (): MenuEntry[] => [
+    {
+      kind: 'item',
+      id: 'csv',
+      label: 'Save as CSV',
+      onSelect: () =>
+        saveAsFile(
+          exportName('network', 'csv'),
+          packetsCsv(shown, (packet) => detailOf(packet).text.replace(/\s+/g, ' ').trim()),
+          'text/csv',
+        ),
+    },
+    {
+      kind: 'item',
+      id: 'json',
+      label: 'Save as JSON',
+      onSelect: () =>
+        saveAsFile(
+          exportName('network', 'json'),
+          `${JSON.stringify(
+            shown.map((packet) => ({ ...packet, text: detailOf(packet).text.trim() })),
+            null,
+            2,
+          )}\n`,
+          'application/json',
+        ),
+    },
+  ];
 </script>
 
 {#snippet choice(
@@ -131,6 +175,7 @@
         onchange={(source) => {
           view.source = source;
           selectedId = undefined;
+          frozen = undefined;
         }}
       />
       {@render choice(
@@ -156,6 +201,17 @@
       <Input bind:value={query} placeholder="Search payloads" aria-label="Search payloads" />
       <span class="count">{countText()}</span>
       <span class="nf-visually-hidden" role="status">{status.text}</span>
+      {#if frozen}
+        <Button size="sm" icon="play" onclick={() => (frozen = undefined)}>Resume</Button>
+      {:else}
+        <Button size="sm" icon="pause" onclick={() => (frozen = [...packets])}>Pause</Button>
+      {/if}
+      <Button size="sm" icon="trash-2" onclick={clear}>Clear</Button>
+      <Menu items={exportItems()}>
+        {#snippet trigger({ props })}
+          <Button {...props} size="sm" icon="download">Export</Button>
+        {/snippet}
+      </Menu>
     </div>
     <ThroughputCharts {totals} />
     <div class="body">

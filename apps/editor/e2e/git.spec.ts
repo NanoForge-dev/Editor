@@ -326,6 +326,42 @@ test('amends the last commit from its message, and offers earlier messages', asy
   await message(page).fill('');
 });
 
+test('shows the commit body, copies a path, keeps the commit and branch shown', async ({
+  page,
+}) => {
+  initRepository();
+  git(PONG, 'branch', 'feature');
+  writeFileSync(join(PONG, FILE), 'second\n');
+  git(PONG, 'commit', '--quiet', '-am', 'second commit', '-m', 'Why: the body says.');
+  await open(page);
+
+  writeFileSync(join(PONG, OTHER_FILE), 'changed\n');
+  const other = row(page, 'Changes', OTHER_FILE);
+  await other.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Copy path' }).click();
+  await expect(page.getByText(`Copied ${OTHER_FILE}`).last()).toBeVisible();
+
+  await showPanel(page, 'Git');
+  const second = commits(page).getByRole('row', { name: /second commit/ });
+  await second.click();
+  const details = logPanel(page).getByRole('complementary', { name: 'Commit details' });
+  await expect(details.getByText('Why: the body says.')).toBeVisible();
+  const local = logPanel(page).getByRole('list', { name: 'Local branches' });
+  await local.getByRole('button', { name: 'feature', exact: true }).click();
+  await expect(second).toHaveCount(0);
+  const first = commits(page).getByRole('row', { name: /first commit/ });
+  await first.click();
+  await expect(first).toHaveAttribute('aria-selected', 'true');
+  await saved(page);
+
+  await page.reload();
+  await expect(first).toHaveAttribute('aria-selected', 'true');
+  await expect(commits(page).getByRole('row', { name: /second commit/ })).toHaveCount(0);
+  await expect(details.getByRole('heading', { name: 'first commit' })).toBeVisible();
+  await logPanel(page).getByRole('button', { name: 'HEAD (Current Branch)' }).click();
+  await expect(commits(page).getByRole('row', { name: /second commit/ })).toBeVisible();
+});
+
 test('stashes changes and pops them back', async ({ page }) => {
   initRepository();
   await open(page);

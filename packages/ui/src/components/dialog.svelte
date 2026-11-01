@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Dialog } from 'bits-ui';
+  import { Dialog as BitsDialog } from 'bits-ui';
   import type { Snippet } from 'svelte';
 
   import IconButton from './icon-button.svelte';
@@ -31,7 +31,7 @@
   }: Props = $props();
 </script>
 
-<Dialog.Root
+<BitsDialog.Root
   bind:open={
     () => open,
     (next) => {
@@ -41,22 +41,22 @@
     }
   }
 >
-  <Dialog.Portal>
-    <Dialog.Overlay class="nf-dialog-overlay" />
-    <Dialog.Content class="nf-dialog" style="width: min({width}, calc(100vw - 32px))">
+  <BitsDialog.Portal>
+    <BitsDialog.Overlay class="nf-dialog-overlay" />
+    <BitsDialog.Content class="nf-dialog" style="width: min({width}, calc(100vw - 32px))">
       <header class="nf-dialog-header">
-        <Dialog.Title class="nf-dialog-title">{title}</Dialog.Title>
-        <Dialog.Close>
+        <BitsDialog.Title class="nf-dialog-title">{title}</BitsDialog.Title>
+        <BitsDialog.Close>
           {#snippet child({ props })}
             <IconButton {...props} icon="x" label="Close" />
           {/snippet}
-        </Dialog.Close>
+        </BitsDialog.Close>
       </header>
-      {#if description}<Dialog.Description class="nf-dialog-description"
-          >{description}</Dialog.Description
+      {#if description}<BitsDialog.Description class="nf-dialog-description"
+          >{description}</BitsDialog.Description
         >{/if}
       {#if children}<div class="nf-dialog-body">{@render children()}</div>{/if}
       {#if footer}<footer class="nf-dialog-footer">{@render footer()}</footer>{/if}
-    </Dialog.Content>
-  </Dialog.Portal>
-</Dialog.Root>
+    </BitsDialog.Content>
+  </BitsDialog.Portal>
+</BitsDialog.Root>

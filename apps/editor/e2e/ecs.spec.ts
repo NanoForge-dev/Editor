@@ -93,16 +93,18 @@ test('edits the layout of a component from its code page', async ({ page }) => {
         'Group 1',
       );
       await panel.getByRole('button', { name: `Preset of ${param}` }).click();
-      await page.getByRole('option', { name: 'vector' }).click();
+      /** Presets of plugins (`ecs.paramPresets`) are offered with the built-in ones. */
+      await expect(page.getByRole('option', { name: 'Range' })).toBeVisible();
+      await page.getByRole('option', { name: 'Vector' }).click();
       await expect(panel.getByRole('button', { name: `Preset of ${param}` })).toContainText(
-        'vector',
+        'Vector',
       );
     }
     await panel.getByRole('button', { name: 'Preset of y' }).focus();
     await page.keyboard.press('Control+z');
     await expect(panel.getByRole('button', { name: 'Preset of y' })).toContainText('None');
     await page.keyboard.press('Control+y');
-    await expect(panel.getByRole('button', { name: 'Preset of y' })).toContainText('vector');
+    await expect(panel.getByRole('button', { name: 'Preset of y' })).toContainText('Vector');
 
     await expect(
       panel
@@ -275,6 +277,106 @@ test('opens a component in code at its declaration, shown in the Component panel
   await expect(panel.getByRole('button', { name: 'Component to edit' })).toContainText('Position');
   await expect(page.locator('.monaco-editor .current-line').first()).toBeVisible();
   await expect(page.locator('.monaco-editor .view-lines')).toContainText('export class Position');
+});
+
+test('edit layout opens the component file with its Component panel', async ({ page }) => {
+  await entity(page, 'ball').click();
+  await showPanel(page, 'Inspector');
+  const card = page.getByRole('region', { name: 'Position' });
+  await card.getByRole('button', { name: 'Position actions' }).click();
+  await page.getByRole('menuitem', { name: 'Edit layout' }).click();
+  const panel = page.getByRole('complementary', { name: 'Component panel' });
+  await expect(panel.getByRole('button', { name: 'Component to edit' })).toContainText('Position');
+  await panel.getByRole('button', { name: 'Hide the Component panel' }).click();
+  await expect(panel).toHaveCount(0);
+
+  const components = page.getByRole('region', { name: 'Components', exact: true });
+  await showPanel(page, 'Components');
+  await components.getByRole('button', { name: /^C Velocity\b/ }).click();
+  await components.getByRole('button', { name: 'Edit layout' }).click();
+  await expect(panel.getByRole('button', { name: 'Component to edit' })).toContainText('Velocity');
+});
+
+test('picks an asset of the accepted type for an asset param', async ({ page }) => {
+  const SKIN = join(PONG, 'apps/client/src/components/skin.ts');
+  const NOTES = join(PONG, 'apps/client/assets/notes.txt');
+  writeFileSync(
+    SKIN,
+    [
+      '/**',
+      ' * A picture drawn for the entity.',
+      ' *',
+      ' * @component',
+      ' * @side client',
+      ' */',
+      'export class Skin {',
+      '  name = "Skin";',
+      '',
+      '  constructor(',
+      '    /** The picture. @asset .png */',
+      '    public image = "",',
+      '  ) {}',
+      '}',
+      '',
+    ].join('\n'),
+  );
+  writeFileSync(NOTES, 'not a picture\n');
+  try {
+    await entity(page, 'ball').click();
+    await showPanel(page, 'Inspector');
+    await page.getByRole('combobox', { name: 'Add component' }).click();
+    await page.keyboard.type('Skin');
+    /** The catalog reads the new file in the background. */
+    await page.getByRole('option', { name: /^Skin/ }).click({ timeout: 15_000 });
+    const card = page.getByRole('region', { name: 'Skin' });
+    await expect(card.getByRole('combobox', { name: 'image' })).toBeVisible();
+    await card.getByRole('button', { name: 'Show options' }).click();
+    await expect(page.getByRole('option', { name: '/logo.png' })).toBeVisible();
+    await expect(page.getByRole('option', { name: '/notes.txt' })).toHaveCount(0);
+    await page.getByRole('option', { name: '/logo.png' }).click();
+    await expect.poll(main).toContain('new Skin("/logo.png")');
+  } finally {
+    rmSync(SKIN, { force: true });
+    rmSync(NOTES, { force: true });
+  }
+});
+
+test('a layout warning of a component shows in Problems, at its declaration', async ({ page }) => {
+  const COMPONENTS = join(PONG, 'apps/client/src/components/components.ts');
+  const before = readFileSync(COMPONENTS, 'utf8');
+  const position =
+    'export class Position {\n  name = "Position";\n  x: number;\n  y: number;\n\n  constructor(x: number';
+  expect(before).toContain(position);
+  writeFileSync(
+    COMPONENTS,
+    before.replace(
+      position,
+      position.replace('constructor(x: number', 'constructor(/** @preset vector.x */ x: number'),
+    ),
+  );
+  try {
+    await showPanel(page, 'Problems');
+    const file = page
+      .getByRole('list', { name: 'Problems' })
+      .getByRole('listitem', { name: 'apps/client/src/components/components.ts' });
+    const warning = file.getByRole('button', { name: /Position: The preset "vector" needs/ });
+    await expect(warning).toBeVisible({ timeout: 15_000 });
+    await warning.click();
+    await expect(page.locator('.monaco-editor .active-line-number')).toHaveText(
+      String(before.slice(0, before.indexOf('export class Position')).split('\n').length),
+    );
+  } finally {
+    writeFileSync(COMPONENTS, before);
+  }
+  await expect(
+    page.getByRole('button', { name: /Position: The preset "vector" needs/ }),
+  ).toHaveCount(0, { timeout: 15_000 });
+});
+
+test('runs an action another plugin adds to entities', async ({ page }) => {
+  await entity(page, 'ball').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Say hello to it' }).click();
+  await expect(page.getByText('Hello, ball!').last()).toBeVisible();
 });
 
 test('switches the app, and adds and removes a system', async ({ page }) => {

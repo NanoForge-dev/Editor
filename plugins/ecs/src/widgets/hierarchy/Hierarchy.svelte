@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { documentHistoryId } from '@nanoforge-dev/editor-sdk';
+  import { EditorServices, documentHistoryId } from '@nanoforge-dev/editor-sdk';
   import {
     ContextMenu,
     type DropPosition,
@@ -16,10 +16,11 @@
 
   import { EcsServiceToken } from '../../service/ecs-service';
   import type { LiveSource } from '../../live/live.type';
-  import { LiveServiceToken } from '../../live/live-service';
+  import { LiveServiceToken, pendingCount } from '../../live/live-service';
   import { MoveGuard } from '../move-guard';
   import InheritedEntitiesTree from './InheritedEntitiesTree.svelte';
   import LiveEntitiesTree from './LiveEntitiesTree.svelte';
+  import { entityActionEntries } from './entity-action-entries';
 
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
@@ -36,8 +37,27 @@
   const selection = ecs.selection;
   // svelte-ignore state_referenced_locally
   const live = instance.services.get(LiveServiceToken);
+  const entityActions = ecs.entityActions;
+  // svelte-ignore state_referenced_locally
+  const contextKeys = instance.services.get(EditorServices.ContextKeys);
+  // svelte-ignore state_referenced_locally
+  const commands = instance.services.get(EditorServices.Commands);
+  /** `ecs.entityActions` of other plugins whose `when` holds for an entity. */
+  const actionsFor = (name: string): MenuEntry[] => {
+    const entity = $model?.entities.find((candidate) => candidate.name === name);
+    return entity
+      ? entityActionEntries(
+          $entityActions,
+          entity,
+          { app: $appId ?? '', entity: name, path: $location?.path },
+          contextKeys,
+          (command, target) => commands.execute(command, target),
+        )
+      : [];
+  };
   const playing = live.playing;
   const instances = live.instances;
+  const pending = live.pending;
   let chosenSource = $state<LiveSource>();
   const liveMode = $derived($playing && $instances.length > 0);
   const source = $derived(
@@ -142,6 +162,7 @@
         onSelect: () => setTimeout(() => tree?.rename(id), 150),
       },
       { kind: 'item', id: 'open', label: 'Open in code', onSelect: () => openInCode(id) },
+      ...actionsFor(id),
       { kind: 'separator' },
       {
         kind: 'item',
@@ -194,6 +215,12 @@
     {/if}
     <Input bind:value={filter} placeholder="Filter" aria-label="Filter entities" />
     {#if liveMode}
+      <IconButton
+        icon="file-code"
+        label="Apply all changes to code"
+        disabled={!pendingCount($pending)}
+        onclick={() => void live.applyAll()}
+      />
       <IconButton
         icon="plus"
         label="Spawn an entity in the game"
