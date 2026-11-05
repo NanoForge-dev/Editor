@@ -11,7 +11,7 @@ import {
 } from '@nanoforge-dev/editor-protocol';
 import type { RpcClient } from '@nanoforge-dev/editor-rpc';
 
-import { type CacheFactory, ClientProject, defaultCacheFactory } from './client-project';
+import { type CacheFactory, ClientProject, memoryCacheFactory } from './client-project';
 
 /** Opens projects through the editor server; one project is active per window. */
 export class ProjectService implements Disposable {
@@ -19,8 +19,13 @@ export class ProjectService implements Disposable {
 
   constructor(
     private readonly _rpc: RpcClient,
-    private readonly _caches: CacheFactory = defaultCacheFactory,
+    private _caches: CacheFactory = memoryCacheFactory(),
   ) {}
+
+  /** Where the next projects opened cache their files (the browser's caches, once known). */
+  useCaches(caches: CacheFactory): void {
+    this._caches = caches;
+  }
 
   get current(): Observable<ClientProject | undefined> {
     return this._current.readonly();

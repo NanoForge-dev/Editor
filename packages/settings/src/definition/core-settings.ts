@@ -22,6 +22,26 @@ export const CoreSettings = {
     category: 'Editor/Appearance',
     scopes: ['account', 'machine'],
   }),
+  cacheBudget: defineSetting({
+    key: 'storage.cacheBudgetMb',
+    schema: z.number().int().min(50).max(100_000),
+    default: 500,
+    title: 'Cache size',
+    description:
+      'Space (MB) the browser may use to keep project files, so they need not be downloaded again. Never more than a tenth of what the browser allows. Least recently used files go first.',
+    category: 'Editor/Storage',
+    scopes: ['machine'],
+  }),
+  cacheMaxAge: defineSetting({
+    key: 'storage.cacheMaxAgeDays',
+    schema: z.number().int().min(0).max(3650),
+    default: 30,
+    title: 'Forget projects after (days)',
+    description:
+      'Cached files of a project not opened for this many days are dropped (0 keeps them).',
+    category: 'Editor/Storage',
+    scopes: ['machine'],
+  }),
   historyLimit: defineSetting({
     key: 'history.limit',
     schema: z.number().int().min(1).max(10_000),

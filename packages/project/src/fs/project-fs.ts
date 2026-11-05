@@ -12,9 +12,10 @@ import {
   type FileEntry,
   FsContract,
 } from '@nanoforge-dev/editor-protocol';
-import type { RpcApi, RpcClient } from '@nanoforge-dev/editor-rpc';
+import { type RpcApi, type RpcClient, RpcError } from '@nanoforge-dev/editor-rpc';
 
 import type { ContentCache, TreeCache } from '../cache/cache.type';
+import { sha1Hex } from '../cache/sha1';
 
 const decoder = new TextDecoder();
 
@@ -26,10 +27,18 @@ export interface WriteOptions {
   expectedHash?: string | null;
 }
 
+/** Whether two entries hold the same content (by hash when both have one). */
+const sameContent = (a: FileEntry, b: FileEntry): boolean =>
+  a.hash && b.hash ? a.hash === b.hash : a.mtime === b.mtime && a.size === b.size;
+
+const sameEntry = (a: FileEntry, b: FileEntry): boolean =>
+  a.kind === b.kind && a.size === b.size && a.mtime === b.mtime && a.hash === b.hash;
+
 /**
  * Files of the open project. The tree is loaded once (cached for fast startup), then kept in
- * sync by the server change stream, so contents can be served from the local cache whenever
- * the cached copy is as recent as the tree says.
+ * sync by the server change stream. Contents come from the local cache, keyed by the hash the
+ * tree gives each file: a copy is served when its hash is the tree's, whatever the dates say,
+ * and a renamed or copied file is already there.
  */
 export class ProjectFs implements Disposable {
   private readonly _fs: RpcApi<typeof FsContract>;
@@ -37,6 +46,18 @@ export class ProjectFs implements Disposable {
   private readonly _ready = new ObservableValue(false);
   private readonly _onDidChange = new Emitter<readonly FileChange[]>();
   private readonly _store = new DisposableStore();
+  private _treeSave: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * Ticks at each change of the tree. A reply only updates the paths nothing changed since its
+   * request left: a listing or a read sent before a save must not put the older hash back.
+   */
+  private _clock = 0;
+  /** Last tick each path changed at. */
+  private readonly _changedAt = new Map<string, number>();
+  /** The hash of each path's last save from here: its change coming back is no news. */
+  private readonly _saved = new Map<string, string>();
+  /** Last tick each path was removed at, with everything under it. */
+  private readonly _removedAt = new Map<string, number>();
 
   /** Batched changes (from the server watcher and this client's own writes). */
   readonly onDidChange: Event<readonly FileChange[]> = this._onDidChange.event;
@@ -73,25 +94,41 @@ export class ProjectFs implements Disposable {
 
   /** Re-fetches the whole tree and reports the differences as changes. */
   async refresh(): Promise<void> {
+    const sent = this._clock;
     const entries = await this._fs.list({ project: this.projectId, path: '', recursive: true });
     const next = new Map(entries.map((entry) => [entry.path, entry]));
+    /**
+     * What changed since the listing left stays as the tree has it. A path the tree does not
+     * have yet (a change waiting for its stat) takes the listing's entry, unless it was removed.
+     */
+    for (const path of new Set([...next.keys(), ...this._tree.keys()])) {
+      if (!this._changedSince(path, sent)) continue;
+      const current = this._tree.get(path);
+      if (current) next.set(path, current);
+      else if (this._removedSince(path, sent)) next.delete(path);
+    }
     const changes: FileChange[] = [];
     for (const [path, entry] of next) {
       const previous = this._tree.get(path);
       if (!previous) changes.push({ type: 'created', path, kind: entry.kind });
-      else if (previous.mtime !== entry.mtime || previous.size !== entry.size) {
+      else if (entry.kind === 'file' && !sameContent(previous, entry)) {
         changes.push({ type: 'changed', path, kind: entry.kind });
       }
     }
     for (const [path, entry] of this._tree) {
       if (!next.has(path)) changes.push({ type: 'deleted', path, kind: entry.kind });
     }
+    const tick = ++this._clock;
+    for (const [path, entry] of this._tree) {
+      const listed = next.get(path);
+      if (!listed) this._removedAt.set(path, tick);
+      else if (!sameEntry(entry, listed)) this._changedAt.set(path, tick);
+    }
+    for (const path of next.keys()) if (!this._tree.has(path)) this._changedAt.set(path, tick);
     this._tree.clear();
     for (const [path, entry] of next) this._tree.set(path, entry);
     this._ready.set(true);
-    await this._treeCache.save(entries);
-    for (const change of changes)
-      if (change.type === 'deleted') await this._contents.delete(change.path);
+    await this._treeCache.save([...next.values()]);
     if (changes.length) this._onDidChange.fire(changes);
   }
 
@@ -121,18 +158,29 @@ export class ProjectFs implements Disposable {
 
   /**
    * `fresh` asks the server even when the cached content looks current: the tree only learns
-   * of a change on disk when the watcher reports it.
+   * of a change on disk when the watcher reports it. The server then sends the bytes only if the
+   * cached copy is out of date.
    */
   async read(path: string, options: { fresh?: boolean } = {}): Promise<FileContent> {
-    const known = this._tree.get(path);
-    const cached = !options.fresh && known && (await this._contents.get(path));
-    if (known && cached && cached.mtime === known.mtime && cached.content.length === known.size) {
-      return { ...known, content: cached.content, hash: cached.hash };
-    }
-    const file = await this._fs.read({ project: this.projectId, path });
-    this._tree.set(path, { path, kind: 'file', size: file.size, mtime: file.mtime });
-    await this._contents.set(path, { content: file.content, mtime: file.mtime, hash: file.hash });
-    return file;
+    const [result] = await this._fetch([path], options.fresh ?? false);
+    if (!result || 'error' in result)
+      throw new RpcError(
+        (result?.error.code ?? 'INTERNAL') as RpcError['code'],
+        result?.error.message ?? `Could not read ${path}`,
+      );
+    return result;
+  }
+
+  /**
+   * Reads several files at once (a project opening, open tabs, type information): the ones the
+   * cache has cost nothing, the others come in a few batched requests. Unreadable files are left
+   * out.
+   */
+  async readMany(paths: readonly string[]): Promise<Map<string, FileContent>> {
+    const results = await this._fetch(paths, false);
+    return new Map(
+      results.flatMap((result) => ('error' in result ? [] : [[result.path, result] as const])),
+    );
   }
 
   async readText(
@@ -148,23 +196,45 @@ export class ProjectFs implements Disposable {
     content: Uint8Array | string,
     options: WriteOptions = {},
   ): Promise<FileEntry & { hash: string }> {
-    const result = await this._fs.write({
-      project: this.projectId,
-      path,
-      content,
-      ...(options.expectedHash !== undefined && { expectedHash: options.expectedHash }),
-    });
     const bytes = typeof content === 'string' ? new TextEncoder().encode(content) : content;
+    /** Known before the save leaves: its own change from the watcher may come back first. */
+    const hash = await sha1Hex(bytes).catch(() => undefined);
+    const savedBefore = this._saved.get(path);
+    if (hash) this._saved.set(path, hash);
+    const result = await this._fs
+      .write({
+        project: this.projectId,
+        path,
+        content,
+        ...(options.expectedHash !== undefined && { expectedHash: options.expectedHash }),
+      })
+      .catch((error: unknown) => {
+        if (savedBefore === undefined) this._saved.delete(path);
+        else this._saved.set(path, savedBefore);
+        throw error;
+      });
     const existed = this._tree.has(path);
-    this._tree.set(path, { path, kind: 'file', size: result.size, mtime: result.mtime });
-    await this._contents.set(path, { content: bytes, mtime: result.mtime, hash: result.hash });
+    this._saved.set(path, result.hash);
+    this._setEntry(path, {
+      path,
+      kind: 'file',
+      size: result.size,
+      mtime: result.mtime,
+      hash: result.hash,
+    });
+    /**
+     * Kept only if the server wrote exactly these bytes: the cache must never lie. Stored in the
+     * background: the file is saved, and the cache keeps the bytes in memory at once.
+     */
+    if (hash === result.hash) void this._contents.set(result.hash, bytes).catch(() => undefined);
+    this._scheduleTreeSave();
     this._onDidChange.fire([{ type: existed ? 'changed' : 'created', path, kind: 'file' }]);
     return result;
   }
 
   async mkdir(path: string): Promise<void> {
     const entry = await this._fs.mkdir({ project: this.projectId, path });
-    this._tree.set(path, entry);
+    this._setEntry(path, entry);
   }
 
   async rename(from: string, to: string, overwrite = false): Promise<void> {
@@ -182,7 +252,7 @@ export class ProjectFs implements Disposable {
     const kind = this.entry(path)?.kind ?? 'file';
     const result = await this._fs.delete({ project: this.projectId, path });
     this._removeFromTree(path);
-    await this._contents.delete(path);
+    this._scheduleTreeSave();
     this._onDidChange.fire([{ type: 'deleted', path, kind }]);
     return result;
   }
@@ -199,33 +269,174 @@ export class ProjectFs implements Disposable {
   }
 
   dispose(): void {
+    if (this._treeSave) {
+      clearTimeout(this._treeSave);
+      void this._treeCache.save([...this._tree.values()]);
+    }
     this._store.dispose();
     this._onDidChange.dispose();
   }
 
   private async _applyRemote(changes: readonly FileChange[]): Promise<void> {
     const relevant: FileChange[] = [];
+    /**
+     * What requests already on their way say of these paths is older than these changes, and
+     * the hash the tree has is no longer known to be current: until the stat answers, reads go to
+     * the server. `before` keeps the entries to tell whether the content changed.
+     */
+    const before = new Map<string, FileEntry>();
     for (const change of changes) {
-      if (change.type === 'deleted') {
-        this._removeFromTree(change.path);
-        await this._contents.delete(change.path);
-        relevant.push(change);
-        continue;
-      }
+      this._changedAt.set(change.path, ++this._clock);
+      const current = this._tree.get(change.path);
+      if (!current?.hash) continue;
+      before.set(change.path, current);
+      this._tree.set(change.path, { ...current, hash: undefined });
+    }
+    /**
+     * Every change is checked with a stat, deletions included: events come late and out of order
+     * (the echo of a deletion after the file was made again), the stat tells what is there now.
+     */
+    for (const change of changes) {
+      const sent = this._clock;
       const entry = await this._fs
         .stat({ project: this.projectId, path: change.path })
         .catch(() => null);
-      if (!entry) continue;
-      const previous = this._tree.get(change.path);
-      this._tree.set(change.path, entry);
-      if (previous && previous.mtime === entry.mtime && previous.size === entry.size) continue;
-      relevant.push(change);
+      if (!entry) {
+        if (change.type !== 'deleted' || this._changedSince(change.path, sent)) continue;
+        const prefix = `${change.path}/`;
+        if (![...this._tree.keys()].some((key) => key === change.path || key.startsWith(prefix)))
+          continue;
+        this._removeFromTree(change.path);
+        relevant.push(change);
+        continue;
+      }
+      const previous = before.get(change.path) ?? this._tree.get(change.path);
+      /** A newer update already has the path: a read's is still told, a save told itself. */
+      if (!this._changedSince(change.path, sent)) this._setEntry(change.path, entry);
+      const now = this._tree.get(change.path);
+      /** A save's own echo is absorbed once; any other content lands and forgets the save. */
+      const saved = this._saved.get(change.path);
+      this._saved.delete(change.path);
+      if (!now || (previous && now.kind === 'file' && sameContent(previous, now))) continue;
+      if (now.hash !== undefined && now.hash === saved) continue;
+      relevant.push({ type: previous ? 'changed' : 'created', path: change.path, kind: now.kind });
     }
+    this._scheduleTreeSave();
     if (relevant.length) this._onDidChange.fire(relevant);
     if (changes.some((change) => change.path === NFIGNORE_FILE)) await this.refresh();
   }
 
+  /**
+   * Contents of files: from the cache when the tree's hash is there (unless `fresh`), else from
+   * the server, which answers `notModified` for a cached copy still current.
+   */
+  private async _fetch(
+    paths: readonly string[],
+    fresh: boolean,
+  ): Promise<(FileContent | { path: string; error: { code: string; message: string } })[]> {
+    const found = new Map<string, FileContent>();
+    const cached = new Map<string, Uint8Array>();
+    const ask: { path: string; knownHash?: string }[] = [];
+    /** Cache lookups run together: each one is a read of the browser's storage. */
+    const lookups = await Promise.all(
+      paths.map(async (path) => {
+        const known = this._tree.get(path);
+        const bytes = known?.hash ? await this._contents.get(known.hash) : undefined;
+        return { path, known, bytes };
+      }),
+    );
+    for (const { path, known, bytes } of lookups) {
+      if (known?.hash && bytes) {
+        if (!fresh) {
+          found.set(path, { ...known, content: bytes, hash: known.hash });
+          continue;
+        }
+        cached.set(path, bytes);
+        ask.push({ path, knownHash: known.hash });
+      } else ask.push({ path });
+    }
+    const errors = new Map<string, { code: string; message: string }>();
+    /** Chunks of 64 files, 4 requests at a time, like reads one by one would overlap. */
+    const chunks: (typeof ask)[] = [];
+    for (let start = 0; start < ask.length; start += 64) chunks.push(ask.slice(start, start + 64));
+    const readChunk = async (chunk: typeof ask) => {
+      let pending = chunk;
+      while (pending.length) {
+        const sent = this._clock;
+        const answer = await this._fs.readMany({ project: this.projectId, files: pending });
+        for (const result of answer.files) {
+          if ('error' in result) {
+            errors.set(result.path, result.error);
+            continue;
+          }
+          const entry: FileEntry = {
+            path: result.path,
+            kind: 'file',
+            size: result.size,
+            mtime: result.mtime,
+            hash: result.hash,
+          };
+          if (!this._changedSince(result.path, sent)) this._setEntry(result.path, entry);
+          if ('notModified' in result) {
+            const bytes = cached.get(result.path);
+            if (bytes) found.set(result.path, { ...entry, content: bytes, hash: result.hash });
+            continue;
+          }
+          found.set(result.path, result);
+          /** Stored in the background: the bytes are already here, and the disk is slow. */
+          void this._contents.set(result.hash, result.content).catch(() => undefined);
+        }
+        const rest = new Set(answer.rest);
+        pending = pending.filter((file) => rest.has(file.path));
+      }
+    };
+    const queue = [...chunks];
+    const worker = async () => {
+      for (let chunk = queue.shift(); chunk; chunk = queue.shift()) await readChunk(chunk);
+    };
+    await Promise.all(Array.from({ length: Math.min(4, queue.length) }, worker));
+    if (ask.length) this._scheduleTreeSave();
+    return paths.map(
+      (path) =>
+        found.get(path) ?? {
+          path,
+          error: errors.get(path) ?? { code: 'NOT_FOUND', message: `Could not read ${path}` },
+        },
+    );
+  }
+
+  /**
+   * Saves the tree a moment after it changed in this session (writes, remote changes, reads):
+   * the cache's upkeep reads the saved trees to know which contents projects still use.
+   */
+  private _scheduleTreeSave(): void {
+    clearTimeout(this._treeSave);
+    this._treeSave = setTimeout(() => {
+      this._treeSave = undefined;
+      void this._treeCache.save([...this._tree.values()]);
+    }, 1000);
+  }
+
+  private _setEntry(path: string, entry: FileEntry): void {
+    this._tree.set(path, entry);
+    this._changedAt.set(path, ++this._clock);
+  }
+
+  /** Whether the tree changed at `path` (or removed a folder holding it) after tick `sent`. */
+  private _changedSince(path: string, sent: number): boolean {
+    return (this._changedAt.get(path) ?? 0) > sent || this._removedSince(path, sent);
+  }
+
+  /** Whether `path`, or a folder holding it, left the tree after tick `sent`. */
+  private _removedSince(path: string, sent: number): boolean {
+    for (let at = path; ; at = at.slice(0, at.lastIndexOf('/'))) {
+      if ((this._removedAt.get(at) ?? 0) > sent) return true;
+      if (!at.includes('/')) return false;
+    }
+  }
+
   private _removeFromTree(path: string): void {
+    this._removedAt.set(path, ++this._clock);
     for (const key of [...this._tree.keys()]) {
       if (key === path || key.startsWith(`${path}/`)) this._tree.delete(key);
     }
