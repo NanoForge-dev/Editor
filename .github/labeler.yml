@@ -172,6 +172,12 @@ tooling:example-plugin:
           - tooling/example-plugin/*
           - tooling/example-plugin/**/*
 
+tooling:example-theme:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tooling/example-theme/*
+          - tooling/example-theme/**/*
+
 tooling:vite-plugin:
   - changed-files:
       - any-glob-to-any-file:

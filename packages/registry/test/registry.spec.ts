@@ -101,7 +101,11 @@ beforeAll(() => {
   });
   publish('@acme/physics', '1.0.0', { dependencies: { '@acme/shapes': '^2.0.0' } });
   publish('@acme/tools', '1.0.0', { type: 'plugin', engines: { editor: '>=0.1.0' } });
-  publish('@acme/tools', '2.0.0', { type: 'plugin', engines: { editor: '>=9.0.0' } });
+  publish('@acme/tools', '2.0.0', {
+    type: 'plugin',
+    engines: { editor: '>=9.0.0' },
+    manifest: { keywords: ['theme', 'dark'] },
+  });
   writeFileSync(
     join(registryDir, '@acme/render/registry.json'),
     JSON.stringify({ author: 'Acme', downloads: 42 }),
@@ -137,6 +141,12 @@ describe('registries', () => {
     ]);
     expect((await source.search({ q: 'draws SHAPES' })).items.map((item) => item.name)).toEqual([
       '@acme/render',
+    ]);
+    const themes = await source.search({ type: 'plugin', q: 'keywords:theme' });
+    expect(themes.items).toMatchObject([{ name: '@acme/tools', keywords: ['theme', 'dark'] }]);
+    expect((await source.search({ q: 'keywords:theme,light' })).items).toEqual([]);
+    expect((await source.search({ q: 'dark' })).items.map((item) => item.name)).toEqual([
+      '@acme/tools',
     ]);
     expect((await source.search({ limit: 1, page: 2 })).items.map((item) => item.name)).toEqual([
       '@acme/physics',

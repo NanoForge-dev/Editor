@@ -67,7 +67,18 @@ describe('parsePluginManifest', () => {
     }
   });
 
-  it('requires at least one entry', () => {
-    expect(() => parsePluginManifest({ ...base, entry: {} })).toThrow(/at least one/);
+  it('takes a plugin with no code, only contributions (a theme)', () => {
+    const withoutEntry: Record<string, unknown> = { ...base };
+    delete withoutEntry.entry;
+    expect(parsePluginManifest({ ...withoutEntry, keywords: ['theme'] })).toMatchObject({
+      entry: {},
+      keywords: ['theme'],
+    });
+  });
+
+  it('refuses an entry it does not know (a typo would leave the plugin doing nothing)', () => {
+    expect(() =>
+      parsePluginManifest({ ...base, entry: { clinet: 'dist/index.js' } }, 'plugins/typo'),
+    ).toThrow(/clinet/);
   });
 });

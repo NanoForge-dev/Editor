@@ -26,9 +26,11 @@
     definition: SettingDefinition;
     revision: number;
     onreload: () => void;
+    /** Opens on the marketplace with this search (Get more themes: `keywords:theme`). */
+    query?: string | undefined;
   }
 
-  const { services, host, draft, definition, revision, onreload }: Props = $props();
+  const { services, host, draft, definition, revision, onreload, query }: Props = $props();
   // svelte-ignore state_referenced_locally
   const plugins = host.plugins;
 
@@ -82,7 +84,10 @@
     }
   };
 
-  let tab = $state<'marketplace' | 'installed'>('installed');
+  // svelte-ignore state_referenced_locally
+  let tab = $state<'marketplace' | 'installed'>(query ? 'marketplace' : 'installed');
+  // svelte-ignore state_referenced_locally
+  if (query) page.query = query;
 
   $effect(() => {
     if (tab !== 'marketplace') return;

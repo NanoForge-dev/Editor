@@ -7,7 +7,11 @@ import {
   toDisposable,
 } from '@nanoforge-dev/editor-kernel';
 import { type ProjectService } from '@nanoforge-dev/editor-project';
-import { type PluginListing, PluginsContract } from '@nanoforge-dev/editor-protocol';
+import {
+  type PluginListing,
+  PluginsContract,
+  RegistryContract,
+} from '@nanoforge-dev/editor-protocol';
 import { type RpcClient } from '@nanoforge-dev/editor-rpc';
 import { CoreSettings, type SettingsService } from '@nanoforge-dev/editor-settings';
 import type { NotificationService } from '@nanoforge-dev/editor-ui';
@@ -100,24 +104,74 @@ export const followProjectPlugins = (options: {
     return listings.filter((listing) => listing.source !== 'project');
   };
 
+  /**
+   * Install actions only in a trusted folder: the project's manifests choose the names, and a
+   * plugin installed for the user runs in every project. Keyed by trust too, so the actions come
+   * once the folder is trusted (the project reopens with the same id).
+   */
   const suggest = async (project: string) => {
-    if (suggested.has(project)) return;
-    suggested.add(project);
+    const installable = !options.online && trusted(project);
+    const key = `${project}\0${installable}`;
+    if (suggested.has(key)) return;
+    suggested.add(key);
     const missing = (await api.suggestions({ project })).filter(
       (suggestion) => plugins.getPlugin(suggestion.name)?.status.kind !== 'ok',
     );
     if (!missing.length) return;
     const count = missing.length > 1 ? `${missing.length} plugins` : 'a plugin';
+    const names = missing.map(({ name }) => name);
+    /** Installs them (`registry.installPlugin`); they load once the editor reloads. */
+    const install = async (scope: 'project' | 'user') => {
+      const registry = rpc.api(RegistryContract);
+      const failed: string[] = [];
+      for (const name of names) {
+        try {
+          const { version } = await registry.installPlugin({ name, scope, project });
+          if (scope === 'user')
+            await settings.set(
+              CoreSettings.pluginsAccount,
+              Object.fromEntries(
+                Object.entries({
+                  ...settings.get(CoreSettings.pluginsAccount),
+                  [name]: `^${version}`,
+                }).sort(([a], [b]) => a.localeCompare(b)),
+              ),
+              'account',
+            );
+        } catch (error) {
+          failed.push(`${name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      if (failed.length)
+        options.notifications.notify('error', 'Some plugins could not be installed', {
+          detail: failed.join('. '),
+        });
+      if (failed.length < names.length)
+        options.notifications.notify('info', 'Plugins installed: reload the editor to finish', {
+          actions: [{ title: 'Reload now', run: () => location.reload() }],
+          timeout: 0,
+        });
+    };
     options.notifications.notify('info', `Packages in this project suggest ${count}`, {
       detail: `${missing
         .map(
           ({ name, suggestedBy }) =>
             `${name} (for ${suggestedBy.map((entry) => entry.package).join(', ')})`,
         )
-        .join(
-          ', ',
-        )}. Install a plugin in the project's .nanoforge/plugins, or in your home for every project.`,
-      timeout: 15_000,
+        .join(', ')}.${
+        options.online
+          ? ' Install them from a local editor, or ask who runs this one.'
+          : installable
+            ? ' Install them in this project (.nanoforge/plugins), or for you in every project.'
+            : ' Trust this folder to install them.'
+      }`,
+      ...(installable && {
+        actions: [
+          { title: 'Install for this project', run: () => void install('project') },
+          { title: 'Install for me', run: () => void install('user') },
+        ],
+      }),
+      timeout: options.online ? 15_000 : 0,
     });
   };
 

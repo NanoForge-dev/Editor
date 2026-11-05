@@ -15,11 +15,23 @@ import {
 } from '@nanoforge-dev/editor-kernel';
 import { CoreSettings, type SettingsService } from '@nanoforge-dev/editor-settings';
 
+import { registerIconFiles } from '../../components/icons';
 import { StyleService } from '../../style/style-service';
 import { BASE_CSS } from '../../theme/base-css';
+import {
+  ICON_THEMES,
+  IconFileSchema,
+  type IconThemeContribution,
+  IconThemeContributionSchema,
+  IconThemeService,
+  iconFileUrl,
+  iconThemeOf,
+} from '../../theme/icon-theme';
 import { KIT_CSS } from '../../theme/kit-css';
+import type { ThemeContribution } from '../../theme/theme-contribution';
 import { THEMES, ThemeService } from '../../theme/theme-service';
-import type { ThemeDefinition } from '../../theme/tokens';
+import type { Density } from '../../theme/tokens';
+import { ChangesetPreviewService } from '../changeset/changeset-preview-service';
 import { KEYBINDINGS, KeybindingSchema } from '../extension-point/keybinding.extension-point';
 import { MENU_BAR, MENU_ITEMS, MenuItemSchema } from '../extension-point/menu.extension-point';
 import {
@@ -48,10 +60,12 @@ export interface ShellOptions {
 export interface Shell extends Disposable {
   readonly styles: StyleService;
   readonly themes: ThemeService;
+  readonly iconThemes: IconThemeService;
   readonly notifications: NotificationService;
   readonly prompts: PromptService;
   readonly keybindings: KeybindingService;
   readonly tours: TourService;
+  readonly changesets: ChangesetPreviewService;
 }
 
 /** Manifest handler registering each declared value on an extension point. */
@@ -77,11 +91,21 @@ export const setupShell = (options: ShellOptions): Shell => {
   store.add(styles.inject('core', BASE_CSS, { layer: 'reset' }));
   store.add(styles.inject('core', KIT_CSS, { layer: 'ui' }));
   const themes = store.add(
-    new ThemeService(extensions, styles, settings.observe(CoreSettings.theme)),
+    new ThemeService(
+      extensions,
+      styles,
+      settings.observe(CoreSettings.theme),
+      document.documentElement,
+      { density: settings.observe(CoreSettings.density) as Observable<Density>, logger },
+    ),
+  );
+  const iconThemes = store.add(
+    new IconThemeService(extensions, settings.observe(CoreSettings.iconTheme), logger),
   );
   const notifications = new NotificationService();
   const prompts = new PromptService();
   const tours = store.add(new TourService(extensions, contextKeys, commands, notifications));
+  const changesets = new ChangesetPreviewService();
   store.add(
     commands.register({
       id: 'tour.start',
@@ -182,8 +206,40 @@ export const setupShell = (options: ShellOptions): Shell => {
       ),
     );
     store.add(
+      host.registerContributionHandler({
+        key: 'icons',
+        validator: z.array(IconFileSchema) as unknown as z.ZodType<
+          z.output<typeof IconFileSchema>[]
+        >,
+        apply: (icons, plugin) =>
+          registerIconFiles(
+            Object.fromEntries(
+              icons.map((icon) => [icon.id, iconFileUrl(plugin.baseUrl, icon.path)]),
+            ),
+          ),
+      }),
+    );
+    store.add(
+      host.registerContributionHandler({
+        key: 'iconThemes',
+        validator: z.array(IconThemeContributionSchema) as unknown as z.ZodType<
+          IconThemeContribution[]
+        >,
+        apply: (themes, plugin) => {
+          const registrations = new DisposableStore();
+          for (const theme of themes)
+            registrations.add(
+              extensions.contribute(ICON_THEMES, iconThemeOf(theme, plugin.baseUrl), {
+                owner: plugin.manifest.name,
+              }),
+            );
+          return registrations;
+        },
+      }),
+    );
+    store.add(
       host.registerContributionHandler(
-        listHandler('themes', z.unknown() as z.ZodType<ThemeDefinition>, (value, owner) =>
+        listHandler('themes', z.unknown() as z.ZodType<ThemeContribution>, (value, owner) =>
           extensions.contribute(THEMES, value, { owner }),
         ),
       ),
@@ -193,10 +249,12 @@ export const setupShell = (options: ShellOptions): Shell => {
   return {
     styles,
     themes,
+    iconThemes,
     notifications,
     prompts,
     keybindings,
     tours,
+    changesets,
     dispose: () => store.dispose(),
   };
 };

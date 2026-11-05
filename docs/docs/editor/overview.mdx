@@ -21,6 +21,7 @@ The center of the editor shows one **screen** at a time, chosen in the top bar.
 
 The Project screen lists what the project is made of, and changes it.
 
+- **Adapt to the editor**: what the editor can't edit well in this project, with a change to preview and apply (see [Bring an existing project](adapt-a-project)).
 - **Apps**: each client and server, with its folder, its engine libraries and the shared libraries it uses. **Add app** creates a client or a server, empty or as a copy of another one. An empty app needs its dependencies: the editor offers to install them.
 - **Shared libraries**: code that several apps use (see [Components](components#share-between-client-and-server)). **Add shared library** creates one. Under **Used by**, tick the apps that use it: the editor writes it in the `libs` of each app's `nanoforge.config.ts` (`libs: ["../../libs/shared"]`) and in its `package.json`. Edit `libs` by hand and the screen follows.
 - The **⋯** menu of a card renames or removes it. Renaming a library rewrites every import of it. A library that code still imports can't be removed: the editor names the files.

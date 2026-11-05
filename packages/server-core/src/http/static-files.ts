@@ -27,12 +27,15 @@ export const contentType = (file: string) =>
 
 /**
  * Serves a file (Bun streams it; Node reads it) with the given cache policy. Given the request's
- * `Accept-Encoding`, text files are sent compressed (Brotli, else gzip).
+ * `Accept-Encoding`, text files are sent compressed (Brotli, else gzip). With `ifNoneMatch` (the
+ * request's header), the file has an ETag (its size and time) and an unchanged one comes back
+ * empty (304): for `no-cache` files that change without changing their URL.
  */
 export const fileResponse = async (
   file: string,
   cacheControl: string,
   acceptEncoding?: string | null,
+  ifNoneMatch?: string | null,
 ): Promise<Response | undefined> => {
   const info = await stat(file).catch(() => undefined);
   if (!info?.isFile()) return undefined;
@@ -42,6 +45,11 @@ export const fileResponse = async (
     'cache-control': cacheControl,
     'x-content-type-options': 'nosniff',
   };
+  if (ifNoneMatch !== undefined) {
+    const etag = `W/"${info.size.toString(36)}-${Math.trunc(info.mtimeMs).toString(36)}"`;
+    headers.etag = etag;
+    if (ifNoneMatch === etag) return new Response(null, { status: 304, headers });
+  }
   const encoding = acceptEncoding === undefined ? undefined : pickEncoding(acceptEncoding);
   if (acceptEncoding !== undefined) headers.vary = 'accept-encoding';
   if (encoding && isCompressible(type, info.size)) {

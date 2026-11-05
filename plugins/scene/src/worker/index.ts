@@ -7,6 +7,7 @@ import { defineWorkerPlugin } from '@nanoforge-dev/editor-sdk/worker';
 import {
   CLASSES_ANALYZER,
   LIBRARY_TRANSFORMER,
+  MAIN_TO_SCENE_ANALYZER,
   REFERENCES_ANALYZER,
   REPLACE_TRANSFORMER,
   SCENES_ANALYZER,
@@ -21,12 +22,14 @@ import {
   transformReplace,
   transformSceneFile,
 } from './edits';
+import { analyzeMainToScene } from './main-to-scene';
 import { analyzeScenes } from './scenes';
 import { analyzeVars, transformVars } from './vars';
 
 export default defineWorkerPlugin({
   activate(sdk) {
     sdk.registerAnalyzer(SCENES_ANALYZER, analyzeScenes);
+    sdk.registerAnalyzer(MAIN_TO_SCENE_ANALYZER, analyzeMainToScene);
     sdk.registerAnalyzer(REFERENCES_ANALYZER, analyzeReferences);
     sdk.registerAnalyzer(CLASSES_ANALYZER, analyzeClasses);
     sdk.registerTransformer(LIBRARY_TRANSFORMER, transformLibrary);

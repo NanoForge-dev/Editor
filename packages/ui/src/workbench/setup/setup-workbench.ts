@@ -201,6 +201,7 @@ export const setupWorkbench = (options: WorkbenchSetupOptions): WorkbenchContext
     prompts: shell.prompts,
     keybindings: shell.keybindings,
     tours: shell.tours,
+    changesets: shell.changesets,
     settings,
     extensions,
     commands,

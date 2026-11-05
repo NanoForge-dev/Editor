@@ -151,16 +151,21 @@ export const createEditorServer = (options: EditorServerOptions): EditorServer =
       mayLoadProjectPlugins(session, projectId),
     );
     if (!resolved) return json(404, { error: 'Not found' });
+    /**
+     * Revalidated, never `immutable`: a plugin's URL holds its version, and an upgraded editor (or
+     * a reinstall) can ship other files under the same version, whose chunks then go missing.
+     */
     const cache = {
       dev: 'no-cache',
       project: 'private, no-cache',
-      installed: 'public, max-age=31536000, immutable',
-      bundled: 'public, max-age=31536000, immutable',
+      installed: 'public, no-cache',
+      bundled: 'public, no-cache',
     }[resolved.plugin.source];
     const response = await fileResponse(
       resolved.file,
       cache,
       request.headers.get('accept-encoding'),
+      request.headers.get('if-none-match'),
     );
     if (!response) return json(404, { error: 'Not found' });
     /** A project's page or image opened on its own runs nothing on the editor's origin. */

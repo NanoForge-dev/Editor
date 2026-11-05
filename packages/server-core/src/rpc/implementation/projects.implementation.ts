@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { cp, readFile, realpath, writeFile } from 'node:fs/promises';
+import { cp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { type Disposable, observe } from '@nanoforge-dev/editor-kernel';
@@ -47,6 +47,14 @@ export const implementProjectsRpc = (
       packageManager: 'npm',
       strict: false,
     });
+    /** An old CLI writes nanoforge.config.json and client/: the tutorial's files don't fit. */
+    if (!existsSync(join(root, 'nanoforge.config.ts'))) {
+      await rm(root, { recursive: true, force: true });
+      throw new RpcError(
+        'PRECONDITION_FAILED',
+        'The NanoForge CLI that made the project is too old for the editor (it wrote no nanoforge.config.ts): update it (npm install -g @nanoforge-dev/cli), then start the tutorial again',
+      );
+    }
     await cp(env.tutorialDir, root, { recursive: true, force: true });
     await addEditorLibraryDependency(join(root, 'package.json'));
     await ignoreBuildOutput(join(root, '.gitignore'));
