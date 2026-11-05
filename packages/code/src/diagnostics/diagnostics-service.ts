@@ -18,13 +18,27 @@ export class DiagnosticsService {
     return this._all.get().get(uri) ?? [];
   }
 
-  /** Replaces the problems of a source for these files. */
+  /** Replaces the problems of a source for this file. */
   set(source: string, uri: string, diagnostics: readonly CodeDiagnostic[]): void {
+    this.setMany(source, new Map([[uri, diagnostics]]));
+  }
+
+  /**
+   * Replaces the problems of a source for these files, at once: `all` changes once, and not at
+   * all when every file's problems are the same as before.
+   */
+  setMany(source: string, byUri: ReadonlyMap<string, readonly CodeDiagnostic[]>): void {
     const files = this._bySource.get(source) ?? new Map<string, readonly CodeDiagnostic[]>();
-    if (diagnostics.length) files.set(uri, diagnostics);
-    else files.delete(uri);
     this._bySource.set(source, files);
-    this._recompute();
+    let changed = false;
+    for (const [uri, diagnostics] of byUri) {
+      const before = files.get(uri) ?? [];
+      if (JSON.stringify(before) === JSON.stringify(diagnostics)) continue;
+      changed = true;
+      if (diagnostics.length) files.set(uri, diagnostics);
+      else files.delete(uri);
+    }
+    if (changed) this._recompute();
   }
 
   /** Files a source reported problems for. */

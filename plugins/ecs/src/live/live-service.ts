@@ -16,6 +16,7 @@ import { NotificationServiceToken } from '@nanoforge-dev/editor-sdk/ui';
 
 import type { EcsLocation } from '../extension/ecs-source.extension-point';
 import type { EntryModel, EntryOp } from '../model/ecs-model.type';
+import { codeServices } from '../service/code-services';
 import { ecsData } from '../service/ecs-data';
 import type { EcsService } from '../service/ecs-service';
 import type { EngineWorld, LiveEntity, LiveInstance, LiveSelection, LiveSource } from './live.type';
@@ -38,6 +39,14 @@ export class LiveService implements Disposable {
   /** Per app: the bundle text (fetched once per session) and spawn indexes by site. */
   private readonly _bundles = new Map<string, Promise<string | undefined>>();
   private readonly _siteIndex = new Map<string, number>();
+  /**
+   * Models of the entry files and scenes the live entities come from, by location: analyzed once
+   * per play session, again only after their file changes (worlds come every 100 ms).
+   */
+  private readonly _models = new Map<string, Promise<EntryModel | undefined>>();
+  /** Per game, the number of the last world received and of the last one shown. */
+  private readonly _received = new Map<LiveSource, number>();
+  private readonly _shown = new Map<LiveSource, number>();
   private _generation = 0;
   /** "Apply to code" runs one at a time: two writes to one file at once refuse each other. */
   private _applying: Promise<unknown> = Promise.resolve();
@@ -228,14 +237,35 @@ export class LiveService implements Disposable {
     const generation = ++this._generation;
     this._bundles.clear();
     this._siteIndex.clear();
+    this._models.clear();
+    this._received.clear();
+    this._shown.clear();
+    const forget = (path: string) => {
+      for (const key of this._models.keys())
+        if (key.startsWith(`${path}\0`)) this._models.delete(key);
+    };
+    const { documents } = codeServices(this._context);
+    if (documents) this._session.add(documents.onDidChange(({ uri }) => forget(uri)));
+    const project = this._context.services.get(ProjectServiceToken).current.get();
+    if (project)
+      this._session.add(
+        project.fs.onDidChange((changes) => {
+          for (const change of changes) forget(change.path);
+        }),
+      );
     const rate = this._context.services.tryGet(SettingsServiceToken)?.get<number>(RATE) ?? 100;
     this._session.add(runtime.useFeatures({ ecsWorld: { intervalMs: rate } }));
     this._session.add(
       runtime.onEvent((event) => {
         if (event.event !== 'ecs-world') return;
         const world = event.args[0] as EngineWorld;
+        const number = (this._received.get(event.source) ?? 0) + 1;
+        this._received.set(event.source, number);
         void this._linked(event.source, event.app, world).then((instance) => {
           if (generation !== this._generation) return;
+          /** A world linked after a newer one (a file changed in between) is out of date. */
+          if (number < (this._shown.get(event.source) ?? 0)) return;
+          this._shown.set(event.source, number);
           const others = this._instances.get().filter((other) => other.source !== event.source);
           this._instances.set(
             [...others, instance].sort((a, b) => a.source.localeCompare(b.source)),
@@ -277,15 +307,13 @@ export class LiveService implements Disposable {
     world: EngineWorld,
   ): Promise<LiveInstance> {
     const app = this._app(appId);
-    const model = app ? await this._ecs.analyzeApp(app).catch(() => undefined) : undefined;
+    const model = app?.entryFile ? await this._model({ path: app.entryFile }) : undefined;
     const spawnsOf = new Map<string, ReturnType<typeof spawnSites>>([['', spawnSites(model)]]);
     if (app) {
       for (const scene of new Set(world.entities.map((entity) => entity.scene))) {
         if (!scene) continue;
         const location = this._ecs.sceneLocation(app, scene);
-        const sceneModel = location
-          ? await this._ecs.analyzeLocation(location).catch(() => undefined)
-          : undefined;
+        const sceneModel = location ? await this._model(location) : undefined;
         spawnsOf.set(scene, spawnSites(sceneModel));
       }
     }
@@ -327,6 +355,20 @@ export class LiveService implements Disposable {
         };
       }),
     };
+  }
+
+  private _model(location: EcsLocation): Promise<EntryModel | undefined> {
+    const key = `${location.path}\0${JSON.stringify(location.scope ?? null)}`;
+    let model = this._models.get(key);
+    if (!model) {
+      model = this._ecs.analyzeLocation(location).catch(() => undefined);
+      this._models.set(key, model);
+      /** No model (the code worker starting, an error): asked again with the next world. */
+      void model.then((result) => {
+        if (!result && this._models.get(key) === model) this._models.delete(key);
+      });
+    }
+    return model;
   }
 
   private _bundle(app: AppModel): Promise<string | undefined> {

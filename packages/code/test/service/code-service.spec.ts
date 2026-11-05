@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SyntaxKind } from 'ts-morph';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   type CommandOrigin,
@@ -104,6 +104,11 @@ beforeAll(async () => {
   writeFileSync(join(lib, 'index.d.ts'), 'export declare const maxSpeed: number;');
   mkdirSync(join(workspace, 'pong/checks'), { recursive: true });
   writeFileSync(join(workspace, 'pong/checks/broken.ts'), 'export const n: number =\n  "text";\n');
+  writeFileSync(join(workspace, 'pong/checks/speed.ts'), 'export const speed = 1;\n');
+  writeFileSync(
+    join(workspace, 'pong/checks/uses-speed.ts'),
+    "import { speed } from './speed';\nexport const fast: number = speed;\n",
+  );
   mkdirSync(join(workspace, 'pong/nf_modules/@acme/pkg'), { recursive: true });
   writeFileSync(
     join(workspace, 'pong/nf_modules/@acme/pkg/bad.ts'),
@@ -248,6 +253,95 @@ describe('CodeService', () => {
     expect(diagnostics.forUri(uri)).toHaveLength(1);
     check.dispose();
     expect(diagnostics.forUri(uri)).toEqual([]);
+    code.dispose();
+  });
+
+  it('still checks the whole project when an edit comes before the first check ends', async () => {
+    const { code, diagnostics } = setup();
+    /** The first batch edits a file and takes long: the edit's check starts meanwhile. */
+    vi.spyOn(code, 'refreshDiagnostics').mockImplementationOnce(async () => {
+      await project.fs.write('checks/speed.ts', 'export const speed = 2;\n');
+      await new Promise((r) => setTimeout(r, 2500));
+      return [];
+    });
+    const check = code.checkProject();
+    const start = Date.now();
+    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
+      await new Promise((r) => setTimeout(r, 25));
+    expect(diagnostics.forUri('checks/broken.ts').map((d) => d.code)).toEqual([2322]);
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 20_000);
+
+  it('checks everything again after an edit to global declarations', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    const start = Date.now();
+    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
+      await new Promise((r) => setTimeout(r, 25));
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    await project.fs.write(
+      'checks/speed.ts',
+      'export const speed = 1;\ndeclare global {\n  var debugSpeed: number;\n}\n',
+    );
+    const edited = Date.now();
+    const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    while (!checked().has('checks/broken.ts') && Date.now() - edited < 10_000)
+      await new Promise((r) => setTimeout(r, 25));
+    expect(checked().has('checks/broken.ts')).toBe(true);
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 30_000);
+
+  it('keeps an edit made while a check reads what changed', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    const start = Date.now();
+    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
+      await new Promise((r) => setTimeout(r, 25));
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    /** While the check of `broken.ts` reads it, `speed.ts` changes: what imports it is checked. */
+    const service = code as unknown as {
+      _declaresGlobally: (paths: readonly string[]) => Promise<boolean>;
+    };
+    vi.spyOn(service, '_declaresGlobally').mockImplementationOnce(async () => {
+      await project.fs.write('checks/speed.ts', 'export const speed = 2;\n');
+      await new Promise((r) => setTimeout(r, 300));
+      return false;
+    });
+    await project.fs.write('checks/broken.ts', 'export const n: number =\n  "other";\n');
+    const user = 'checks/uses-speed.ts';
+    const edited = Date.now();
+    const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    while (!checked().has(user) && Date.now() - edited < 10_000)
+      await new Promise((r) => setTimeout(r, 25));
+    expect(checked().has('checks/broken.ts')).toBe(true);
+    expect(checked().has(user)).toBe(true);
+    await project.fs.write('checks/broken.ts', 'export const n: number =\n  "text";\n');
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 30_000);
+
+  it('after an edit, checks again only the file and what imports it', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    const start = Date.now();
+    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
+      await new Promise((r) => setTimeout(r, 25));
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    await project.fs.write('checks/speed.ts', 'export const speed = "fast";\n');
+    const user = 'checks/uses-speed.ts';
+    const edited = Date.now();
+    while (!diagnostics.forUri(user).length && Date.now() - edited < 10_000)
+      await new Promise((r) => setTimeout(r, 25));
+    expect(diagnostics.forUri(user).map((d) => d.code)).toEqual([2322]);
+    const checked = new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    expect([...checked].sort()).toEqual(['checks/speed.ts', user]);
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
     code.dispose();
   });
 });

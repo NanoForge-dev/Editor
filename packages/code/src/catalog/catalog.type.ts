@@ -30,4 +30,9 @@ export interface CatalogOptions {
   readonly logger?: Logger;
   /** Delay before extracting again after a change. */
   readonly delayMs?: number;
+  /**
+   * Delay before a source's new meta is written to the cache folder (default 2 s): while the
+   * user types, it is kept in memory and written once they pause.
+   */
+  readonly cacheWriteDelayMs?: number;
 }
