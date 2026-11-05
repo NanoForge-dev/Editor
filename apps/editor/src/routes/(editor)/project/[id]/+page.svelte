@@ -61,11 +61,11 @@
                 {
                   label: `Reopen ${known.name}`,
                   primary: true,
-                  run: async () => {
-                    const project = await editor.projects.open(known.ref);
-                    if (project.id === id) retry.run();
-                    else await goto(`/project/${project.id}`);
-                  },
+                  /** Through /load: it explains a folder that moved, and asks before trusting. */
+                  run: () =>
+                    goto(
+                      `/load?${new URLSearchParams('path' in known.ref ? { path: known.ref.path } : { gatewayId: known.ref.gatewayId })}`,
+                    ),
                 },
                 back,
               ],

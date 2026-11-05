@@ -39,7 +39,12 @@ test('finds a setting, applies or cancels a change', async ({ page }) => {
 
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape');
+  await expect(dialog(page).getByRole('alert')).toHaveText('1 setting is changed but not applied.');
+  await dialog(page).getByRole('button', { name: 'Keep editing' }).click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
   await dialog(page).getByRole('button', { name: 'Cancel' }).click();
+  await dialog(page).getByRole('button', { name: 'Discard changes' }).click();
   await expect(dialog(page)).toHaveCount(0);
   await openSettings(page);
   await search(page).fill('maximize play');

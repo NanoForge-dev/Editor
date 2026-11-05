@@ -8,6 +8,8 @@
     formatKeybinding,
     portableStroke,
     strokeFromEvent,
+    blocksTyping,
+    outsideTyping,
   } from '@nanoforge-dev/editor-sdk/ui';
 
   export interface RecordedShortcut {
@@ -59,7 +61,12 @@
   const conflicts = $derived(
     key && !invalidWhen ? conflictsFor(key, when.trim() || undefined) : [],
   );
-  const ready = $derived(strokes.length > 0 && !invalidWhen);
+  /**
+   * A shortcut that starts with a plain key would take that key from typing, unless its condition
+   * keeps it out of text fields.
+   */
+  const typing = $derived(strokes.length > 0 && !outsideTyping(when) && blocksTyping(strokes[0]!));
+  const ready = $derived(strokes.length > 0 && !invalidWhen && !typing);
 
   const save = (replace: boolean) => {
     if (!ready) return;
@@ -74,7 +81,7 @@
     event.preventDefault();
     event.stopPropagation();
     if (plain && event.key === 'Enter' && strokes.length) {
-      if (!conflicts.length) save(false);
+      if (!conflicts.length && ready) save(false);
       return;
     }
     if (plain && event.key === 'Backspace' && strokes.length) {
@@ -115,6 +122,12 @@
         invalid={!!invalidWhen}
       />
     </label>
+    {#if typing}
+      <p class="problem" role="alert">
+        Start with Ctrl, Alt or ⌘, use a function key (F1 to F12), or add !textInputFocus to the
+        condition: {formatKeybinding(strokes[0]!)} alone would no longer work while typing.
+      </p>
+    {/if}
     {#if invalidWhen}
       <p class="problem" role="alert">This condition can't be read: {invalidWhen}</p>
     {/if}

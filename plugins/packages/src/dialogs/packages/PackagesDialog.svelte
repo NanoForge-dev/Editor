@@ -52,7 +52,9 @@
 
   $effect(() => {
     const name = packages.selected;
+    void packages.detailsAttempt;
     packages.details = undefined;
+    packages.detailsError = undefined;
     if (!name) return;
     return packages.loadDetails(name);
   });

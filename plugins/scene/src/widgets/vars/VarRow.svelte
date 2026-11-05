@@ -24,7 +24,7 @@
   <button class="row" aria-expanded={open} onclick={ontoggle}>
     <span class="name">{field.name}</span>
     <span class="type">{field.type}</span>
-    {#if field.default}<span class="default">= {field.default}</span>{/if}
+    {#if field.default}<span class="default" title="= {field.default}">= {field.default}</span>{/if}
     <span class="detail">
       {owners.length ? `made by ${owners.join(', ')}` : ''}
       {uses.length ? `· ${uses.length} use${uses.length > 1 ? 's' : ''}` : '· unused'}
@@ -90,6 +90,28 @@
   }
   .name {
     font-weight: 600;
+  }
+  /** One line in a narrow dock: name and type stay whole, the rest is cut. */
+  .row > span {
+    white-space: nowrap;
+  }
+  .name,
+  .type {
+    flex: none;
+  }
+  .default,
+  .detail {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /** The details give way first: the default value matters more. */
+  .default {
+    flex: 0 1 auto;
+    min-width: 4ch;
+  }
+  .detail {
+    flex: 0 4 auto;
   }
   .type,
   .default,

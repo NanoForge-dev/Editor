@@ -12,8 +12,10 @@ import { KEYBINDINGS } from '../../../src/workbench/extension-point/keybinding.e
 import { KeybindingService } from '../../../src/workbench/keybinding/keybinding-service';
 import type { KeymapOverride } from '../../../src/workbench/keybinding/keymap.type';
 import {
+  blocksTyping,
   formatKeybinding,
   normalizeStroke,
+  outsideTyping,
   parseKeybinding,
   portableStroke,
 } from '../../../src/workbench/keybinding/keystroke';
@@ -243,5 +245,39 @@ describe('recording', () => {
     suspended.dispose();
     expect(service.handle(key({ key: 'F5' }))).toBe(true);
     expect(ran).toBe(1);
+  });
+});
+
+describe('blocksTyping', () => {
+  it('leaves only modified strokes and function keys free to start a shortcut', () => {
+    for (const stroke of ['R', 'Shift+R', '1', 'Space', '+', 'Delete', 'ArrowUp', 'Home', 'Tab'])
+      expect(blocksTyping(stroke), stroke).toBe(true);
+    for (const stroke of ['Mod+R', 'Ctrl+Shift+P', 'Alt+1', 'Meta+Space', 'F2', 'Shift+F5'])
+      expect(blocksTyping(stroke), stroke).toBe(false);
+  });
+});
+
+describe('outsideTyping', () => {
+  it('holds when !textInputFocus is a condition the clause needs', () => {
+    for (const when of [
+      '!textInputFocus',
+      "focusedWidget == 'file-manager.files' && !textInputFocus",
+      '(a || b) && !textInputFocus',
+      '(a && (!textInputFocus && b))',
+    ])
+      expect(outsideTyping(when), when).toBe(true);
+    for (const when of [
+      undefined,
+      '',
+      'textInputFocus',
+      'a || !textInputFocus',
+      '(a || !textInputFocus) && b',
+      '!(a && !textInputFocus)',
+      '!textInputFocus == false',
+      '!!textInputFocus',
+      '!textInputFocusX',
+      '!textInputFocus &&',
+    ])
+      expect(outsideTyping(when), when).toBe(false);
   });
 });

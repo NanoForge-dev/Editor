@@ -1,6 +1,11 @@
 <script lang="ts">
   import { CatalogServiceToken } from '@nanoforge-dev/editor-code';
-  import { ProjectServiceToken, librariesOf, runnableApps } from '@nanoforge-dev/editor-project';
+  import {
+    ProjectServiceToken,
+    librariesOf,
+    nameTaken,
+    runnableApps,
+  } from '@nanoforge-dev/editor-project';
   import type { AppModel } from '@nanoforge-dev/editor-protocol';
   import {
     Button,
@@ -27,6 +32,7 @@
   const catalog = $derived(instance.services.tryGet(CatalogServiceToken)?.state);
 
   const apps = $derived($model ? runnableApps($model) : []);
+  const taken = (name: string) => ($model ? nameTaken(name, $model, exists) : undefined);
   const libraries = $derived($model ? librariesOf($model) : []);
   /** How many items (components, systems) the catalog found in a library. */
   const itemsOf = (library: AppModel) =>
@@ -189,6 +195,7 @@
       project={$model.name}
       {apps}
       {exists}
+      {taken}
       oncreate={(library) => void actions.addLibrary(library)}
       onclose={() => actions.ask(undefined)}
     />
@@ -198,6 +205,7 @@
       project={$model.name}
       {apps}
       {exists}
+      {taken}
       oncreate={(app) => void actions.addApp(app)}
       onclose={() => actions.ask(undefined)}
     />

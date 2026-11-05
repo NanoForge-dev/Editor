@@ -11,6 +11,11 @@
     children?: Snippet;
     footer?: Snippet;
     onclose?: () => void;
+    /**
+     * Asked before Escape, the close button or a click outside close the dialog: `false` keeps it
+     * open (unsaved changes to confirm first).
+     */
+    beforeclose?: () => boolean;
     width?: string;
   }
 
@@ -21,15 +26,20 @@
     children,
     footer,
     onclose,
+    beforeclose,
     width = '480px',
   }: Props = $props();
 </script>
 
 <Dialog.Root
-  bind:open
-  onOpenChange={(next) => {
-    if (!next) onclose?.();
-  }}
+  bind:open={
+    () => open,
+    (next) => {
+      if (!next && beforeclose?.() === false) return;
+      open = next;
+      if (!next) onclose?.();
+    }
+  }
 >
   <Dialog.Portal>
     <Dialog.Overlay class="nf-dialog-overlay" />

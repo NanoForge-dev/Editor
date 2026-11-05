@@ -18,7 +18,8 @@
   const session = editor.session;
   const projectsApi = editor.rpc.api(ProjectsContract);
 
-  let recent = $state<RecentProject[]>([]);
+  /** `undefined` until the list arrives. */
+  let recent = $state<RecentProject[]>();
   let gateways = $state<{ gatewayId: string; name: string; description: string }[]>([]);
   let path = $state('');
   let error = $state<string>();
@@ -39,14 +40,20 @@
   );
 
   $effect(() => {
-    if (!session.user) return;
+    if (!session.user) {
+      recent = [];
+      return;
+    }
     const failed = (reason: unknown) => {
       error = reason instanceof Error ? reason.message : String(reason);
     };
     editor.projects
       .recent()
       .then((list) => (recent = list))
-      .catch(failed);
+      .catch((reason: unknown) => {
+        recent = [];
+        failed(reason);
+      });
     if (session.mode === 'ONLINE')
       projectsApi
         .gateways(null)
@@ -73,7 +80,7 @@
     error = undefined;
     try {
       await projectsApi.forget({ id: project.id });
-      recent = recent.filter((candidate) => candidate.id !== project.id);
+      recent = recent?.filter((candidate) => candidate.id !== project.id);
     } catch (reason) {
       error = reason instanceof Error ? reason.message : String(reason);
     }
@@ -159,11 +166,13 @@
 
     <section aria-labelledby="recent-title">
       <h2 id="recent-title">Recent</h2>
-      {#if recent.length}
+      {#if !recent}
+        <p class="muted" role="status">Loading the recent projects…</p>
+      {:else if recent.length}
         <ul class="list">
           {#each recent as project (project.id)}
             <li class="recent">
-              <button type="button" class="row" onclick={() => open(project.ref)}>
+              <button type="button" class="row" disabled={!!busy} onclick={() => open(project.ref)}>
                 <Icon name="folder" />
                 <span class="name">{project.name}</span>
                 <span class="detail location" title={project.location}
@@ -174,6 +183,7 @@
               <IconButton
                 icon="x"
                 label={`Remove ${project.name} from the recent projects`}
+                disabled={!!busy}
                 onclick={() => void forget(project)}
               />
             </li>
@@ -315,9 +325,12 @@
     text-align: left;
     cursor: pointer;
   }
-  .row:hover {
+  .row:hover:not(:disabled) {
     background: var(--nf-color-surface);
     color: var(--nf-color-text);
+  }
+  .row:disabled {
+    cursor: progress;
   }
   .name {
     overflow: hidden;
