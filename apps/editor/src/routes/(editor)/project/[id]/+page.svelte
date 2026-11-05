@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { onDestroy } from 'svelte';
-  import { CoreServices, type Disposable } from '@nanoforge-dev/editor-kernel';
+  import { CoreServices, type Disposable, errorCodeOf } from '@nanoforge-dev/editor-kernel';
   import {
     LayoutControllerToken,
     Workbench,
@@ -16,7 +16,6 @@
   import {
     type ErrorAction,
     type ErrorDescription,
-    errorCode,
     errorMessage,
   } from '$lib/editor/error-description';
 
@@ -48,7 +47,7 @@
   /** Why the project could not open, and what the user can do about it. */
   const describe = async (reason: unknown, id: string): Promise<ErrorDescription> => {
     const detail = errorMessage(reason);
-    switch (errorCode(reason)) {
+    switch (errorCodeOf(reason)) {
       case 'NOT_FOUND': {
         const recent = await editor.projects.recent().catch(() => []);
         const known = recent.find((project) => project.id === id);
@@ -146,6 +145,7 @@
           resolve();
         });
       });
+      const recent = await editor.projects.recent().catch(() => []);
       if (disposed) return;
       created = setupWorkbench({
         shell: editor.shell,
@@ -157,6 +157,7 @@
         history: editor.history,
         logger: editor.services.get(CoreServices.Logger).getLogger('workbench'),
         activate: (event) => editor.plugins.activateByEvent(event),
+        knownUser: recent.some((project) => project.id !== id),
       });
       provided = [
         editor.services.provide(LayoutControllerToken, created.layout),

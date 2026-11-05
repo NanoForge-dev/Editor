@@ -50,4 +50,6 @@ export interface CodeEditorServiceOptions {
   readonly settings: SettingsService;
   readonly notifications: NotificationService | undefined;
   readonly logger: Logger;
+  /** Runs an editor command (the empty screen offers Go to file). */
+  readonly runCommand?: (id: string) => void;
 }

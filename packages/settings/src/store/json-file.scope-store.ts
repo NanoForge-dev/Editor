@@ -1,10 +1,15 @@
-import { DisposableStore, type Observable, ObservableValue } from '@nanoforge-dev/editor-kernel';
+import {
+  DisposableStore,
+  type Observable,
+  ObservableValue,
+  errorCodeOf,
+} from '@nanoforge-dev/editor-kernel';
 
 import type { ScopeStore, SettingValues, TextFileAdapter } from './scope-store.type';
 import { applyPatch, serializeValues } from './setting-values';
 import { SettingsFileError } from './settings-file.exception';
 
-const isConflict = (error: unknown) => (error as { code?: string } | null)?.code === 'CONFLICT';
+const isConflict = (error: unknown) => errorCodeOf(error) === 'CONFLICT';
 
 /**
  * Scope stored as a JSON object in a file. Edits made outside the editor are picked up; a

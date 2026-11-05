@@ -5,6 +5,7 @@ import {
   type GitStash,
   type GitStatus,
   ObservableValue,
+  errorCodeOf,
 } from '@nanoforge-dev/editor-sdk';
 
 /** The git API of one project (the RPC contract with the project bound). */
@@ -163,7 +164,7 @@ export class GitStore implements Disposable {
       });
     } catch (error) {
       if (generation !== this._generation) return;
-      if ((error as { code?: string }).code === 'FORBIDDEN') {
+      if (errorCodeOf(error) === 'FORBIDDEN') {
         this._patch({ ...EMPTY, unavailable: 'Git is available in local editors only.' });
         return;
       }

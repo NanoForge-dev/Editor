@@ -12,6 +12,7 @@
     "widgets": [
       {
         "id": "console.console",
+        "essential": true,
         "title": "Console",
         "icon": "square-terminal",
         "defaultSlot": "bottom",

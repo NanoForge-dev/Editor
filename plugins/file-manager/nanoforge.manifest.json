@@ -20,6 +20,7 @@
     "widgets": [
       {
         "id": "file-manager.files",
+        "essential": true,
         "title": "Files",
         "icon": "folder-tree",
         "defaultSlot": "leftTop",

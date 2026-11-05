@@ -38,6 +38,7 @@
     "widgets": [
       {
         "id": "ecs.hierarchy",
+        "essential": true,
         "title": "Hierarchy",
         "icon": "list-tree",
         "defaultSlot": "leftTop",
@@ -45,6 +46,7 @@
       },
       {
         "id": "ecs.inspector",
+        "essential": true,
         "title": "Inspector",
         "icon": "sliders-horizontal",
         "defaultSlot": "rightTop",

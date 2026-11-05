@@ -79,6 +79,11 @@ export default definePlugin({
         settings: services.get(SettingsServiceToken),
         notifications: services.tryGet(NotificationServiceToken),
         logger: context.logger,
+        runCommand: (id) =>
+          void services
+            .get(EditorServices.Commands)
+            .execute(id)
+            .catch(() => undefined),
       });
       service.applyTheme(themes.current.get());
       current.set({ service, monaco });

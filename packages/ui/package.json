@@ -24,6 +24,7 @@
       "default": "./src/index.ts"
     },
     "./fonts.css": "./src/theme/fonts.css",
+    "./notification": "./src/workbench/notification/index.ts",
     "./package.json": "./package.json"
   },
   "type": "module",

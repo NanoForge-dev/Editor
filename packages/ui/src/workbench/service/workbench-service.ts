@@ -140,6 +140,7 @@ export class WorkbenchService implements Disposable {
       kind: 'dock' as const,
       order: 0,
       openByDefault: false,
+      essential: false,
       singleton: true,
     };
     const record: InstanceRecord = {

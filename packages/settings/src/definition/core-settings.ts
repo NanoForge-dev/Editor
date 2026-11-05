@@ -58,6 +58,16 @@ export const CoreSettings = {
     description: 'Consecutive changes of the same value within this delay (ms) are one undo step.',
     category: 'Editor/History',
   }),
+  layoutPreset: defineSetting({
+    key: 'layout.preset',
+    schema: z.enum(['simple', 'full']),
+    default: 'simple',
+    title: 'Default layout',
+    description:
+      'Simple shows only the main panels (files, hierarchy, scenes, inspector, console); All panels shows every one. Used when a layout is reset or none is saved yet.',
+    category: 'Editor/Layout',
+    scopes: ['account', 'machine'],
+  }),
   layoutActive: defineSetting({
     key: 'layout.active',
     schema: z.string(),

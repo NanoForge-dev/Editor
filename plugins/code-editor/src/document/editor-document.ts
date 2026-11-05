@@ -7,6 +7,7 @@ import {
   ObservableValue,
   type OpenDocument,
   type TextEdit,
+  errorCodeOf,
 } from '@nanoforge-dev/editor-sdk';
 
 import { type Monaco, type monaco, uriOf } from '../monaco/monaco';
@@ -22,8 +23,7 @@ const modelFor = (monaco: Monaco, path: string, text: string): monaco.editor.ITe
   return existing;
 };
 
-const isConflict = (error: unknown): boolean =>
-  typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 'CONFLICT';
+const isConflict = (error: unknown): boolean => errorCodeOf(error) === 'CONFLICT';
 
 /**
  * A file open in the code editor: a Monaco model, registered with the DocumentService so edits

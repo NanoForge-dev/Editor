@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errorCodeOf } from '@nanoforge-dev/editor-kernel';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import type { ProjectRef } from '@nanoforge-dev/editor-protocol';
@@ -8,7 +9,6 @@
   import {
     type ErrorAction,
     type ErrorDescription,
-    errorCode,
     errorMessage,
   } from '$lib/editor/error-description';
 
@@ -55,7 +55,7 @@
   const describe = (reason: unknown, ref: ProjectRef): ErrorDescription => {
     const detail = errorMessage(reason);
     const name = 'path' in ref ? ref.path : 'this project';
-    switch (errorCode(reason)) {
+    switch (errorCodeOf(reason)) {
       case 'NOT_FOUND':
         return 'path' in ref
           ? {

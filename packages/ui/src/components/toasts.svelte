@@ -55,6 +55,12 @@
       <div class="body">
         <p class="message">{notification.message}</p>
         {#if notification.detail}<p class="detail">{notification.detail}</p>{/if}
+        {#if notification.technical}
+          <details class="technical">
+            <summary>Show details</summary>
+            <pre>{notification.technical}</pre>
+          </details>
+        {/if}
         {#if notification.actions.length}
           <div class="actions">
             {#each notification.actions as action (action.title)}
@@ -119,6 +125,18 @@
   }
   .message {
     margin: 2px 0 0;
+  }
+  .technical {
+    margin: var(--nf-space-1) 0 0;
+    color: var(--nf-color-text-muted);
+    font-size: var(--nf-font-size-sm);
+  }
+  .technical pre {
+    max-height: 8em;
+    margin: var(--nf-space-1) 0 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
   .detail {
     margin: 2px 0 0;

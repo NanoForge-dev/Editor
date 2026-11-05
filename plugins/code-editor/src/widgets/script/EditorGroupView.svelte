@@ -289,8 +289,14 @@
       <EmptyState
         icon="file-code"
         title="No file open"
-        description="Open a file from the Files panel, or with Go to definition."
-      />
+        description="Open a file from the Files panel, or find one by name."
+      >
+        {#snippet actions()}
+          <Button icon="search" onclick={() => service.runCommand('palette.files')}
+            >Go to file…</Button
+          >
+        {/snippet}
+      </EmptyState>
     {/if}
   </div>
 </section>

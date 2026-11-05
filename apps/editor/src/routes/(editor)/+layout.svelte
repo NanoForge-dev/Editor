@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { errorCodeOf } from '@nanoforge-dev/editor-kernel';
   import type { Snippet } from 'svelte';
 
   import Loading from '$lib/editor/Loading.svelte';
   import { type Editor, createEditor } from '$lib/editor/create-editor';
   import { provideEditor } from '$lib/editor/editor-context';
-  import { type ErrorDescription, errorCode, errorMessage } from '$lib/editor/error-description';
+  import { type ErrorDescription, errorMessage } from '$lib/editor/error-description';
 
   const { children }: { children: Snippet } = $props();
 
@@ -19,14 +20,14 @@
 
   /** Startup failures, with what the user can do about them. */
   const describeStartupError = (reason: unknown): ErrorDescription =>
-    errorCode(reason) === 'TIMEOUT'
+    errorCodeOf(reason) === 'TIMEOUT'
       ? {
           title: 'The editor server does not answer',
           hint: 'It accepted the connection but sent nothing back. Restart it with nf editor, then try again.',
           detail: errorMessage(reason),
           actions: [retry],
         }
-      : errorCode(reason) === 'UNAVAILABLE'
+      : errorCodeOf(reason) === 'UNAVAILABLE'
         ? {
             title: "Can't reach the editor server",
             hint: 'Start it with nf editor in your project folder (or check your connection), then try again.',

@@ -77,6 +77,7 @@ export {
   PluginHostToken,
   type PluginInfo,
   switchObservable,
+  errorCodeOf,
 } from '@nanoforge-dev/editor-kernel';
 
 export {

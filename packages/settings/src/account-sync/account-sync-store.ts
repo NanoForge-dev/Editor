@@ -3,6 +3,7 @@ import {
   type Observable,
   ObservableValue,
   createToken,
+  errorCodeOf,
 } from '@nanoforge-dev/editor-kernel';
 import { SETTINGS_LIMITS } from '@nanoforge-dev/editor-protocol';
 
@@ -24,7 +25,6 @@ interface PersistedState {
   dirty: boolean;
 }
 
-const errorCode = (error: unknown) => (error as { code?: string } | null)?.code;
 const OFFLINE_CODES = new Set(['UNAVAILABLE', 'TIMEOUT']);
 
 /**
@@ -152,7 +152,7 @@ export class AccountSyncStore implements ScopeStore {
         this._conflicts.get().length ? 'conflict' : this._state.dirty ? 'pending' : 'idle',
       );
     } catch (error) {
-      if (OFFLINE_CODES.has(errorCode(error) ?? '') || error instanceof TypeError) {
+      if (OFFLINE_CODES.has(errorCodeOf(error) ?? '') || error instanceof TypeError) {
         this._status.set('offline');
         const delays = this._options.retryDelays ?? [1000, 2000, 5000, 15_000, 60_000];
         this._schedule(delays[Math.min(this._attempt++, delays.length - 1)]!);
@@ -206,7 +206,7 @@ export class AccountSyncStore implements ScopeStore {
       await this._persist();
       if (dirty) this._rerun = true;
     } catch (error) {
-      if (errorCode(error) !== 'CONFLICT' || attempt >= 3) throw error;
+      if (errorCodeOf(error) !== 'CONFLICT' || attempt >= 3) throw error;
       const remote = (error as { data?: AccountDocument }).data ?? (await this._remote.get());
       this._rebase(remote);
       this._rerun = false;
