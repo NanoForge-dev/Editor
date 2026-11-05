@@ -7,11 +7,14 @@ import { type StreamEntry, toRpcError } from './router-entries';
 import type { CallInfo, RouterOptions, StreamCleanup, StreamSink } from './router.type';
 
 interface Subscription {
+  readonly id: number;
   readonly controller: AbortController;
   readonly coalesce: boolean;
   queue: string[];
   cleanup?: StreamCleanup;
   closed: boolean;
+  /** Ended (or failed) while events still waited: it goes once they and the end are sent. */
+  finishing?: boolean;
 }
 
 export class RpcSession implements Disposable {
@@ -58,6 +61,8 @@ export class RpcSession implements Disposable {
       while (subscription.queue.length && !this._blocked) {
         this._blocked = !this._send(subscription.queue.shift()!);
       }
+      if (!subscription.queue.length && subscription.finishing)
+        this._subscriptions.delete(subscription.id);
       if (this._blocked) return;
     }
   }
@@ -78,6 +83,7 @@ export class RpcSession implements Disposable {
     };
     if (this._subscriptions.has(message.id)) return;
     const subscription: Subscription = {
+      id: message.id,
       controller: new AbortController(),
       coalesce: entry?.definition.coalesce ?? false,
       queue: [],
@@ -93,10 +99,7 @@ export class RpcSession implements Disposable {
           if (subscription.controller.signal.aborted) return;
           this._emit(message.id, subscription, entry.definition.event.parse(event));
         },
-        end: () => {
-          this._write({ t: 'end', id: message.id });
-          this._close(message.id);
-        },
+        end: () => this._finish(message.id, { t: 'end', id: message.id }),
         error: (error) => this._fail(message.id, error, call),
       };
       const cleanup = await entry.handler(
@@ -131,8 +134,25 @@ export class RpcSession implements Disposable {
   private _fail(id: number, error: unknown, call: CallInfo): void {
     const rpcError = toRpcError(error);
     if (rpcError.code === 'INTERNAL') this._options.onError?.(error, call);
-    this._write({ t: 'error', id, error: rpcError.toJSON() });
-    this._close(id);
+    this._finish(id, { t: 'error', id, error: rpcError.toJSON() });
+  }
+
+  /**
+   * Ends a subscription with its last message. Events still queued by back-pressure go first:
+   * the end waits behind them, and the subscription goes once they are sent.
+   */
+  private _finish(id: number, message: ServerMessage): void {
+    const subscription = this._subscriptions.get(id);
+    if (!subscription?.queue.length || subscription.finishing) {
+      this._write(message);
+      this._close(id);
+      return;
+    }
+    subscription.queue.push(JSON.stringify(message));
+    subscription.finishing = true;
+    subscription.closed = true;
+    subscription.controller.abort();
+    disposeCleanup(subscription.cleanup);
   }
 
   private _write(message: ServerMessage): void {

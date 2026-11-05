@@ -125,4 +125,28 @@ describe('GitStore', () => {
     await store.showBranch('gone');
     expect(store.state.get().logBranch).toBeUndefined();
   });
+
+  it('keeps a branch chosen while a read runs', async () => {
+    const store = new GitStore();
+    const repo = api(status());
+    let open: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    let first = true;
+    store.setApi({
+      ...repo.api,
+      log: async (limit, branch) => {
+        if (first) {
+          first = false;
+          await gate;
+        }
+        return repo.api.log(limit, branch);
+      },
+    });
+    await vi.waitFor(() => expect(repo.calls).toContain('branches'));
+    const shown = store.showBranch('feature');
+    open();
+    await shown;
+    expect(store.state.get().logBranch).toBe('feature');
+    expect(repo.calls).toContain('log 50 feature');
+  });
 });

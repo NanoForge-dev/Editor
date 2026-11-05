@@ -1079,7 +1079,7 @@ R18 ❌ **Light theme, dark _New_ button:** not reproduced, dropped. Buttons onl
 - **Layout**: a benchmark of the model (`pnpm --filter @nanoforge-dev/editor-layout bench`), and screen switches timed in the page (21 ms).
 - `BENCH=1 npx playwright test` runs the startup measurements; they are not part of the tests.
 
-13.4 ✅ Release `@nanoforge-dev/editor@1.0.0` and `@nanoforge-dev/editor-sdk@1.0.0`, with the changelog (do not release it in github or on pnpm, just write a CHANGELOG-v2.md). **Done:** `CHANGELOG-v2.md` at the root. Package versions are unchanged, nothing is tagged or published.
+13.4 ✅ Release `@nanoforge-dev/editor@1.0.0` and `@nanoforge-dev/editor-sdk@1.0.0`, with the changelog (do not release it in github or on pnpm, just write a CHANGELOG-v2.md). **Done:** `CHANGELOG-v2.md` was written at the root, then removed (`4fa9f45`). Package versions are unchanged, nothing is tagged or published.
 
 ## Existing things to reuse or reference (not copy)
 

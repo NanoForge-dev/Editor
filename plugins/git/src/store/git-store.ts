@@ -162,6 +162,8 @@ export class GitStore implements Disposable {
         ? await Promise.all([api.stashes(), api.log(limit, logBranch)])
         : [[], []];
       if (generation !== this._generation) return;
+      /** showBranch ran meanwhile: the read it queued answers, this one would undo its choice. */
+      if (this._state.get().logBranch !== wanted) return;
       this._patch({
         status,
         branches,

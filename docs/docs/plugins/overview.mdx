@@ -28,6 +28,8 @@ _Settings › Plugins_ lists every plugin with its source and state, lets you tu
 
 <Note>A project plugin's server entry only runs in a local editor, never in a hosted one.</Note>
 
+The editor's page has a Content Security Policy: in a hosted editor, the page (plugins included) connects to the editor's own origin only; in a local editor, the page, plugins and games, may connect anywhere (`http:`, `https:`, `ws:`, `wss:`).
+
 ## How a plugin is loaded
 
 1. The editor reads every manifest. Everything a manifest declares in `contributes` (commands, menus, panels, settings, shortcuts) is in place **before any plugin code runs**.

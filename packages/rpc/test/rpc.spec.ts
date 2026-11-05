@@ -26,6 +26,7 @@ const Files = defineContract('fs', {
 
 const createRouter = () => {
   const emitters = new Map<string, (path: string) => void>();
+  const enders = new Map<string, () => void>();
   let emitStatus: (n: number) => void = () => undefined;
   const cleanup = vi.fn();
   const internal = vi.fn();
@@ -46,6 +47,7 @@ const createRouter = () => {
     streams: {
       changes: ({ glob }, _context, sink) => {
         emitters.set(glob, (path) => sink.emit({ path }));
+        enders.set(glob, () => sink.end());
         return toDisposable(() => {
           emitters.delete(glob);
           cleanup(glob);
@@ -56,7 +58,14 @@ const createRouter = () => {
       },
     },
   });
-  return { router, emitters, cleanup, internal, emitStatus: (n: number) => emitStatus(n) };
+  return {
+    router,
+    emitters,
+    enders,
+    cleanup,
+    internal,
+    emitStatus: (n: number) => emitStatus(n),
+  };
 };
 
 describe('RPC calls', () => {
@@ -160,6 +169,28 @@ describe('RPC streams', () => {
     socket.session!.drain();
     await flush();
     expect(values).toEqual([1, 3]);
+  });
+
+  it('ends a stream after the events back-pressure held back', async () => {
+    const { router, emitters, enders, cleanup } = createRouter();
+    const { client, sockets } = connect(router);
+    const received: string[] = [];
+    client.subscribe(Files, 'changes', { glob: '*' }, (event) => received.push(event.path), {
+      onEnd: () => received.push('end'),
+    });
+    await flush();
+    const socket = sockets[0]!;
+    socket.backpressure = true;
+    emitters.get('*')!('a.ts');
+    emitters.get('*')!('b.ts');
+    emitters.get('*')!('c.ts');
+    enders.get('*')!();
+    expect(cleanup).toHaveBeenCalledWith('*');
+    socket.backpressure = false;
+    socket.session!.drain();
+    await flush();
+    expect(received).toEqual(['a.ts', 'b.ts', 'c.ts', 'end']);
+    expect(socket.session!.subscriptionCount).toBe(0);
   });
 
   it('closes dead connections through the heartbeat', async () => {
