@@ -30,6 +30,8 @@
     onmove: (offset: -1 | 1) => void;
     onremove: () => void;
     onopen: () => void;
+    /** Opens the component's file with the Component panel (not offered without it). */
+    onlayout?: () => void;
   }
 
   const {
@@ -45,6 +47,7 @@
     onmove,
     onremove,
     onopen,
+    onlayout,
   }: Props = $props();
 
   /** Params from the catalog; without it, one code field per argument. */
@@ -81,6 +84,17 @@
       { kind: 'item', id: 'up', label: 'Move up', disabled: first, onSelect: () => onmove(-1) },
       { kind: 'item', id: 'down', label: 'Move down', disabled: last, onSelect: () => onmove(1) },
       { kind: 'item', id: 'open', label: 'Open source', disabled: !item, onSelect: onopen },
+      ...(onlayout
+        ? [
+            {
+              kind: 'item' as const,
+              id: 'layout',
+              label: 'Edit layout',
+              disabled: !item || item.readonly,
+              onSelect: onlayout,
+            },
+          ]
+        : []),
       ...(hiddenShown.length
         ? [
             { kind: 'separator' as const },

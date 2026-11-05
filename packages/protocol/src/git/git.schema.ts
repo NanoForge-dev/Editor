@@ -46,6 +46,8 @@ export const GitCommit = z.object({
   hash: z.string(),
   shortHash: z.string(),
   subject: z.string(),
+  /** The message after the subject, when there is one (cut at 4000 characters). */
+  body: z.string().optional(),
   author: z.string(),
   /** Seconds since epoch. */
   time: z.number(),
@@ -54,5 +56,6 @@ export const GitCommit = z.object({
 });
 export type GitCommit = z.output<typeof GitCommit>;
 
-export const GitStash = z.object({ index: z.number().int(), message: z.string() });
+/** A stash, named by the hash of its commit: its `stash@{n}` changes as stashes come and go. */
+export const GitStash = z.object({ hash: z.string(), message: z.string() });
 export type GitStash = z.output<typeof GitStash>;

@@ -158,7 +158,7 @@ Everything above (name, description, color, preset, group, hidden) can also be s
 ## Extension points (SDK)
 
 - `ecs.fieldEditors`: `{ type, ref?, component }`, the inspector field for an `Element` type, or for one `ref` (`@nanoforge-dev/graphics-2d#Rect`).
-- `ecs.entityActions`: extra actions on a hierarchy row (`{ id, title, command, when? }`).
+- `ecs.entityActions`: extra actions on a hierarchy row (`{ id, title, command, when? }`). The command gets `{ app, entity, path }`; `when` sees `ecsEntity` (its name) and `ecsComponent:<class>` for each of its components.
 - In the code editor (a new `codeEditor.sidePanels` point, see Core additions): the **Component** panel, shown when the active file defines a component.
 - `ecs.paramPresets`: `{ id, slots?, component }`, a visual control combining the params of a group that use it (`vector`, `size` and `color` are built in).
 

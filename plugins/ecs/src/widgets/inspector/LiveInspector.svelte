@@ -161,6 +161,7 @@
     onmove={() => undefined}
     onremove={() => live.removeComponent(source, entity, component.name)}
     onopen={() => item && void ecs.openItem(item)}
+    onlayout={() => item && void ecs.editLayout(item)}
   />
 {/each}
 

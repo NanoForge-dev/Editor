@@ -212,3 +212,31 @@ test('keymap: chords, conflicts, conditions, removals, presets, kept on this mac
   await expect(previous.locator('kbd')).toHaveCount(0);
   await settings(page).getByRole('button', { name: 'Cancel' }).click();
 });
+
+test('keymap: the IntelliJ preset, Shift Shift and Ctrl+Shift+A', async ({ page }) => {
+  await open(page);
+  await openKeymap(page);
+  await settings(page).getByRole('button', { name: 'Preset' }).click();
+  await page.getByRole('option', { name: 'IntelliJ' }).click();
+  await find(page, 'command palette');
+  await expect(shortcut(page, 'View: Command palette…')).toContainText('Shift Shift');
+  await settings(page).getByRole('button', { name: 'OK' }).click();
+  await expect(settings(page)).toHaveCount(0);
+
+  await page.locator('[data-nf-part="screen"]').click();
+  await page.keyboard.press('Control+Shift+a');
+  await expect(box(page)).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(box(page)).toHaveCount(0);
+
+  /** One tap types on; two in a row open the palette. */
+  await page.keyboard.press('Shift');
+  await page.waitForTimeout(700);
+  await page.keyboard.press('Shift');
+  await expect(box(page)).toHaveCount(0);
+  await page.keyboard.press('Shift');
+  await page.keyboard.press('Shift');
+  await expect(box(page)).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(box(page)).toHaveCount(0);
+});

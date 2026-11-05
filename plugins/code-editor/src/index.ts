@@ -24,7 +24,7 @@ import {
 import { setupMonaco } from './monaco/monaco';
 import { CodeEditorService } from './service/code-editor-service';
 import type { Comparison, OpenOptions } from './service/code-editor.type';
-import { current } from './session/code-editor-session';
+import { current, sidePanelRequest } from './session/code-editor-session';
 import ScriptScreen from './widgets/script/ScriptScreen.svelte';
 
 export const SCRIPT_SCREEN = 'code-editor.script';
@@ -119,6 +119,7 @@ export default definePlugin({
         withService(async (service, path: string, options: OpenOptions = {}) => {
           await context.executeCommand('workbench.openWidget', SCRIPT_SCREEN);
           await service.open(path, options);
+          if (options.sidePanel) sidePanelRequest.set({ id: options.sidePanel });
         }),
       ],
       [

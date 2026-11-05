@@ -109,6 +109,17 @@ describe('Recorder', () => {
       out: { bytes: 1000, packets: 20 },
     });
     expect(revisions).toBe(6);
+    recorder.acquire('profiler');
+    recorder.handle(event('server', 'frame-stats', frame(4)));
+    recorder.clear('server', 'network');
+    expect(recorder.record('server')).toMatchObject({ packets: [], network: [], untraced: 0 });
+    expect(recorder.record('server')?.frames).toHaveLength(1);
+    expect(recorder.record('server')?.world).toEqual({ entities: [], systems: [] });
+    recorder.handle(event('server', 'network-trace', packet));
+    expect(recorder.record('server')!.packets.map((entry) => entry.id)).toEqual([2]);
+    recorder.clear('server', 'profiler');
+    expect(recorder.record('server')?.frames).toEqual([]);
+    expect(recorder.record('server')!.packets).toHaveLength(1);
     recorder.reset();
     expect(recorder.sources).toEqual([]);
   });

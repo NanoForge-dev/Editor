@@ -12,6 +12,7 @@
   import { type FieldEditor, fieldEditorFor } from '../../extension/field-editor.extension-point';
   import type { ArgModel, ArgValue, ImportNeed } from '../../model/ecs-model.type';
   import { currentValue, enumMemberArg, hexColor } from '../../model/arg-values';
+  import { assetList } from './asset-context';
 
   interface Props {
     element: Element;
@@ -50,6 +51,20 @@
   );
   const literalOnly = $derived(arg !== undefined && arg.value === undefined);
   let text = $derived(typeof value === 'string' ? value : code);
+  const assets = assetList();
+  const listId = $props.id();
+  /** Bumped when the project's files change: the assets are read again. */
+  let revision = $state(0);
+  $effect(() => {
+    const subscription = assets?.onDidChange(() => revision++);
+    return () => subscription?.dispose();
+  });
+  /** An `@asset` param suggests the app's assets of the accepted types (any text still goes). */
+  const assetChoices = $derived.by(() => {
+    void revision;
+    if (element.type !== 'asset' || !assets) return [];
+    return assets.list(element.accept ?? []);
+  });
 </script>
 
 <div class="field">
@@ -122,9 +137,17 @@
         aria-label={label}
         bind:value={text}
         placeholder={element.type === 'asset' ? 'Path of an asset' : ''}
+        list={assetChoices.length ? listId : undefined}
         {disabled}
         onchange={() => onchange({ value: text })}
       />
+      {#if assetChoices.length}
+        <datalist id={listId}>
+          {#each assetChoices as path (path)}
+            <option value={path}></option>
+          {/each}
+        </datalist>
+      {/if}
     {/if}
   </span>
 </div>

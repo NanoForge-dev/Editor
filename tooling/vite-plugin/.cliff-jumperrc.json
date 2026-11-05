@@ -3,6 +3,5 @@
   "name": "editor-vite-plugin",
   "org": "nanoforge-dev",
   "packagePath": "tooling/vite-plugin",
-  "tagTemplate": "{{new-version}}",
   "identifierBase": false
 }

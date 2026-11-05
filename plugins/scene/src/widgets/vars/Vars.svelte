@@ -5,6 +5,7 @@
     EmptyState,
     IconButton,
     type MenuEntry,
+    NotificationServiceToken,
     PromptServiceToken,
     type WidgetInstance,
   } from '@nanoforge-dev/editor-sdk/ui';
@@ -22,6 +23,8 @@
   const scenes = instance.services.get(SceneServiceToken);
   // svelte-ignore state_referenced_locally
   const prompts = instance.services.tryGet(PromptServiceToken);
+  // svelte-ignore state_referenced_locally
+  const notifications = instance.services.tryGet(NotificationServiceToken);
   const vars = scenes.vars;
   const model = scenes.model;
   $effect(() => instance.setHistoryContext(SCENES_HISTORY));
@@ -109,6 +112,22 @@
     if (value !== undefined) await scenes.updateVar(field.name, { [what]: value });
   };
 
+  /** Removes a var's declaration; one the code uses is removed only once the user confirms. */
+  const remove = (field: VarModel) => {
+    const uses = usesOf(field.name);
+    if (!uses.length || !notifications) return void scenes.removeVar(field.name);
+    const files = [...new Set(uses.map((use) => use.path))];
+    notifications.notify(
+      'warning',
+      `${field.name} is used ${uses.length === 1 ? 'once' : `${uses.length} times`} in the code`,
+      {
+        detail: `Removing it leaves those uses without a declaration: ${files.join(', ')}.`,
+        timeout: 0,
+        actions: [{ title: 'Remove anyway', run: () => void scenes.removeVar(field.name) }],
+      },
+    );
+  };
+
   const menu = (): MenuEntry[] => {
     const field = $vars?.vars.find((candidate) => candidate.name === menuTarget);
     if (!field) {
@@ -156,7 +175,7 @@
         kind: 'item',
         id: 'remove',
         label: 'Remove',
-        onSelect: () => void scenes.removeVar(field.name),
+        onSelect: () => remove(field),
       },
     ];
   };

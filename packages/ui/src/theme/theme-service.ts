@@ -34,9 +34,14 @@ export const THEMES = defineExtensionPoint<ThemeContribution>('ui.themes', {
   validator: ThemeContributionSchema as never,
 });
 
+/** `appearance.theme` value that follows the system: NanoForge Light or Dark (the default). */
+export const SYSTEM_THEME = 'system';
+
 export interface ThemeServiceOptions {
   /** `appearance.density`: how tight the UI is. */
   readonly density?: Observable<Density>;
+  /** Whether the system prefers light colors, for `SYSTEM_THEME`. */
+  readonly prefersLight?: Observable<boolean>;
   /** Where unresolved themes and faint text are reported. */
   readonly logger?: Logger;
 }
@@ -63,6 +68,7 @@ export class ThemeService implements Disposable {
     const apply = () => this._apply();
     this._store.add(observe(_selected, apply));
     if (_options.density) this._store.add(observe(_options.density, apply));
+    if (_options.prefersLight) this._store.add(observe(_options.prefersLight, apply));
     this._store.add(_extensions.onDidChange((point) => point.id === THEMES.id && apply()));
   }
 
@@ -85,14 +91,20 @@ export class ThemeService implements Disposable {
     });
   }
 
+  /** The theme an `appearance.theme` value shows: `SYSTEM_THEME` and unknown ids included. */
+  resolve(id: string): ThemeDefinition {
+    if (id === SYSTEM_THEME)
+      id = this._options.prefersLight?.get() ? nanoforgeLight.id : nanoforgeDark.id;
+    return this.themes.find((candidate) => candidate.id === id) ?? nanoforgeDark;
+  }
+
   dispose(): void {
     this._applied.dispose();
     this._store.dispose();
   }
 
   private _apply(): void {
-    const id = this._selected.get();
-    const theme = this.themes.find((candidate) => candidate.id === id) ?? nanoforgeDark;
+    const theme = this.resolve(this._selected.get());
     this._root.dataset.nfTheme = theme.id;
     this._applied.value = this._styles.inject(
       'core',

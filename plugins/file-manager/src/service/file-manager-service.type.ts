@@ -1,5 +1,6 @@
 import type {
   ClientProject,
+  ContextKeyService,
   ExtensionPoint,
   HistoryContext,
   Logger,
@@ -20,6 +21,8 @@ export interface FileManagerServiceOptions {
   readonly project: ClientProject;
   readonly history: HistoryContext;
   readonly extensions: Contributions;
+  /** Evaluates the `when` of templates. */
+  readonly contextKeys: Pick<ContextKeyService, 'createScoped'>;
   readonly prompts: PromptService | undefined;
   readonly notifications: NotificationService | undefined;
   readonly executeCommand: (id: string, ...args: unknown[]) => Promise<unknown>;

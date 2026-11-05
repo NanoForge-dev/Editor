@@ -18,7 +18,7 @@ The NanoForge editor, rewritten from scratch. The full plan, with status per pha
   Ask the user before building anything that depends on them.
 
 - **Repository standards follow the engine** (`../engine`, `origin/main`):
-  - `package.json` fields in the engine's order (`$schema`, `name`, `version`, `description`, `keywords`, `homepage`, `bugs`, `license`, `contributors`, `files`, `main`, `module`, `types`, `exports`, `type`, `directories`, `repository`, `funding`, `scripts`, `dependencies`, `peerDependencies`, `devDependencies`, `packageManager`, `engines`, `private`, `publishConfig`, `lint-staged`), dependencies sorted, Node 26 and pnpm 12;
+  - `package.json` fields in the engine's order (`$schema`, `name`, `version`, `description`, `keywords`, `homepage`, `bugs`, `license`, `contributors`, `files`, `main`, `module`, `types`, `exports`, `type`, `directories`, `repository`, `funding`, `scripts`, `dependencies`, `peerDependencies`, `peerDependenciesMeta`, `devDependencies`, `packageManager`, `engines`, `private`, `publishConfig`, `lint-staged`), dependencies sorted, Node 26 and pnpm 12;
   - every workspace has the engine's `README.md` (badges, About, Links, Contributing, Help), `LICENSE` and `.prettierignore`; published ones (`apps/editor`, `packages/sdk`, `tooling/vite-plugin`) also `CHANGELOG.md`, `cliff.toml` and `.cliff-jumperrc.json`;
   - each workspace has a `<group>:<name>` label (`.github/labels.yml`, `labeler.yml`, `issue-labeler.yml`) and a choice in the issue forms. A new workspace gets all of them;
   - the editor keeps single quotes (its Prettier override of the engine config).
@@ -103,7 +103,7 @@ pnpm e2e:last-failure   # error-context.md of the last failed test, its last fra
   - `viewport` (Game and Scene screens)
   - `history-panel`
   - `settings-ui`
-  - `ecs`
+  - `ecs` (its extension points: `ecs.sources`, `ecs.fieldEditors`, `ecs.paramPresets`, `ecs.entityActions`, whose `when` sees `ecsEntity` and `ecsComponent:<class>`; a component's layout warnings are diagnostics of source `@nanoforge/ecs`)
   - `console` (Console and Problems panels)
   - `command-palette` (the palette, and the Keyboard shortcuts page of Settings)
   - `inspectors` (Profiler, Network and World panels)
@@ -155,6 +155,13 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
   3. its name is accepted as a commit scope automatically.
 - **Plugins only import the SDK** (ESLint enforces it). If a plugin needs something from core, export it from the SDK: add a token in the owning package, provide it in `apps/editor/src/lib/editor/create-editor.ts`, re-export it, and update the snapshot.
 - **Dialogs from a plugin:** mount a Svelte component with `mount`/`unmount` from a command (see `plugins/settings-ui/src/index.ts`).
+- **Published SDK and vite-plugin (M7).**
+  - They are versioned on their own and tagged `@nanoforge-dev/<name>@<version>` (the editor keeps bare `<version>` tags). Pre-release and alpha take the package; a `releases/editor@…` branch releases the editor (image and docs), any other `releases/<name>@…` that package; betas run per package, each when its own code changed.
+  - The SDK bundles every editor package it reaches (tsdown `alwaysBundle`, subpaths included). `scripts/build-types.ts` emits the declarations they reach (Svelte components through svelte2tsx), rewrites their specifiers to relative paths, prunes the rest and type-checks what is left: a clash in emitted declarations, or an import of a package that is not published, fails the build.
+  - `./ui` is published as types plus a stub whose exports throw when used (`scripts/build-ui-stub.ts`): plugins built with the vite-plugin take the editor's own module, and their unit tests mock it.
+  - The acceptance test: `pnpm pack` both, install the tarballs in a copy of `examples/counter-plugin` outside the workspace, then svelte-check, `vite build`, and a node import of `/`, `/worker` and `/ui`.
+- **Code editor side panels:** `codeEditor.open(path, { sidePanel: 'ecs.component' })` opens a file with that panel shown (_Edit layout_).
+- **Kit helpers:** `saveAsFile(name, content, type)` hands the browser a file to save (exports of the Console, inspectors and settings).
 
 ### Folder trust (local editors)
 
@@ -202,6 +209,8 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 - **Actions and shortcuts:**
   - An _action_ is a command with its arguments (`actionId`). The palette and the keymap page list `listActions`: titled commands, plus menu entries that give arguments.
   - A command that needs arguments sets `palette: false` (in `commands.register` or in the manifest), or it shows in the palette and does nothing.
+  - A modifier twice is a double tap (`Shift Shift`, the IntelliJ preset's palette): a modifier pressed and released alone twice within 500 ms. A single tap never starts a chord.
+  - A browser tab never gets Ctrl+T, Ctrl+N, Ctrl+Shift+N, Ctrl+W, Ctrl+F4 or Ctrl+F5 (and Linux browsers keep Alt+1…9): don't bind them, even in a preset.
   - Write default shortcuts with `Mod` (Ctrl, or Cmd on macOS). The keymap is layered: `KEYBINDINGS`, the preset, the account's `keymap.overrides`, this machine's. Edit lists with `setShortcut`, never by hand.
   - The kit's `Select` trigger is a `button` named by its label (not a `combobox`): `getByRole('button', { name: 'Preset' })`.
 
@@ -256,6 +265,8 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 - **Formatting:** each workspace runs its own Prettier (`lint`, `format`, its `lint-staged`) with its own `.prettierignore`; the root one skips `apps/`, `packages/`, `plugins/` and `tooling/`. A folder Prettier must not touch (test fixtures: golden tests compare their text) goes in that workspace's `.prettierignore`.
 - **Doc comments:** TypeScript counts a comment right after `(` or `,` as that token's trailing comment. Read param docs with `leadingDocComments` (editor-meta), not ts-morph's `getLeadingCommentRanges`.
 - **Worker mirror:** it follows document changes asynchronously. `CodeService.analyze`/`transform` mirror the file's current text first; code that talks to the engine directly must too.
+- **Theme in e2e:** `appearance.theme` defaults to `system` (light or dark as the system is), so `playwright.config.ts` sets `colorScheme: 'dark'`: the suite runs on the dark theme. A test of the light one emulates it (`page.emulateMedia`).
+- **`when` clauses:** the left of `in` is a key, never a string (`'Position' in list` does not parse): give a key per member instead (`ecsComponent:Position`, like `engineLib:<name>`). Lists of contributions evaluate each `when` in a `try`, so one bad clause hides its entry, not the menu.
 - **Saved layout and widget state in e2e:** they outlive a test (server-side, saved after 500 ms). A test that changes tabs or expands folders resets them at the end and waits before the page closes (see `e2e/ecs.spec.ts`).
 - **Plugin activation order changes timing:** adding an `onStartup` plugin delays the others, which exposed focus races. Test the full suite after adding one.
 - **Workspace changes (Project screen):**
@@ -272,6 +283,8 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 - **File manager:**
   - Fast repeated commands race: they run through a serialized queue.
   - After a drag and drop, focus goes back to the tree (`refocus`), so Ctrl+Z reaches the Files history rather than the layout.
+  - `FILE_TEMPLATES` entries are offered where their `when` holds: it sees `fileFolder` and `appType` (`client`, `server`, `lib`, empty outside apps; `appAt` finds the app of a path). The ECS plugin's _Component_ and _System_ need an app.
+- **Asset params:** an `@asset .png` param picks among the app's assets, written as the game loads them: the CLI copies the assets folder to the build's root, so `<assets>/textures/hero.png` is `/textures/hero.png`.
 
 ## Status (2026-10-02)
 

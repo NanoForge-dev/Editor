@@ -36,6 +36,7 @@ const FIELDS = [
   'scripts',
   'dependencies',
   'peerDependencies',
+  'peerDependenciesMeta',
   'devDependencies',
   'packageManager',
   'engines',

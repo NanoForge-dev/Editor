@@ -32,22 +32,32 @@ const normalizeKey = (key: string): string => {
   return key[0]!.toUpperCase() + key.slice(1);
 };
 
+/** `Mod`, `Control`, `Option`, `Cmd`… → `Ctrl`, `Alt`, `Shift` or `Meta` (undefined: not one). */
+const modifierOf = (part: string, mac: boolean): string | undefined => {
+  const name = part.toLowerCase();
+  if (name === 'mod') return mac ? 'Meta' : 'Ctrl';
+  if (name === 'ctrl' || name === 'control') return 'Ctrl';
+  if (name === 'alt' || name === 'option') return 'Alt';
+  if (name === 'shift') return 'Shift';
+  if (name === 'meta' || name === 'cmd' || name === 'command' || name === 'super') return 'Meta';
+  return undefined;
+};
+
 /** Canonical form of one keystroke: `Ctrl+Shift+P` (modifier order Ctrl, Alt, Shift, Meta). */
 export const normalizeStroke = (stroke: string, mac = isMac()): string => {
   const parts = stroke.split('+').map((part) => part.trim());
   if (parts.at(-1) === '' && parts.at(-2) === '') parts.splice(-2, 2, '+');
   const key = parts.pop();
   if (!key) throw new Error(`Invalid keybinding "${stroke}"`);
+  if (!parts.length) {
+    const lone = modifierOf(key, mac);
+    if (lone) return lone;
+  }
   const modifiers = new Set<string>();
   for (const part of parts) {
-    const name = part.toLowerCase();
-    if (name === 'mod') modifiers.add(mac ? 'Meta' : 'Ctrl');
-    else if (name === 'ctrl' || name === 'control') modifiers.add('Ctrl');
-    else if (name === 'alt' || name === 'option') modifiers.add('Alt');
-    else if (name === 'shift') modifiers.add('Shift');
-    else if (name === 'meta' || name === 'cmd' || name === 'command' || name === 'super')
-      modifiers.add('Meta');
-    else throw new Error(`Unknown modifier "${part}" in "${stroke}"`);
+    const modifier = modifierOf(part, mac);
+    if (!modifier) throw new Error(`Unknown modifier "${part}" in "${stroke}"`);
+    modifiers.add(modifier);
   }
   return [...MODIFIERS.filter((modifier) => modifiers.has(modifier)), normalizeKey(key)].join('+');
 };
@@ -83,6 +93,9 @@ export const formatKeybinding = (key: string, mac = isMac()): string =>
     .map((stroke) =>
       mac
         ? stroke
+            .replace(/^Shift$/, '⇧')
+            .replace(/^Alt$/, '⌥')
+            .replace(/^Meta$/, '⌘')
             .replace('Ctrl+', '⌃')
             .replace('Alt+', '⌥')
             .replace('Shift+', '⇧')

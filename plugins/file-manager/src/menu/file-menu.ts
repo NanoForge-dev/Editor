@@ -21,7 +21,7 @@ const SEPARATOR: MenuEntry = { kind: 'separator' };
 
 /** "New" entries: file, folder and the contributed templates by category. */
 export const newEntries = (service: FileManagerService, folder: string): MenuEntry[] => {
-  const templates = service.templates();
+  const templates = service.templates(folder);
   const categories = [...new Set(templates.map((template) => template.category ?? ''))];
   return [
     item('new-file', 'File…', () => service.newFile(folder), { icon: 'file' }),

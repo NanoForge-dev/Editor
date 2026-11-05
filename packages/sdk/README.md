@@ -19,6 +19,8 @@
 
 Public API for NanoForge editor plugins.
 
+Three entries: `@nanoforge-dev/editor-sdk` (services, commands, extension points), `@nanoforge-dev/editor-sdk/ui` (widgets, the component kit) and `@nanoforge-dev/editor-sdk/worker` (code analyzers and transformers, which need `ts-morph`). The editor provides all three at runtime: build plugins with [`@nanoforge-dev/editor-vite-plugin`](https://www.npmjs.com/package/@nanoforge-dev/editor-vite-plugin), which points their imports at the editor's own copy. The published `ui` entry holds the types only: its exports throw when used outside the editor, so unit tests mock it (`vi.mock('@nanoforge-dev/editor-sdk/ui')`).
+
 ## Installation
 
 **Node.js 26 or newer is required.**

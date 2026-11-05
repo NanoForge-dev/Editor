@@ -1,7 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject } from './helpers';
+import { openProject, saved } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -129,6 +129,39 @@ test('creates from a template and imports dropped files', async ({ page }) => {
   await target.dispatchEvent('dragover', { dataTransfer: transfer });
   await target.dispatchEvent('drop', { dataTransfer: transfer });
   await expect.poll(() => existsSync(join(PONG, 'scratch/target/imported.txt'))).toBe(true);
+});
+
+test('creates a component from the ECS template, only in an app', async ({ page }) => {
+  const created = join(PONG, 'apps/client/src/components/power-up.ts');
+  try {
+    await open(page);
+    await expand(page, 'scratch');
+    await row(page, 'scratch').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'New' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Greeting…' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Component…' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+
+    await expand(page, 'apps', 'client', 'src');
+    await row(page, 'components').click({ button: 'right' });
+    await page.getByRole('menuitem', { name: 'New' }).click();
+    await page.getByRole('menuitem', { name: 'Component…' }).click();
+    await page.getByRole('dialog').getByRole('textbox').fill('PowerUp');
+    await page.getByRole('dialog').getByRole('button', { name: 'Create' }).click();
+    await expect.poll(() => existsSync(created)).toBe(true);
+    const text = readFileSync(created, 'utf8');
+    expect(text).toContain('export class PowerUp');
+    expect(text).toContain('@side client');
+    await expect(page.getByRole('tab', { name: /power-up\.ts/ })).toBeVisible();
+    /** Expanded folders are saved with the panel: fold them back for the next tests. */
+    await row(page, 'apps').click();
+    await page.keyboard.press('ArrowLeft');
+    await expect(row(page, 'apps')).toHaveAttribute('aria-expanded', 'false');
+    await saved(page);
+  } finally {
+    rmSync(created, { force: true });
+  }
 });
 
 test('shows installed packages read-only', async ({ page }) => {

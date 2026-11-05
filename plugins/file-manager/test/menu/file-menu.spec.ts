@@ -94,4 +94,24 @@ describe('file menu', () => {
       'Readme…',
     ]);
   });
+
+  it('offers a template where its when holds: the folder and the type of its app', () => {
+    const { service } = makeService(
+      undefined,
+      {
+        'files.templates': [
+          { id: 'component', title: 'Component', when: "appType == 'client'" },
+          { id: 'docs', title: 'Doc page', when: "fileFolder == 'docs'" },
+        ],
+      },
+      { apps: [{ root: 'apps/client', type: 'client' }] },
+    );
+    const labels = (folder: string) =>
+      (newEntries(service, folder) as Entry[]).flatMap((entry) =>
+        entry.label ? [entry.label] : [],
+      );
+    expect(labels('apps/client/src')).toContain('Component…');
+    expect(labels('apps/client/src')).not.toContain('Doc page…');
+    expect(labels('docs')).toEqual(['File…', 'Folder…', 'Doc page…']);
+  });
 });

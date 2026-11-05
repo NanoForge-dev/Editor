@@ -1,5 +1,5 @@
 <script lang="ts" generics="T extends string">
-  import { Select } from 'bits-ui';
+  import { Select as BitsSelect } from 'bits-ui';
 
   import Icon from './icon.svelte';
 
@@ -16,7 +16,7 @@
   const id = $props.id();
 </script>
 
-<Select.Root
+<BitsSelect.Root
   type="single"
   {value}
   {disabled}
@@ -27,15 +27,15 @@
   }))}
   onValueChange={(next) => onchange?.(next as T)}
 >
-  <Select.Trigger class="nf-select-trigger" aria-label={label} aria-describedby="{id}-value">
+  <BitsSelect.Trigger class="nf-select-trigger" aria-label={label} aria-describedby="{id}-value">
     <span id="{id}-value">{selected?.label ?? ''}</span>
     <Icon name="chevron-down" size={14} />
-  </Select.Trigger>
-  <Select.Portal>
-    <Select.Content class="nf-popover" sideOffset={4}>
-      <Select.Viewport>
+  </BitsSelect.Trigger>
+  <BitsSelect.Portal>
+    <BitsSelect.Content class="nf-popover" sideOffset={4}>
+      <BitsSelect.Viewport>
         {#each items as item (item.value)}
-          <Select.Item
+          <BitsSelect.Item
             class="nf-menu-item"
             value={item.value}
             label={item.label}
@@ -47,9 +47,9 @@
               >
               {item.label}
             {/snippet}
-          </Select.Item>
+          </BitsSelect.Item>
         {/each}
-      </Select.Viewport>
-    </Select.Content>
-  </Select.Portal>
-</Select.Root>
+      </BitsSelect.Viewport>
+    </BitsSelect.Content>
+  </BitsSelect.Portal>
+</BitsSelect.Root>

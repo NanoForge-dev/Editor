@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { documentHistoryId } from '@nanoforge-dev/editor-sdk';
+  import { documentHistoryId, ProjectServiceToken } from '@nanoforge-dev/editor-sdk';
   import { Combobox, EmptyState, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
 
   import { EcsServiceToken } from '../../service/ecs-service';
@@ -8,10 +8,17 @@
   import { LiveServiceToken } from '../../live/live-service';
   import ComponentCard from './ComponentCard.svelte';
   import LiveInspector from './LiveInspector.svelte';
+  import { provideAssets } from './asset-context';
 
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
   const ecs = instance.services.get(EcsServiceToken);
+  // svelte-ignore state_referenced_locally
+  const projects = instance.services.get(ProjectServiceToken);
+  provideAssets({
+    list: (accept) => ecs.assets(accept),
+    onDidChange: (listener) => projects.current.get()?.fs.onDidChange(listener),
+  });
   /** Undo targets the file the Inspector edits: `main`, or the selected scene's file. */
   const location = ecs.location;
   $effect(() => {
@@ -136,6 +143,7 @@
               `Remove ${component.className ?? 'component'} from ${entity.name}`,
             )}
           onopen={() => item && void ecs.openItem(item)}
+          onlayout={() => item && void ecs.editLayout(item)}
         />
       {/each}
     </div>

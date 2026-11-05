@@ -70,6 +70,7 @@ describe('public API', () => {
         "SettingsServiceToken",
         "TEXT_INPUT_FOCUS_KEY",
         "WorkspaceError",
+        "appAt",
         "appRefName",
         "applyTextEdits",
         "basename",
