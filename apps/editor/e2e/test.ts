@@ -1,5 +1,7 @@
 import { test as base } from '@playwright/test';
 
+import { stopGame } from './helpers';
+
 export { type Locator, type Page, expect } from '@playwright/test';
 
 /** Not failures: Monaco rejects the promises of requests it cancels (typing during a completion). */
@@ -35,14 +37,7 @@ export const test = base.extend<{ pageErrors: string[]; stopsTheGame: undefined 
   stopsTheGame: [
     async ({ page }, use) => {
       await use(undefined);
-      const run = page.getByRole('toolbar', { name: 'Run' });
-      const stop = run.getByRole('button', { name: /^Stop/ });
-      if (!(await stop.isVisible().catch(() => false))) return;
-      await stop.click({ timeout: 5_000 }).catch(() => undefined);
-      await base
-        .expect(run.getByRole('button', { name: /^Play/ }))
-        .toBeVisible({ timeout: 15_000 })
-        .catch(() => undefined);
+      await stopGame(page);
     },
     { auto: true },
   ],

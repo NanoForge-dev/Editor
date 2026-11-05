@@ -223,4 +223,20 @@ describe('AccountSyncStore limits', () => {
     expect(store.error.get()).toBeUndefined();
     store.dispose();
   });
+
+  it('keeps showing the error while another edit waits for its push', async () => {
+    const remote = new FakeRemote();
+    const store = new AccountSyncStore(remote, new MemoryKeyValueStore(), 'account', {
+      debounceMs: 60_000,
+    });
+    await store.initialize();
+    await store.write({ 'keymap.overrides': 'x'.repeat(300 * 1024) });
+    await store.sync();
+    expect(store.status.get()).toBe('error');
+
+    await store.write({ 'editor.fontSize': 12 });
+    expect(store.status.get()).toBe('error');
+    expect(store.error.get()).toMatch(/too large to sync/);
+    store.dispose();
+  });
 });

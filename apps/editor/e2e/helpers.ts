@@ -12,6 +12,15 @@ export const saved = async (page: Page): Promise<void> => {
   await expect(page.locator('html[data-nf-saved="true"]')).toHaveCount(1, { timeout: 15_000 });
 };
 
+/** Stops the game when one plays (the page may already be closed: then nothing plays). */
+export const stopGame = async (page: Page): Promise<void> => {
+  const run = page.getByRole('toolbar', { name: 'Run' });
+  const stop = run.getByRole('button', { name: /^Stop/ });
+  if (!(await stop.isVisible().catch(() => false))) return;
+  await stop.click({ timeout: 5_000 });
+  await expect(run.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 15_000 });
+};
+
 /**
  * Puts the saved layout of the project back to the default with every panel (tests reuse
  * projects, and expect the panels of the full layout).

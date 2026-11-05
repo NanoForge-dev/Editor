@@ -12,7 +12,8 @@ export const followSaved = (
 ): Disposable => {
   const update = () => {
     const status = account.status.get();
-    const saved = settings.pending.get() === 0 && status !== 'pending' && status !== 'syncing';
+    /** Offline or failed pushes are not saved: `saved()` times out on them rather than leak. */
+    const saved = settings.pending.get() === 0 && (status === 'idle' || status === 'conflict');
     root.dataset.nfSaved = String(saved);
   };
   update();

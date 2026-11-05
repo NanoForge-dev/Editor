@@ -47,13 +47,15 @@ const newest = (folder: string): { path: string; time: number } => {
 export const checkBuild = (): void => {
   if (process.env.E2E_ALLOW_STALE === '1' || process.env.BENCH) return;
   if (!existsSync(BUILD))
-    throw new Error('No build of the editor: pnpm turbo build --filter=@nanoforge-dev/editor...');
+    throw new Error(
+      "No build of the editor: pnpm turbo build --filter=@nanoforge-dev/editor... --filter='./tooling/*'",
+    );
   const built = statSync(BUILD).mtimeMs;
   const source = SOURCES.map((folder) => newest(join(ROOT, folder))).reduce((a, b) =>
     b.time > a.time ? b : a,
   );
   if (source.time > built)
     throw new Error(
-      `The editor build is older than ${source.path.slice(ROOT.length + 1)}: run pnpm turbo build --filter=@nanoforge-dev/editor... (or E2E_ALLOW_STALE=1 to test the old build)`,
+      `The editor build is older than ${source.path.slice(ROOT.length + 1)}: run pnpm turbo build --filter=@nanoforge-dev/editor... --filter='./tooling/*' (or E2E_ALLOW_STALE=1 to test the old build)`,
     );
 };

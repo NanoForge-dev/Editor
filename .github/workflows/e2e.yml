@@ -12,6 +12,7 @@ on:
       - 'plugins/**'
       - 'tooling/**'
       - 'examples/**'
+      - 'scripts/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'turbo.json'

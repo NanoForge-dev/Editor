@@ -2,29 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { EditorDocument } from '../../src/document/editor-document';
 import type { DocumentHost } from '../../src/document/editor-document.type';
+import { fakeModel } from '../fixtures/fake-monaco';
 
 vi.mock('../../src/monaco/monaco', () => ({ uriOf: (path: string) => path }));
-
-/** Just what a document reads of a Monaco model: its text and version. */
-const fakeModel = (initial: string) => {
-  let text = initial;
-  let version = 1;
-  const listeners = new Set<(event: { changes: [] }) => void>();
-  return {
-    getValue: () => text,
-    getAlternativeVersionId: () => version,
-    onDidChangeContent: (listener: (event: { changes: [] }) => void) => {
-      listeners.add(listener);
-      return { dispose: () => listeners.delete(listener) };
-    },
-    dispose: () => undefined,
-    type(more: string) {
-      text += more;
-      version++;
-      for (const listener of listeners) listener({ changes: [] });
-    },
-  };
-};
 
 /** A file on a server that refuses a write based on another hash than the file's. */
 const setup = async () => {

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, saved, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel, stopGame } from './helpers';
 import { type Page, expect, test } from './test';
 import { BREAKOUT } from './workspace';
 
@@ -45,6 +45,7 @@ test.describe('scenes', () => {
   });
 
   test.afterEach(async ({ page }) => {
+    await stopGame(page);
     for (const path of snapshot().keys()) if (!original.has(path)) rmSync(path);
     for (const [path, text] of original) writeFileSync(path, text);
     await resetLayout(page);
