@@ -31,6 +31,22 @@ runs:
       name: Install dependencies
       uses: ./.github/actions/pnpm-install
 
+    # Turbo's local cache, one per job (jobs don't overwrite each other) and per month (a new
+    # month starts empty, so the cache doesn't only grow), kept between runs of a branch.
+    - name: Turbo cache month
+      id: turbo-month
+      shell: bash
+      run: echo "month=$(date +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache turbo
+      uses: actions/cache@v5
+      with:
+        path: .turbo/cache
+        key: ${{ runner.os }}-turbo-${{ github.job }}-${{ steps.turbo-month.outputs.month }}-${{ github.ref_name }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-turbo-${{ github.job }}-${{ steps.turbo-month.outputs.month }}-${{ github.ref_name }}-
+          ${{ runner.os }}-turbo-${{ github.job }}-${{ steps.turbo-month.outputs.month }}-
+
     - if: inputs.build == 'true'
       name: Build packages
       shell: bash

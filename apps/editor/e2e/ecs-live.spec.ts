@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -83,7 +83,7 @@ test('shows the live world, edits it, applies it to the code and pauses a system
   } finally {
     writeFileSync(MAIN, original);
     await resetLayout(page).catch(() => undefined);
-    await page.waitForTimeout(1500);
+    await saved(page).catch(() => undefined);
   }
 });
 
@@ -142,7 +142,7 @@ test('moves an entity by dragging it in the Game screen, and applies it to the c
       .click({ timeout: 2000 })
       .catch(() => undefined);
     await resetLayout(page).catch(() => undefined);
-    await page.waitForTimeout(1500);
+    await saved(page).catch(() => undefined);
   }
 });
 
@@ -171,6 +171,6 @@ test('edits an engine enum param with a select (types from the engine packages)'
   } finally {
     writeFileSync(MAIN, original);
     await resetLayout(page).catch(() => undefined);
-    await page.waitForTimeout(1500);
+    await saved(page).catch(() => undefined);
   }
 });

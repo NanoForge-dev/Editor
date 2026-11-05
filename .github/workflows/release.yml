@@ -55,14 +55,30 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # A pull request that changes no code (docs, CI, issue forms) publishes no beta.
+      - name: Check for code changes
+        id: changes
+        shell: bash
+        run: |
+          if git diff --name-only "${{ github.event.pull_request.merge_commit_sha }}^" "${{ github.event.pull_request.merge_commit_sha }}" \
+            | grep -qE '^(apps|packages|plugins|tooling)/|^(pnpm-lock|pnpm-workspace)\.yaml$|^turbo\.json$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Prepare
+        if: steps.changes.outputs.code == 'true'
         uses: ./.github/actions/prepare
         env:
           NODE_ENV: development
           PUBLIC_MODE: OFFLINE
 
       - name: Release beta
+        if: steps.changes.outputs.code == 'true'
         uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
         with:
           package: '@nanoforge-dev/editor'

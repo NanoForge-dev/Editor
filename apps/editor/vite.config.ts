@@ -76,8 +76,26 @@ const analyzeBundle = (): Plugin => ({
   },
 });
 
+/**
+ * The kit playground (`/kit`) is for the dev server: a build gets an empty module in its place.
+ * Its import sits in a branch the build drops, but Rollup still emitted the chunk.
+ */
+const KIT_STUB = '\0kit-playground-stub';
+const noKitPlayground = (): Plugin => ({
+  name: 'nanoforge-no-kit-playground',
+  apply: 'build',
+  enforce: 'pre',
+  resolveId: (id) => (id.endsWith('/kit/KitPlayground.svelte') ? KIT_STUB : undefined),
+  load: (id) => (id === KIT_STUB ? 'export default undefined;' : undefined),
+});
+
 export default defineConfig({
-  plugins: [sveltekit(), editorServer(), ...(process.env.ANALYZE ? [analyzeBundle()] : [])],
+  plugins: [
+    noKitPlayground(),
+    sveltekit(),
+    editorServer(),
+    ...(process.env.ANALYZE ? [analyzeBundle()] : []),
+  ],
   define: { __EDITOR_VERSION__: JSON.stringify(pkg.version) },
   worker: { format: 'es' },
   server: {

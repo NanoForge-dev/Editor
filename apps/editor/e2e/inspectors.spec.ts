@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openProject, resetLayout, showPanel } from './helpers';
+import { openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { GAME } from './workspace';
 
@@ -25,16 +25,8 @@ const stop = async (page: Page) => {
 /** The shown tab is saved with the layout: put Console back. */
 const leave = async (page: Page) => {
   await showPanel(page, 'Console');
-  await page.waitForTimeout(900);
+  await saved(page);
 };
-
-test.afterEach(async ({ page }) => {
-  const stopButton = run(page, 'Stop');
-  if (await stopButton.isVisible().catch(() => false)) {
-    await stopButton.click();
-    await expect(run(page, 'Play')).toBeVisible({ timeout: 15_000 });
-  }
-});
 
 test('inspectors say so when no game runs', async ({ page }) => {
   await open(page, 'pong');

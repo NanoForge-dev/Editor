@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Editor server (Bun, built)",
+      "type": "bun",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/editor/dist/index.js",
+      "cwd": "${workspaceFolder}/apps/editor",
+      "env": { "PORT": "4810", "FS_ROOT": "${workspaceFolder}/examples" },
+      "stopOnEntry": false,
+      "watchMode": false
+    },
+    {
+      "name": "Vitest: this test file",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "--config", "${workspaceFolder}/vitest.config.ts", "${fileBasenameNoExtension}"],
+      "cwd": "${workspaceFolder}/${input:workspace}",
+      "env": { "CHROME": "/usr/bin/google-chrome-stable" },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+    },
+    {
+      "name": "Playwright: this e2e spec",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/editor/node_modules/@playwright/test/cli.js",
+      "args": ["test", "--config", "playwright.config.ts", "${fileBasename}", "--reporter=line"],
+      "cwd": "${workspaceFolder}/apps/editor",
+      "env": { "E2E_WORKSPACE": ".workspace-debug", "CHROME": "/usr/bin/google-chrome-stable" },
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "workspace",
+      "type": "promptString",
+      "description": "Workspace of the test file (vitest runs from it)",
+      "default": "packages/kernel"
+    }
+  ]
+}

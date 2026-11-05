@@ -1,5 +1,7 @@
 import { test as base } from '@playwright/test';
 
+import { stopGame } from './helpers';
+
 export { type Locator, type Page, expect } from '@playwright/test';
 
 /** Not failures: Monaco rejects the promises of requests it cancels (typing during a completion). */
@@ -9,7 +11,7 @@ const IGNORED = new Set(['Canceled']);
  * The `test` of every spec: it fails when a page of the test throws an uncaught error
  * (a Svelte effect loop or a rejected promise doesn't break what the test looks at).
  */
-export const test = base.extend<{ pageErrors: string[] }>({
+export const test = base.extend<{ pageErrors: string[]; stopsTheGame: undefined }>({
   pageErrors: [
     async ({ context }, use) => {
       const errors: string[] = [];
@@ -25,6 +27,17 @@ export const test = base.extend<{ pageErrors: string[] }>({
       });
       await use(errors);
       base.expect(errors, 'uncaught errors in the page').toEqual([]);
+    },
+    { auto: true },
+  ],
+  /**
+   * A game still playing when a test ends keeps its server running on the editor's server, and
+   * the next test's game then fails to start: every test stops the game it left playing.
+   */
+  stopsTheGame: [
+    async ({ page }, use) => {
+      await use(undefined);
+      await stopGame(page);
     },
     { auto: true },
   ],

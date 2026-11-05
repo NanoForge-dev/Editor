@@ -20,7 +20,7 @@ export const lastStatementOf = (entity: ParsedEntity): Statement =>
   entity.components.at(-1) ?? entity.declaration;
 
 /** Names already used in the file (declarations and references). */
-export const usedNames = (context: TransformContext): Set<string> =>
+const usedNames = (context: TransformContext): Set<string> =>
   new Set(
     context.file
       .getDescendants()

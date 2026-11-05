@@ -10,7 +10,7 @@ import type { CatalogItem } from '@nanoforge-dev/editor-sdk';
 import type { LiveEntity } from '../live/live.type';
 import type { ArgModel, EntryModel } from '../model/ecs-model.type';
 
-export interface ScenePosition {
+interface ScenePosition {
   /** Index of the component in the entity (for `setArgs`). */
   readonly component: number;
   /** ECS name of the component (for live edits). */

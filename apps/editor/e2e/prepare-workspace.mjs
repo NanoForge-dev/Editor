@@ -16,6 +16,7 @@ import { dirname, join, resolve } from 'node:path';
 
 import {
   bridgeOf,
+  cliRoot,
   engineRoot,
   linkEditorLibrary,
   linkEngineModules,
@@ -191,7 +192,7 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
   const game = join(root, 'game');
   copyGame(pong, game);
   symlinkSync(join(engine, 'node_modules'), join(root, 'node_modules'));
-  const cli = process.env.NANOFORGE_CLI && resolve(process.env.NANOFORGE_CLI);
+  const cli = cliRoot(join(import.meta.dirname, '../../..'));
   if (cli && existsSync(join(cli, 'dist/command.loader.js'))) {
     const local = join(game, 'node_modules/@nanoforge-dev/cli');
     rmSync(local, { recursive: true, force: true });
@@ -252,6 +253,10 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
     linkNodeModules(join(pong, 'apps/client/node_modules'), join(tutorial, 'node_modules'));
     rmSync(join(tutorial, 'node_modules/@nanoforge-dev/cli'), { recursive: true, force: true });
     symlinkSync(cli, join(tutorial, 'node_modules/@nanoforge-dev/cli'));
+    /** Builds run the project's own `nf`: without it they need one on the PATH, which CI has not. */
+    mkdirSync(join(tutorial, 'node_modules/.bin'), { recursive: true });
+    rmSync(join(tutorial, 'node_modules/.bin/nf'), { force: true });
+    symlinkSync(join(cli, 'dist/nf.js'), join(tutorial, 'node_modules/.bin/nf'));
     symlinkSync(
       realpathSync(join(pong, 'node_modules/@nanoforge-dev/config')),
       join(tutorial, 'node_modules/@nanoforge-dev/config'),
@@ -278,4 +283,21 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
   console.warn(
     `No built engine with the editor bridge at ${engine}: the runtime e2e test is skipped.`,
   );
+}
+
+/**
+ * `E2E_REQUIRE_ENGINE=1` (CI): every project the engine tests play must be there, or the run
+ * fails here instead of skipping them.
+ */
+if (process.env.E2E_REQUIRE_ENGINE === '1') {
+  const missing = [
+    ['game', 'a built engine with the editor bridge (NANOFORGE_ENGINE)'],
+    ['my-first-game', 'a built CLI (NANOFORGE_CLI)'],
+    ['breakout', "the engine's built scene module"],
+  ].filter(([folder]) => !existsSync(join(root, folder, 'package.json')));
+  if (missing.length) {
+    for (const [folder, need] of missing)
+      console.error(`E2E_REQUIRE_ENGINE: no ${folder} project, it needs ${need}`);
+    process.exit(1);
+  }
 }

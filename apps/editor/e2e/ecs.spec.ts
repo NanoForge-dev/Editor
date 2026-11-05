@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { expandFolders, openProject, resetLayout, showPanel } from './helpers';
+import { expandFolders, openProject, resetLayout, saved, showPanel } from './helpers';
 import { type Page, expect, test } from './test';
 import { PONG } from './workspace';
 
@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(async ({ page }) => {
   writeFileSync(MAIN, original);
   await resetLayout(page);
-  await page.waitForTimeout(1500);
+  await saved(page);
 });
 
 test('lists the entities of main.ts and edits a component param', async ({ page }) => {

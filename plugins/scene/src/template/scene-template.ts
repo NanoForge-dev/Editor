@@ -23,7 +23,7 @@ export const scenePath = (app: AppModel, name: string): string =>
   `${app.dirs.scenes}/${kebab(name)}.ts`;
 
 /** The import of a file from another one in the same app (relative, no extension). */
-export const relativeImport = (from: string, to: string): string => {
+const relativeImport = (from: string, to: string): string => {
   const source = from.split('/').slice(0, -1);
   const target = to.replace(/\.[cm]?[jt]sx?$/, '').split('/');
   let common = 0;

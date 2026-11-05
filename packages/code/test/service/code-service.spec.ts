@@ -34,6 +34,19 @@ import { serveEngine } from '../../src/worker-rpc/serve-engine';
 
 const MAIN = 'apps/client/src/main.ts';
 
+/**
+ * Waits for a check's result. A checker runs TypeScript over the project: with coverage on a slow
+ * runner it takes several times longer than locally, so the wait is long and the tests' timeouts
+ * leave room for it.
+ */
+const settled = (done: () => unknown, timeout = 25_000) =>
+  vi.waitFor(
+    () => {
+      if (!done()) throw new Error('not yet');
+    },
+    { timeout, interval: 25 },
+  );
+
 /** Worker plugin: renames the first `const` declared in a file. */
 const renamePlugin: WorkerPluginModule = {
   activate: (sdk) => {
@@ -229,22 +242,18 @@ describe('CodeService', () => {
     await code.engine();
     await (await code.engine()).setFiles([{ path: uri, text: await documents.getText(uri) }]);
     const watch = code.watchDiagnostics(uri);
-    const start = Date.now();
-    while (!diagnostics.forUri(uri).length && Date.now() - start < 8000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri(uri).length);
     expect(diagnostics.forUri(uri).map((d) => d.code)).toEqual([2322]);
     watch.dispose();
     expect(diagnostics.forUri(uri)).toEqual([]);
     code.dispose();
-  });
+  }, 60_000);
 
   it('checks every file of the project while asked to, read-only packages aside', async () => {
     const { code, diagnostics } = setup();
     const uri = 'checks/broken.ts';
     const check = code.checkProject();
-    const start = Date.now();
-    while (!diagnostics.forUri(uri).length && Date.now() - start < 15_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri(uri).length);
     expect(diagnostics.forUri(uri)).toMatchObject([
       { code: 2322, source: 'typescript', line: 1, column: 14 },
     ]);
@@ -254,7 +263,7 @@ describe('CodeService', () => {
     check.dispose();
     expect(diagnostics.forUri(uri)).toEqual([]);
     code.dispose();
-  });
+  }, 60_000);
 
   it('still checks the whole project when an edit comes before the first check ends', async () => {
     const { code, diagnostics } = setup();
@@ -265,42 +274,34 @@ describe('CodeService', () => {
       return [];
     });
     const check = code.checkProject();
-    const start = Date.now();
-    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
     expect(diagnostics.forUri('checks/broken.ts').map((d) => d.code)).toEqual([2322]);
     await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
     check.dispose();
     code.dispose();
-  }, 20_000);
+  }, 60_000);
 
   it('checks everything again after an edit to global declarations', async () => {
     const { code, diagnostics } = setup();
     const check = code.checkProject();
-    const start = Date.now();
-    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
     const refresh = vi.spyOn(code, 'refreshDiagnostics');
     await project.fs.write(
       'checks/speed.ts',
       'export const speed = 1;\ndeclare global {\n  var debugSpeed: number;\n}\n',
     );
-    const edited = Date.now();
     const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
-    while (!checked().has('checks/broken.ts') && Date.now() - edited < 10_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => checked().has('checks/broken.ts'));
     expect(checked().has('checks/broken.ts')).toBe(true);
     await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
     check.dispose();
     code.dispose();
-  }, 30_000);
+  }, 60_000);
 
   it('keeps an edit made while a check reads what changed', async () => {
     const { code, diagnostics } = setup();
     const check = code.checkProject();
-    const start = Date.now();
-    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
     const refresh = vi.spyOn(code, 'refreshDiagnostics');
     /** While the check of `broken.ts` reads it, `speed.ts` changes: what imports it is checked. */
     const service = code as unknown as {
@@ -313,35 +314,29 @@ describe('CodeService', () => {
     });
     await project.fs.write('checks/broken.ts', 'export const n: number =\n  "other";\n');
     const user = 'checks/uses-speed.ts';
-    const edited = Date.now();
     const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
-    while (!checked().has(user) && Date.now() - edited < 10_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => checked().has(user));
     expect(checked().has('checks/broken.ts')).toBe(true);
     expect(checked().has(user)).toBe(true);
     await project.fs.write('checks/broken.ts', 'export const n: number =\n  "text";\n');
     await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
     check.dispose();
     code.dispose();
-  }, 30_000);
+  }, 60_000);
 
   it('after an edit, checks again only the file and what imports it', async () => {
     const { code, diagnostics } = setup();
     const check = code.checkProject();
-    const start = Date.now();
-    while (!diagnostics.forUri('checks/broken.ts').length && Date.now() - start < 15_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
     const refresh = vi.spyOn(code, 'refreshDiagnostics');
     await project.fs.write('checks/speed.ts', 'export const speed = "fast";\n');
     const user = 'checks/uses-speed.ts';
-    const edited = Date.now();
-    while (!diagnostics.forUri(user).length && Date.now() - edited < 10_000)
-      await new Promise((r) => setTimeout(r, 25));
+    await settled(() => diagnostics.forUri(user).length);
     expect(diagnostics.forUri(user).map((d) => d.code)).toEqual([2322]);
     const checked = new Set(refresh.mock.calls.flatMap(([paths]) => paths));
     expect([...checked].sort()).toEqual(['checks/speed.ts', user]);
     await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
     check.dispose();
     code.dispose();
-  });
+  }, 60_000);
 });

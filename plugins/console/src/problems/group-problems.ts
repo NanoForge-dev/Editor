@@ -19,7 +19,7 @@ export interface ProblemFilter {
 }
 
 /** `build:apps/client` → `Build of apps/client`; other sources keep their name. */
-export const sourceTitle = (source: string): string => {
+const sourceTitle = (source: string): string => {
   const build = /^build:(.*)$/.exec(source);
   return build ? `Build of ${build[1] || 'the project'}` : source;
 };

@@ -41,7 +41,7 @@ const hasTree = (values: readonly LogValue[]): boolean =>
   values.some((value) => value !== null && typeof value === 'object');
 
 /** A log entry as a console line: values are snapshots taken now. */
-export const toLine = (entry: LogEntry, id: number): ConsoleLine => {
+const toLine = (entry: LogEntry, id: number): ConsoleLine => {
   const values =
     entry.values ??
     (entry.args.length

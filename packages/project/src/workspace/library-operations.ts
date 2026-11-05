@@ -59,10 +59,10 @@ export const setLibraryUse = (
   return changes.run(() => setUse(io, changes, app, library, used));
 };
 
-export const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** A module specifier of the library in an import, an export or a dynamic import. */
-export const specifier = (library: string) =>
+const specifier = (library: string) =>
   new RegExp(
     `(\\bfrom\\s*|\\bimport\\s*\\(?\\s*|\\brequire\\s*\\(\\s*)(["'])${escape(library)}(/[^"']*)?\\2`,
     'g',

@@ -6,7 +6,6 @@ import {
   CodeServiceToken,
   type Disposable,
   DisposableStore,
-  EditorServices,
   type Logger,
   type Observable,
   ObservableValue,
@@ -542,5 +541,3 @@ export class EcsService implements Disposable {
   }
 }
 export const EcsServiceToken = createToken<EcsService>('ecs.service');
-
-export { EditorServices };

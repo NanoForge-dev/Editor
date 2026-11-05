@@ -254,3 +254,6 @@ apps/editor/build/
 examples/.data/
 examples/node_modules
 .vitest-attachments
+
+# Engine and CLI built by pnpm setup:engine
+.engine/

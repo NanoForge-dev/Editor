@@ -52,14 +52,14 @@ const importOf = (file: SourceFile, local: string): ImportedName | undefined => 
 };
 
 /** A class declaration a name refers to: in the same file, or imported from a project file. */
-export const classNamed = (file: SourceFile, local: string): ClassDeclaration | undefined => {
+const classNamed = (file: SourceFile, local: string): ClassDeclaration | undefined => {
   const own = file.getClass(local);
   if (own) return own;
   const imported = importOf(file, local);
   return imported?.file?.getClass(imported.name);
 };
 
-export interface SceneBase {
+interface SceneBase {
   readonly ecs: boolean;
   /** The type argument given to `Scene` / `EcsScene`, if any. */
   readonly params?: TypeNode;
@@ -68,7 +68,7 @@ export interface SceneBase {
 }
 
 /** Whether a class is a scene: it extends `Scene` or `EcsScene`, through project classes. */
-export const sceneBase = (
+const sceneBase = (
   declaration: ClassDeclaration,
   seen = new Set<ClassDeclaration>(),
 ): SceneBase | undefined => {

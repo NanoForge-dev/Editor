@@ -38,7 +38,9 @@
     "format": "prettier --write . && eslint --fix --format=pretty src",
     "typecheck": "tsc -p tsconfig.json",
     "test:unit": "vitest run --config ../../vitest.config.ts",
-    "test:contract": "vitest run --config ../../vitest.config.ts test/contract"
+    "test:coverage": "vitest run --config ../../vitest.config.ts --coverage",
+    "test:contract": "vitest run --config ../../vitest.config.ts test/contract",
+    "generate:env": "bun ./scripts/generate-env-example.ts"
   },
   "dependencies": {
     "@nanoforge-dev/config": "catalog:config",
@@ -50,7 +52,6 @@
     "fflate": "catalog:libs",
     "ignore": "catalog:libs",
     "prettier": "catalog:server",
-    "semver": "catalog:libs",
     "typescript": "catalog:build",
     "unrun": "catalog:build",
     "yaml": "catalog:server",
@@ -59,8 +60,6 @@
   "devDependencies": {
     "@types/bun": "catalog:core",
     "@types/node": "catalog:core",
-    "@types/semver": "catalog:libs",
-    "typescript": "catalog:build",
     "vitest": "catalog:test"
   },
   "packageManager": "pnpm@12.0.0",

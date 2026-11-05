@@ -22,10 +22,10 @@ export const validateItemName = (kind: ItemKind, name: string): string | undefin
 };
 
 /** `@side` of a new item: the app's side, `shared` in a shared library. */
-export const sideOf = (target: AppModel): 'client' | 'server' | 'shared' =>
+const sideOf = (target: AppModel): 'client' | 'server' | 'shared' =>
   target.type === 'lib' ? 'shared' : target.type;
 
-export const itemTemplate = (kind: ItemKind, name: string, target: AppModel): string => {
+const itemTemplate = (kind: ItemKind, name: string, target: AppModel): string => {
   const side = sideOf(target);
   if (kind === 'component') {
     return [
@@ -66,7 +66,7 @@ export const itemTemplate = (kind: ItemKind, name: string, target: AppModel): st
 };
 
 /** Path of a new item's file in an app or shared library. */
-export const itemPath = (kind: ItemKind, name: string, target: AppModel): string =>
+const itemPath = (kind: ItemKind, name: string, target: AppModel): string =>
   `${kind === 'component' ? target.dirs.components : target.dirs.systems}/${kebab(name)}.ts`;
 
 export const createItem = async (

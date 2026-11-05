@@ -38,7 +38,7 @@ export const isCompressible = (contentType: string, size: number): boolean =>
  * Compresses files once per version (path, size and modification time) and keeps the result:
  * the editor's bundles and plugins are served many times and never change while it runs.
  */
-export class CompressedFiles {
+class CompressedFiles {
   private readonly _cache = new Map<string, Promise<Uint8Array>>();
   private readonly _sizes = new Map<string, number>();
   private _bytes = 0;

@@ -1,5 +1,5 @@
 /** Unsaved text of a file, and the disk version it was based on. */
-export interface UnsavedText {
+interface UnsavedText {
   readonly text: string;
   /** Hash of the file on disk when editing started (detects disk changes meanwhile). */
   readonly baseHash: string | null;

@@ -43,7 +43,7 @@ export const BUILT_IN_PRESETS: readonly PresetDefinition[] = [
   },
 ];
 
-export interface ParamRow {
+interface ParamRow {
   readonly kind: 'param';
   readonly index: number;
   readonly element: Element;
@@ -68,16 +68,16 @@ export interface PresetRow {
 
 export type LayoutRow = ParamRow | PresetRow;
 
-export interface GroupBlock {
+interface GroupBlock {
   readonly kind: 'group';
   readonly group: ParamGroup;
   readonly rows: readonly LayoutRow[];
   readonly hidden: boolean;
 }
 
-export type LayoutBlock = LayoutRow | GroupBlock;
+type LayoutBlock = LayoutRow | GroupBlock;
 
-export interface HiddenEntry {
+interface HiddenEntry {
   /** `param:<name>` or `group:<name>`. */
   readonly id: string;
   readonly label: string;
@@ -90,7 +90,7 @@ export interface ParamLayout {
   readonly warnings: readonly string[];
 }
 
-export const paramLabel = (element: Element): string => element.layout?.label ?? element.name;
+const paramLabel = (element: Element): string => element.layout?.label ?? element.name;
 
 const presetFor = (
   presets: readonly PresetDefinition[],

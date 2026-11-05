@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PUBLIC_MODE: ${{ vars.PUBLIC_MODE }}
   PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
@@ -19,7 +23,8 @@ env:
   PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
 
 jobs:
-  tests:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -28,16 +33,57 @@ jobs:
       - name: Prepare
         uses: ./.github/actions/prepare
 
+      # Prettier, the workspace standards (scripts/check-workspaces.mjs), knip and ESLint.
       - name: Run linter
         run: pnpm lint
+
+  typecheck:
+    name: Type checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
 
       - name: Run type checks
         run: pnpm typecheck
 
-      - name: Install browsers for component and cache tests
-        run: pnpm --filter @nanoforge-dev/editor-ui exec playwright install --with-deps chromium firefox
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - name: Run tests
-        run: pnpm test:unit
+      - name: Prepare
+        uses: ./.github/actions/prepare
+
+      - name: Install browsers
+        uses: ./.github/actions/playwright-install
+        with:
+          browsers: chromium firefox
+
+      # Coverage on Chromium (v8 coverage reads Chromium only), failing under each
+      # workspace's floor (coverage-floors.json). The kit's component tests use the runner's
+      # Chrome.
+      - name: Run tests with coverage
+        run: pnpm test:coverage
         env:
-          BROWSERS: chromium,firefox
+          CHROME: /usr/bin/google-chrome
+
+      - name: Run the browser cache tests on Firefox
+        run: pnpm --filter @nanoforge-dev/editor-project exec vitest run --config vitest.config.ts --project browser
+        env:
+          BROWSERS: firefox
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            */*/coverage/lcov.info
+            */*/coverage/coverage-summary.json
+          if-no-files-found: ignore
