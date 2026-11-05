@@ -63,6 +63,7 @@ export default [
       'apps/editor/e2e/.workspace*/**',
       'apps/editor/test-results/**',
       'apps/editor/playwright-report/**',
+      'apps/editor/tutorial/**',
       'examples/**',
       'docs/drafts/**',
     ],

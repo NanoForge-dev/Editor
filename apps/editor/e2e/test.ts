@@ -18,8 +18,10 @@ export const test = base.extend<{ pageErrors: string[] }>({
           console.log(`[page ${message.type()}] ${message.text()}`),
         );
       context.on('weberror', (webError) => {
-        const { message } = webError.error();
-        if (!IGNORED.has(message)) errors.push(message);
+        const { message, stack } = webError.error();
+        if (IGNORED.has(message)) return;
+        /** `E2E_STACKS=1`: where it was thrown, for errors that only show in a full run. */
+        errors.push(process.env.E2E_STACKS && stack ? `${message}\n${stack}` : message);
       });
       await use(errors);
       base.expect(errors, 'uncaught errors in the page').toEqual([]);

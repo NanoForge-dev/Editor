@@ -12,6 +12,10 @@
     "widgets": [
       {
         "id": "history-panel.history",
+        "tip": {
+          "text": "The steps of what you are working on. Click one to go back to it.",
+          "docs": "editor/overview"
+        },
         "openByDefault": false,
         "title": "History",
         "icon": "history",

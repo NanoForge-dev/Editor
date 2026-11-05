@@ -6,6 +6,7 @@ import type {
   ExtensionRegistry,
   Logger,
 } from '@nanoforge-dev/editor-kernel';
+import type { SettingsService } from '@nanoforge-dev/editor-settings';
 
 import type { KeybindingService } from './keybinding/keybinding-service';
 import type { DragController } from './layout/drag-controller';
@@ -14,6 +15,7 @@ import type { MenuContext } from './menu/resolve-menu';
 import type { NotificationService } from './notification/notification-service';
 import type { PromptService } from './prompt/prompt-service';
 import type { WorkbenchService } from './service/workbench-service';
+import type { TourService } from './tour/tour-service';
 
 export interface WorkbenchContext extends MenuContext {
   readonly workbench: WorkbenchService;
@@ -25,6 +27,8 @@ export interface WorkbenchContext extends MenuContext {
   readonly commands: CommandRegistry;
   readonly contextKeys: ContextKeyService;
   readonly keybindings: KeybindingService;
+  readonly tours: TourService;
+  readonly settings: SettingsService;
   readonly logger: Logger;
 }
 

@@ -12,6 +12,10 @@
     "widgets": [
       {
         "id": "git.changes",
+        "tip": {
+          "text": "What changed since the last commit. Tick the files to keep, write a message, then Commit.",
+          "docs": "editor/git"
+        },
         "title": "Commit",
         "icon": "check",
         "defaultSlot": "leftTop",
@@ -19,6 +23,10 @@
       },
       {
         "id": "git.log",
+        "tip": {
+          "text": "Branches, their commits, and the files each commit changed. Double-click a branch to check it out.",
+          "docs": "editor/git"
+        },
         "title": "Git",
         "icon": "git-branch",
         "defaultSlot": "bottom",

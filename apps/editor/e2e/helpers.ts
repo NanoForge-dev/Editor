@@ -54,3 +54,42 @@ export const openProject = async (page: Page, path: string): Promise<void> => {
   await page.goto(`/load?path=${encodeURIComponent(path)}`);
   await page.getByRole('button', { name: 'Trust and open', exact: true }).click();
 };
+
+/** The settings RPC of the editor server, as the page's own session (account settings). */
+const settingsRpc = async (page: Page, method: string, input: unknown) => {
+  const response = await page.request.post(`/rpc/settings.${method}`, {
+    headers: { 'content-type': 'application/json' },
+    data: JSON.stringify(input),
+  });
+  const body = (await response.json()) as {
+    result?: { revision: string | null; values: Record<string, unknown> };
+  };
+  return { ok: response.ok(), result: body.result };
+};
+
+/** An account setting as the editor server keeps it (`undefined`: not set). */
+export const accountSetting = async (page: Page, key: string): Promise<unknown> =>
+  (await settingsRpc(page, 'accountGet', null)).result?.values[key];
+
+/**
+ * Puts an account setting back (`undefined` removes it). Account settings outlive tests (and the
+ * CI retry): a test that changes one reads it first, then puts it back. Written on the server
+ * directly, so nothing waits for the page's debounced push.
+ */
+export const putBackAccountSetting = async (
+  page: Page,
+  key: string,
+  value: unknown,
+): Promise<void> => {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const document = (await settingsRpc(page, 'accountGet', null)).result;
+    if (!document) break;
+    const values = Object.fromEntries(
+      Object.entries(document.values).filter(([name]) => name !== key),
+    );
+    if (value !== undefined) values[key] = value;
+    if ((await settingsRpc(page, 'accountPut', { baseRevision: document.revision, values })).ok)
+      return;
+  }
+  throw new Error(`Could not put back the account setting ${key}`);
+};

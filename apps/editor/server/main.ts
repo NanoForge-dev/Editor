@@ -2,6 +2,7 @@
  * Entry of the editor server (`nf editor` runs `bun dist/index.js`): serves the RPC endpoint,
  * the WebSocket, plugin files and the built UI.
  */
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { type SocketData, createEditorServer, loadEnv } from '@nanoforge-dev/editor-server-core';
@@ -14,6 +15,12 @@ const editor = createEditorServer({
   env: {
     ...env,
     bundledPluginsDir: env.bundledPluginsDir ?? join(import.meta.dir, 'plugins'),
+    /** Next to the built server, or the sources' `tutorial/` when run from them (dev). */
+    tutorialDir:
+      env.tutorialDir ??
+      [join(import.meta.dir, 'tutorial'), join(import.meta.dir, '../tutorial')].find((dir) =>
+        existsSync(dir),
+      ),
   },
   version: pkg.version,
   ...(process.env.EDITOR_NO_STATIC ? {} : { staticDir }),

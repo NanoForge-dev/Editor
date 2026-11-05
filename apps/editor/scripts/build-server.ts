@@ -41,4 +41,5 @@ if (existsSync(pluginsRoot)) {
     cpSync(built, join(dist, 'plugins', name), { recursive: true });
   }
 }
+cpSync(join(root, 'tutorial'), join(dist, 'tutorial'), { recursive: true });
 console.log(`Editor server built in ${dist}`);

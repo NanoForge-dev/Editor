@@ -30,6 +30,11 @@ export const WidgetDescriptorSchema = z.object({
   singleton: z.boolean().default(true),
   /** Offered in menus only when true. */
   when: z.string().optional(),
+  /**
+   * Docks: a hint shown above the panel until dismissed (`tips.dismissed`), with a link to a
+   * page of the documentation (`docs`: its path after `/docs/`, e.g. `editor/entities`).
+   */
+  tip: z.object({ text: z.string().min(1), docs: z.string().optional() }).optional(),
   /** History context of the widget (undo/redo target while focused). */
   historyContext: z.string().optional(),
 });

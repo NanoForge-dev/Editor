@@ -130,30 +130,10 @@ export const setupWorkbench = (options: WorkbenchSetupOptions): WorkbenchContext
    * else starts simple. Writing it also for a new user keeps their first saved layout from making
    * them look like an existing one on the next load.
    */
-  let preset = settings.get(CoreSettings.layoutPreset);
   if (settings.inspect(CoreSettings.layoutPreset).effectiveScope === 'default') {
-    preset = !layout.firstRun || options.knownUser ? 'full' : 'simple';
+    const preset = !layout.firstRun || options.knownUser ? 'full' : 'simple';
     void settings.set(CoreSettings.layoutPreset, preset, presetScope()).catch(() => undefined);
     if (layout.firstRun && preset === 'full') void layout.reset('full');
-  }
-
-  /** Said once per browser: the default layout is composed again until something is saved. */
-  const NOTICE_KEY = 'nanoforge.layout.simpleNoticeShown';
-  const noticeShown = () => {
-    try {
-      return localStorage.getItem(NOTICE_KEY) !== null;
-    } catch {
-      return true;
-    }
-  };
-  if (layout.firstRun && preset === 'simple' && !noticeShown()) {
-    try {
-      localStorage.setItem(NOTICE_KEY, '1');
-    } catch {}
-    shell.notifications.notify('info', 'Only the main panels are shown', {
-      detail: 'View › Panels opens the others, or show them all.',
-      actions: [{ title: 'Show all panels', run: () => usePreset('full') }],
-    });
   }
 
   const dynamic = store.add(new DisposableStore());
@@ -205,6 +185,14 @@ export const setupWorkbench = (options: WorkbenchSetupOptions): WorkbenchContext
     observe(settings.observe(CoreSettings.layoutSaved), refreshMenus, { immediate: false }),
   );
 
+  /** `screen`: the screen shown (`when` clauses, tour steps). */
+  store.add({
+    dispose: layout.layout.subscribe((current) =>
+      options.contextKeys.set('screen', current.activeScreen ?? ''),
+    ),
+  });
+  options.contextKeys.set('screen', layout.current.activeScreen ?? '');
+
   return {
     workbench,
     layout,
@@ -212,6 +200,8 @@ export const setupWorkbench = (options: WorkbenchSetupOptions): WorkbenchContext
     notifications: shell.notifications,
     prompts: shell.prompts,
     keybindings: shell.keybindings,
+    tours: shell.tours,
+    settings,
     extensions,
     commands,
     contextKeys: options.contextKeys,
