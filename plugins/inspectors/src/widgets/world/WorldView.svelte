@@ -4,6 +4,7 @@
   import JsonTree from '../JsonTree.svelte';
   import SourcePicker from '../SourcePicker.svelte';
   import { follow } from '../follow.svelte';
+  import { settledStatus } from '../settled-status.svelte';
   import { getRecorder } from '../../session/recorder-session';
   import { filterEntities } from '../../world/world-query';
 
@@ -15,6 +16,9 @@
 
   const world = $derived(view.record?.world);
   const entities = $derived(world ? filterEntities(world.entities, query) : []);
+  const countText = () =>
+    `${entities.length} of ${world?.entities.length ?? 0} ${world?.entities.length === 1 ? 'entity' : 'entities'}`;
+  const status = settledStatus(() => query, countText);
   const toggle = (id: number) => {
     open = open.includes(id) ? open.filter((other) => other !== id) : [...open, id];
   };
@@ -39,10 +43,8 @@
         aria-label="World query"
         placeholder="Position   Position.x > 100   #12   &quot;text&quot;"
       />
-      <span class="count" role="status"
-        >{entities.length} of {world.entities.length}
-        {world.entities.length === 1 ? 'entity' : 'entities'}</span
-      >
+      <span class="count">{countText()}</span>
+      <span class="nf-visually-hidden" role="status">{status.text}</span>
     </div>
     <ul class="entities" aria-label="Entities of the running world">
       {#each entities as entity (entity.id)}

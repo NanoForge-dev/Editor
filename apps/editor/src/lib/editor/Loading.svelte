@@ -107,7 +107,7 @@
   .description,
   .hint {
     margin: 0;
-    color: var(--nf-color-text-muted, #949cae);
+    color: var(--nf-color-text-muted, #a9b0be);
   }
   .actions {
     display: flex;
@@ -126,7 +126,7 @@
     cursor: pointer;
   }
   button:hover:not(:disabled) {
-    border-color: var(--nf-color-border-strong, #3a4356);
+    border-color: var(--nf-color-border-strong, #797f8c);
   }
   button.primary {
     border-color: transparent;
@@ -134,7 +134,7 @@
     color: var(--nf-color-on-accent, #ffffff);
   }
   button.primary:hover:not(:disabled) {
-    background: var(--nf-color-accent-hover, #9067ea);
+    background: var(--nf-color-accent-hover, #7852c7);
   }
   button:disabled {
     opacity: 0.6;
@@ -146,7 +146,7 @@
   }
   .detail {
     margin: var(--nf-space-2, 8px) 0 0;
-    color: var(--nf-color-text-faint, #626a7d);
+    color: var(--nf-color-text-faint, #9ba0ac);
     font-family: var(--nf-font-code, ui-monospace, monospace);
     font-size: var(--nf-font-size-sm, 12px);
     overflow-wrap: anywhere;

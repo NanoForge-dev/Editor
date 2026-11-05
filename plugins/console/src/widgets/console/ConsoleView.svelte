@@ -213,6 +213,7 @@
         bind:this={list}
         role="log"
         aria-label="Console"
+        aria-live="off"
         {onscroll}
         oncontextmenu={(event) => {
           const id = (event.target as HTMLElement).closest<HTMLElement>('[data-line]')?.dataset

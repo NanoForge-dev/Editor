@@ -114,4 +114,7 @@ export {
   type DropPosition,
   type TreeNode,
   Vector2Input,
+  isKeyboardMenu,
+  moveRowFocus,
+  moveTabFocus,
 } from '@nanoforge-dev/editor-ui';

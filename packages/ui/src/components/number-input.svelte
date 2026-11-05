@@ -136,12 +136,12 @@
     align-items: stretch;
     min-width: 0;
     height: var(--nf-control-height);
-    border: 1px solid var(--nf-color-border);
+    border: 1px solid var(--nf-color-border-strong);
     border-radius: var(--nf-radius-control);
     background: var(--nf-color-sunken);
   }
   .number:hover {
-    border-color: var(--nf-color-border-strong);
+    border-color: var(--nf-color-text-faint);
   }
   .number:focus-within {
     border-color: var(--nf-color-focus);

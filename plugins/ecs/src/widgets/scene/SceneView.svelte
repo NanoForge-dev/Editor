@@ -7,6 +7,9 @@
   import { LiveServiceToken } from '../../live/live-service';
   import { type SceneShape, buildScene, withLivePositions } from '../../scene/build-scene';
   import { panelServices } from '../../session/panel-services';
+  import { type KeyMove, keyNudges, nudgeStep } from './key-nudges';
+  import { moveShape } from './move-shape';
+  import { FIT, STAGE_HEIGHT, STAGE_WIDTH, isFitted, zoomAround, zoomOf } from './scene-camera';
 
   /** The Scene screen hosting this view. */
   const { instance }: { instance?: WidgetInstance } = $props();
@@ -25,10 +28,6 @@
   const playing = live.playing;
   const instances = live.instances;
   const liveSelection = live.selection;
-
-  /** Design resolution of the game (the engine's default viewport). */
-  const WIDTH = 1920;
-  const HEIGHT = 1080;
 
   const client = $derived($instances.find((candidate) => candidate.source === 'client'));
   const componentName = (item: ReturnType<typeof ecs.item>, className: string | undefined) => {
@@ -62,20 +61,9 @@
   });
 
   /** The part of the world in view: the whole stage with a margin, until zoomed or panned. */
-  const MARGIN = 0.05;
-  const FIT = {
-    x: -WIDTH * MARGIN,
-    y: -HEIGHT * MARGIN,
-    width: WIDTH * (1 + 2 * MARGIN),
-    height: HEIGHT * (1 + 2 * MARGIN),
-  };
-  const MIN_ZOOM = 0.1;
-  const MAX_ZOOM = 16;
   let view = $state({ ...FIT });
-  const zoom = $derived(FIT.width / view.width);
-  const fitted = $derived(
-    view.x === FIT.x && view.y === FIT.y && view.width === FIT.width && view.height === FIT.height,
-  );
+  const zoom = $derived(zoomOf(view));
+  const fitted = $derived(isFitted(view));
 
   let root = $state<HTMLElement>();
   let svg = $state<SVGSVGElement>();
@@ -103,18 +91,7 @@
   const wheel = (node: SVGSVGElement) => {
     const onwheel = (event: WheelEvent) => {
       event.preventDefault();
-      const point = toScene(event);
-      const next = Math.min(
-        MAX_ZOOM,
-        Math.max(MIN_ZOOM, zoom * (event.deltaY > 0 ? 1 / 1.15 : 1.15)),
-      );
-      const ratio = zoom / next;
-      view = {
-        x: point.x - (point.x - view.x) * ratio,
-        y: point.y - (point.y - view.y) * ratio,
-        width: view.width * ratio,
-        height: view.height * ratio,
-      };
+      view = zoomAround(view, toScene(event), event.deltaY);
     };
     node.addEventListener('wheel', onwheel, { passive: false });
     return { destroy: () => node.removeEventListener('wheel', onwheel) };
@@ -166,38 +143,44 @@
     pan = undefined;
     const current = drag;
     drag = undefined;
-    if (!current || (!current.dx && !current.dy)) return;
+    if (!current) return;
     const shape = shapes.find(
       (candidate) => candidate.entity === current.entity && candidate.position,
     );
-    const position = shape?.position;
-    if (!shape || !position) return;
-    const x = shape.x + current.dx;
-    const y = shape.y + current.dy;
-    if ($playing && client) {
-      const entity = client.entities.find(
-        (candidate) => candidate.code === shape.entity && candidate.scene === $location?.scene,
-      );
-      if (!entity) return;
-      live.setField('client', entity, position.componentName, 'x', x);
-      live.setField('client', entity, position.componentName, 'y', y);
-      return;
-    }
-    const fill = [x, y];
-    void ecs.apply(
-      {
-        kind: 'setArgs',
-        entity: shape.entity,
-        index: position.component,
-        args: { [position.xParam]: { value: fill[0] }, [position.yParam]: { value: fill[1] } },
-        fill: [{ value: 0 }, { value: 0 }],
-      },
-      `Move ${shape.entity}`,
-    );
+    if (shape) moveShape(moveContext(), shape, current.dx, current.dy);
   };
 
-  const offset = (shape: SceneShape) =>
-    drag && drag.entity === shape.entity ? { x: drag.dx, y: drag.dy } : { x: 0, y: 0 };
+  const moveContext = () => ({
+    ecs,
+    live,
+    client: $playing ? client : undefined,
+    scene: $location?.scene,
+  });
+
+  /** The arrow keys move the selected entity: presses in a row are written as one move. */
+  let keyMove = $state<KeyMove>();
+  const nudges = keyNudges({
+    read: () => keyMove,
+    write: (next) => (keyMove = next),
+    commit: (moved) => {
+      const shape = shapes.find((candidate) => candidate.entity === moved.entity);
+      if (shape) moveShape(moveContext(), shape, moved.dx, moved.dy);
+    },
+  });
+  $effect(() => () => nudges.flush());
+  const nudge = (event: KeyboardEvent) => {
+    const step = nudgeStep(event);
+    const shape =
+      step && shapes.find((candidate) => candidate.entity === selectedEntity && candidate.position);
+    if (!step || !shape) return;
+    event.preventDefault();
+    nudges.press(shape.entity, step);
+  };
+
+  const offset = (shape: SceneShape) => {
+    const moved = drag ?? keyMove;
+    return moved && moved.entity === shape.entity ? { x: moved.dx, y: moved.dy } : { x: 0, y: 0 };
+  };
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -209,6 +192,7 @@
       description="Apps using the ECS show their entities here, drawn from main.ts."
     />
   {:else}
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
     <svg
       bind:this={svg}
       viewBox="{view.x} {view.y} {view.width} {view.height}"
@@ -218,6 +202,11 @@
       preserveAspectRatio="xMidYMid meet"
       role="application"
       aria-label="2D scene"
+      aria-roledescription="scene"
+      aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+      tabindex="0"
+      onkeydown={nudge}
+      onblur={nudges.flush}
       onpointermove={move}
       onpointerup={end}
       onpointercancel={() => {
@@ -225,7 +214,7 @@
         pan = undefined;
       }}
     >
-      <rect class="stage" x="0" y="0" width={WIDTH} height={HEIGHT} />
+      <rect class="stage" x="0" y="0" width={STAGE_WIDTH} height={STAGE_HEIGHT} />
       {#each inheritedShapes as shape, index (`inherited:${shape.entity}:${index}`)}
         <g class="inherited" transform="translate({shape.x} {shape.y})" aria-hidden="true">
           {#if shape.kind === 'rect'}
@@ -278,7 +267,8 @@
       {$playing
         ? 'Dragging moves the entity in the running game.'
         : `Drag an entity to move it in ${$location?.label ?? 'main.ts'}.`}
-      Scroll to zoom; drag the background or use the middle button to pan.
+      Arrow keys move the selected entity (Shift: 10 units). Scroll to zoom; drag the background or use
+      the middle button to pan.
     </p>
   {/if}
 </div>

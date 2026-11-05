@@ -16,6 +16,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 code, kbd, pre { font-family: var(--nf-font-code); }
 * { scrollbar-width: thin; scrollbar-color: var(--nf-color-border-strong) transparent; }
 [hidden] { display: none !important; }
+.nf-visually-hidden {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
 }

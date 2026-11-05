@@ -1,6 +1,9 @@
 export * from './icons';
 export type { MenuEntry } from './menu-entry.type';
 export type { PropertyField } from './property-field.type';
+export * from './menu-event';
+export * from './row-focus';
+export * from './tab-focus';
 export * from './tree-model';
 export { default as Button } from './button.svelte';
 export { default as Checkbox } from './checkbox.svelte';

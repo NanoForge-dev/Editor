@@ -24,13 +24,13 @@
     width: 100%;
     height: var(--nf-control-height);
     padding: 0 var(--nf-space-2);
-    border: 1px solid var(--nf-color-border);
+    border: 1px solid var(--nf-color-border-strong);
     border-radius: var(--nf-radius-control);
     background: var(--nf-color-sunken);
     outline: none;
   }
   .input:hover {
-    border-color: var(--nf-color-border-strong);
+    border-color: var(--nf-color-text-faint);
   }
   .input:focus {
     border-color: var(--nf-color-focus);

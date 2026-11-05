@@ -46,6 +46,9 @@ export interface ThemeDefinition {
 }
 
 /**
+ * Text tokens reach 4.5:1 and `border-strong` 3:1 on every background of their theme (WCAG AA:
+ * text, and the edges of controls).
+ *
  * Blue-grey steel surfaces with the NanoForge brand violet (`oklch(0.4493 0.1953 294.69)`,
  * shared with the landing page and web workspace) as accent; focus and selection stay blue.
  * The dark theme lifts the violet's lightness so markers stay visible on dark panels.
@@ -62,18 +65,18 @@ export const nanoforgeDark: ThemeDefinition = {
     hover: '#262d3a',
     pressed: '#2d3545',
     border: '#2a3140',
-    'border-strong': '#3a4356',
+    'border-strong': '#797f8c',
     text: '#d8dde7',
-    'text-muted': '#949cae',
-    'text-faint': '#626a7d',
+    'text-muted': '#a9b0be',
+    'text-faint': '#9ba0ac',
     accent: '#855bdd',
-    'accent-hover': '#9067ea',
+    'accent-hover': '#7852c7',
     'on-accent': '#ffffff',
-    'accent-text': '#af87ff',
+    'accent-text': '#b189ff',
     focus: '#6d91ea',
     selection: '#2c3f68',
     'selection-text': '#eef2ff',
-    danger: '#e26b62',
+    danger: '#e7837b',
     warning: '#e4924a',
     success: '#62b58c',
     scrim: 'rgba(8, 10, 14, 0.62)',
@@ -92,10 +95,10 @@ export const nanoforgeLight: ThemeDefinition = {
     hover: '#dde2ea',
     pressed: '#d2d8e2',
     border: '#c7cedb',
-    'border-strong': '#aab3c4',
+    'border-strong': '#747a85',
     text: '#1c2230',
-    'text-muted': '#546076',
-    'text-faint': '#7e889b',
+    'text-muted': '#465062',
+    'text-faint': '#565c69',
     accent: '#612eb3',
     'accent-hover': '#541ea0',
     'on-accent': '#ffffff',
@@ -103,9 +106,9 @@ export const nanoforgeLight: ThemeDefinition = {
     focus: '#3c63c7',
     selection: '#c9d6f5',
     'selection-text': '#101a33',
-    danger: '#bf3f36',
-    warning: '#b3611b',
-    success: '#2d8a5e',
+    danger: '#a4362e',
+    warning: '#8c4c15',
+    success: '#226947',
     scrim: 'rgba(28, 34, 48, 0.4)',
   },
 };

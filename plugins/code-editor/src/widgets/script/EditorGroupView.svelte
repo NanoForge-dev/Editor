@@ -3,7 +3,14 @@
   import { onDestroy, onMount, untrack } from 'svelte';
 
   import { basename } from '@nanoforge-dev/editor-sdk';
-  import { Button, Dialog, EmptyState, Icon, IconButton } from '@nanoforge-dev/editor-sdk/ui';
+  import {
+    Button,
+    Dialog,
+    EmptyState,
+    Icon,
+    IconButton,
+    moveTabFocus,
+  } from '@nanoforge-dev/editor-sdk/ui';
 
   import type { EditorDocument } from '../../document/editor-document';
   import type { CodeEditorService } from '../../service/code-editor-service';
@@ -207,7 +214,14 @@
         title={path}
         onclick={() => select(path)}
         onauxclick={(event) => event.button === 1 && requestClose(path)}
-        onkeydown={(event) => event.key === 'Enter' && select(path)}
+        aria-keyshortcuts="Delete"
+        onkeydown={(event) => {
+          if (moveTabFocus(event)) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            select(path);
+          } else if (event.key === 'Delete') requestClose(path);
+        }}
       >
         {#if state.readOnly}<Icon name="lock" size={12} />{/if}
         <span class="name">{basename(path)}</span>

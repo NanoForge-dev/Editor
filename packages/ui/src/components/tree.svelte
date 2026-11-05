@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { isKeyboardMenu } from './menu-event';
   import Icon from './icon.svelte';
   import { type DropPosition, TREE_DRAG_TYPE, type TreeNode, flattenTree } from './tree-model';
 
@@ -14,6 +15,11 @@
     onrename?: (id: string, name: string) => unknown;
     /** Rows dropped on a target; enables drag and drop. */
     ondrop?: (ids: string[], targetId: string, position: DropPosition) => void;
+    /**
+     * Alt+Up and Alt+Down move the focused row before its previous sibling or after its next one,
+     * through `ondrop` (lists whose order matters).
+     */
+    reorderable?: boolean;
     oncontextmenu?: (id: string, event: MouseEvent) => void;
     onselectionchange?: (selected: Set<string>) => void;
   }
@@ -27,6 +33,7 @@
     onactivate,
     onrename,
     ondrop,
+    reorderable = false,
     oncontextmenu,
     onselectionchange,
   }: Props = $props();
@@ -137,10 +144,25 @@
     await onrename?.(id, name);
   };
 
+  /** Moves a row before its previous sibling or after its next one (Alt+Up, Alt+Down). */
+  const reorder = (i: number, step: -1 | 1): boolean => {
+    const row = rows[i];
+    if (!row || !ondrop || row.node.draggable === false) return false;
+    const siblings = rows.filter((candidate) => candidate.parentId === row.parentId);
+    const target = siblings[siblings.indexOf(row) + step];
+    if (!target || target.node.droppable === false || target.node.draggable === false) return true;
+    ondrop([row.node.id], target.node.id, step < 0 ? 'before' : 'after');
+    return true;
+  };
+
   const onkeydown = (event: KeyboardEvent) => {
     if (renaming || !rows.length) return;
     const i = focused ? (index.get(focused) ?? 0) : -1;
     const row = rows[i];
+    if (reorderable && event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+      if (reorder(i, event.key === 'ArrowUp' ? -1 : 1)) event.preventDefault();
+      return;
+    }
     const move = (to: number) => {
       const target = rows[Math.min(rows.length - 1, Math.max(0, to))]!.node.id;
       focusRow(target);
@@ -235,6 +257,13 @@
   bind:this={container}
   onscroll={() => (scrollTop = container!.scrollTop)}
   {onkeydown}
+  aria-keyshortcuts={reorderable ? 'Alt+ArrowUp Alt+ArrowDown' : undefined}
+  oncontextmenu={(event) => {
+    if (event.target === event.currentTarget && focused && isKeyboardMenu(event)) {
+      if (!selected.has(focused)) setSelection(new Set([focused]));
+      oncontextmenu?.(focused, event);
+    }
+  }}
   onfocus={() => {
     if (!focused && rows[0]) focused = rows[0].node.id;
   }}
@@ -362,6 +391,9 @@
     display: inline-grid;
     flex: none;
     color: var(--nf-color-text-muted);
+  }
+  .selected .detail {
+    color: inherit;
   }
   .selected .icon {
     color: inherit;
