@@ -17,7 +17,7 @@ describe('shellCsp', () => {
       }),
     );
     expect(directives['script-src']).toEqual(["'self'", `'sha256-${hash}'`, "'wasm-unsafe-eval'"]);
-    expect(directives['connect-src']).toContain('ws://localhost:*');
+    expect(directives['connect-src']).toEqual(["'self'"]);
     expect(directives['frame-ancestors']).toEqual(["'self'"]);
     expect(directives['default-src']).toEqual(["'self'"]);
   });
@@ -25,5 +25,6 @@ describe('shellCsp', () => {
   it('lets a local editor play games, whose WebAssembly bindings compile strings', () => {
     expect(shellCsp('', { games: true })).toContain("script-src 'self' 'unsafe-eval'");
     expect(shellCsp('')).not.toContain("'unsafe-eval'");
+    expect(shellCsp('', { games: true })).toContain("connect-src 'self' http: https: ws: wss:;");
   });
 });

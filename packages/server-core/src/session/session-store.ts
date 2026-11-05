@@ -3,6 +3,7 @@ import { userInfo } from 'node:os';
 
 import { Emitter, type Event } from '@nanoforge-dev/editor-kernel';
 import type { User } from '@nanoforge-dev/editor-protocol';
+import { RpcError } from '@nanoforge-dev/editor-rpc';
 
 import type { EditorEnv } from '../env/editor-env.type';
 import { parseCookies, serializeCookie, sign, unsign } from './cookies';
@@ -41,7 +42,10 @@ export interface SessionResolution {
 export interface SessionStoreOptions {
   /**
    * Who an access token belongs to, asked to the API (`ApiClient.currentUser`). It may refresh
-   * the session's tokens; null when the tokens are not valid.
+   * the session's tokens; null when the tokens are not valid. A thrown `RpcError` other than
+   * `UNAVAILABLE` counts as null. Any other error (API unreachable) is transient: the session
+   * keeps its user only when it presented the tokens it already holds, and the next request asks
+   * again.
    */
   readonly verify: (session: Session) => Promise<User | null>;
   /** Sessions kept at most; the least recently seen ones go first. */
@@ -146,24 +150,41 @@ export class SessionStore {
     }
     if (known && (accessToken === known.token || (accessToken && accessToken === known.replaced)))
       return;
-    session.tokens = { accessToken: accessToken ?? '', refreshToken: refreshToken ?? '' };
-    const verification: Verification = { token: accessToken ?? '' };
-    verification.pending = this._options
-      .verify(session)
-      .catch(() => null)
-      .then((user) => {
-        this._setUser(session, user);
-        delete verification.pending;
-        if (!user || !session.tokens) {
-          this._verifications.set(session.id, {
-            token: `${accessToken}\0${refreshToken}`,
-            rejectedUntil: Date.now() + REJECTED_TTL_MS,
-          });
-          return;
-        }
-        verification.token = session.tokens.accessToken;
-        if (accessToken && accessToken !== verification.token) verification.replaced = accessToken;
+    const presented = { accessToken: accessToken ?? '', refreshToken: refreshToken ?? '' };
+    /** Checked on a copy: the session keeps its verified tokens until the API accepts these. */
+    const candidate: Session = { ...session, tokens: presented };
+    const verification: Verification = { token: presented.accessToken };
+    const signOut = () => {
+      session.tokens = null;
+      this._setUser(session, null);
+    };
+    const reject = () => {
+      signOut();
+      this._verifications.set(session.id, {
+        token: `${accessToken}\0${refreshToken}`,
+        rejectedUntil: Date.now() + REJECTED_TTL_MS,
       });
+    };
+    verification.pending = this._options.verify(candidate).then(
+      (user) => {
+        delete verification.pending;
+        if (!user || !candidate.tokens) return reject();
+        session.tokens = candidate.tokens;
+        this._setUser(session, user);
+        verification.token = candidate.tokens.accessToken;
+        if (accessToken && accessToken !== verification.token) verification.replaced = accessToken;
+      },
+      (error: unknown) => {
+        delete verification.pending;
+        if (error instanceof RpcError && error.code !== 'UNAVAILABLE') return reject();
+        if (this._verifications.get(session.id) === verification)
+          this._verifications.delete(session.id);
+        const verified =
+          session.tokens?.accessToken === presented.accessToken &&
+          session.tokens.refreshToken === presented.refreshToken;
+        if (!verified) signOut();
+      },
+    );
     this._verifications.set(session.id, verification);
     return verification.pending;
   }

@@ -82,7 +82,8 @@ export const EnvSchema = z
     /**
      * A local editor answers only to a browser that opened its link with this token once (other
      * users of a shared machine can reach its loopback port). `random`: a new token at each
-     * start, printed with the link. Unset: no token (a machine of your own).
+     * start, printed with the link; any other value has at least 16 characters. Unset: no token
+     * (a machine of your own).
      */
     EDITOR_TOKEN: optionalString,
     /**
@@ -114,6 +115,13 @@ export const EnvSchema = z
         code: 'custom',
         path: ['HOST'],
         message: `a local (OFFLINE) editor has no sign-in and runs project code: it only listens on a loopback address, not "${env.HOST}". Set PUBLIC_MODE=ONLINE for a hosted editor, or ALLOW_REMOTE_OFFLINE=1 behind something that restricts who can connect`,
+      });
+    }
+    if (env.EDITOR_TOKEN && env.EDITOR_TOKEN !== 'random' && env.EDITOR_TOKEN.length < 16) {
+      context.addIssue({
+        code: 'custom',
+        path: ['EDITOR_TOKEN'],
+        message: 'at least 16 characters, or "random" for a new one at each start',
       });
     }
     if (env.PUBLIC_MODE === 'ONLINE' && !env.API_KEY) {

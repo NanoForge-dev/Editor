@@ -56,11 +56,17 @@ describe('launch token', () => {
     expect(link.headers.get('location')).toBe('/project/abc?tour=x');
     const cookie = link.headers.get('set-cookie')!;
     expect(cookie).toMatch(
-      /^nf_editor_token=a-long-enough-token; Path=\/; HttpOnly; SameSite=Strict/,
+      /^nf_editor_token_80=a-long-enough-token; Path=\/; HttpOnly; SameSite=Strict/,
     );
 
     const opened = (await page('/project/abc', { cookie: cookie.split(';')[0]! }))!;
     expect(opened.status).toBe(200);
+    const otherPort = await editor.fetch(
+      new Request('http://editor.localhost:4000/project/abc', {
+        headers: { accept: 'text/html', cookie: cookie.split(';')[0]! },
+      }),
+    );
+    expect(otherPort!.status).toBe(401);
     expect((await page('/healthz'))!.status).toBe(200);
     editor.dispose();
   });
@@ -74,6 +80,7 @@ describe('launch token', () => {
       `http://127.0.0.1:3000/?token=${random.env.launchToken}`,
     );
     expect(server('a-long-enough-token', 'ONLINE').env.launchToken).toBeUndefined();
+    expect(() => server('short')).toThrow(/EDITOR_TOKEN/);
     for (const { editor } of [none, random]) editor.dispose();
   });
 });

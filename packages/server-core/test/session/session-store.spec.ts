@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { RpcError } from '@nanoforge-dev/editor-rpc';
+
 import { ApiClient } from '../../src/api/api-client';
 import { loadEnv } from '../../src/env/load-env';
 import { serializeCookie, sign } from '../../src/session/cookies';
@@ -136,5 +138,47 @@ describe('SessionStore', () => {
     for (let index = 0; index < 5; index++) await store.resolve(null);
     const again = await store.resolve(`${cookie}; accessToken=good; refreshToken=r`);
     expect(again.session).toBe(good.session);
+  });
+
+  it('keeps the user on an API outage only for the tokens it verified, and refuses on 403', async () => {
+    let failure: Error | undefined;
+    let asked = 0;
+    const store = new SessionStore(env, {
+      verify: async () => {
+        asked++;
+        if (failure) throw failure;
+        return { id: 'ada', name: 'Ada' };
+      },
+    });
+    const first = await store.resolve('accessToken=a1; refreshToken=r1');
+    const cookie = cookieOf(first.setCookies);
+    first.session.projects.add('ada-project');
+    first.session.tokens = { accessToken: 'a2', refreshToken: 'r2' };
+
+    failure = new RpcError('UNAVAILABLE', 'API down');
+    await store.resolve(`${cookie}; accessToken=a2; refreshToken=r2`);
+    expect(first.session.user?.id).toBe('ada');
+    expect([...first.session.projects]).toEqual(['ada-project']);
+    await store.resolve(`${cookie}; accessToken=a2; refreshToken=r2`);
+    expect(asked).toBe(3);
+
+    failure = new Error('connection refused');
+    await store.resolve(`${cookie}; accessToken=other; refreshToken=r`);
+    expect(first.session.user).toBeNull();
+    expect(first.session.tokens).toBeNull();
+    expect(first.session.projects.size).toBe(0);
+    await store.resolve(`${cookie}; accessToken=other; refreshToken=r`);
+    expect(asked).toBe(5);
+
+    failure = new RpcError('FORBIDDEN', 'no');
+    await store.resolve(`${cookie}; accessToken=forbidden; refreshToken=r`);
+    await store.resolve(`${cookie}; accessToken=forbidden; refreshToken=r`);
+    expect(first.session.user).toBeNull();
+    expect(asked).toBe(6);
+
+    failure = undefined;
+    await store.resolve(`${cookie}; accessToken=a3; refreshToken=r3`);
+    expect(first.session.user?.id).toBe('ada');
+    expect(first.session.tokens).toEqual({ accessToken: 'a3', refreshToken: 'r3' });
   });
 });

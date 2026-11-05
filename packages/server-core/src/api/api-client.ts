@@ -135,11 +135,16 @@ export class ApiClient {
     return refreshing;
   }
 
-  /** The user the session's tokens belong to (refreshing them if needed); null when invalid. */
+  /**
+   * The user the session's tokens belong to (refreshing them if needed); null when invalid or
+   * when the API answers with something else than a user.
+   */
   async currentUser(session: Session): Promise<User | null> {
     if (!session.tokens) return null;
     try {
-      const user = parseResponse(ApiUserSchema, await this.request(session, '/users/me'), 'user');
+      const parsed = ApiUserSchema.safeParse(await this.request(session, '/users/me'));
+      if (!parsed.success) return null;
+      const user = parsed.data;
       const name = user.username || [user.firstName, user.lastName].filter(Boolean).join(' ');
       return {
         id: user.id,

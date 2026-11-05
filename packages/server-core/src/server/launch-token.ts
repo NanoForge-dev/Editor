@@ -2,7 +2,12 @@ import { timingSafeEqual } from 'node:crypto';
 
 import { parseCookies, serializeCookie } from '../session/cookies';
 
-const LAUNCH_TOKEN_COOKIE = 'nf_editor_token';
+/**
+ * Cookies are shared by every port of a host: the name carries the port, so editors on other
+ * ports of this machine don't overwrite each other's token (they still receive it).
+ */
+const cookieName = (url: URL) =>
+  `nf_editor_token_${url.port || (url.protocol === 'https:' ? '443' : '80')}`;
 const PARAM = 'token';
 
 const same = (a: string, b: string) => {
@@ -24,9 +29,10 @@ export const linkWithToken = (base: string, token: string): string => {
  * anything else is refused, a page saying which link to open.
  */
 export const launchTokenCheck = (token: string, request: Request): Response | undefined => {
-  const cookie = parseCookies(request.headers.get('cookie'))[LAUNCH_TOKEN_COOKIE];
-  if (cookie && same(cookie, token)) return undefined;
   const url = new URL(request.url);
+  const name = cookieName(url);
+  const cookie = parseCookies(request.headers.get('cookie'))[name];
+  if (cookie && same(cookie, token)) return undefined;
   const given = url.searchParams.get(PARAM);
   if (given && same(given, token) && request.method === 'GET') {
     url.searchParams.delete(PARAM);
@@ -34,7 +40,7 @@ export const launchTokenCheck = (token: string, request: Request): Response | un
       status: 303,
       headers: {
         location: `${url.pathname}${url.search}`,
-        'set-cookie': serializeCookie(LAUNCH_TOKEN_COOKIE, token, { sameSite: 'Strict' }),
+        'set-cookie': serializeCookie(name, token, { sameSite: 'Strict' }),
         'cache-control': 'no-store',
       },
     });

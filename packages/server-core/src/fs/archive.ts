@@ -1,4 +1,4 @@
-import { Zip, ZipDeflate } from 'fflate';
+import { AsyncZipDeflate, Zip, ZipDeflate } from 'fflate';
 import { readFile } from 'node:fs/promises';
 
 import { RpcError } from '@nanoforge-dev/editor-rpc';
@@ -10,12 +10,16 @@ export const MAX_ARCHIVE_BYTES = 1024 * 1024 * 1024;
 
 /** Left out of archives: deleted files, and installed packages (installed again from the lock). */
 const LEFT_OUT = [TRASH_DIR, PACKAGES_DIR];
+/** From this size on, a file is compressed in a worker (as fflate's `zip()` does). */
+const ASYNC_FROM_BYTES = 160_000;
+
 const leftOut = (path: string) =>
   LEFT_OUT.some((folder) => path === folder || path.startsWith(`${folder}/`));
 
 /**
  * Zips a folder of the project as a stream: one file read at a time, as the reader asks for
- * more, so a large folder is never held in memory. Entries hidden by `.nfignore`, the trash and
+ * more (the next once the last is zipped), so a large folder is never held in memory. A file
+ * deleted since the folder was listed is left out. Entries hidden by `.nfignore`, the trash and
  * `nf_modules` stay out; a folder over `maxBytes` is refused (`PAYLOAD_TOO_LARGE`).
  */
 export const archiveFolder = async (
@@ -45,14 +49,35 @@ export const archiveFolder = async (
       });
     },
     async pull() {
-      const entry = files[next++];
-      if (!entry) {
-        zip!.end();
+      for (;;) {
+        const entry = files[next++];
+        if (!entry) {
+          zip!.end();
+          return;
+        }
+        let data: Uint8Array;
+        try {
+          data = new Uint8Array(await readFile(await fs.jail.resolve(entry.path)));
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+          throw error;
+        }
+        const name = entry.path.slice(prefix.length);
+        const file =
+          data.length < ASYNC_FROM_BYTES
+            ? new ZipDeflate(name, { level: 6 })
+            : new AsyncZipDeflate(name, { level: 6 });
+        zip!.add(file);
+        const forward = file.ondata;
+        await new Promise<void>((resolve) => {
+          file.ondata = (error, chunk, final) => {
+            forward(error, chunk, final);
+            if (error || final) resolve();
+          };
+          file.push(data, true);
+        });
         return;
       }
-      const file = new ZipDeflate(entry.path.slice(prefix.length), { level: 6 });
-      zip!.add(file);
-      file.push(new Uint8Array(await readFile(await fs.jail.resolve(entry.path))), true);
     },
     cancel() {
       zip?.terminate();

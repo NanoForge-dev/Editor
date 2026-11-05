@@ -268,6 +268,20 @@ describe('archiveFolder', () => {
     expect(new TextDecoder().decode(files['kept.txt'])).toBe('kept\n');
     await expect(archiveFolder(fs, '', 3)).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
   });
+
+  it('zips large files in a worker, and leaves out a file deleted since the listing', async () => {
+    const { root, fs } = project();
+    const large = new Uint8Array(300_000).map((_, index) => index % 251);
+    writeFileSync(join(root, 'large.bin'), large);
+    const listed = await fs.list('', true);
+    const ghost = { ...listed.find((entry) => entry.path === 'src/main.ts')!, path: 'ghost.txt' };
+    const stale = Object.create(fs) as ProjectFileSystem;
+    stale.list = async () => [...listed, ghost];
+    const stream = await archiveFolder(stale, '');
+    const files = unzipSync(new Uint8Array(await new Response(stream).arrayBuffer()));
+    expect(Object.keys(files).sort()).toEqual(['large.bin', 'src/main.ts']);
+    expect(files['large.bin']).toEqual(large);
+  });
 });
 
 describe('ProjectWatcher', () => {

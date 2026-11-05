@@ -299,7 +299,7 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 | 10    | Done: meta extractor and catalog, ECS plugin (hierarchy, inspector, param layout, Component panel, browser, systems, shared libraries, live mode, 2D scene), except dragging inside the Game screen; last full e2e run 44/44 |
 | 11    | Done: console + problems, command palette + keyboard shortcuts, inspectors, git (after IntelliJ's windows, VCS menu), marketplace (plugins in Settings, Packages dialog, on a folder registry); last full e2e run 60/60      |
 | 12    | Done: `docs/api/` hand-off (registry after npm's routes, settings sync, account plugin list as a settings key), contract tests (stand-ins and `CONTRACT_*` targets), `API_FEATURES` flags; last full e2e run 60/60           |
-| 13    | Done: plugin guide and `nf create plugin`, user docs, performance pass (compiler out of the page bundle), `CHANGELOG-v2.md`. Not released: versions unchanged, nothing tagged or published                                   |
+| 13    | Done: plugin guide and `nf create plugin`, user docs, performance pass (compiler out of the page bundle), a v2 changelog (written, then removed). Not released: versions unchanged, nothing tagged or published              |
 | 14    | Planned: hosted editor parity (sandboxed runtime, dependencies, networked games, push from a hosted editor). Until then the runtime stays off in ONLINE                                                                      |
 
 ### Open design questions (ask the user)
