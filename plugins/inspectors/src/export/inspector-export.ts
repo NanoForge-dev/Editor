@@ -1,8 +1,16 @@
 import type { FrameSample, Packet } from '../recorder/recorder';
 
-/** A CSV field: quoted when it holds a comma, a quote or a line break. */
+/**
+ * A CSV field: quoted when it holds a comma, a quote or a line break. A string a spreadsheet
+ * would read as a formula (`=`, `+`, `-`, `@`, tab, CR first) is prefixed with `'`.
+ */
 const field = (value: string | number | undefined): string => {
-  const text = value === undefined ? '' : String(value);
+  const text =
+    value === undefined
+      ? ''
+      : typeof value === 'string' && /^[=+\-@\t\r]/.test(value)
+        ? `'${value}`
+        : String(value);
   return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 

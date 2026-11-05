@@ -27,7 +27,6 @@ const lines = [
   '  `${name} of @nanoforge-dev/editor-sdk/ui is provided by the NanoForge editor at runtime: build the plugin with @nanoforge-dev/editor-vite-plugin, and mock the module in unit tests.`;',
   'const unavailable = (name) =>',
   '  new Proxy(function () {}, {',
-  '    get: (_target, key) => (key === Symbol.toPrimitive ? undefined : unavailable(name)),',
   '    apply: () => {',
   '      throw new Error(message(name));',
   '    },',

@@ -71,6 +71,14 @@ describe('keybinding parsing', () => {
     expect(formatKeybinding('Shift Shift', true)).toBe('⇧ ⇧');
     expect(() => normalizeStroke('Hyper+X', false)).toThrow(/modifier/);
   });
+
+  it('maps a lone modifier like a modifier of a stroke', () => {
+    expect(parseKeybinding('Mod Mod', false)).toEqual(['Ctrl', 'Ctrl']);
+    expect(parseKeybinding('Mod Mod', true)).toEqual(['Meta', 'Meta']);
+    expect(parseKeybinding('Cmd Cmd', false)).toEqual(['Meta', 'Meta']);
+    expect(normalizeStroke('Control', false)).toBe('Ctrl');
+    expect(normalizeStroke('Option', false)).toBe('Alt');
+  });
 });
 
 describe('KeybindingService', () => {
@@ -125,6 +133,22 @@ describe('KeybindingService', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('breaks a double tap on a click', async () => {
+    const { service, ran, bind } = setup();
+    bind({ key: 'Shift Shift', command: 'other' });
+    const target = new EventTarget();
+    service.attach(target as unknown as Window);
+    const tap = () => {
+      service.handle(key({ key: 'Shift', shiftKey: true }));
+      return service.handleKeyUp(key({ key: 'Shift' }));
+    };
+    expect(tap()).toBe(false);
+    target.dispatchEvent(new Event('pointerdown'));
+    expect(tap()).toBe(false);
+    await Promise.resolve();
+    expect(ran).toEqual([]);
   });
 
   it('applies user overrides and reports conflicts', () => {

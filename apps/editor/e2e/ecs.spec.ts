@@ -329,11 +329,16 @@ test('picks an asset of the accepted type for an asset param', async ({ page }) 
     /** The catalog reads the new file in the background. */
     await page.getByRole('option', { name: /^Skin/ }).click({ timeout: 15_000 });
     const card = page.getByRole('region', { name: 'Skin' });
-    await expect(card.getByRole('combobox', { name: 'image' })).toBeVisible();
-    await card.getByRole('button', { name: 'Show options' }).click();
-    await expect(page.getByRole('option', { name: '/logo.png' })).toBeVisible();
-    await expect(page.getByRole('option', { name: '/notes.txt' })).toHaveCount(0);
-    await page.getByRole('option', { name: '/logo.png' }).click();
+    const image = card.getByRole('combobox', { name: 'image' });
+    await expect(image).toBeVisible();
+    const choices = () =>
+      card
+        .locator('datalist option')
+        .evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value));
+    await expect.poll(choices).toContain('/logo.png');
+    expect(await choices()).not.toContain('/notes.txt');
+    await image.fill('/logo.png');
+    await image.blur();
     await expect.poll(main).toContain('new Skin("/logo.png")');
   } finally {
     rmSync(SKIN, { force: true });

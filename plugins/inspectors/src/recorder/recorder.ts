@@ -138,10 +138,19 @@ export class Recorder implements Disposable {
     };
   }
 
-  /** Forgets what a game reported so far; what it reports next is recorded as usual. */
-  clear(source: GameSource): void {
-    if (!this._records.has(source)) return;
-    this._records.set(source, { ...emptyRecord(), world: this._records.get(source)?.world });
+  /**
+   * Forgets what a game reported so far to one inspector (the profiler's frames, or the
+   * network's packets and totals); what it reports next is recorded as usual.
+   */
+  clear(source: GameSource, inspector: 'profiler' | 'network'): void {
+    const record = this._records.get(source);
+    if (!record) return;
+    this._records.set(
+      source,
+      inspector === 'profiler'
+        ? { ...record, frames: [] }
+        : { ...record, packets: [], network: [], untraced: 0 },
+    );
     this._bump();
   }
 

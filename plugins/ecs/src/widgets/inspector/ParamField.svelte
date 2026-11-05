@@ -2,7 +2,6 @@
   import type { Element } from '@nanoforge-dev/editor-sdk';
   import {
     ColorPicker,
-    Combobox,
     Input,
     NumberInput,
     Select,
@@ -53,12 +52,18 @@
   const literalOnly = $derived(arg !== undefined && arg.value === undefined);
   let text = $derived(typeof value === 'string' ? value : code);
   const assets = assetList();
-  /** An `@asset` param picks among the app's assets of the accepted types (its value kept). */
+  const listId = $props.id();
+  /** Bumped when the project's files change: the assets are read again. */
+  let revision = $state(0);
+  $effect(() => {
+    const subscription = assets?.onDidChange(() => revision++);
+    return () => subscription?.dispose();
+  });
+  /** An `@asset` param suggests the app's assets of the accepted types (any text still goes). */
   const assetChoices = $derived.by(() => {
+    void revision;
     if (element.type !== 'asset' || !assets) return [];
-    const paths = assets(element.accept ?? []);
-    const current = typeof value === 'string' && value ? [value] : [];
-    return [...new Set([...current, ...paths])].map((path) => ({ value: path, label: path }));
+    return assets.list(element.accept ?? []);
   });
 </script>
 
@@ -127,22 +132,22 @@
         {disabled}
         onchange={(next, final) => final && onchange({ value: next })}
       />
-    {:else if assetChoices.length && !disabled}
-      <Combobox
-        {label}
-        value={typeof value === 'string' ? value : ''}
-        items={assetChoices}
-        placeholder="Pick an asset"
-        onchange={(next) => onchange({ value: next })}
-      />
     {:else}
       <Input
         aria-label={label}
         bind:value={text}
         placeholder={element.type === 'asset' ? 'Path of an asset' : ''}
+        list={assetChoices.length ? listId : undefined}
         {disabled}
         onchange={() => onchange({ value: text })}
       />
+      {#if assetChoices.length}
+        <datalist id={listId}>
+          {#each assetChoices as path (path)}
+            <option value={path}></option>
+          {/each}
+        </datalist>
+      {/if}
     {/if}
   </span>
 </div>

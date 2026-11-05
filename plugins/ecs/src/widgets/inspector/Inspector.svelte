@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { documentHistoryId } from '@nanoforge-dev/editor-sdk';
+  import { documentHistoryId, ProjectServiceToken } from '@nanoforge-dev/editor-sdk';
   import { Combobox, EmptyState, type WidgetInstance } from '@nanoforge-dev/editor-sdk/ui';
 
   import { EcsServiceToken } from '../../service/ecs-service';
@@ -13,7 +13,12 @@
   const { instance }: { instance: WidgetInstance } = $props();
   // svelte-ignore state_referenced_locally
   const ecs = instance.services.get(EcsServiceToken);
-  provideAssets((accept) => ecs.assets(accept));
+  // svelte-ignore state_referenced_locally
+  const projects = instance.services.get(ProjectServiceToken);
+  provideAssets({
+    list: (accept) => ecs.assets(accept),
+    onDidChange: (listener) => projects.current.get()?.fs.onDidChange(listener),
+  });
   /** Undo targets the file the Inspector edits: `main`, or the selected scene's file. */
   const location = ecs.location;
   $effect(() => {

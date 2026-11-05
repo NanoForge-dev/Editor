@@ -89,16 +89,27 @@ export class KeybindingService implements Disposable {
     });
   }
 
-  /** Listens to keydown (and keyup, for double taps) on a target (the editor window). */
+  /**
+   * Listens to keydown (and keyup, for double taps) on a target (the editor window). A click or
+   * the window losing focus breaks a double tap.
+   */
   attach(target: Pick<Window, 'addEventListener' | 'removeEventListener'>): Disposable {
     const down = (event: Event) => this.handle(event as KeyboardEvent);
     const up = (event: Event) => this.handleKeyUp(event as KeyboardEvent);
+    const interrupt = () => {
+      this._held = undefined;
+      this._tap = undefined;
+    };
     target.addEventListener('keydown', down, { capture: true });
     target.addEventListener('keyup', up, { capture: true });
+    target.addEventListener('pointerdown', interrupt, { capture: true });
+    target.addEventListener('blur', interrupt);
     return this._store.add(
       toDisposable(() => {
         target.removeEventListener('keydown', down, { capture: true });
         target.removeEventListener('keyup', up, { capture: true });
+        target.removeEventListener('pointerdown', interrupt, { capture: true });
+        target.removeEventListener('blur', interrupt);
       }),
     );
   }

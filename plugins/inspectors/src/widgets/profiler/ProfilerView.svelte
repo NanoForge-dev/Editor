@@ -48,7 +48,7 @@
     pinned = undefined;
   };
   const clear = () => {
-    recorder.clear(view.source ?? 'client');
+    recorder.clear(view.source ?? 'client', 'profiler');
     resume();
   };
   /** Saves the windows shown (the frozen ones while paused). */

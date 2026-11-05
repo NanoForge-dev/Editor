@@ -112,7 +112,7 @@
   const status = settledStatus(() => [query, transport, direction], countText);
 
   const clear = () => {
-    recorder.clear(view.source ?? 'client');
+    recorder.clear(view.source ?? 'client', 'network');
     frozen = undefined;
     selectedId = undefined;
   };

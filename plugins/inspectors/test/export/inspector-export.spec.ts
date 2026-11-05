@@ -15,6 +15,12 @@ describe('inspector export', () => {
     ).toBe('a,b\n"x,y","say ""hi"""\n"line\nbreak",\n');
   });
 
+  it('defuses text a spreadsheet would read as a formula, not numbers', () => {
+    expect(toCsv(['a'], [['=1+2'], ['+x'], ['-y'], ['@SUM(A1)'], ['\tz'], ['\rw'], [-3]])).toBe(
+      "a\n'=1+2\n'+x\n'-y\n'@SUM(A1)\n'\tz\n\"'\rw\"\n-3\n",
+    );
+  });
+
   it('writes a row per window, a column per library', () => {
     const frame = (time: number, physics?: number) => ({
       time,

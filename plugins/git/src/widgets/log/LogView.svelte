@@ -25,8 +25,9 @@
   const saved = instance.getState<SavedState>() ?? {};
   let selectedHash = $state<string | undefined>(saved.commit);
   if (saved.branch && !store.state.get().logBranch) void store.showBranch(saved.branch);
+  const branch = $derived($git.logBranch);
   $effect(() => {
-    const state: SavedState = { commit: selectedHash, branch: $git.logBranch };
+    const state: SavedState = { commit: selectedHash, branch };
     untrack(() => instance.setState(state));
   });
   const selected = $derived($git.log.find((commit) => commit.hash === selectedHash));
