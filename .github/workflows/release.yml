@@ -1,4 +1,9 @@
 name: Release
+# The release PR title holds the version (commitFormat); any other merged PR publishes the betas of the packages it changed.
+run-name: >-
+  ${{ !github.event.pull_request.merged && format('Closed without merge: {0}', github.event.pull_request.title)
+  || startsWith(github.head_ref, 'releases/') && format('Release: {0}', github.event.pull_request.title)
+  || format('Beta release of {0}', github.event.pull_request.merge_commit_sha) }}
 
 on:
   pull_request:
@@ -7,85 +12,37 @@ on:
     branches:
       - main
 
-env:
-  REGISTRY: ghcr.io
-  ORG_NAME: ${{ github.repository_owner }}
-  IMAGE_NAME: ${{ github.event.repository.name }}
-  CONFIG_FILE: kubernetes/nanoforge/editor-override.yaml
-
-  PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
-  PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
-  PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
-
 permissions:
   contents: write
-  packages: write
-  attestations: write
   id-token: write
 
 jobs:
+  # A releases/editor@… PR releases the editor (then its image, and the docs in this job); a releases/packages/…
+  # PR releases the SDK or the vite-plugin, versioned on their own.
   release:
     name: Release
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'NanoForge-dev' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'releases/editor@')
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+    uses: nanoforge-dev/actions/.github/workflows/release.yml@v3
+    with:
+      prepare-env: |
+        NODE_ENV=development
+        PUBLIC_MODE=OFFLINE
+        PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
+        PUBLIC_DOCS_URL=${{ vars.PUBLIC_DOCS_URL }}
+        PUBLIC_LANDING_URL=${{ vars.PUBLIC_LANDING_URL }}
+    secrets:
+      NPM_PUBLISH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+      # The config has docs: an editor release syncs docs/docs to the editor category of NanoForge-dev/docs.
+      NANOFORGE_DOCS_PRIVATE_KEY: ${{ secrets.NANOFORGE_DOCS_PRIVATE_KEY }}
 
-      - name: Prepare
-        uses: ./.github/actions/prepare
-        env:
-          NODE_ENV: development
-          PUBLIC_MODE: OFFLINE
-
-      - name: Release packages
-        uses: ./node_modules/@nanoforge-dev/actions/actions/release-packages
-        with:
-          packages: '@nanoforge-dev/editor'
-          tag-format: '{version}'
-          latest: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # The SDK and the vite-plugin are versioned on their own (releases/editor-sdk@1.2.0), tagged
-  # @nanoforge-dev/<name>@<version>. Only the editor's release pushes the image and the docs.
-  release-single-package:
-    name: Release single package
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'NanoForge-dev' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'releases/') && !startsWith(github.head_ref, 'releases/editor@')
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Prepare
-        uses: ./.github/actions/prepare
-        env:
-          NODE_ENV: development
-          PUBLIC_MODE: OFFLINE
-
-      - name: Get package name
-        id: package
-        shell: bash
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          name="${BRANCH#releases/}"
-          echo "name=@nanoforge-dev/${name%%@*}" >> "$GITHUB_OUTPUT"
-
-      - name: Release package
-        uses: ./node_modules/@nanoforge-dev/actions/actions/release-packages
-        with:
-          packages: ${{ steps.package.outputs.name }}
-          latest: false
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  beta-release:
+  # No betaOnMerge in the config: the shared beta job would publish all three packages on every merge.
+  # This one publishes a package's beta only when the PR changed its code.
+  beta:
     name: Beta release (${{ matrix.package }})
     runs-on: ubuntu-latest
     if: github.repository_owner == 'NanoForge-dev' && github.event.pull_request.merged == true && !startsWith(github.head_ref, 'releases/')
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -101,101 +58,83 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 2
 
-      # A pull request that changes none of the package's code (docs, CI, issue forms) publishes no beta of it.
       - name: Check for code changes
         id: changes
         shell: bash
         env:
           PATHS: ${{ matrix.paths }}
         run: |
-          if git diff --name-only "${{ github.event.pull_request.merge_commit_sha }}^" "${{ github.event.pull_request.merge_commit_sha }}" \
-            | grep -qE "$PATHS"; then
+          if git diff --name-only HEAD^ HEAD | grep -qE "$PATHS"; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Prepare
+      - name: Export the prepare env
+        if: steps.changes.outputs.code == 'true'
+        uses: nanoforge-dev/actions/export-env@v3
+        with:
+          env: |
+            NODE_ENV=development
+            PUBLIC_MODE=OFFLINE
+            PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
+            PUBLIC_DOCS_URL=${{ vars.PUBLIC_DOCS_URL }}
+            PUBLIC_LANDING_URL=${{ vars.PUBLIC_LANDING_URL }}
+
+      - name: Prepare the repository
         if: steps.changes.outputs.code == 'true'
         uses: ./.github/actions/prepare
-        env:
-          NODE_ENV: development
-          PUBLIC_MODE: OFFLINE
 
-      - name: Release beta
+      - name: Publish the beta on npm
         if: steps.changes.outputs.code == 'true'
-        uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
+        uses: nanoforge-dev/actions/prerelease@v3
         with:
-          package: ${{ matrix.package }}
-          tag: beta
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          channel: beta
+          packages: ${{ matrix.package }}
+          npm-token: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
-  push-image:
+  docker:
     name: Push image
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'NanoForge-dev'
     needs: [release]
+    # An SDK or vite-plugin release also sets released: only the editor's pushes the image.
+    if: needs.release.outputs.released == 'true' && startsWith(github.head_ref, 'releases/editor@')
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
-      - name: Push Docker image
-        uses: ./.github/actions/docker-push
+      # A one-hour token of the NanoForge deploy GitHub App, for NanoForge-dev/cloud-iac only.
+      - name: Get a cloud-iac token from the NanoForge deploy app
+        id: bot
+        uses: actions/create-github-app-token@v3
         with:
-          target: editor
-          registry: ${{ env.REGISTRY }}
-          image: ${{ env.ORG_NAME }}/${{ env.IMAGE_NAME }}
-          token: ${{ secrets.TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: ${{ env.CONFIG_FILE }}
-          args: |
-            PUBLIC_MODE
-            PUBLIC_PM_URL
-            PUBLIC_DOCS_URL
-            PUBLIC_LANDING_URL
-            FS_ROOT
-            ARCHIVE_ROOT
-        env:
-          NODE_ENV: production
-          PUBLIC_MODE: ONLINE
-          FS_ROOT: projects
-          ARCHIVE_ROOT: archives
+          client-id: ${{ vars.NANOFORGE_DEPLOY_CLIENT_ID }}
+          private-key: ${{ secrets.NANOFORGE_DEPLOY_PRIVATE_KEY }}
+          owner: NanoForge-dev
+          repositories: cloud-iac
+          permission-contents: write
 
-  publish-docs:
-    name: Publish docs
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'NanoForge-dev'
-    needs: [push-image]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - name: Build and push the image, then update cloud-iac
+        uses: nanoforge-dev/actions/docker-release@v3
         with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Checkout docs repository
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          path: docs-dist
-          repository: nanoforge-dev/docs
-          token: ${{ secrets.TOKEN }}
-
-      - name: Prepare
-        uses: ./.github/actions/prepare
-        env:
-          PUBLIC_MODE: OFFLINE
-
-      - name: Publish docs
-        uses: ./node_modules/@nanoforge-dev/actions/actions/synchronize-docs
-        with:
-          repository: editor
-          category: editor
+          image: nanoforge-dev/editor
+          version: ${{ needs.release.outputs.version }}
+          values-file: kubernetes/nanoforge/editor-override.yaml
+          cloud-iac-token: ${{ steps.bot.outputs.token }}
+          build-args: |
+            PUBLIC_MODE=ONLINE
+            PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
+            PUBLIC_DOCS_URL=${{ vars.PUBLIC_DOCS_URL }}
+            PUBLIC_LANDING_URL=${{ vars.PUBLIC_LANDING_URL }}
+            FS_ROOT=projects
+            ARCHIVE_ROOT=archives

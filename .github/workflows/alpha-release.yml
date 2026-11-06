@@ -1,52 +1,39 @@
 name: Alpha Release
+# The alpha is <next version>-alpha.<branch>.<n>: the exact number is in the job summary.
+run-name: Alpha release ${{ inputs.packages }} on ${{ github.ref_name }}${{ inputs.dry-run && ' (dry run)' || '' }}
 
 on:
   workflow_dispatch:
     inputs:
-      package:
+      packages:
         description: The package to release (the SDK and the vite-plugin are versioned on their own)
         type: choice
-        required: true
         default: '@nanoforge-dev/editor'
         options:
           - '@nanoforge-dev/editor'
           - '@nanoforge-dev/editor-sdk'
           - '@nanoforge-dev/editor-vite-plugin'
-      dry_run:
+      dry-run:
         description: Perform a dry run?
         type: boolean
         default: false
-
-env:
-  PUBLIC_PM_URL: ${{ vars.PUBLIC_PM_URL }}
-  PUBLIC_DOCS_URL: ${{ vars.PUBLIC_DOCS_URL }}
-  PUBLIC_LANDING_URL: ${{ vars.PUBLIC_LANDING_URL }}
 
 permissions:
   contents: write
   id-token: write
 
 jobs:
-  alpha-release:
+  alpha:
     name: Alpha release
-    runs-on: ubuntu-latest
-    if: github.repository_owner == 'NanoForge-dev' && github.ref_name != 'main' && github.ref_name != 'master'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Prepare
-        uses: ./.github/actions/prepare
-        env:
-          NODE_ENV: development
-          PUBLIC_MODE: OFFLINE
-
-      - name: Release alpha
-        uses: ./node_modules/@nanoforge-dev/actions/actions/release-dev
-        with:
-          package: ${{ inputs.package }}
-          tag: alpha
-          dry: ${{ inputs.dry_run }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: nanoforge-dev/actions/.github/workflows/alpha-release.yml@v3
+    with:
+      packages: ${{ inputs.packages }}
+      dry-run: ${{ inputs.dry-run }}
+      prepare-env: |
+        NODE_ENV=development
+        PUBLIC_MODE=OFFLINE
+        PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
+        PUBLIC_DOCS_URL=${{ vars.PUBLIC_DOCS_URL }}
+        PUBLIC_LANDING_URL=${{ vars.PUBLIC_LANDING_URL }}
+    secrets:
+      NPM_PUBLISH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}

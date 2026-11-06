@@ -1,0 +1,44 @@
+name: Release PR
+run-name: Release PR ${{ inputs.group }} ${{ inputs.packages }} ${{ inputs.version || '(auto version)' }}${{ inputs.dry-run && ' (dry run)' || '' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      group:
+        description: 'Release group of .github/nanoforge.json: editor, or packages (the SDK and the vite-plugin, versioned on their own)'
+        type: choice
+        default: editor
+        options:
+          - editor
+          - packages
+      packages:
+        description: 'The package to release, for the packages group only (@nanoforge-dev/editor-sdk or @nanoforge-dev/editor-vite-plugin)'
+        type: string
+        default: ''
+      version:
+        description: Version (empty = from the commits, breaking → major, feat → minor, fix → patch)
+        type: string
+        default: ''
+      dry-run:
+        description: Perform a dry run?
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    name: Release PR
+    uses: nanoforge-dev/actions/.github/workflows/release-pr.yml@v3
+    with:
+      group: ${{ inputs.group }}
+      packages: ${{ inputs.packages }}
+      version: ${{ inputs.version }}
+      dry-run: ${{ inputs.dry-run }}
+      prepare-env: |
+        PUBLIC_MODE=${{ vars.PUBLIC_MODE }}
+        PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
+        PUBLIC_DOCS_URL=${{ vars.PUBLIC_DOCS_URL }}
+        PUBLIC_LANDING_URL=${{ vars.PUBLIC_LANDING_URL }}

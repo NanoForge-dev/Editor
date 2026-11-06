@@ -18,7 +18,6 @@ catalogs:
     '@commitlint/cli': ^21.2.0
     '@commitlint/config-conventional': ^21.2.0
     '@favware/cliff-jumper': ^6.1.0
-    '@nanoforge-dev/actions': ^2.1.5
     husky: ^9.1.7
     lint-staged: ^17.0.8
   components:

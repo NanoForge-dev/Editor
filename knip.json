@@ -9,7 +9,7 @@
     "apps/editor/e2e/.workspace*/**",
     ".engine/**"
   ],
-  "ignoreDependencies": ["eslint-formatter-pretty", "@nanoforge-dev/actions"],
+  "ignoreDependencies": ["eslint-formatter-pretty"],
   "ignoreBinaries": ["mkfifo"],
   "workspaces": {
     ".": {
