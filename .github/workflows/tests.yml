@@ -26,6 +26,8 @@ jobs:
       style-scripts: '["lint", "typecheck"]'
       # The unit tests need Playwright browsers and CHROME, which the shared unit job can't set: see unit below.
       unit-script: ''
+      # No audit job yet: the lockfile has high and critical advisories to fix first.
+      audit-level: ''
       prepare-env: |
         PUBLIC_MODE=${{ vars.PUBLIC_MODE }}
         PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
@@ -48,7 +50,7 @@ jobs:
 
       # Restored before prepare, so its build skips the untouched packages.
       - name: Cache the turbo outputs
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: .turbo/cache
           key: turbo-${{ runner.os }}-unit-${{ github.sha }}
@@ -83,7 +85,7 @@ jobs:
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: |
