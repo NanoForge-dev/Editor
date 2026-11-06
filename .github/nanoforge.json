@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/NanoForge-dev/actions/v3/schema/nanoforge.schema.json",
+  "groups": [
+    {
+      "name": "editor",
+      "packages": ["@nanoforge-dev/editor"],
+      "mode": "all",
+      "versioning": "shared",
+      "commitFormat": "chore(editor): release @nanoforge-dev/editor@{version}"
+    },
+    {
+      "name": "packages",
+      "packages": ["@nanoforge-dev/editor-sdk", "@nanoforge-dev/editor-vite-plugin"],
+      "mode": "single",
+      "versioning": "independent",
+      "commitFormat": "chore(release): release {packages}"
+    }
+  ],
+  "docs": { "category": "editor" }
+}
