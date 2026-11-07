@@ -118,7 +118,8 @@ pnpm e2e:last-failure   # error-context.md of the last failed test, its last fra
   - `example-plugin`: `@acme/hello`, the dev plugin loaded by the e2e tests.
 - **`examples/breakout`**: a client-only game made of scenes (`@nanoforge-dev/scene`, engine `modules/scene`), the default of `pnpm example` (`scripts/example.mjs`): it links the engine libraries from `NANOFORGE_ENGINE` (default `../engine`, shared with the e2e setup through `engineRoot`) and starts the built editor on port 4800 with `FS_ROOT=examples`. Its entities and systems all belong to scenes (`GameScene`), so the Scene screen and Hierarchy show none: use Play and the World panel.
 - **`examples/counter-plugin`**: a standalone plugin, outside the workspace, as `nf create plugin` writes it (the CLI command is in `../cli`).
-- **`docs/docs`**: the user documentation and the plugin authoring guide (Mintlify pages, copied to the docs site).
+- **`docs/docs`**: the user documentation and the plugin authoring guide (Mintlify pages). The release copies it to the `editor` folder of the docs site (`.github/nanoforge.json` → `docs`). `docs/docs/navigation.json` sets the sidebar order: every page must be listed in it, once. Link pages relative to the file (`../editor/play`); the sync makes them absolute.
+  Screenshots are in `docs/docs/images`, taken on the engine's pong-network example (`create-project.png` and `init-project.png` show the projects website, kept from the previous documentation). The plugin guide walks through `examples/counter-plugin`.
 
 ### Manifests: packages and plugins (ADR 0003)
 
