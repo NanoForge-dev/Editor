@@ -60,7 +60,7 @@ setup() {
     fi
 
     echo "Syncing SvelteKit..."
-    pnpm exec svelte-kit sync || true
+    pnpm --filter @nanoforge-dev/editor exec svelte-kit sync || pnpm exec svelte-kit sync || npx svelte-kit sync || true
 }
 
 run_unit_tests() {
@@ -71,7 +71,12 @@ run_unit_tests() {
 
     mkdir -p "$RAW_DIR/coverage"
 
-    pnpm vitest run -c vite.config.ts \
+    local vitest_cfg="vitest.config.ts"
+    if [[ ! -f "$vitest_cfg" ]] && [[ -f "vite.config.ts" ]]; then
+        vitest_cfg="vite.config.ts"
+    fi
+
+    pnpm vitest run -c "$vitest_cfg" \
         --coverage \
         --coverage.reporter=text \
         --coverage.reporter=json-summary \
@@ -151,9 +156,14 @@ run_e2e_tests() {
     local exit_code=0
     e2e_start=$(date +%s)
 
+    local config_args=()
+    if [[ -f "playwright.nightly.config.ts" ]]; then
+        config_args=("--config=playwright.nightly.config.ts")
+    fi
+
     local results_file="$RAW_DIR/e2e-results.json"
     PLAYWRIGHT_JSON_OUTPUT_NAME="$results_file" \
-        pnpm exec playwright test --reporter=list,json || exit_code=$?
+        pnpm exec playwright test "${config_args[@]}" --reporter=list,json || exit_code=$?
 
     e2e_end=$(date +%s)
     e2e_duration=$((e2e_end - e2e_start))
