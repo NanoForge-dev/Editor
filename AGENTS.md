@@ -25,7 +25,7 @@ The NanoForge editor, rewritten from scratch. The full plan, with status per pha
 - **Commits.**
   - Conventional commits, with the package or plugin name as scope: `feat(settings-ui): …`, `fix(ui): …`.
   - Commitlint rejects sentence case, and a subject starting with an acronym such as "JSON" counts as sentence case: write "json".
-  - End the message with the `Co-Authored-By` line.
+  - No `Co-Authored-By` line.
   - Split work into logical commits: core/SDK changes first, then the plugin.
   - Husky runs Prettier and ESLint on staged files.
 - **Shell.**
