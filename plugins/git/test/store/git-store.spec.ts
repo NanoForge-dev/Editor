@@ -1,0 +1,152 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import type { GitStatus } from '@nanoforge-dev/editor-sdk';
+
+import { GitStore } from '../../src/store/git-store';
+import { status } from '../fixtures/status';
+
+describe('GitStore', () => {
+  const api = (value: GitStatus) => {
+    const calls: string[] = [];
+    return {
+      calls,
+      api: {
+        status: async () => (calls.push('status'), value),
+        branches: async () => (
+          calls.push('branches'),
+          [
+            { name: 'main', current: true, remote: false },
+            { name: 'feature', current: false, remote: false },
+          ]
+        ),
+        stashes: async () => (calls.push('stashes'), []),
+        log: async (limit: number, branch?: string) => (
+          calls.push(`log ${limit}${branch ? ` ${branch}` : ''}`),
+          []
+        ),
+      },
+    };
+  };
+
+  it('reads the repository, and nothing more than the status without one', async () => {
+    const store = new GitStore();
+    const repo = api(status());
+    store.setApi(repo.api);
+    await store.refresh();
+    expect(store.state.get()).toMatchObject({
+      status: { branch: 'main' },
+      branches: [{ name: 'main', current: true }, { name: 'feature' }],
+      busy: false,
+    });
+    const none = api({ ...status(), repository: false, files: [] });
+    store.setApi(none.api);
+    await store.refresh();
+    expect(new Set(none.calls)).toEqual(new Set(['status']));
+    expect(store.state.get().status?.repository).toBe(false);
+  });
+
+  it('shows a read as running only once it is slow', async () => {
+    vi.useFakeTimers();
+    try {
+      const store = new GitStore();
+      const repo = api(status());
+      let open: () => void = () => undefined;
+      const gate = new Promise<void>((resolve) => (open = resolve));
+      /** setApi starts the read. */
+      store.setApi({ ...repo.api, status: () => gate.then(() => status()) });
+      await vi.advanceTimersByTimeAsync(100);
+      expect(store.state.get().reading).toBe(false);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(store.state.get().reading).toBe(true);
+      open();
+      await store.refresh();
+      expect(store.state.get()).toMatchObject({ reading: false, status: { branch: 'main' } });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('refreshes after an operation and reports a failure', async () => {
+    const errors: string[] = [];
+    const store = new GitStore((title, error) => errors.push(`${title}: ${String(error)}`));
+    const repo = api(status());
+    store.setApi(repo.api);
+    await store.refresh();
+    repo.calls.length = 0;
+    expect(await store.run('Commit', async () => undefined)).toBe(true);
+    expect(repo.calls).toContain('status');
+    expect(
+      await store.run('Push failed', async () => {
+        throw new Error('rejected');
+      }),
+    ).toBe(false);
+    expect(errors).toEqual(['Push failed: Error: rejected']);
+    expect(store.state.get().busy).toBe(false);
+  });
+
+  it('keeps why the repository could not be read, and reports it once', async () => {
+    const errors: string[] = [];
+    const store = new GitStore((title) => errors.push(title));
+    let broken = true;
+    const repo = api(status());
+    store.setApi({
+      ...repo.api,
+      status: async () => {
+        if (broken) throw new Error('detected dubious ownership');
+        return repo.api.status();
+      },
+    });
+    await store.refresh();
+    await store.refresh();
+    expect(store.state.get().readError).toBe('detected dubious ownership');
+    expect(errors).toEqual(['Could not read the repository']);
+    broken = false;
+    await store.refresh();
+    expect(store.state.get()).toMatchObject({ readError: undefined, status: { branch: 'main' } });
+  });
+
+  it('says so in a hosted editor, and asks for more history', async () => {
+    const store = new GitStore();
+    store.setApi({
+      ...api(status()).api,
+      status: async () => {
+        throw Object.assign(new Error('no'), { code: 'FORBIDDEN' });
+      },
+    });
+    await store.refresh();
+    expect(store.state.get().unavailable).toMatch(/local editors/);
+    const repo = api(status());
+    store.setApi(repo.api);
+    await store.refresh();
+    await store.showMore();
+    expect(repo.calls).toContain('log 100');
+    await store.showBranch('feature');
+    expect(repo.calls).toContain('log 50 feature');
+    await store.showBranch('gone');
+    expect(store.state.get().logBranch).toBeUndefined();
+  });
+
+  it('keeps a branch chosen while a read runs', async () => {
+    const store = new GitStore();
+    const repo = api(status());
+    let open: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (open = resolve));
+    let first = true;
+    store.setApi({
+      ...repo.api,
+      log: async (limit, branch) => {
+        if (first) {
+          first = false;
+          await gate;
+        }
+        return repo.api.log(limit, branch);
+      },
+    });
+    await vi.waitFor(() => expect(repo.calls).toContain('branches'));
+    const shown = store.showBranch('feature');
+    open();
+    await shown;
+    expect(store.state.get().logBranch).toBe('feature');
+    expect(repo.calls).toContain('log 50 feature');
+  });
+});

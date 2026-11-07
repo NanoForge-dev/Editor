@@ -1,0 +1,335 @@
+import { unzipSync } from 'fflate';
+import { execFileSync } from 'node:child_process';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import type { FileChange } from '@nanoforge-dev/editor-protocol';
+
+import { archiveFolder } from '../../src/fs/archive';
+import { ProjectFileSystem, TRASH_TTL_MS } from '../../src/fs/fs-service';
+import { ProjectWatcher } from '../../src/fs/watcher';
+import { sha1 } from '../../src/util/hash';
+
+const roots: string[] = [];
+const project = () => {
+  const root = mkdtempSync(join(tmpdir(), 'nf-fs-'));
+  roots.push(root);
+  mkdirSync(join(root, 'src'));
+  writeFileSync(join(root, 'src/main.ts'), 'export {};\n');
+  return { root, fs: new ProjectFileSystem(root) };
+};
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
+
+describe('ProjectFileSystem', () => {
+  it('gives files their content hash, the same after a touch, another after an edit', async () => {
+    const { root, fs } = project();
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === 'src')?.hash).toBeUndefined();
+    expect(listed.find((entry) => entry.path === 'src/main.ts')?.hash).toBe(sha1('export {};\n'));
+    const later = new Date(Date.now() + 60_000);
+    utimesSync(join(root, 'src/main.ts'), later, later);
+    expect((await fs.stat('src/main.ts'))?.hash).toBe(sha1('export {};\n'));
+    writeFileSync(join(root, 'src/main.ts'), 'export [];\n');
+    utimesSync(join(root, 'src/main.ts'), later, later);
+    expect((await fs.stat('src/main.ts'))?.hash).toBe(sha1('export [];\n'));
+  });
+
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'gives no hash to a file it cannot read, and still stats it after a rename',
+    async () => {
+      const { root, fs } = project();
+      writeFileSync(join(root, 'src/locked.ts'), 'x');
+      chmodSync(join(root, 'src/locked.ts'), 0o000);
+      try {
+        expect(await fs.stat('src/locked.ts')).toMatchObject({
+          path: 'src/locked.ts',
+          kind: 'file',
+        });
+        expect((await fs.stat('src/locked.ts'))?.hash).toBeUndefined();
+        expect(await fs.rename('src/locked.ts', 'src/moved.ts')).toMatchObject({
+          path: 'src/moved.ts',
+        });
+        const listed = await fs.list('', true);
+        expect(listed.find((entry) => entry.path === 'src/moved.ts')?.hash).toBeUndefined();
+      } finally {
+        for (const name of ['locked.ts', 'moved.ts']) {
+          if (existsSync(join(root, 'src', name))) chmodSync(join(root, 'src', name), 0o644);
+        }
+      }
+    },
+  );
+
+  it.skipIf(process.platform === 'win32')('lists a named pipe without reading it', async () => {
+    const { root, fs } = project();
+    execFileSync('mkfifo', [join(root, 'src/pipe')]);
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === 'src/pipe')?.hash).toBeUndefined();
+    expect((await fs.stat('src/pipe'))?.hash).toBeUndefined();
+  });
+
+  it('gives no hash to the files in the trash', async () => {
+    const { fs } = project();
+    const { trashPath } = await fs.delete('src/main.ts');
+    const listed = await fs.list('', true);
+    expect(listed.find((entry) => entry.path === trashPath)).toBeDefined();
+    expect(listed.find((entry) => entry.path === trashPath)?.hash).toBeUndefined();
+  });
+
+  it('answers readMany within 8 MiB, the rest for the next call', async () => {
+    const { root, fs } = project();
+    const big = new Uint8Array(5 * 1024 * 1024);
+    for (const name of ['a', 'b', 'c']) writeFileSync(join(root, `src/${name}.bin`), big);
+    const first = await fs.readMany(['a', 'b', 'c'].map((name) => ({ path: `src/${name}.bin` })));
+    expect(first.files.map((file) => file.path)).toEqual(['src/a.bin']);
+    expect(first.rest).toEqual(['src/b.bin', 'src/c.bin']);
+    const known = (await fs.stat('src/a.bin'))!.hash!;
+    const again = await fs.readMany([{ path: 'src/a.bin', knownHash: known }, { path: 'nope' }]);
+    expect(again.files).toMatchObject([
+      { path: 'src/a.bin', notModified: true },
+      { path: 'nope', error: { code: 'NOT_FOUND' } },
+    ]);
+  });
+
+  it('reads, stats and lists', async () => {
+    const { fs } = project();
+    const file = await fs.read('src/main.ts');
+    expect(new TextDecoder().decode(file.content)).toBe('export {};\n');
+    expect(file.hash).toBe(sha1('export {};\n'));
+    expect(await fs.stat('missing')).toBeNull();
+    expect((await fs.list('', true)).map((e) => [e.path, e.kind])).toEqual([
+      ['src', 'directory'],
+      ['src/main.ts', 'file'],
+    ]);
+  });
+
+  it('never reaches a .git folder', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, '.git/hooks'), { recursive: true });
+    writeFileSync(join(root, '.git/config'), '[core]\n');
+    expect((await fs.list('')).map((entry) => entry.path)).toEqual(['src']);
+    await expect(fs.read('.git/config')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.write('.git/hooks/post-checkout', 'x')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(fs.write('libs/x/.GIT/config', 'x')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(fs.rename('src', '.git/src')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.copy('.git', 'leak')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(existsSync(join(root, '.git/hooks/post-checkout'))).toBe(false);
+  });
+
+  it('never reaches a .git folder through a link inside the project', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, '.git/hooks'), { recursive: true });
+    writeFileSync(join(root, '.git/config'), '[core]\n');
+    symlinkSync('.git', join(root, 'x'));
+    symlinkSync('../.git/hooks', join(root, 'src/hooks'));
+    await expect(fs.read('x/config')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.stat('x/config')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.write('x/config', '[core]\n\tfsmonitor = touch pwned\n')).rejects.toMatchObject(
+      { code: 'FORBIDDEN' },
+    );
+    await expect(fs.write('src/hooks/post-merge', 'x')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    await expect(fs.copy('src/main.ts', 'x/main.ts')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+    expect(readFileSync(join(root, '.git/config'), 'utf8')).toBe('[core]\n');
+    expect(existsSync(join(root, '.git/hooks/post-merge'))).toBe(false);
+  });
+
+  it('writes atomically with optimistic concurrency', async () => {
+    const { root, fs } = project();
+    const { hash } = await fs.read('src/main.ts');
+    const written = await fs.write('src/main.ts', 'export const a = 1;\n', { expectedHash: hash });
+    expect(readFileSync(join(root, 'src/main.ts'), 'utf8')).toBe('export const a = 1;\n');
+    await expect(fs.write('src/main.ts', 'x', { expectedHash: hash })).rejects.toMatchObject({
+      code: 'CONFLICT',
+      data: { hash: written.hash },
+    });
+    await expect(fs.write('src/new.ts', 'x', { expectedHash: 'abc' })).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    await fs.write('deep/new/file.ts', 'x', { expectedHash: null });
+    expect(readdirSync(join(root, 'src')).some((name) => name.includes('.nf-'))).toBe(false);
+  });
+
+  it('jails paths, including through symlinks', async () => {
+    const { root, fs } = project();
+    const outside = mkdtempSync(join(tmpdir(), 'nf-outside-'));
+    roots.push(outside);
+    writeFileSync(join(outside, 'secret'), 'x');
+    symlinkSync(outside, join(root, 'link'));
+    await expect(fs.read('../etc/passwd')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.read('link/secret')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(fs.write('link/new', 'x')).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('moves deleted entries to the trash', async () => {
+    const { root, fs } = project();
+    await fs.delete('src/main.ts');
+    expect(existsSync(join(root, 'src/main.ts'))).toBe(false);
+    const trash = readdirSync(join(root, '.nanoforge/editor/trash'));
+    expect(trash).toHaveLength(1);
+    expect(trash[0]).toMatch(/main\.ts$/);
+    expect(readFileSync(join(root, '.nanoforge/editor/.gitignore'), 'utf8')).toContain('trash/');
+    await expect(fs.delete('')).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('renames and copies without overwriting by default', async () => {
+    const { fs } = project();
+    await fs.copy('src/main.ts', 'src/copy.ts');
+    await expect(fs.copy('src/main.ts', 'src/copy.ts')).rejects.toMatchObject({ code: 'CONFLICT' });
+    await fs.rename('src/copy.ts', 'lib/moved.ts');
+    expect(await fs.stat('lib/moved.ts')).toMatchObject({ kind: 'file' });
+    await expect(fs.rename('missing', 'x')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+describe('ProjectFileSystem packages, ignore and trash', () => {
+  it('hides .nfignore entries from listings', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, 'generated'));
+    writeFileSync(join(root, 'generated/out.ts'), '');
+    writeFileSync(join(root, 'src/secret.ts'), '');
+    writeFileSync(join(root, '.nfignore'), '# hidden\ngenerated/\nsrc/secret.ts\n');
+    const paths = (await fs.list('', true)).map((entry) => entry.path);
+    expect(paths).toContain('.nfignore');
+    expect(paths).toContain('src/main.ts');
+    expect(paths.filter((path) => path.includes('generated') || path.includes('secret'))).toEqual(
+      [],
+    );
+    expect(fs.isIgnored('generated', true)).toBe(true);
+    expect(fs.isIgnored('src/main.ts', false)).toBe(false);
+  });
+
+  it('never changes installed packages (nf_modules)', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, 'nf_modules/physics'), { recursive: true });
+    writeFileSync(join(root, 'nf_modules/physics/body.ts'), 'export {};\n');
+    await expect(fs.write('nf_modules/physics/body.ts', 'x')).rejects.toThrow('cannot be changed');
+    await expect(fs.delete('nf_modules/physics')).rejects.toThrow('cannot be changed');
+    await expect(fs.rename('src/main.ts', 'nf_modules/main.ts')).rejects.toThrow(
+      'cannot be changed',
+    );
+    await fs.copy('nf_modules/physics/body.ts', 'src/body.ts');
+    expect(readFileSync(join(root, 'src/body.ts'), 'utf8')).toBe('export {};\n');
+  });
+
+  it('restores deleted entries from the trash', async () => {
+    const { root, fs } = project();
+    const { trashPath } = await fs.delete('src/main.ts');
+    expect(existsSync(join(root, 'src/main.ts'))).toBe(false);
+    await fs.restore(trashPath, 'src/main.ts');
+    expect(readFileSync(join(root, 'src/main.ts'), 'utf8')).toBe('export {};\n');
+    await expect(fs.restore('src/main.ts', 'src/other.ts')).rejects.toThrow('Not in the trash');
+  });
+
+  it('empties the trash of entries deleted over a month ago', async () => {
+    const { root, fs } = project();
+    const { trashPath } = await fs.delete('src/main.ts');
+    const deletedAt = Number(/trash\/(\d+)-/.exec(trashPath)![1]);
+    expect(await fs.purgeTrash(deletedAt + TRASH_TTL_MS)).toBe(0);
+    expect(existsSync(join(root, trashPath))).toBe(true);
+    expect(await fs.purgeTrash(deletedAt + TRASH_TTL_MS + 1)).toBe(1);
+    expect(existsSync(join(root, trashPath))).toBe(false);
+  });
+});
+
+describe('archiveFolder', () => {
+  it('streams a folder without the trash and packages, and refuses one too large', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, 'nf_modules/@acme/ball'), { recursive: true });
+    writeFileSync(join(root, 'nf_modules/@acme/ball/ball.ts'), 'export {};\n');
+    await fs.delete('src/main.ts');
+    writeFileSync(join(root, 'kept.txt'), 'kept\n');
+    const stream = await archiveFolder(fs, '');
+    const files = unzipSync(new Uint8Array(await new Response(stream).arrayBuffer()));
+    expect(Object.keys(files).sort()).toEqual(expect.arrayContaining(['kept.txt']));
+    expect(Object.keys(files).some((name) => name.includes('trash/'))).toBe(false);
+    expect(Object.keys(files).some((name) => name.startsWith('nf_modules/'))).toBe(false);
+    expect(new TextDecoder().decode(files['kept.txt'])).toBe('kept\n');
+    await expect(archiveFolder(fs, '', 3)).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
+  });
+
+  it('zips large files in a worker, and leaves out a file deleted since the listing', async () => {
+    const { root, fs } = project();
+    const large = new Uint8Array(300_000).map((_, index) => index % 251);
+    writeFileSync(join(root, 'large.bin'), large);
+    const listed = await fs.list('', true);
+    const ghost = { ...listed.find((entry) => entry.path === 'src/main.ts')!, path: 'ghost.txt' };
+    const stale = Object.create(fs) as ProjectFileSystem;
+    stale.list = async () => [...listed, ghost];
+    const stream = await archiveFolder(stale, '');
+    const files = unzipSync(new Uint8Array(await new Response(stream).arrayBuffer()));
+    expect(Object.keys(files).sort()).toEqual(['large.bin', 'src/main.ts']);
+    expect(files['large.bin']).toEqual(large);
+  });
+});
+
+describe('ProjectWatcher', () => {
+  it('reports batched changes within 200 ms and ignores noise', async () => {
+    const { root, fs } = project();
+    mkdirSync(join(root, '.nanoforge/editor'), { recursive: true });
+    mkdirSync(join(root, 'node_modules'));
+    mkdirSync(join(root, 'dist'));
+    const watcher = new ProjectWatcher(fs.jail, { ignoredPaths: () => ['dist'] });
+    const batches: FileChange[][] = [];
+    const subscription = watcher.onDidChange((changes) => batches.push(changes));
+    await watcher.ready;
+
+    const start = Date.now();
+    writeFileSync(join(root, 'src/new.ts'), 'x');
+    writeFileSync(join(root, 'node_modules/ignored.js'), 'x');
+    writeFileSync(join(root, 'dist/main.js'), 'x');
+    mkdirSync(join(root, '.nanoforge/editor/cache/meta/apps'), { recursive: true });
+    writeFileSync(join(root, '.nanoforge/editor/cache/meta/apps/client.json'), '{}');
+    await fs.write('src/main.ts', 'changed');
+    while (!batches.length && Date.now() - start < 1000) await new Promise((r) => setTimeout(r, 5));
+    const elapsed = Date.now() - start;
+    await new Promise((r) => setTimeout(r, 100));
+    subscription.dispose();
+
+    expect(elapsed).toBeLessThan(200);
+    expect(batches.flat().sort((a, b) => a.path.localeCompare(b.path))).toEqual([
+      { type: 'changed', kind: 'file', path: 'src/main.ts' },
+      { type: 'created', kind: 'file', path: 'src/new.ts' },
+    ]);
+  });
+
+  it('never follows a link that leaves the project', async () => {
+    const { root, fs } = project();
+    const outside = mkdtempSync(join(tmpdir(), 'nf-outside-'));
+    roots.push(outside);
+    writeFileSync(join(outside, 'secret.txt'), 'x');
+    symlinkSync(outside, join(root, 'link'));
+    const watcher = new ProjectWatcher(fs.jail);
+    const batches: FileChange[][] = [];
+    const subscription = watcher.onDidChange((changes) => batches.push(changes));
+    await watcher.ready;
+    writeFileSync(join(outside, 'later.txt'), 'x');
+    writeFileSync(join(root, 'src/new.ts'), 'x');
+    const start = Date.now();
+    while (!batches.length && Date.now() - start < 1000) await new Promise((r) => setTimeout(r, 5));
+    await new Promise((r) => setTimeout(r, 150));
+    subscription.dispose();
+    expect(batches.flat().map((change) => change.path)).toEqual(['src/new.ts']);
+  });
+});

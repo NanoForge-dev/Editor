@@ -1,0 +1,121 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/ecs",
+  "version": "0.1.0",
+  "displayName": "ECS",
+  "description": "Entities, components and systems of each app: hierarchy, inspector, browser, and the live world while playing.",
+  "engines": {
+    "editor": ">=0.1.0"
+  },
+  "engineLibs": {
+    "required": {
+      "@nanoforge-dev/ecs": "*"
+    },
+    "optional": {
+      "@nanoforge-dev/graphics-2d": "*"
+    }
+  },
+  "entry": {
+    "client": "index.js",
+    "worker": "worker.js"
+  },
+  "activation": [
+    "onWidget:ecs.hierarchy",
+    "onWidget:ecs.inspector",
+    "onWidget:ecs.browser",
+    "onWidget:ecs.systems",
+    "onCommand:ecs.addEntity",
+    "onCommand:ecs.removeEntity",
+    "onWidget:code-editor.script",
+    "onWidget:viewport.scene"
+  ],
+  "contributes": {
+    "itemOwner": {
+      "schema": 1,
+      "tags": ["component", "system", "query", "uses"]
+    },
+    "widgets": [
+      {
+        "id": "ecs.hierarchy",
+        "tip": {
+          "text": "The entities your app's main.ts creates. + adds one; select one to see its components in the Inspector.",
+          "docs": "editor/entities"
+        },
+        "essential": true,
+        "title": "Hierarchy",
+        "icon": "list-tree",
+        "defaultSlot": "leftTop",
+        "order": 200
+      },
+      {
+        "id": "ecs.inspector",
+        "tip": {
+          "text": "The components of the selected entity. A change here is written into your code, and Ctrl+Z undoes it.",
+          "docs": "editor/components"
+        },
+        "essential": true,
+        "title": "Inspector",
+        "icon": "sliders-horizontal",
+        "defaultSlot": "rightTop",
+        "order": 150
+      },
+      {
+        "id": "ecs.browser",
+        "tip": {
+          "text": "The components (C) and systems (S) the selected app can use: its own, its shared libraries' and its installed packages'.",
+          "docs": "editor/components"
+        },
+        "title": "Components",
+        "icon": "blocks",
+        "defaultSlot": "leftBottom",
+        "order": 200
+      },
+      {
+        "id": "ecs.systems",
+        "tip": {
+          "text": "The systems the selected app runs, in run order, with the components each one reads.",
+          "docs": "editor/systems"
+        },
+        "title": "Systems",
+        "icon": "settings",
+        "defaultSlot": "leftBottom",
+        "order": 210
+      }
+    ],
+    "commands": [
+      {
+        "id": "ecs.addEntity",
+        "title": "Add entity",
+        "category": "ECS"
+      },
+      {
+        "id": "ecs.removeEntity",
+        "title": "Remove selected entity",
+        "category": "ECS"
+      }
+    ],
+    "settings": [
+      {
+        "key": "autoApply",
+        "type": "boolean",
+        "default": false,
+        "title": "Apply live edits to code",
+        "description": "Write every change made while playing to the code as it happens.",
+        "category": "Editor/ECS",
+        "order": 0
+      },
+      {
+        "key": "liveRateMs",
+        "type": "number",
+        "minimum": 16,
+        "maximum": 2000,
+        "default": 100,
+        "title": "Live world refresh (ms)",
+        "description": "How often the running game sends its world while playing.",
+        "category": "Editor/ECS",
+        "order": 1
+      }
+    ]
+  }
+}

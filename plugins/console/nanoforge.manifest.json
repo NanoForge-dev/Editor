@@ -1,0 +1,71 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/console",
+  "version": "0.1.0",
+  "displayName": "Console",
+  "description": "The Console (game, build, task, editor and plugin output) and the Problems of the project.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onStartup"],
+  "contributes": {
+    "widgets": [
+      {
+        "id": "console.console",
+        "tip": {
+          "text": "What your game, its builds and the editor print. The buttons above filter it by group and level, and the search by text.",
+          "docs": "editor/play"
+        },
+        "essential": true,
+        "title": "Console",
+        "icon": "square-terminal",
+        "defaultSlot": "bottom",
+        "order": 100
+      },
+      {
+        "id": "console.problems",
+        "tip": {
+          "text": "Errors and warnings in your code, found as you type. Click one to open its line.",
+          "docs": "editor/code-editor"
+        },
+        "title": "Problems",
+        "icon": "circle-alert",
+        "defaultSlot": "bottom",
+        "order": 110
+      }
+    ],
+    "commands": [
+      { "id": "console.show", "title": "Show the console", "category": "Console" },
+      { "id": "console.clear", "title": "Clear the console", "category": "Console" },
+      { "id": "console.showProblems", "title": "Show problems", "category": "Console" },
+      {
+        "id": "console.errorsOnly",
+        "title": "Show only errors, or every level again",
+        "category": "Console"
+      }
+    ],
+    "keybindings": [{ "key": "Mod+Alt+E", "command": "console.errorsOnly" }],
+    "settings": [
+      {
+        "key": "maxLines",
+        "type": "number",
+        "minimum": 100,
+        "maximum": 20000,
+        "default": 2000,
+        "title": "Console lines kept",
+        "description": "Older lines are dropped.",
+        "category": "Editor/Console",
+        "order": 0
+      },
+      {
+        "key": "checkWholeProject",
+        "type": "boolean",
+        "default": true,
+        "title": "Check the whole project for problems",
+        "description": "Check every code file, not only the open ones. Turn off on big projects if the editor feels slow.",
+        "category": "Editor/Console",
+        "order": 1
+      }
+    ]
+  }
+}

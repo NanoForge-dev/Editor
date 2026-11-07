@@ -1,0 +1,10 @@
+{
+  "engine": {
+    "repository": "https://github.com/NanoForge-dev/Engine.git",
+    "ref": "3423bac441053ce1cd43e1a2a0ecc902447d083c"
+  },
+  "cli": {
+    "repository": "https://github.com/NanoForge-dev/CLI.git",
+    "ref": "044015451885e5ef2a3ad6475477ae326fc21406"
+  }
+}

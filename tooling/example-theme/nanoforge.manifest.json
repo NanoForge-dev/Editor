@@ -1,0 +1,55 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@acme/ocean",
+  "version": "1.0.0",
+  "displayName": "Ocean",
+  "description": "A deep blue theme, and icons to go with it.",
+  "keywords": ["theme"],
+  "engines": { "editor": ">=0.1.0" },
+  "contributes": {
+    "themes": [
+      {
+        "id": "acme-ocean",
+        "label": "Ocean",
+        "extends": "nanoforge-dark",
+        "colors": {
+          "bg": "#0d1622",
+          "surface": "#122031",
+          "raised": "#18293d",
+          "sunken": "#0f1a28",
+          "hover": "#1d3149",
+          "pressed": "#233a55",
+          "border": "#21364d",
+          "accent": "#176aa8",
+          "accent-hover": "#135a8f",
+          "accent-text": "#6cc3ff",
+          "selection": "#1d4266"
+        },
+        "syntax": {
+          "keyword": "#6cc3ff",
+          "string": "#9fdba8",
+          "number": "#f2c879",
+          "comment": "#7b8ea3",
+          "type": "#7fe0d4"
+        },
+        "tokens": { "radius-control": "4px", "radius-float": "8px" }
+      }
+    ],
+    "icons": [{ "id": "acme-wave", "path": "icons/wave.svg" }],
+    "iconThemes": [
+      {
+        "id": "acme-ocean-icons",
+        "label": "Ocean icons",
+        "icons": {
+          "folder": "icons/folder.svg",
+          "folder-open": "icons/folder-open.svg",
+          "acme-code": "icons/code.svg",
+          "acme-assets": "icons/assets.svg"
+        },
+        "files": [{ "pattern": "**/*.{ts,js}", "icon": "acme-code" }],
+        "folders": [{ "pattern": "**/assets", "icon": "acme-assets" }]
+      }
+    ]
+  }
+}

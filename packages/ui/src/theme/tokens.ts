@@ -1,0 +1,202 @@
+/**
+ * Design tokens of the editor. Colors come from themes; everything else is shared.
+ * All tokens are CSS custom properties named `--nf-<group>-<name>`.
+ */
+export const COLOR_TOKENS = [
+  /** App chrome behind panels. */
+  'bg',
+  /** Panels and docks. */
+  'surface',
+  /** Floating surfaces: menus, dialogs, floating docks. */
+  'raised',
+  /** Inputs and wells. */
+  'sunken',
+  'hover',
+  'pressed',
+  'border',
+  'border-strong',
+  'text',
+  'text-muted',
+  'text-faint',
+  /** Primary actions and active markers: the NanoForge brand violet. */
+  'accent',
+  'accent-hover',
+  /** Text drawn on the accent color. */
+  'on-accent',
+  /** Accent used for text (lighter in dark themes for contrast). */
+  'accent-text',
+  /** Keyboard focus rings and selection. */
+  'focus',
+  'selection',
+  'selection-text',
+  'danger',
+  'warning',
+  'success',
+  /** Backdrop of modal dialogs. */
+  'scrim',
+] as const;
+
+export type ColorToken = (typeof COLOR_TOKENS)[number];
+
+/** Code colors a theme may give (Monaco's token rules); the others come from Monaco's base. */
+export const SYNTAX_TOKENS = [
+  'keyword',
+  'string',
+  'number',
+  'comment',
+  'type',
+  'variable',
+  'regexp',
+  'delimiter',
+] as const;
+
+export type SyntaxToken = (typeof SYNTAX_TOKENS)[number];
+
+/** Shared tokens a theme may change (fonts and corners); the rest stays the editor's. */
+export const THEME_TOKENS = ['font-ui', 'font-code', 'radius-control', 'radius-float'] as const;
+
+export type ThemeToken = (typeof THEME_TOKENS)[number];
+
+/** A complete theme, as applied: every color, and the code colors and tokens it changes. */
+export interface ThemeDefinition {
+  readonly id: string;
+  readonly label: string;
+  readonly kind: 'dark' | 'light';
+  readonly colors: Readonly<Record<ColorToken, string>>;
+  readonly syntax?: Readonly<Partial<Record<SyntaxToken, string>>>;
+  readonly tokens?: Readonly<Partial<Record<ThemeToken, string>>>;
+}
+
+/**
+ * Text tokens reach 4.5:1 and `border-strong` 3:1 on every background of their theme (WCAG AA:
+ * text, and the edges of controls).
+ *
+ * Blue-grey steel surfaces with the NanoForge brand violet (`oklch(0.4493 0.1953 294.69)`,
+ * shared with the landing page and web workspace) as accent; focus and selection stay blue.
+ * The dark theme lifts the violet's lightness so markers stay visible on dark panels.
+ */
+export const nanoforgeDark: ThemeDefinition = {
+  id: 'nanoforge-dark',
+  label: 'NanoForge Dark',
+  kind: 'dark',
+  colors: {
+    bg: '#12161d',
+    surface: '#1a1f28',
+    raised: '#222834',
+    sunken: '#141821',
+    hover: '#262d3a',
+    pressed: '#2d3545',
+    border: '#2a3140',
+    'border-strong': '#797f8c',
+    text: '#d8dde7',
+    'text-muted': '#a9b0be',
+    'text-faint': '#9ba0ac',
+    accent: '#855bdd',
+    'accent-hover': '#7852c7',
+    'on-accent': '#ffffff',
+    'accent-text': '#b189ff',
+    focus: '#6d91ea',
+    selection: '#2c3f68',
+    'selection-text': '#eef2ff',
+    danger: '#e7837b',
+    warning: '#e4924a',
+    success: '#62b58c',
+    scrim: 'rgba(8, 10, 14, 0.62)',
+  },
+};
+
+export const nanoforgeLight: ThemeDefinition = {
+  id: 'nanoforge-light',
+  label: 'NanoForge Light',
+  kind: 'light',
+  colors: {
+    bg: '#dfe3ea',
+    surface: '#eef1f5',
+    raised: '#f9fafc',
+    sunken: '#e6e9ef',
+    hover: '#dde2ea',
+    pressed: '#d2d8e2',
+    border: '#c7cedb',
+    'border-strong': '#747a85',
+    text: '#1c2230',
+    'text-muted': '#465062',
+    'text-faint': '#565c69',
+    accent: '#612eb3',
+    'accent-hover': '#541ea0',
+    'on-accent': '#ffffff',
+    'accent-text': '#612eb3',
+    focus: '#3c63c7',
+    selection: '#c9d6f5',
+    'selection-text': '#101a33',
+    danger: '#a4362e',
+    warning: '#8c4c15',
+    success: '#226947',
+    scrim: 'rgba(28, 34, 48, 0.4)',
+  },
+};
+
+/** Theme-independent tokens. */
+export const SHARED_TOKENS: Readonly<Record<string, string>> = {
+  'font-ui': "'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
+  'font-code': "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+  'font-size-xs': '11px',
+  'font-size-sm': '12px',
+  'font-size-md': '13px',
+  'font-size-lg': '15px',
+  'font-size-xl': '19px',
+  'line-height': '1.45',
+  'space-1': '4px',
+  'space-2': '8px',
+  'space-3': '12px',
+  'space-4': '16px',
+  'space-5': '24px',
+  'space-6': '32px',
+  'radius-control': '3px',
+  'radius-float': '6px',
+  'control-height': '26px',
+  'row-height': '24px',
+  'shadow-float': '0 10px 30px -8px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25)',
+  'z-dock': '10',
+  'z-float': '100',
+  /** The tour's bubble and ring: over docks and floats, under dialogs, menus and toasts. */
+  'z-tour': '1500',
+  'z-dialog': '2000',
+  'z-menu': '2500',
+  'z-toast': '3000',
+  'motion-fast': '90ms',
+  motion: '160ms',
+  /** The only gradient of the UI (brand violet to focus blue): active screen marker, startup progress. */
+  temper: 'linear-gradient(90deg, #855bdd 0%, #6d62e0 50%, #5a80dc 100%)',
+};
+
+export const cssVar = (group: 'color' | 'token', name: string) =>
+  group === 'color' ? `var(--nf-color-${name})` : `var(--nf-${name})`;
+
+/** How tight the UI is: `normal` is the editor's own sizes. */
+export type Density = 'compact' | 'normal' | 'comfortable';
+
+/** The sizes a density changes, and its factor. */
+const DENSITY_TOKENS = ['space-1', 'space-2', 'space-3', 'space-4', 'control-height', 'row-height'];
+const DENSITY_FACTOR: Record<Density, number> = { compact: 0.85, normal: 1, comfortable: 1.2 };
+
+/** The shared tokens for a theme and a density. */
+export const sharedTokens = (
+  theme?: Pick<ThemeDefinition, 'tokens'>,
+  density: Density = 'normal',
+): Record<string, string> => {
+  const tokens: Record<string, string> = { ...SHARED_TOKENS, ...theme?.tokens };
+  if (density !== 'normal')
+    for (const name of DENSITY_TOKENS)
+      tokens[name] = `${Math.round(Number.parseFloat(tokens[name]!) * DENSITY_FACTOR[density])}px`;
+  return tokens;
+};
+
+/** CSS declarations of a theme (colors) plus the shared tokens. */
+export const themeDeclarations = (theme: ThemeDefinition, density: Density = 'normal'): string =>
+  [
+    `color-scheme: ${theme.kind};`,
+    ...Object.entries(theme.colors).map(([name, value]) => `--nf-color-${name}: ${value};`),
+    ...Object.entries(sharedTokens(theme, density)).map(
+      ([name, value]) => `--nf-${name}: ${value};`,
+    ),
+  ].join('\n  ');

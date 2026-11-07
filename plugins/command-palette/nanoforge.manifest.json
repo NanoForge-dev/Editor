@@ -1,0 +1,99 @@
+{
+  "$schema": "../../packages/kernel/schemas/plugin.schema.json",
+  "type": "plugin",
+  "name": "@nanoforge/command-palette",
+  "version": "0.1.0",
+  "displayName": "Command palette",
+  "description": "Run commands, open files, go to lines and symbols from one box, and edit the keyboard shortcuts.",
+  "engines": { "editor": ">=0.1.0" },
+  "entry": { "client": "index.js" },
+  "activation": ["onStartup"],
+  "contributes": {
+    "commands": [
+      { "id": "palette.show", "title": "Command palette…", "category": "View" },
+      { "id": "palette.files", "title": "Go to file…", "category": "Go" },
+      { "id": "palette.line", "title": "Go to line…", "category": "Go" },
+      { "id": "palette.symbols", "title": "Go to symbol in file…", "category": "Go" },
+      { "id": "keymap.open", "title": "Keyboard shortcuts…", "category": "File" }
+    ],
+    "keybindings": [
+      { "key": "Mod+Shift+P", "command": "palette.show" },
+      { "key": "Mod+P", "command": "palette.files" },
+      { "key": "Mod+G", "command": "palette.line" },
+      { "key": "Mod+Shift+O", "command": "palette.symbols" }
+    ],
+    "menus": [
+      { "menu": "view", "command": "palette.show", "group": "a-palette", "order": 0 },
+      { "menu": "view", "command": "palette.files", "group": "a-palette", "order": 1 },
+      { "menu": "file", "command": "keymap.open", "group": "z-settings", "order": 1 }
+    ],
+    "keymapPresets": [
+      {
+        "id": "vscode",
+        "title": "VS Code",
+        "description": "Shortcuts close to Visual Studio Code's.",
+        "bindings": [
+          { "key": "Mod+J", "command": "console.show" },
+          { "key": "Mod+`", "command": "console.show" },
+          { "key": "Mod+Shift+M", "command": "console.showProblems" },
+          { "key": "Mod+B", "command": "workbench.toggleSlot", "args": ["leftTop"] },
+          { "key": "Mod+K Mod+S", "command": "keymap.open" }
+        ]
+      },
+      {
+        "id": "godot",
+        "title": "Godot",
+        "description": "Shortcuts close to the Godot editor's.",
+        "bindings": [
+          { "key": "F8", "command": "runtime.stop", "when": "runtime.active" },
+          {
+            "key": "F7",
+            "command": "runtime.pause",
+            "when": "runtime.state == 'running' && runtime.controllable"
+          },
+          { "key": "F7", "command": "runtime.resume", "when": "runtime.state == 'paused'" },
+          { "key": "Mod+F1", "command": "workbench.openWidget", "args": ["viewport.scene"] },
+          { "key": "Mod+F2", "command": "workbench.openWidget", "args": ["viewport.game"] },
+          { "key": "Mod+F3", "command": "workbench.openWidget", "args": ["code-editor.script"] }
+        ]
+      },
+      {
+        "id": "intellij",
+        "title": "IntelliJ",
+        "description": "Shortcuts close to IntelliJ IDEA's: Shift Shift, Ctrl+Shift+A, Ctrl+K to commit, Alt+0 for the Commit window. Those a browser keeps for itself (Ctrl+T, Ctrl+F4, Ctrl+F5, Alt+1…9) are left out.",
+        "bindings": [
+          { "key": "Shift Shift", "command": "palette.show" },
+          { "key": "Mod+Shift+A", "command": "palette.show" },
+          { "key": "Mod+F12", "command": "palette.symbols" },
+          { "key": "Alt+0", "command": "workbench.openWidget", "args": ["git.changes"] },
+          { "key": "Mod+K S", "command": "codeEditor.saveAll", "remove": true },
+          {
+            "key": "Mod+S",
+            "command": "codeEditor.save",
+            "when": "focusedWidget == 'code-editor.script'",
+            "remove": true
+          },
+          { "key": "Mod+S", "command": "codeEditor.saveAll" },
+          { "key": "Mod+K", "command": "git.commit" },
+          {
+            "key": "Mod+Alt+L",
+            "command": "codeEditor.format",
+            "when": "focusedWidget == 'code-editor.script'"
+          },
+          {
+            "key": "Mod+Alt+O",
+            "command": "codeEditor.organizeImports",
+            "when": "focusedWidget == 'code-editor.script'"
+          },
+          {
+            "key": "Alt+Insert",
+            "command": "fileManager.newFile",
+            "when": "focusedWidget == 'file-manager.files' && !textInputFocus"
+          },
+          { "key": "Mod+F2", "command": "runtime.stop", "when": "runtime.active" },
+          { "key": "Mod+Alt+Shift+S", "command": "project.show" }
+        ]
+      }
+    ]
+  }
+}

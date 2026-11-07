@@ -1,0 +1,342 @@
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { SyntaxKind } from 'ts-morph';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import {
+  type CommandOrigin,
+  HistoryService,
+  type TextEdit,
+  applyTextEdits,
+} from '@nanoforge-dev/editor-history';
+import { Emitter, ObservableValue } from '@nanoforge-dev/editor-kernel';
+import {
+  type ClientProject,
+  MemoryContentCache,
+  MemoryTreeCache,
+  ProjectService,
+} from '@nanoforge-dev/editor-project';
+import type { RpcClient } from '@nanoforge-dev/editor-rpc';
+import { type EditorServer, createEditorServer, loadEnv } from '@nanoforge-dev/editor-server-core';
+import { createLoopbackClient } from '@nanoforge-dev/editor-server-core/testing';
+
+import {
+  CodeService,
+  DiagnosticsService,
+  type DocumentChange,
+  DocumentService,
+  type OpenDocument,
+  type WorkerPluginModule,
+  projectFsBackend,
+} from '../../src';
+import { serveEngine } from '../../src/worker-rpc/serve-engine';
+
+const MAIN = 'apps/client/src/main.ts';
+
+/**
+ * Waits for a check's result. A checker runs TypeScript over the project: with coverage on a slow
+ * runner it takes several times longer than locally, so the wait is long and the tests' timeouts
+ * leave room for it.
+ */
+const settled = (done: () => unknown, timeout = 25_000) =>
+  vi.waitFor(
+    () => {
+      if (!done()) throw new Error('not yet');
+    },
+    { timeout, interval: 25 },
+  );
+
+/** Worker plugin: renames the first `const` declared in a file. */
+const renamePlugin: WorkerPluginModule = {
+  activate: (sdk) => {
+    sdk.registerTransformer('test.rename-first-const', ({ file, edit }, op) => {
+      const declaration = file.getFirstDescendantByKindOrThrow(SyntaxKind.VariableDeclaration);
+      edit.replace(declaration.getNameNode(), (op as { name: string }).name);
+    });
+  },
+};
+
+let workspace: string;
+let editor: EditorServer;
+let rpc: RpcClient;
+let project: ClientProject;
+
+const setup = () => {
+  const documents = new DocumentService(projectFsBackend(project.fs));
+  const diagnostics = new DiagnosticsService();
+  const code = new CodeService({
+    projectId: project.id,
+    fs: project.fs,
+    rpc,
+    documents,
+    diagnostics,
+    diagnosticsDelayMs: 10,
+    createWorker: () => {
+      const channel = new MessageChannel();
+      serveEngine(channel.port2 as never, { importModule: async () => renamePlugin });
+      return channel.port1 as never;
+    },
+  });
+  return { documents, diagnostics, code, history: new HistoryService() };
+};
+
+/** A Monaco-like open document. */
+const fakeDocument = (uri: string, initial: string) => {
+  let text = initial;
+  const changes = new Emitter<DocumentChange>();
+  const document: OpenDocument & { text(): string } = {
+    uri,
+    kind: 'text',
+    onDidChange: changes.event,
+    dirty: new ObservableValue(false),
+    getText: () => text,
+    text: () => text,
+    applyEdits: (edits: readonly TextEdit[], origin: CommandOrigin | undefined) => {
+      const result = applyTextEdits(text, edits);
+      text = result.text;
+      changes.fire({ uri, edits, origin });
+      return result.inverse;
+    },
+    save: async () => undefined,
+    revert: async () => undefined,
+  };
+  return document;
+};
+
+beforeAll(async () => {
+  workspace = mkdtempSync(join(import.meta.dirname, '../../../server-core/test/.tmp-code-'));
+  cpSync(
+    join(import.meta.dirname, '../../../server-core/test/fixtures/pong-network'),
+    join(workspace, 'pong'),
+    { recursive: true },
+  );
+  const lib = join(workspace, 'pong/node_modules/@acme/speed');
+  mkdirSync(lib, { recursive: true });
+  writeFileSync(join(lib, 'package.json'), '{"name":"@acme/speed","types":"index.d.ts"}');
+  writeFileSync(join(lib, 'index.d.ts'), 'export declare const maxSpeed: number;');
+  mkdirSync(join(workspace, 'pong/checks'), { recursive: true });
+  writeFileSync(join(workspace, 'pong/checks/broken.ts'), 'export const n: number =\n  "text";\n');
+  writeFileSync(join(workspace, 'pong/checks/speed.ts'), 'export const speed = 1;\n');
+  writeFileSync(
+    join(workspace, 'pong/checks/uses-speed.ts'),
+    "import { speed } from './speed';\nexport const fast: number = speed;\n",
+  );
+  mkdirSync(join(workspace, 'pong/nf_modules/@acme/pkg'), { recursive: true });
+  writeFileSync(
+    join(workspace, 'pong/nf_modules/@acme/pkg/bad.ts'),
+    'export const n: number = "x";\n',
+  );
+  editor = createEditorServer({
+    env: loadEnv(
+      { NODE_ENV: 'test', FS_ROOT: workspace, DATA_DIR: mkdtempSync(join(tmpdir(), 'nf-data-')) },
+      workspace,
+    ),
+    version: 'test',
+  });
+  rpc = createLoopbackClient(editor);
+  project = await new ProjectService(rpc, {
+    contents: () => new MemoryContentCache(),
+    tree: () => new MemoryTreeCache(),
+  }).open({
+    path: 'pong',
+  });
+});
+
+afterAll(() => {
+  rpc.dispose();
+  editor.dispose();
+  rmSync(workspace, { recursive: true, force: true });
+});
+
+describe('CodeService', () => {
+  it('sends edits to the open document instead of the file', async () => {
+    const { documents, code, history } = setup();
+    await code.loadWorkerPlugin('test/rename', 'memory://plugin');
+    const onDisk = readFileSync(join(workspace, 'pong', MAIN), 'utf8');
+    const document = fakeDocument(MAIN, onDisk);
+    documents.register(document);
+    const { stack } = history.registerContext({ id: 'file', label: MAIN });
+
+    const command = await code.edit(
+      MAIN,
+      'test.rename-first-const',
+      { name: 'renamed' },
+      { label: 'Rename' },
+    );
+    await stack.push(command!);
+    expect(document.text()).toMatch(/const renamed/);
+    expect(readFileSync(join(workspace, 'pong', MAIN), 'utf8')).toBe(onDisk);
+    await stack.undo();
+    expect(document.text()).toBe(onDisk);
+    code.dispose();
+  });
+
+  it('refuses an edit when the text changed after it was computed', async () => {
+    const { documents, code, history } = setup();
+    await code.loadWorkerPlugin('test/rename', 'memory://plugin');
+    const onDisk = readFileSync(join(workspace, 'pong', MAIN), 'utf8');
+    const document = fakeDocument(MAIN, onDisk);
+    documents.register(document);
+    const { stack } = history.registerContext({ id: 'file', label: MAIN });
+    const command = await code.edit(
+      MAIN,
+      'test.rename-first-const',
+      { name: 'renamed' },
+      { label: 'Rename' },
+    );
+    document.applyEdits([{ start: 0, end: 0, text: '// typed meanwhile\n' }], undefined);
+    await expect(stack.push(command!)).rejects.toThrow(/changed while the edit was prepared/);
+    expect(document.text()).toBe(`// typed meanwhile\n${onDisk}`);
+    code.dispose();
+  });
+
+  it('starts a new worker after a failed start', async () => {
+    const { code } = setup();
+    let starts = 0;
+    const options = (code as unknown as { _options: { createWorker: () => unknown } })._options;
+    const create = options.createWorker;
+    options.createWorker = () => {
+      if (++starts === 1) throw new Error('worker blocked');
+      return create();
+    };
+    await expect(code.engine()).rejects.toThrow('worker blocked');
+    await expect(code.symbols(MAIN)).resolves.toBeInstanceOf(Array);
+    expect(starts).toBe(2);
+    code.dispose();
+  });
+
+  it('edits closed files on disk, undoes, and drops undo after an outside change', async () => {
+    const { code, history } = setup();
+    await code.loadWorkerPlugin('test/rename', 'memory://plugin');
+    const { stack } = history.registerContext({ id: 'file', label: MAIN });
+    const path = join(workspace, 'pong', MAIN);
+    const original = readFileSync(path, 'utf8');
+
+    await stack.push(
+      (await code.edit(MAIN, 'test.rename-first-const', { name: 'app' }, { label: 'Rename' }))!,
+    );
+    expect(readFileSync(path, 'utf8')).toMatch(/const app\b/);
+    await stack.undo();
+    expect(readFileSync(path, 'utf8')).toBe(original);
+    await stack.redo();
+
+    writeFileSync(path, `${readFileSync(path, 'utf8')}\n// hand edit\n`);
+    /** Watcher → ProjectFs. */
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(await stack.undo()).toBe(false);
+    expect(stack.state.canUndo).toBe(false);
+    code.dispose();
+  });
+
+  it('publishes diagnostics of watched files with types from node_modules', async () => {
+    const { code, documents, diagnostics } = setup();
+    const uri = 'apps/client/src/speed.ts';
+    documents.register(
+      fakeDocument(
+        uri,
+        "import { maxSpeed } from '@acme/speed';\nexport const s: string = maxSpeed;\n",
+      ),
+    );
+    /** Mirror first, then the open document text is pushed on change. */
+    await code.engine();
+    await (await code.engine()).setFiles([{ path: uri, text: await documents.getText(uri) }]);
+    const watch = code.watchDiagnostics(uri);
+    await settled(() => diagnostics.forUri(uri).length);
+    expect(diagnostics.forUri(uri).map((d) => d.code)).toEqual([2322]);
+    watch.dispose();
+    expect(diagnostics.forUri(uri)).toEqual([]);
+    code.dispose();
+  }, 60_000);
+
+  it('checks every file of the project while asked to, read-only packages aside', async () => {
+    const { code, diagnostics } = setup();
+    const uri = 'checks/broken.ts';
+    const check = code.checkProject();
+    await settled(() => diagnostics.forUri(uri).length);
+    expect(diagnostics.forUri(uri)).toMatchObject([
+      { code: 2322, source: 'typescript', line: 1, column: 14 },
+    ]);
+    expect(diagnostics.forUri('nf_modules/@acme/pkg/bad.ts')).toEqual([]);
+    code.watchDiagnostics(uri).dispose();
+    expect(diagnostics.forUri(uri)).toHaveLength(1);
+    check.dispose();
+    expect(diagnostics.forUri(uri)).toEqual([]);
+    code.dispose();
+  }, 60_000);
+
+  it('still checks the whole project when an edit comes before the first check ends', async () => {
+    const { code, diagnostics } = setup();
+    /** The first batch edits a file and takes long: the edit's check starts meanwhile. */
+    vi.spyOn(code, 'refreshDiagnostics').mockImplementationOnce(async () => {
+      await project.fs.write('checks/speed.ts', 'export const speed = 2;\n');
+      await new Promise((r) => setTimeout(r, 2500));
+      return [];
+    });
+    const check = code.checkProject();
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
+    expect(diagnostics.forUri('checks/broken.ts').map((d) => d.code)).toEqual([2322]);
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 60_000);
+
+  it('checks everything again after an edit to global declarations', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    await project.fs.write(
+      'checks/speed.ts',
+      'export const speed = 1;\ndeclare global {\n  var debugSpeed: number;\n}\n',
+    );
+    const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    await settled(() => checked().has('checks/broken.ts'));
+    expect(checked().has('checks/broken.ts')).toBe(true);
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 60_000);
+
+  it('keeps an edit made while a check reads what changed', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    /** While the check of `broken.ts` reads it, `speed.ts` changes: what imports it is checked. */
+    const service = code as unknown as {
+      _declaresGlobally: (paths: readonly string[]) => Promise<boolean>;
+    };
+    vi.spyOn(service, '_declaresGlobally').mockImplementationOnce(async () => {
+      await project.fs.write('checks/speed.ts', 'export const speed = 2;\n');
+      await new Promise((r) => setTimeout(r, 300));
+      return false;
+    });
+    await project.fs.write('checks/broken.ts', 'export const n: number =\n  "other";\n');
+    const user = 'checks/uses-speed.ts';
+    const checked = () => new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    await settled(() => checked().has(user));
+    expect(checked().has('checks/broken.ts')).toBe(true);
+    expect(checked().has(user)).toBe(true);
+    await project.fs.write('checks/broken.ts', 'export const n: number =\n  "text";\n');
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 60_000);
+
+  it('after an edit, checks again only the file and what imports it', async () => {
+    const { code, diagnostics } = setup();
+    const check = code.checkProject();
+    await settled(() => diagnostics.forUri('checks/broken.ts').length);
+    const refresh = vi.spyOn(code, 'refreshDiagnostics');
+    await project.fs.write('checks/speed.ts', 'export const speed = "fast";\n');
+    const user = 'checks/uses-speed.ts';
+    await settled(() => diagnostics.forUri(user).length);
+    expect(diagnostics.forUri(user).map((d) => d.code)).toEqual([2322]);
+    const checked = new Set(refresh.mock.calls.flatMap(([paths]) => paths));
+    expect([...checked].sort()).toEqual(['checks/speed.ts', user]);
+    await project.fs.write('checks/speed.ts', 'export const speed = 1;\n');
+    check.dispose();
+    code.dispose();
+  }, 60_000);
+});

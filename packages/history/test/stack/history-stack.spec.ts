@@ -1,0 +1,260 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import { type HistoryCommand, compositeCommand } from '../../src';
+import { cell, setup } from '../fixtures/history';
+
+describe('HistoryStack', () => {
+  it('undoes and redoes, and a new change drops the redo steps', async () => {
+    const { stack } = setup();
+    const { state, set } = cell(0);
+    await stack.push(set(1));
+    await stack.push(set(2));
+    await stack.undo();
+    expect(state.value).toBe(1);
+    await stack.redo();
+    expect(state.value).toBe(2);
+    await stack.undo();
+    await stack.push(set(5));
+    expect(stack.state.canRedo).toBe(false);
+    await stack.undo();
+    expect(state.value).toBe(1);
+  });
+
+  it('trims to the limit, live when the setting changes', async () => {
+    const { stack, limit } = setup({ limit: 3 });
+    const { state, set } = cell(0);
+    const disposed = vi.fn();
+    for (let i = 1; i <= 5; i++) await stack.push(set(i, { dispose: disposed }));
+    expect(stack.state.past).toHaveLength(3);
+    expect(disposed).toHaveBeenCalledTimes(2);
+    limit.set(1);
+    await stack.trim();
+    expect(stack.state.past).toHaveLength(1);
+    while (await stack.undo());
+    expect(state.value).toBe(4);
+  });
+
+  it('trims to the memory budget', async () => {
+    const { stack } = setup({ budgetBytes: 1000 });
+    const { set } = cell(0);
+    for (let i = 1; i <= 5; i++) await stack.push(set(i, { sizeBytes: 400 }));
+    expect(stack.state.past.map((entry) => entry.command.label)).toEqual(['set 4', 'set 5']);
+  });
+
+  it('merges same-key changes within the merge window only', async () => {
+    let now = 0;
+    const { stack } = setup({ now: () => now });
+    const { state, set } = cell(0);
+    await stack.push(set(1, { mergeKey: 'x' }));
+    now = 300;
+    await stack.push(set(2, { mergeKey: 'x' }));
+    now = 700;
+    await stack.push(set(3, { mergeKey: 'x' }));
+    now = 1500;
+    /** Too late: new step. */
+    await stack.push(set(4, { mergeKey: 'x' }));
+    expect(stack.state.past).toHaveLength(2);
+    await stack.undo();
+    expect(state.value).toBe(3);
+    await stack.undo();
+    expect(state.value).toBe(0);
+    await stack.redo();
+    expect(state.value).toBe(3);
+  });
+
+  it('groups transactions and rolls back nested failures', async () => {
+    const { stack } = setup();
+    const a = cell(0);
+    const b = cell(0);
+    await stack.transaction('move', async (tx) => {
+      await tx.push(a.set(1));
+      await tx.transaction('inner', async (inner) => inner.push(b.set(1)));
+    });
+    expect(stack.state.past).toHaveLength(1);
+    await expect(
+      stack.transaction('broken', async (tx) => {
+        await tx.push(a.set(2));
+        await tx.transaction('inner', async (inner) => {
+          await inner.push(b.set(2));
+          throw new Error('boom');
+        });
+      }),
+    ).rejects.toThrow('boom');
+    expect([a.state.value, b.state.value]).toEqual([1, 1]);
+    expect(stack.state.past).toHaveLength(1);
+    await stack.undo();
+    expect([a.state.value, b.state.value]).toEqual([0, 0]);
+  });
+
+  it('adds pushes made through the stack during a transaction to it', async () => {
+    const { stack } = setup();
+    const a = cell(0);
+    const b = cell(0);
+    const c = cell(0);
+    await stack.transaction('move', async (tx) => {
+      await tx.push(a.set(1));
+      await stack.push(b.set(1));
+      await stack.transaction('nested', async (inner) => inner.push(c.set(1)));
+    });
+    expect(stack.state.past).toHaveLength(1);
+    await expect(
+      stack.transaction('broken', async () => {
+        await stack.push(a.set(2));
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+    expect(a.state.value).toBe(1);
+    await stack.undo();
+    expect([a.state.value, b.state.value, c.state.value]).toEqual([0, 0, 0]);
+  });
+
+  it('runs async operations in order', async () => {
+    const { stack } = setup();
+    const log: string[] = [];
+    const slow = (name: string, ms: number): HistoryCommand => ({
+      label: name,
+      do: () =>
+        new Promise<void>((resolve) => setTimeout(() => (log.push(`do ${name}`), resolve()), ms)),
+      undo: () => void log.push(`undo ${name}`),
+    });
+    await Promise.all([
+      stack.push(slow('a', 30)),
+      stack.push(slow('b', 0)),
+      stack.undo(),
+      stack.redo(),
+    ]);
+    expect(log).toEqual(['do a', 'do b', 'undo b', 'do b']);
+  });
+
+  it('never undoes changes of other origins', async () => {
+    const { stack } = setup();
+    const mine = cell(0);
+    const theirs = cell(0);
+    await stack.push(mine.set(1));
+    theirs.set(7).do();
+    await stack.record({ ...theirs.set(7), origin: { kind: 'remote', id: 'bob' } });
+    expect(stack.state.past.map((entry) => entry.undoable)).toEqual([true, false]);
+    await stack.undo();
+    expect([mine.state.value, theirs.state.value]).toEqual([0, 7]);
+    expect(stack.state.canUndo).toBe(false);
+  });
+
+  it('tracks the savepoint for dirty state', async () => {
+    const { stack } = setup();
+    const { set } = cell(0);
+    expect(stack.state.dirty).toBe(false);
+    await stack.push(set(1));
+    stack.markSaved();
+    expect(stack.state.dirty).toBe(false);
+    await stack.push(set(2));
+    expect(stack.state.dirty).toBe(true);
+    await stack.undo();
+    expect(stack.state.dirty).toBe(false);
+  });
+
+  it('drops the history when a command is no longer valid', async () => {
+    const { history, stack } = setup();
+    const invalidated = vi.fn();
+    history.onDidInvalidate(invalidated);
+    const { state, set } = cell(0);
+    await stack.push(set(1, { isValid: () => false }));
+    expect(await stack.undo()).toBe(false);
+    expect(state.value).toBe(1);
+    expect(stack.state.past).toHaveLength(0);
+    expect(invalidated).toHaveBeenCalledWith({ contextId: 'scene', reason: 'invalid-command' });
+  });
+
+  it('undoes a merged step entirely, the last change first', async () => {
+    const { stack } = setup();
+    const text = { value: '' };
+    const insert = (chars: string): HistoryCommand => ({
+      label: 'type',
+      mergeKey: 'typing',
+      do: () => void (text.value += chars),
+      undo: () => void (text.value = text.value.slice(0, -chars.length)),
+    });
+    await stack.push(insert('ab'));
+    await stack.push(insert('cd'));
+    expect(stack.state.past).toHaveLength(1);
+    await stack.undo();
+    expect(text.value).toBe('');
+    await stack.redo();
+    expect(text.value).toBe('abcd');
+  });
+
+  it('reverts the parts of a group already applied when one fails', async () => {
+    const { stack } = setup();
+    const { state, set } = cell(0);
+    const failing: HistoryCommand = {
+      label: 'fail',
+      do: () => Promise.reject(new Error('disk full')),
+      undo: () => undefined,
+    };
+    await expect(stack.push(compositeCommand('move', [set(1), failing]))).rejects.toThrow(
+      'disk full',
+    );
+    expect(state.value).toBe(0);
+    expect(stack.state.past).toHaveLength(0);
+  });
+  describe('steps made of several edits of one document', () => {
+    /** A document and its edits, valid in the text they last left (as `DocumentService`'s). */
+    const doc = () => {
+      const file = { text: '' };
+      const append = (chars: string, extra: Partial<HistoryCommand> = {}): HistoryCommand => {
+        let expected = '';
+        const run = (text: string) => {
+          file.text = text;
+          expected = text;
+        };
+        return {
+          label: `append ${chars}`,
+          do: () => run(file.text + chars),
+          undo: () => run(file.text.slice(0, -chars.length)),
+          isValid: () => file.text === expected,
+          ...extra,
+        };
+      };
+      return { file, append };
+    };
+
+    it('undoes and redoes a transaction that edits the same document twice', async () => {
+      const { stack } = setup();
+      const { file, append } = doc();
+      await stack.transaction('two edits', async (tx) => {
+        await tx.push(append('a'));
+        await tx.push(append('b'));
+      });
+      expect(await stack.undo()).toBe(true);
+      expect(file.text).toBe('');
+      expect(await stack.redo()).toBe(true);
+      expect(file.text).toBe('ab');
+      expect(await stack.undo()).toBe(true);
+      expect(file.text).toBe('');
+    });
+
+    it('undoes merged edits of one document', async () => {
+      const { stack } = setup();
+      const { file, append } = doc();
+      await stack.push(append('a', { mergeKey: 'typing' }));
+      await stack.push(append('b', { mergeKey: 'typing' }));
+      await stack.push(append('c', { mergeKey: 'typing' }));
+      expect(stack.state.past).toHaveLength(1);
+      expect(await stack.undo()).toBe(true);
+      expect(file.text).toBe('');
+      expect(await stack.redo()).toBe(true);
+      expect(file.text).toBe('abc');
+    });
+
+    it('drops the step, leaving the text as it was, when a part of it changed since', async () => {
+      const { stack } = setup();
+      const other = doc();
+      const { file, append } = doc();
+      await stack.push(compositeCommand('edits', [append('a'), other.append('x')]));
+      file.text = 'a by hand';
+      expect(await stack.undo()).toBe(false);
+      expect(file.text).toBe('a by hand');
+      expect(other.file.text).toBe('x');
+      expect(stack.state.past).toHaveLength(0);
+    });
+  });
+});

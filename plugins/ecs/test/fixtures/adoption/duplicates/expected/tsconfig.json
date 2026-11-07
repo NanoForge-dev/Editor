@@ -1,0 +1,6 @@
+{
+  "compilerOptions": {
+    "paths": { "@pong/shared/*": ["./libs/shared/src/*"] },
+    "strict": true
+  }
+}
