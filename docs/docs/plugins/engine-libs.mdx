@@ -83,7 +83,7 @@ events.dispose();
 | Feature                                    | Events                           | Carries                                                          |
 | ------------------------------------------ | -------------------------------- | ---------------------------------------------------------------- |
 | `frameStats: { intervalMs }`               | `frame-stats`                    | Tick time and time per library, per window.                      |
-| `logs: { values: true }`                   | lines through `runtime.onLog`    | Console lines with the logged values and where they were logged. |
+| `logs: { values: true }` | lines through `runtime.onLog` | Console lines with the logged values and where they were logged. The editor always asks clients for them, so you don't need to request it. |
 | `networkTrace: { sampleRate, maxPerSecond, maxBytes }` | `network-trace`, `network-stats` | Packets (with their first `maxBytes` bytes), and totals every second. |
 | `ecsWorld: { intervalMs }`                 | `ecs-world`                      | Entities and components of the live world.                       |
 | `ecsSystemStats: { intervalMs }`           | `ecs-system-stats`               | Time per ECS system.                                             |

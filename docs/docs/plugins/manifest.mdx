@@ -180,7 +180,7 @@ A guided tour: steps shown one at a time over the editor, each pointing at a con
 }
 ```
 
-A step shows only while its `when` holds, and goes on by itself once `advanceWhen` holds or the key of `advanceWhenChanged` changes. `"exact": false` on a target matches a name that only starts with `name` (a tree row says more than its label). The command `tour.start` with the tour's id starts it. Here `counter.value` is a context key the plugin sets with `context.contextKeys.set`.
+A step shows only while its `when` holds, and goes on by itself once `advanceWhen` holds or the key of `advanceWhenChanged` changes. `"exact": false` on a target matches a name that only starts with `name` (a tree row says more than its label). The command `tour.start` with the tour's id starts it. `advanceWhenChanged` names a context key: here `counter.value`, which the plugin would set with `context.contextKeys.set` (the Counter example of this guide does not).
 
 ### `documentEditors`
 
