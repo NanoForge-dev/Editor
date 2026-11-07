@@ -44,7 +44,8 @@ Its first row is **main.ts**, the app itself: what `main` creates is in the game
 | Rename               | `F2`, or _Rename_. Every use of the class follows, and its file when it is named after it.                                                  |
 | Change its parent    | Drag it onto another scene, next to one, or _Move to the root_.                                                                             |
 | Start the game on it | _Set as initial scene_.                                                                                                                     |
-| Delete               | _Delete_. Its children lose their parent. Code that still uses the class must be changed.                                                   |
+| Edit or read it      | _Edit_ selects it for editing (see below); _Open in code_ opens its file.                                                                   |
+| Delete               | _Delete_. Its children lose their parent. Code that still uses the class must be changed. The initial scene can't be deleted.               |
 
 Each of these is one step you can undo (`Ctrl+Z` in the panel).
 
@@ -72,7 +73,7 @@ declare module '@nanoforge-dev/scene' {
 - Each var shows its type, its default, its description, the scenes that make it (`init`, its possible owners), and its uses: click it to list them, and click a use to open it.
 - **Add var** asks for its name, type, default and description; the file is created with the first var.
 - _Rename_ changes the declaration and every `vars.get("…")`, `vars.set("…")`… of that var. _Change type_, _Change default_ and _Change description_ edit the declaration; _Remove_ removes it, after a warning when the code uses it (_Remove anyway_).
-- A var used in code but not declared is listed under _Used but not declared_, with **Declare**.
+- A var used in code but not declared is listed under _Used but not declared_, with **Declare** [name].
 
 A var belongs to the scene that made it, and goes away when that scene is unloaded, unless it is persistent.
 

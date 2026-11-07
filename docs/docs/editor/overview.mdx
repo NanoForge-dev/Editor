@@ -4,7 +4,7 @@ icon: 'compass'
 description: 'Screens, panels, menus and the command palette'
 ---
 
-![The editor](../images/editor-overview.png)
+![The editor with a game open: menu bar and screens at the top, panels on the left, right and bottom](../images/editor-overview.png)
 
 ## Screens
 
@@ -22,7 +22,7 @@ The center of the editor shows one **screen** at a time, chosen in the top bar.
 The Project screen lists what the project is made of, and changes it.
 
 - **Adapt to the editor**: what the editor can't edit well in this project, with a change to preview and apply (see [Bring an existing project](adapt-a-project)).
-- **Apps**: each client and server, with its folder, its engine libraries and the shared libraries it uses. **Add app** creates a client or a server, empty or as a copy of another one. An empty app needs its dependencies: the editor offers to install them.
+- **Apps**: each client and server, with its folder, its engine libraries and the shared libraries it uses. **Add app** adds a client or a server app: give its folder and name, and start it empty or as a copy of another app. An empty app needs its dependencies: the editor offers to install them.
 - **Shared libraries**: code that several apps use (see [Components](components#share-between-client-and-server)). **Add shared library** creates one. Under **Used by**, tick the apps that use it: the editor writes it in the `libs` of each app's `nanoforge.config.ts` (`libs: ["../../libs/shared"]`) and in its `package.json`. Edit `libs` by hand and the screen follows.
 - The **⋯** menu of a card renames or removes it. Renaming a library rewrites every import of it. A library that code still imports can't be removed: the editor names the files.
 
@@ -30,7 +30,7 @@ Each change is one step you can undo with `Ctrl+Z` while the Project screen has 
 
 ## Panels
 
-Around the screen, **panels** sit in five docks: two on the left, two on the right, one at the bottom.
+Around the screen, **panels** sit in six docks: two on the left, two on the right, and two at the bottom. A new editor shows only the main panels (Files, Hierarchy, Scenes, Inspector, Console); _View › Layouts › All panels_ shows every one. See [Layout](layout).
 
 | Panel                    | For                                                                                      |
 | ------------------------ | ---------------------------------------------------------------------------------------- |
@@ -48,12 +48,12 @@ The first time a panel shows, a tip above it says what it is for, with a link to
 
 ## Menus
 
-- **File**: Packages…, Settings…, Close project.
-- **Edit**: undo and redo.
-- **View**: the command palette, panels, screens, docks, layouts, light or dark theme.
-- **Run**: Play, Pause, Step, Restart, Stop, and the play modes.
-- **VCS**: Git commands.
-- **Help**: documentation.
+- **File**: new files and folders, import, save, Packages…, Settings…, Keyboard shortcuts…, Close project.
+- **Edit**: undo and redo, format and organize imports.
+- **View**: the command palette, panels, screens, docks, layouts, the light or dark theme.
+- **Run**: Play and the play modes, Pause, Step, Restart, Stop, screenshots and Pop out.
+- **VCS**: Git commands (local editors).
+- **Help**: Tutorial and Documentation.
 
 Plugins add their own entries.
 
@@ -61,7 +61,7 @@ Plugins add their own entries.
 
 Press `Ctrl+Shift+P` and type what you want to do. Every action of the editor is there, with its shortcut.
 
-![The command palette](../images/command-palette.png)
+![The command palette listing commands with their shortcuts](../images/command-palette.png)
 
 The same box finds other things, depending on how the text starts:
 
@@ -78,8 +78,8 @@ Letters only need to be in order, not next to each other. The commands you ran l
 
 `Ctrl+Z` undoes the last change **of what has focus**: the file you edit, the Files panel, the layout. Each has its own history, so undoing a file move does not undo your code.
 
-The **History** panel (_View › Panels › History_) lists the steps of what you are working on. Click a step to go back to it; the _All_ switch shows every history.
+The **History** panel (_View › Panels › History_) lists the steps of what you are working on. Click a step to go back to it. The _All_ switch shows every history.
 
 ## Problems and the status bar
 
-The status bar shows the count of errors and warnings in the project's code; click it to open **Problems**, where each one opens its file at the right line.
+The status bar shows the project's name (click it for the Project screen), the count of errors and warnings in the code, the Git branch, and whether the editor is local or online. Click the count to open **Problems**, where each problem opens its file at the right line.

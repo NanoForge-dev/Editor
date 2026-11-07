@@ -19,16 +19,17 @@ The **Commit** panel on the left lists what changed since the last commit, as fi
 2. Write a message.
 3. **Commit**, or **Commit and push…**
 
-**Amend** replaces the last commit instead of adding one.
+Tick **Amend** to replace the last commit instead of adding one. The history button beside the message brings back an earlier message. The toolbar above the list has **Refresh**, **Show diff** (`Ctrl+D`), **Expand all** and **Collapse all**.
 
-| To                         | Do                                                                  |
-| -------------------------- | ------------------------------------------------------------------- |
-| See what changed in a file | Double-click it: the diff opens in the code editor.                 |
-| Undo your changes to files | Select them, then **Rollback**. It asks first: it cannot be undone. |
-| Start tracking a new file  | Right-click › Add to VCS                                            |
-| Ignore a file              | Right-click › Add to .gitignore                                     |
-| Copy a file's path         | Right-click › Copy path                                             |
-| Put changes aside          | The **Stash** tab: Stash changes, then Apply, Pop or Drop           |
+| To                         | Do                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| See what changed in a file | Double-click it: the diff opens in the code editor.                                 |
+| Undo your changes to files | Select them, then **Rollback…** (`Ctrl+Alt+Z`). It asks first: it cannot be undone. |
+| Open the file              | Right-click › Jump to source (`F4`)                                                 |
+| Start tracking a new file  | Right-click › Add to VCS                                                            |
+| Ignore a file              | Right-click › Add to .gitignore                                                     |
+| Copy a file's path         | Right-click › Copy path                                                             |
+| Put changes aside          | The **Stash** tab: **Stash changes**, then Apply, Pop or Drop                       |
 
 Checking a file only chooses what is committed. Selecting rows (click, `Ctrl`+click, `Shift`+click, or a click on a group to select all its files) is what Rollback and the other actions act on.
 
@@ -46,8 +47,8 @@ The status bar shows the branch and what is ahead and behind (`main ↑1 ↓2`).
 
 The **Git** panel at the bottom has three parts:
 
-- **Branches**: the current one, local ones, and remote ones. Double-click a branch to check it out. Right-click for _New branch from…_, _Update_, _Push…_, _Delete_.
-- **Commits** of the selected branch, with a filter by text, author and date.
+- **Branches**: _HEAD (Current Branch)_, _Local_ and _Remote_. Double-click a branch to check it out. Right-click for _Checkout_, _New branch from…_, _Update_, _Push…_ and _Delete_.
+- **Commits** of the selected branch, with a filter by text, author and date. **Show more** loads older ones; right-click › _Copy revision number_ copies a hash.
 - **Changed files** of the selected commit, and its details: the whole message, hash, author, date. Double-click a file to compare. The panel keeps the selected branch and commit.
 
 _VCS › New branch…_ creates a branch from the current commit and switches to it.

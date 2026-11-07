@@ -6,7 +6,7 @@ description: 'Run the game in the editor, watch it, and change it while it runs'
 
 Press **Play** in the top bar, or `F5`. The editor saves your files, builds the game, and runs it in the **Game** screen.
 
-![The game running in the editor](../images/game-playing.png)
+![A game running in the Game screen, with the Hierarchy and the Inspector showing its live entities](../images/game-playing.png)
 
 | Action             | Shortcut                         |
 | ------------------ | -------------------------------- |
@@ -41,14 +41,17 @@ A project can have several clients or several servers. Play starts one of each: 
 
 The toolbar above the game:
 
-| Tool           | Does                                                                                                                                      |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Resolution** | _Fit_ fills the screen. Or a fixed size: 1920×1080, 1280×720, 1024×768, a phone, a tablet (with portrait or landscape), or a custom size. |
-| **Zoom**       | For fixed sizes. _Pixel perfect_ keeps whole zoom steps and sharp pixels.                                                                 |
-| **Stats**      | An overlay: ticks per second, tick time, the slowest libraries, memory.                                                                   |
-| **Mute**       | Mutes the game's sounds and music.                                                                                                        |
-| **Screenshot** | Saves the game as a PNG in the project's `screenshots/` folder and copies it.                                                             |
-| **Pop out**    | Moves the running game to its own browser window. Closing it brings the game back.                                                        |
+| Tool                 | Does                                                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Resolution**       | _Fit to screen_ fills the screen. Or a fixed size: 1920×1080, 1280×720, 1024×768, a phone, a tablet, or a custom size. |
+| **Zoom**, **Rotate** | For fixed sizes: zoom in and out (**Reset zoom** goes back to 100%), and switch between portrait and landscape.        |
+| **Pixel perfect**    | Keeps whole zoom steps and sharp pixels.                                                                               |
+| **Stats**            | An overlay: ticks per second, tick time, the slowest libraries, memory (JS heap, in Chromium).                         |
+| **Mute**             | Mutes the game's sounds and music.                                                                                     |
+| **Maximize on play** | Hides the docks and stripes while the game plays.                                                                      |
+| **Screenshot**       | While the game runs: saves it as a PNG in the project's `screenshots/` folder and copies it.                           |
+| **Pop out**          | While the game runs: moves it to its own browser window. Closing that window brings the game back.                     |
+| **Move entities**    | Drag entities over the running game: see [Edit the running game](#edit-the-running-game).                              |
 
 While paused, the game is dimmed with a _Paused_ badge. The status bar shows the speed of the client and the server.
 
@@ -56,7 +59,7 @@ While paused, the game is dimmed with a _Paused_ badge. The status bar shows the
 
 The **Console** shows what the game prints, the output of builds, and messages of the editor and its plugins.
 
-- **Chips** at the top show or hide groups: Game, Build, Tasks, Editor, Plugins. A dot on a hidden group means it holds warnings or errors.
+- **Chips** at the top show or hide groups: Game, Build, Tasks, Editor, Plugins. Editor and Plugins are hidden at first. A dot on a hidden group means it holds warnings or errors.
 - **Levels**: debug, info, warnings, errors. **Search** filters by text.
 - A logged **object** shows as one line that expands into a tree.
 - A **file path** in a line is a link: it opens the file at that line. Lines of the game show where they were logged (`main.ts:12`).
@@ -81,11 +84,11 @@ Stopping the game drops the changes that were not applied; the editor offers to 
 
 Three panels at the bottom, each with a Client / Server selector.
 
-![The profiler](../images/profiler.png)
+![The Profiler panel: tick time over time against the budget line, and the time per library and per system](../images/profiler.png)
 
 - **Profiler**: tick time over the last two minutes, against a budget line (16.7 ms by default); spikes are marked. Below, the time per engine library and **per system**. Click the chart to freeze it on a moment. **Pause**, **Clear** and **Export** (CSV or JSON) are in its toolbar.
 - **Network**: the packets sent and received, with their size, type name and decoded content; filters by direction, transport and text; charts of bytes and packets per second. **Pause** keeps the list still, **Clear** starts it over, **Export** saves the packets shown (CSV or JSON).
-- **World**: every entity of the running game with its components, read-only, with a search: `Position` (has the component), `Position.x > 100`, `#12` (an entity id).
+- **World**: every entity of the running game with its components, read-only, with a search: `Position` (has the component), `Position.x > 100` (also `=`, `!=`, `>=`, `<`, `<=`), `#12` (an entity id), `"text"` (anywhere). Every term must match.
 
 They ask the game for data only while they are shown.
 
@@ -93,7 +96,7 @@ They ask the game for data only while they are shown.
 
 - A **build error** stops Play: the error is in the Console and in **Problems**, with its file and line.
 - A game that **crashes** shows its error in the Console; links in the stack open your source files.
-- A game that does not register the **editor library** still plays, without pause, stats, live editing and the inspectors; the editor says so. Click **Add the editor library** in its message, or add it yourself to the app's `main.ts`, then play again:
+- A game that does not register the **editor library** still plays, without pause, stats, live editing and the inspectors; the editor says so. Click **Add the editor library** in its message, install the dependency it adds to `package.json` (`@nanoforge-dev/editor-lib`), then play again. Or add it yourself to the app's `main.ts`:
 
   ```ts
   import { EditorLibrary } from '@nanoforge-dev/editor-lib';

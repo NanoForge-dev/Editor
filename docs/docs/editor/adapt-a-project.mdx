@@ -6,7 +6,9 @@ description: 'What the editor changes so it can edit a game made without it, sho
 
 A game written before the editor, or by hand, works in it as it is. Some ways of writing it, though, keep parts of the game out of the panels. The **Project** screen counts them under **Adapt to the editor**, and **Show suggestions** lists them: one card each, saying what the editor can't do and why the change helps.
 
-Nothing changes on its own. A card's button shows the change first: every file it creates, changes or removes, with its lines. **Apply** makes it as one step: `Ctrl+Z` on the Project screen puts every file back. When the project is a Git repository, the preview reminds you to commit first, so you can compare afterwards. A file with unsaved changes is never overwritten: save it first.
+Nothing changes on its own. Most cards have a button ending in `…` (**Move to files of their own…**, **Add the editor library…**) that shows the change first: every file it creates, changes or removes, with its lines. **Apply** makes it as one step, and `Ctrl+Z` on the Project screen puts every file back. When the project is a Git repository, the preview reminds you to commit first, so you can compare afterwards. A file with unsaved changes is never overwritten: save it first.
+
+The install cards are the exception: **Install dependencies** runs the package manager at once, with no preview and no undo.
 
 **Dismiss** puts a card away for this project. _Settings › Editor › Project › Dismissed suggestions_ brings it back.
 

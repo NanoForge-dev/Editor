@@ -24,21 +24,21 @@ export class Position {
 
 ## The Components panel
 
-![The Components panel](../images/ecs-components.png)
+![The Components panel: components and systems grouped by app, shared library and installed package, with the details of the selected one](../images/ecs-components.png)
 
 The panel lists the components (**C**) and systems (**S**) the selected app can use, grouped by where they come from:
 
-- **App**: the app's own;
-- **Shared library**: code shared by the client and the server;
-- **Installed packages**: read-only, with a lock.
+- **App** [name]: the app's own;
+- **Shared library** [name]: code shared by the client and the server;
+- **Installed package** [name]: read-only, with a lock.
 
-Select one to read its description, its parameters and where it is defined. The search box filters by name.
+Select one to read its description, its parameters and where it is defined. Double-click it, or click **Open in code**, to open its file. The search box filters by name.
 
 An item marked _untagged_ was recognized from the code but has no `@component` or `@system` tag: add the tag to make it explicit.
 
 ## Create a component
 
-**New › New component in app**, then a name. The file is created in the app's components folder, with its tags, and opens in the code editor.
+**New › New component in app** [app], then a name. The file is created in the app's components folder, with its tags, and opens in the code editor. The **New** menu has one entry per app and per shared library.
 
 ## Add it to an entity
 
@@ -49,7 +49,7 @@ Select an entity in the **Hierarchy**, select the component in the panel and cli
 A **shared library** holds components and systems that both apps use.
 
 - **New › New shared library…** creates it (a folder in `libs/` and a package name such as `@my-game/shared`).
-- **New › New component in shared library** creates a component there.
+- **New › New component in shared library** [library] creates a component there.
 - **Move to shared library** moves an app's component into it and rewrites every import in the project, in one step you can undo.
 
 Apps import shared code by package name: `@my-game/shared/components/player`.
@@ -98,8 +98,8 @@ export class Position {
 
 ### Without writing tags
 
-Open the component's file: the **Component** panel beside the code (a toggle in the editor's toolbar, or _Edit layout_ in the inspector's ⋯ menu and in the Components panel) has a control for each of these, and a preview. It writes the tags for you. A tag that can't apply (a preset missing a slot) is a warning on the component, in the panel, in the code and in **Problems**.
+Open the component's file: the **Component** panel beside the code (**Show the Component panel** at the right edge of the code editor, or _Edit layout_ in the Inspector's ⋯ menu and in the Components panel) has a control for each of these, and a preview. It writes the tags for you. A tag that can't apply (a preset missing a slot) is a warning on the component, in the panel, in the code and in **Problems**.
 
 ## Two components with the same name
 
-The engine finds a component by its `name`. When an app can use two components with the same name (yours and a package's), the panel warns, and the app's own is the one used.
+The engine finds a component by its `name`. When an app can use two components with the same name (yours and a package's), the Components panel warns: rename one of them.

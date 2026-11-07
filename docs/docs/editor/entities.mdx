@@ -6,7 +6,7 @@ description: 'The entities of an app: hierarchy, inspector and the Scene screen'
 
 Entities are the objects of your game: the player, the ball, the background. An entity is only a name; **components** give it data, and **systems** make it act.
 
-In NanoForge, entities are created in the app's `main.ts`: In a game made of [scenes](scenes), each scene creates its own in its `setup`, edited the same way.
+In NanoForge, entities are created in the app's `main.ts`. In a game made of [scenes](scenes), each scene creates its own in its `setup`, edited the same way.
 
 ```ts
 const ball = registry.spawnEntity();
@@ -45,7 +45,7 @@ Select an entity: the **Inspector** shows its components, with one field per par
 
 - Change a value: only that value changes in the code.
 - **Add component…** lists the components the app can use. The import is added for you.
-- The **⋯** menu of a component removes it, opens its code, or edits how it is laid out.
+- The **⋯** menu of a component moves it up or down, removes it, opens its source, or edits how it is laid out (_Edit layout_).
 
 Fields follow the parameter's type: numbers, text, lists of choices, switches, colors. A value the editor has no field for (an engine object such as `new Rect(…)`) is shown as code, which you can edit.
 
