@@ -111,6 +111,7 @@ The code gives the widget its view with the `WIDGET_VIEWS` extension point. See 
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `menu`             | **Required.** A menu of the menu bar (`file`, `edit`, `view`, `run`, `help`, `vcs`, or one a plugin added with `MENU_BAR`), a submenu id, or a context menu id. |
 | `command`          | The command to run. The entry shows the command's title and shortcut.                                                                                           |
+| `icon`             | An icon name shown before the entry.                                                                                                                            |
 | `submenu`, `title` | Instead of a command: opens the submenu with that id.                                                                                                           |
 | `group`            | Entries are separated by group (default `main`), then sorted by `order`.                                                                                        |
 | `when`             | Shown only while true.                                                                                                                                          |
@@ -171,15 +172,15 @@ A guided tour: steps shown one at a time over the editor, each pointing at a con
     {
       "id": "add",
       "title": "Count",
-      "text": "Click Add one.",
-      "target": { "role": "button", "name": "Add one", "within": { "role": "region", "name": "Counter" } },
+      "text": "Click Add.",
+      "target": { "role": "button", "name": "Add", "within": { "role": "region", "name": "Counter" } },
       "advanceWhenChanged": "counter.value"
     }
   ]
 }
 ```
 
-A step shows only while its `when` holds, and goes on by itself once `advanceWhen` holds or the key of `advanceWhenChanged` changes. `"exact": false` on a target matches a name that only starts with `name` (a tree row says more than its label). The command `tour.start` with the tour's id starts it.
+A step shows only while its `when` holds, and goes on by itself once `advanceWhen` holds or the key of `advanceWhenChanged` changes. `"exact": false` on a target matches a name that only starts with `name` (a tree row says more than its label). The command `tour.start` with the tour's id starts it. `advanceWhenChanged` names a context key: here `counter.value`, which the plugin would set with `context.contextKeys.set` (the Counter example of this guide does not).
 
 ### `documentEditors`
 
@@ -221,11 +222,13 @@ Operators: `!`, `&&`, `||`, `==`, `!=`, `=~` (regular expression), `in`, and par
 | `engineLib:<name>`                                              | true when the active app has that engine library         |
 | `runtime.active`, `runtime.state`, `runtime.controllable`       | the game is playing, its state, whether it can be paused |
 | `codeEditor.activeFile`                                         | path of the file in the focused code editor              |
-| `git.repository`, `git.head`                                    | the project is a Git repository, its current commit      |
+| `git.repository`, `git.head`                                    | the project is a Git repository, its current commit (set once the Git plugin runs) |
 | `screen`                                                        | id of the screen shown                                   |
 | `editor.local`                                                  | a local editor (games, Git, installs)                    |
 | `ecs.entityCount`, `ecs.revision`                               | entities of the edited code, a count bumped on each edit |
 | `problems.hasErrors`                                            | the project's code has errors (unset until first checked) |
 | `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount` | in file context menus                                    |
+| `fileFolder`, `appType`                                         | in file templates                                        |
+| `ecsEntity`, `ecsComponent:<class>`                             | in entity actions of the Hierarchy                       |
 
 A plugin sets its own keys with `context.contextKeys.set(key, value)`.

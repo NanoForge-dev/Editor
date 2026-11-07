@@ -15,34 +15,36 @@ Installing is for local editors.
 
 _File › Settings… › Plugins_.
 
-![The plugin marketplace](../images/plugins-marketplace.png)
+![The Plugins page of the Settings dialog, on the Marketplace tab](../images/plugins-marketplace.png)
 
 ### Marketplace
 
 Search, select a plugin to read about it, then **Install**:
 
-- **For me**: in every project you open on this machine;
-- **For this project**: in the project's `.nanoforge/plugins` folder, which can be committed so the whole team has it. On a hosted editor, a project's own plugins load only after you choose **Allow its plugins** for that project: anyone who can change the project can change them.
+- **For me (every project)**: in every project you open on this machine;
+- **For this project**: in the project's `.nanoforge/plugins` folder, which can be committed so the whole team has it.
 
-A plugin starts working after a reload of the editor: the page offers **Reload now**. When a newer version exists, **Update** shows instead of _Installed_.
+With no project open, **Install** installs it for you. A plugin starts working after a reload of the editor: the page offers **Reload now**. When a newer version exists, **Update to** [version] shows instead of _Installed_. A plugin made for another version of the editor says _Needs another editor_.
+
+On a hosted editor, a project's own plugins load only after you choose **Allow its plugins** in the notification that names them: anyone who can change the project can change them.
 
 ### Installed
 
-Every plugin of the editor, with its version and where it comes from. The switch turns a plugin off (after a reload). Plugins installed from the marketplace can be **updated** and **uninstalled** here; built-in ones cannot.
+Every plugin of the editor, with its version and where it comes from. The switch turns a plugin off (after a reload); plugins marked _Required_ stay on. Plugins installed from the marketplace can be **updated** and **uninstalled** here; built-in ones cannot.
 
 ### Plugins a project suggests
 
-A package can suggest plugins that make it easier to use. When a project opens with such packages and the plugins are missing, the editor says which.
+A package can suggest plugins that make it easier to use. When a project opens with such packages and the plugins are missing, a notification names them, with **Install for this project** and **Install for me**. In a folder you have not trusted, it only names them: trust the folder first.
 
 ## Packages
 
 _File › Packages…_
 
-![The Packages dialog](../images/packages.png)
+![The Packages dialog, listing packages to install with the details of the selected one](../images/packages.png)
 
 ### Browse
 
-Search, select a package to see what it depends on, then **Install**. The package and the packages it needs go to the project's `nf_modules` folder, and their components and systems show in the [Components](components) panel at once.
+Search, select a package to see what it holds, what it depends on and the plugins it works best with, then **Install**. The package and the packages it needs go to the project's `nf_modules` folder, and their components and systems show in the [Components](components) panel at once.
 
 ### Installed
 

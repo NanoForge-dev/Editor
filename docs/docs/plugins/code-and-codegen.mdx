@@ -49,8 +49,9 @@ The context of an analyzer has:
 | `file`, `project`           | The ts-morph `SourceFile` and `Project`. ts-morph comes from the editor: do not bundle it. |
 | `ref(node)`, `resolve(ref)` | A stable reference of a node, to send to the page and get the node back later.             |
 | `literals`                  | Helpers between literals in code and values (`literalToValue`, `valueToLiteral`…).         |
+| `moduleSpecifier(target)`   | The import specifier of a project file from this one.                                     |
 
-A transformer also gets `edit`, which records the changes: `replace(node, text)`, `insertBefore`, `insertAfter`, `insertAt(offset, text)`, `remove(node)`, `removeLines(node)`.
+A transformer also gets `edit`, which records the changes: `replace(target, text)`, `insertBefore`, `insertAfter`, `insertAt(offset, text)`, `remove(target)`, `removeLines(target)`, and `indentationOf(target)`. A target is a node or a `{ start, end }` range.
 
 ## Call them from the page
 
@@ -119,7 +120,7 @@ sdk.registerItemOwner({
 });
 ```
 
-`extract` returns the plugin's own data about an export, stored under the plugin's name. Read items in the page with the catalog:
+`extract` returns the plugin's own data about an export, stored under the plugin's name. An owner may also give `validate`, `infer` (returns true when an export without the owner's tags is still one of its items) and `claims` (returns `{ params, fields }`: the members the owner describes itself, left out of the parameters and fields). Read items in the page with the catalog:
 
 ```ts
 import { CatalogServiceToken, ownerObjects } from '@nanoforge-dev/editor-sdk';

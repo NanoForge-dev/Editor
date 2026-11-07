@@ -45,7 +45,7 @@ export default definePlugin({
 | `t(key, params)`, `registerMessages(locale, messages)` | Translations of the plugin.                                                                           |
 | `resolveAsset(path)`                                   | URL of a file of the plugin's built folder.                                                           |
 | `eligibleApps`                                         | An observable of the project's apps that have the engine libraries the plugin requires.               |
-| `provide(token, value)`                                | Offers a service to the editor and to other plugins.                                                  |
+| `provide(token, value)`, `provideFactory(token, factory)` | Offers a service to the editor and to other plugins.                                               |
 | `override(token, decorate)`                            | Wraps a service of the editor.                                                                        |
 | `scope`                                                | A container private to the plugin.                                                                    |
 
@@ -81,8 +81,8 @@ From `@nanoforge-dev/editor-sdk/ui`:
 
 | Token                                            | Service                                                     |
 | ------------------------------------------------ | ----------------------------------------------------------- |
-| `NotificationServiceToken`                       | `notify(severity, message, { detail, actions, timeout })`.  |
-| `PromptServiceToken`                             | `ask(options)`: asks the user for a text in a small dialog. |
+| `NotificationServiceToken`                       | `notify(severity, message, { detail, actions, timeout })`: severity `info`, `success`, `warning` or `error` (errors stay until dismissed). Returns `{ dismiss() }`. |
+| `PromptServiceToken`                             | `ask({ title, label, value, confirm, validate })`: asks the user for a text in a small dialog. Resolves `undefined` when cancelled. |
 | `StyleServiceToken`                              | Injects the plugin's CSS.                                   |
 | `ThemeServiceToken`                              | The current theme and the list of themes.                   |
 | `WorkbenchServiceToken`, `LayoutControllerToken` | Widgets and the layout.                                     |
@@ -101,7 +101,7 @@ context.subscriptions.add(observe(label, (text) => context.logger.info(text)));
 count.set(1);
 ```
 
-`observe` calls the listener at once and on every change, and returns a disposable.
+`observe` calls the listener at once and on every change, and returns a disposable. Pass `{ immediate: false }` as a third argument to skip the first call.
 
 ## Disposables and events
 
@@ -123,10 +123,10 @@ import {
 
 const rpc = context.services.get(RpcClientToken);
 const session = await rpc.api(SessionContract).info(null); // mode, user, features
-const status = await rpc.api(GitContract).status({ project: project.id });
+const status = project && (await rpc.api(GitContract).status({ project: project.id }));
 ```
 
-Errors are `RpcError`s with a `code` (`NOT_FOUND`, `FORBIDDEN`, `UNAVAILABLE`…). A hosted editor refuses with `FORBIDDEN` what only a local editor can do.
+Errors are `RpcError`s with a `code`: `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `PRECONDITION_FAILED`, `PAYLOAD_TOO_LARGE`, `CANCELLED`, `INTERNAL`, `UNAVAILABLE` or `TIMEOUT`. `RpcError.is(error, code)` tests one. A hosted editor refuses with `FORBIDDEN` what only a local editor can do.
 
 ## Server entries
 
@@ -153,7 +153,7 @@ import { z } from 'zod';
 const EchoContract = {
   namespace: 'plugin.@acme/echo',
   methods: { echo: { input: z.object({ text: z.string() }), output: z.string() } },
-  events: {},
+  streams: {},
 };
 
 export const activate = (context) => {
@@ -163,7 +163,7 @@ export const activate = (context) => {
 };
 ```
 
-The server context has `name`, `manifest`, `subscriptions`, `logger`, `namespace` and `implement(contract, implementation)`. Inputs and outputs are checked against the contract's schemas.
+The server context has `name`, `manifest`, `services`, `subscriptions`, `logger`, `namespace` and `implement(contract, implementation)`. `implement` accepts only contracts in the plugin's own namespace. Inputs and outputs are checked against the contract's schemas. The module may also export `deactivate`.
 
 <Warning>
   Server entries are less finished than the rest. The plugin build does not handle them: a server

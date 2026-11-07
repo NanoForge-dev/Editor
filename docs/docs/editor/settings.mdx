@@ -6,7 +6,7 @@ description: 'Change the editor settings, where they are saved, and the keyboard
 
 Open the settings with _File › Settings…_ or `Ctrl+Alt+S` (also `Ctrl+,`).
 
-![The Settings dialog](../images/settings.png)
+![The Settings dialog: categories on the left, the settings of the selected one on the right](../images/settings.png)
 
 Categories are on the left, their settings on the right. The search box looks through every category. Changes wait until you press **Apply** or **OK**. **Cancel** (or `Escape`) asks before dropping them.
 
@@ -43,9 +43,9 @@ _Settings › Editor › Appearance_ shows each theme as a card in its own color
 
 ## Keyboard shortcuts
 
-The _Keyboard shortcuts_ page lists every action with its shortcuts.
+The _Keyboard shortcuts_ page (also _File › Keyboard shortcuts…_) lists every action with its shortcuts.
 
-![Keyboard shortcuts](../images/keyboard-shortcuts.png)
+![The Keyboard shortcuts page: the list of actions with their shortcuts, a search box and the preset](../images/keyboard-shortcuts.png)
 
 - **Search** by name or by shortcut (`ctrl+s`). The filters show only what you changed, or conflicts.
 - **Add shortcut** on an action, then press the keys. Press a second combination to make a chord (`Ctrl+K` then `Ctrl+S`). A shortcut starts with `Ctrl`, `Alt` or `⌘`, or is a function key (`F1` to `F12`): a plain key would no longer work while typing. A plain key is accepted when the condition needs `!textInputFocus` (as in `focusedWidget == 'file-manager.files' && !textInputFocus`, not under `||`): the shortcut then never fires in a text field or the code editor.
@@ -53,7 +53,7 @@ The _Keyboard shortcuts_ page lists every action with its shortcuts.
 - **Reset** puts an action back to its default.
 - A **preset** changes many shortcuts at once: _NanoForge_ (the defaults), _VS Code_, _Godot_, _IntelliJ_ (Shift twice for the command palette, Ctrl+K to commit, Alt+0 for the Commit window; the browser keeps Alt+1…9 for its tabs, so the preset leaves them out). Your own changes apply on top.
 
-Shortcuts are saved to your account, or to this machine only.
+**Save changes to** chooses where your shortcuts go: _Account_ or _This machine_.
 
 ## Plugins
 

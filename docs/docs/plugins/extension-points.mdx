@@ -33,7 +33,7 @@ From `@nanoforge-dev/editor-sdk/ui`.
 | `MENU_ITEMS`       | An entry of a menu, a submenu or a context menu.                                                                            | `menus`         |
 | `KEYBINDINGS`      | A default shortcut: `{ key, command, when, args }`.                                                                         | `keybindings`   |
 | `KEYMAP_PRESETS`   | A named set of shortcuts.                                                                                                   | `keymapPresets` |
-| `TOOLBAR_ITEMS`    | A button of the top bar: `{ id, icon, title, command, when, toggled }`.                                                     |                 |
+| `TOOLBAR_ITEMS`    | A button of the top bar: `{ id, icon, title, command, args, when, toggled, order }`.                                                     |                 |
 | `STATUS_BAR_ITEMS` | An item of the status bar: `{ id, alignment, text, tooltip, command, when }`. `text` is an observable.                      |                 |
 | `SETTINGS_PAGES`   | A page of the Settings dialog with its own editor. It names the settings it edits, which then leave the category list.      |                 |
 | `THEMES`           | A color theme.                                                                                                              | `themes`        |
@@ -43,10 +43,10 @@ From `@nanoforge-dev/editor-sdk/ui`.
 
 | Point              | A value is                                                                                                                                                                                      |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FILE_TEMPLATES`   | A "New…" entry of the Files panel: `{ id, title, category, when, defaultName, create({ folder, name }) }` returning the files to write. `when` sees `fileFolder` and `appType` (`client`, `server`, `lib`, empty outside apps).                                                               |
-| `FILE_ACTIONS`     | An entry of the context menu of files: `{ id, title, command, group, when }`. The command gets the selected paths. `when` sees `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount`. |
-| `FILE_ICONS`       | The icon of files matching a glob: `{ pattern, icon, priority }`.                                                                                                                               |
-| `FILE_DECORATIONS` | Marks on files (a badge and a tone), as Git does: `{ id, changes, decorate(path, kind) }`.                                                                                                      |
+| `FILE_TEMPLATES`   | A "New…" entry of the Files panel: `{ id, title, icon, category, when, defaultName, create({ folder, name }) }`, which returns (or resolves with) the files to write, `{ path, content }`; the first one opens. `when` sees `fileFolder` and `appType` (`client`, `server`, `lib`, empty outside apps). |
+| `FILE_ACTIONS`     | An entry of the context menu of files: `{ id, title, icon, command, group, order, when }`. The command gets the selected paths. `when` sees `fileKind`, `fileExtname`, `fileReadOnly`, `fileSelectionCount`. |
+| `FILE_ICONS`       | The icon of files or folders matching a glob: `{ pattern, icon, priority }`, with `folder: true` and `iconOpen` for folders.                                                                                                                               |
+| `FILE_DECORATIONS` | Marks on files, as Git does: `{ id, changes, decorate(path, kind) }`. `changes` is an observable that fires when marks must be read again; `decorate` returns `{ badge, tone, tooltip }` or `undefined`, and the first answer wins.                                                                                                      |
 
 ## Code
 
@@ -55,21 +55,21 @@ From `@nanoforge-dev/editor-sdk/ui`.
 | `DOCUMENT_EDITORS`        | Opens files matching a glob with a widget (manifest key `documentEditors`).                            | SDK       |
 | `JSON_SCHEMAS`            | A JSON schema for files matching globs: completion and validation in the code editor.                  | SDK       |
 | `CODEGEN_TARGETS`         | A way to read and change an app's code as a model. See [code and code generation](./code-and-codegen). | SDK       |
-| `CODE_EDITOR_SIDE_PANELS` | A panel beside the code editor for some files: `{ id, title, component, appliesTo(path) }`.            | SDK `/ui` |
+| `CODE_EDITOR_SIDE_PANELS` | A panel beside the code editor for some files: `{ id, title, icon, component, appliesTo(path), changes }`.            | SDK `/ui` |
 
 ## Game and Scene screens
 
 | Point               | A value is                                                                              |
 | ------------------- | --------------------------------------------------------------------------------------- |
-| `VIEWPORT_TOOLS`    | A button of the Game or Scene toolbar: `{ id, screen, icon, title, command, toggled }`. |
-| `VIEWPORT_OVERLAYS` | A component drawn over the running game or the scene (gizmos, debug views).             |
-| `SCENE_EDITORS`     | The content of the Scene screen for a code generation target.                           |
+| `VIEWPORT_TOOLS`    | A button of the Game or Scene toolbar: `{ id, screen, icon, title, command, toggled, when, order }`. |
+| `VIEWPORT_OVERLAYS` | A component drawn over the running game or the scene (gizmos, debug views): `{ id, screen, component }`. |
+| `SCENE_EDITORS`     | The content of the Scene screen for code generation targets: `{ id, title, targets, component }` (`targets: ['*']` for any; `mount` instead of `component` for another framework). |
 
 ## Project
 
 From `@nanoforge-dev/editor-sdk`.
 
-`PROJECT_CHECKS`: a check of the open project, for the Project screen's **Adapt to the editor** report (see [Bring an existing project](../editor/adapt-a-project)). `run(project)` resolves with suggestions: an `id` (stable, so a dismissed one stays dismissed), a `title`, a `detail` (what the editor can't do, why the change helps) and either a `fix` or an `action`. A fix computes its change without writing anything: `recordChanges` runs workspace operations on the files kept in memory, and the editor shows the result as a diff before applying it as one undo step.
+`PROJECT_CHECKS`: a check of the open project, for the Project screen's **Adapt to the editor** report (see [Bring an existing project](../editor/adapt-a-project)). `run(project)` resolves with suggestions: an `id` (stable, so a dismissed one stays dismissed), a `title`, a `detail` (what the editor can't do, why the change helps) an optional `app`, and either a `fix` or an `action` (`{ title, run() }`, run at once). A fix computes its change without writing anything: `recordChanges` runs workspace operations on the files kept in memory, and the editor shows the result as a diff before applying it as one undo step. It refuses to apply while a file it changes has unsaved edits.
 
 ```ts
 import { PROJECT_CHECKS, recordChanges, workspaceIo } from '@nanoforge-dev/editor-sdk';
@@ -99,7 +99,7 @@ Checks run when a project opens, when a check is contributed, and after files ch
 
 ## Points of other plugins
 
-A plugin can define its own points with `defineExtensionPoint<T>(id)`, and others contribute to them by declaring the same id. The ECS plugin has three:
+A plugin can define its own points with `defineExtensionPoint<T>(id)`, and others contribute to them by declaring the same id. The ECS plugin has four:
 
 | Id                 | A value is                                                                                                                                                                          |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -114,5 +114,5 @@ Declare `@nanoforge/ecs` in your manifest's `dependencies` to contribute to them
 
 ```ts
 const items = context.contributions(FILE_TEMPLATES); // observable of contributions
-items.subscribe((list) => console.log(list.map(({ value }) => value.id)));
+items.subscribe((list) => console.log(list.map(({ value, owner }) => `${owner}: ${value.id}`)));
 ```

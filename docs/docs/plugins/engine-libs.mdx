@@ -32,7 +32,7 @@ context.subscriptions.add(
 );
 ```
 
-Each app has its `id`, `name`, `type` (`client`, `server`, or `lib` for a shared library) and `engineLibs` (name to installed version). `missingEngineLibs(manifest, app)` lists what an app lacks, and `isEligible(manifest, app)` answers yes or no.
+Each app has its `id`, `name`, `type` (`client`, `server`, or `lib` for a shared library) and `engineLibs` (name to installed version). `missingEngineLibs(manifest, app)` lists the required libraries an app lacks or has in a version out of range (`{ name, range, installed? }`), and `isEligible(manifest, app)` answers yes or no.
 
 ### In `when` clauses
 
@@ -56,7 +56,7 @@ import { RuntimeServiceToken, isPlaying } from '@nanoforge-dev/editor-sdk';
 const runtime = context.services.get(RuntimeServiceToken);
 runtime.session.subscribe(({ state }) => {
   if (isPlaying(state)) {
-    /* building, starting, running, paused */
+    /* building, starting, running, paused, stopping */
   }
 });
 ```
@@ -83,10 +83,12 @@ events.dispose();
 | Feature                                    | Events                           | Carries                                                          |
 | ------------------------------------------ | -------------------------------- | ---------------------------------------------------------------- |
 | `frameStats: { intervalMs }`               | `frame-stats`                    | Tick time and time per library, per window.                      |
-| `logs: { values: true }`                   | lines through `runtime.onLog`    | Console lines with the logged values and where they were logged. |
-| `networkTrace: { maxPerSecond, maxBytes }` | `network-trace`, `network-stats` | Packets, and totals every second.                                |
+| `logs: { values: true }` | lines through `runtime.onLog` | Console lines with the logged values and where they were logged. The editor always asks clients for them, so you don't need to request it. |
+| `networkTrace: { sampleRate, maxPerSecond, maxBytes }` | `network-trace`, `network-stats` | Packets (with their first `maxBytes` bytes), and totals every second. |
 | `ecsWorld: { intervalMs }`                 | `ecs-world`                      | Entities and components of the live world.                       |
 | `ecsSystemStats: { intervalMs }`           | `ecs-system-stats`               | Time per ECS system.                                             |
+| `viewport: true` | `viewport` | How game units map to the client's view, to draw over the game. Sent at once and on every change. |
+| `scenes: { intervalMs }` | `scenes` | Loaded scenes and scene vars (`@nanoforge-dev/scene`), when they change. |
 
 - Requests of every plugin are merged; the most demanding one wins. **Dispose your request when your panel is hidden**: ask in an effect on `instance.visible`, not when the plugin starts.
 - An older engine ignores features it does not know: handle the absence of events.
