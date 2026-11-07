@@ -61,6 +61,7 @@ The Counter panel is in the bottom right dock. In the simple layout, which shows
   "name": "@acme/counter",
   "version": "0.1.0",
   "displayName": "Counter",
+  "description": "Counts, to show how an editor plugin is made.",
   "engines": { "editor": ">=0.1.0" },
   "entry": { "client": "index.js" },
   "activation": ["onWidget:counter.panel", "onCommand:counter.add"],
@@ -77,7 +78,14 @@ The Counter panel is in the bottom right dock. In the simple layout, which shows
     "commands": [{ "id": "counter.add", "title": "Add to the counter", "category": "Counter" }],
     "menus": [{ "menu": "edit", "command": "counter.add", "group": "counter" }],
     "settings": [
-      { "key": "step", "type": "number", "default": 1, "title": "Step", "category": "Counter" }
+      {
+        "key": "step",
+        "type": "number",
+        "default": 1,
+        "title": "Step",
+        "description": "How much each click adds.",
+        "category": "Counter"
+      }
     ]
   }
 }
@@ -137,6 +145,7 @@ export default definePlugin({
           do: () => count.set(count.get() + step),
           undo: () => count.set(count.get() - step),
         });
+        context.logger.info(`Counter: ${count.get()}`);
       }),
     );
   },

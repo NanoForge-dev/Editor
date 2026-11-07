@@ -27,17 +27,17 @@ The key is prefixed with the plugin's name: this one is `@acme/counter.step`.
 
 | Field                  | Description                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------ |
-| `key`                  | **Required.** Letters, digits and dots.                                                    |
+| `key`                  | **Required.** Segments of letters, digits, `-` and `_`, separated by dots.                 |
 | `type`                 | **Required.** See the types below.                                                         |
 | `default`              | **Required.** Must fit the type.                                                           |
 | `title`, `description` | Shown in the dialog. The search looks in both.                                             |
 | `category`             | Where it is listed: `Counter`, or `Editor/Game view` for a sub-category.                   |
 | `order`, `tags`        | Order in the category; extra search words.                                                 |
 | `scopes`               | The scopes it can be saved in. Default: all.                                               |
-| `sync`                 | `false`: never saved to the account.                                                       |
+| `sync`                 | `false`: never saved to the account (the `account` scope is removed).                      |
 | `mergeStrategy`        | How scopes combine: `replace` (default), `deep` (objects merged), `union` (arrays joined). |
-| `deprecated`           | A message; the setting leaves the dialog.                                                  |
-| `renamedFrom`          | Former keys, whose saved values are still read.                                            |
+| `deprecated`           | A message; the setting leaves the dialog, and writing it logs a warning.                   |
+| `renamedFrom`          | Former keys, whose saved values are still read. A key without `/` gets the plugin prefix.  |
 
 ### Types
 
@@ -61,7 +61,7 @@ A setting's value is the one of the highest scope that has it.
 | `project`      | `.nanoforge/editor/settings.json`, committed  | what the whole team shares       |
 | `projectLocal` | `.nanoforge/editor/local.json`, not committed | this user on this project        |
 
-A project file cannot force a setting that does not allow the `project` scope: such values are ignored.
+A project file cannot force a setting that does not allow the `project` scope: such values are ignored, like values that don't fit the type. Both show in `settings.inspect(key).ignored`, with a warning.
 
 ## Read and follow
 
@@ -124,4 +124,4 @@ context.contribute(SETTINGS_PAGES, {
 });
 ```
 
-In the page, `page.value(key)` reads a setting with its pending change, `page.set(key, value, scope)` changes it, and `page.revision` is an observable bumped on every change.
+In the page, `page.value(key)` reads a setting with its pending change, `page.scopeValue(key, scope)` reads one scope, `page.set(key, value, scope)` changes it, `page.isPending(key)` says whether it changed, and `page.revision` is an observable bumped on every change. A page can also have an `icon` and an `order`.

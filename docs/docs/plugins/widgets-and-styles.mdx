@@ -34,6 +34,7 @@ The component gets `instance`:
 | Member                          | Use                                                                                  |
 | ------------------------------- | ------------------------------------------------------------------------------------ |
 | `services`                      | The editor's services.                                                               |
+| `instanceId`, `descriptor`      | This instance's id, and the widget as declared.                                      |
 | `visible`                       | An observable: true while the widget is on screen.                                   |
 | `onShow`, `onHide`              | Events of the same.                                                                  |
 | `getState()`, `setState(state)` | A small JSON state (scroll, filters, expanded nodes) kept across reloads.            |
@@ -78,7 +79,7 @@ const css = await fetch(context.resolveAsset('counter.css')).then((r) => (r.ok ?
 context.subscriptions.add(context.services.get(StyleServiceToken).inject(context.name, css));
 ```
 
-The editor puts it in a cascade layer of the plugin (`plugins.<name>`), and removes it with the plugin.
+The editor puts it in a cascade layer of the plugin (`plugins.<name>`, with characters other than letters, digits, `-` and `_` replaced by `_`: `plugins._acme_counter`), and removes it with the plugin. `inject(owner, css, { widgetId })` scopes the rules to one widget.
 
 ### Theme tokens
 
@@ -92,10 +93,11 @@ Use the editor's CSS variables, never fixed colors: your panel then follows the 
 | `--nf-color-text`, `-text-muted`, `-text-faint`                    | Text                                    |
 | `--nf-color-accent`, `-accent-hover`, `-on-accent`, `-accent-text` | Primary actions                         |
 | `--nf-color-success`, `-warning`, `-danger`                        | Status                                  |
-| `--nf-space-1` … `--nf-space-4`                                    | Spacing                                 |
-| `--nf-font-size-sm`, `--nf-font-size-lg`                           | Text sizes                              |
+| `--nf-color-focus`, `-selection-text`, `-scrim`                    | Focus ring, selected text, behind dialogs |
+| `--nf-space-1` … `--nf-space-6`                                    | Spacing                                 |
+| `--nf-font-size-xs` … `--nf-font-size-xl`, `--nf-font-ui`, `--nf-font-code` | Text sizes and fonts             |
 | `--nf-radius-control`, `--nf-radius-float`                         | Corners                                 |
-| `--nf-control-height`                                              | Height of buttons and inputs            |
+| `--nf-control-height`, `--nf-row-height`                           | Height of buttons and inputs, of rows   |
 
 A plugin adds a theme with `contributes.themes`: see [make a theme](./themes). Icons drawn with `<Icon name="…">` follow the chosen icon theme.
 

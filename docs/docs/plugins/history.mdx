@@ -18,7 +18,13 @@ const add = (step: number) => ({
 });
 ```
 
-`do` and `undo` may be async. Other fields: `mergeKey` (commands with the same key pushed close together become one step, for a drag or a slider), `preview` (what changed, for the History panel).
+`do` and `undo` may be async. Optional fields:
+
+- `redo`: when redoing differs from `do` (default: `do`);
+- `mergeKey`: commands with the same key pushed close together become one step, for a drag or a slider (`merge(next)` combines them yourself);
+- `isValid()`: false when the step can no longer apply;
+- `preview`: `{ title?, before, after }`, what changed, for the History panel;
+- `dispose()`: called when the step leaves the history.
 
 ## A context of your own
 
@@ -46,7 +52,7 @@ await history.stack.transaction('Add twice', async (tx) => {
 });
 ```
 
-If the function throws, the steps already done are undone. `compositeCommand` builds one command from several when you have them up front.
+If the function throws, the steps already done are undone in reverse order, and the error is thrown again. A transaction started inside another one joins it. `compositeCommand(label, commands)` builds one command from several when you have them up front.
 
 ## Point undo at your context
 
@@ -79,7 +85,9 @@ await documents.edit('apps/client/src/main.ts', [{ start: 0, end: 0, text: '// h
 });
 ```
 
-An edit is a list of `{ start, end, text }` offsets in the file's current text. A step whose file changed underneath it (the content it produced is gone) is dropped rather than applied to the wrong text.
+An edit is a list of `{ start, end, text }` offsets in the file's current text. The options also take `mergeKey`. With no history for the file, the edit is applied without an undo step.
+
+A step whose file changed underneath it (the content it produced is gone) is never applied to the wrong text: the editor clears that file's history instead, past and future steps.
 
 To change code by its meaning rather than by offsets, see [code and code generation](./code-and-codegen).
 
