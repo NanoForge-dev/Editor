@@ -41,7 +41,7 @@ catalogs:
     '@sveltejs/adapter-static': ^3.0.10
   libs:
     '@jridgewell/trace-mapping': ^0.3.31
-    '@nanoforge-dev/registry': ^2.4.0
+    '@nanoforge-dev/registry': ^3.0.0
     fflate: ^0.8.2
     ignore: ^7.0.5
     semver: ^7.7.3
