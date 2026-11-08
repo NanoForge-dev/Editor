@@ -47,7 +47,7 @@
     "@nanoforge-dev/editor-kernel": "workspace:*",
     "@nanoforge-dev/editor-protocol": "workspace:*",
     "@nanoforge-dev/editor-rpc": "workspace:*",
-    "@nanoforge-dev/registry": "workspace:*",
+    "@nanoforge-dev/registry": "catalog:libs",
     "chokidar": "catalog:server",
     "fflate": "catalog:libs",
     "ignore": "catalog:libs",

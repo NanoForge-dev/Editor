@@ -37,7 +37,7 @@
     },
     "packages/sdk": {
       "entry": ["scripts/*.ts", "test/**/*.spec.ts"],
-      "ignoreDependencies": ["bits-ui"]
+      "ignoreDependencies": ["bits-ui", "@nanoforge-dev/registry"]
     },
     "packages/ui": {
       "ignoreDependencies": ["@fontsource/.+"]

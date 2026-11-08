@@ -52,12 +52,6 @@ packages:protocol:
           - packages/protocol/*
           - packages/protocol/**/*
 
-packages:registry:
-  - changed-files:
-      - any-glob-to-any-file:
-          - packages/registry/*
-          - packages/registry/**/*
-
 packages:rpc:
   - changed-files:
       - any-glob-to-any-file:

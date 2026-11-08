@@ -160,11 +160,5 @@
     "statements": 82,
     "functions": 57,
     "branches": 62
-  },
-  "@nanoforge-dev/registry": {
-    "lines": 93,
-    "statements": 90,
-    "functions": 89,
-    "branches": 81
   }
 }

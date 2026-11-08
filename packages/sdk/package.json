@@ -73,6 +73,7 @@
     "@nanoforge-dev/editor-runtime": "workspace:*",
     "@nanoforge-dev/editor-settings": "workspace:*",
     "@nanoforge-dev/editor-ui": "workspace:*",
+    "@nanoforge-dev/registry": "catalog:libs",
     "svelte": "catalog:core",
     "svelte2tsx": "catalog:core",
     "ts-morph": "catalog:code",

@@ -22,9 +22,6 @@ packages:project:
 packages:protocol:
   - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nprotocol\\n"
 
-packages:registry:
-  - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nregistry\\n"
-
 packages:rpc:
   - "### Which (package|tooling|package or tooling) is this (bug report|feature request) for\\?\\n\\nrpc\\n"
 

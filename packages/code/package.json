@@ -48,7 +48,7 @@
     "@nanoforge-dev/editor-project": "workspace:*",
     "@nanoforge-dev/editor-protocol": "workspace:*",
     "@nanoforge-dev/editor-rpc": "workspace:*",
-    "@nanoforge-dev/registry": "workspace:*",
+    "@nanoforge-dev/registry": "catalog:libs",
     "ts-morph": "catalog:code",
     "zod": "catalog:libs"
   },
