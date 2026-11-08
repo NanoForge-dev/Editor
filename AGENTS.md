@@ -62,6 +62,7 @@ pnpm e2e:last-failure   # error-context.md of the last failed test, its last fra
 
 - **Run e2e with `E2E_WORKSPACE=.workspace-agent`** (`.workspace` or `.workspace-<name>`: anything else is refused, since the folder is wiped). The default `e2e/.workspace` is wiped at each run, and the user's dev server (`FS_ROOT=apps/editor`) may have its projects open. Specs take their paths from `e2e/workspace.ts`.
 - The e2e run refuses a build older than the code (`e2e/check-build.ts`, names the newer file); `E2E_ALLOW_STALE=1` runs the old build anyway.
+- The nightly run (`scripts/nightly.sh`, from the cloud-iac nightly image) builds the editor with the example plugin and theme, then runs `apps/editor/playwright.nightly.config.ts`: Chromium only, the system one from `PLAYWRIGHT_LAUNCH_OPTIONS_EXECUTABLE_PATH`, no engine (the game tests skip).
 - `E2E_REQUIRE_ENGINE=1` (CI) fails the run when the `game`, `my-first-game` or `breakout` copy is missing, instead of skipping their tests. Without `NANOFORGE_ENGINE`/`NANOFORGE_CLI`, the e2e prep and `pnpm example` use `.engine/` when `pnpm setup:engine` made it, else `../engine`.
 - Without `NANOFORGE_ENGINE`, the tests that play the game (runtime, the viewport's "while playing", some code-editor tests) are **skipped**, not failed. Check the skipped count.
 - `NANOFORGE_CLI` (a built CLI checkout) is linked into the played game as its own CLI. Without it, the console test skips its source-map check (the game's published CLI writes no source maps).
