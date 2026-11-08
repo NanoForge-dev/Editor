@@ -66,7 +66,7 @@ pnpm e2e:last-failure   # error-context.md of the last failed test, its last fra
 - `E2E_REQUIRE_ENGINE=1` (CI) fails the run when the `game`, `my-first-game` or `breakout` copy is missing, instead of skipping their tests. Without `NANOFORGE_ENGINE`/`NANOFORGE_CLI`, the e2e prep and `pnpm example` use `.engine/` when `pnpm setup:engine` made it, else `../engine`.
 - Without `NANOFORGE_ENGINE`, the tests that play the game (runtime, the viewport's "while playing", some code-editor tests) are **skipped**, not failed. Check the skipped count.
 - `NANOFORGE_CLI` (a built CLI checkout) is linked into the played game as its own CLI. Without it, the console test skips its source-map check (the game's published CLI writes no source maps).
-- Contract tests (`test/contract` in `server-core` and `registry`) run in `pnpm test` against the stand-ins, and against a real API with `CONTRACT_*` variables (`docs/api/README.md`). Never run them against a real API yourself.
+- Contract tests (`test/contract` in `server-core`; the registry's are in the CLI repository, `libs/registry/test/contract`) run in `pnpm test` against the stand-ins, and against a real API with `CONTRACT_*` variables (`docs/api/README.md`). Never run them against a real API yourself.
 - `ANALYZE=1 npx vite build` (in `apps/editor`) prints the bundle analysis; `BENCH=1 npx playwright test` runs the startup measurements of `e2e/*.bench.ts` instead of the tests (`docs/performance.md`).
 - `E2E_EXTRA_PLUGINS=<built plugin folder>` adds a dev plugin to the e2e editor.
 - Unit tests fail on an unexpected `console.error` (`vitest.setup.ts`): a test that expects one spies on it (`vi.spyOn(console, 'error').mockImplementation(() => {})`).
