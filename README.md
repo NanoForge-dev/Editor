@@ -22,13 +22,13 @@ This repository contains the Editor of NanoForge. Check [releases][github-releas
 
 The editor is a pnpm + turbo monorepo. The rewrite plan is [`docs/rewrite-plan.md`](docs/rewrite-plan.md), design decisions are in [`docs/adr`](docs/adr), plugin specs in [`docs/specs`](docs/specs), and the user documentation and plugin guide in [`docs/docs`](docs/docs).
 
-| Path          | Content                                                                                                                                                           |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/editor` | The SvelteKit shell and Bun server published as `@nanoforge-dev/editor`                                                                                           |
-| `packages/*`  | Core editor packages (`kernel`, `sdk`, `rpc`, `protocol`, `history`, `settings`, `layout`, `ui`, `project`, `code`, `meta`, `runtime`, `server-core`, `registry`) |
-| `plugins/*`   | Built-in editor plugins (`nanoforge.manifest.json`, type `plugin`)                                                                                                |
-| `tooling/*`   | Plugin build tooling (`vite-plugin`) and the example plugin the e2e tests load                                                                                    |
-| `examples/*`  | A game to try the editor on (`breakout`) and a standalone plugin (`counter-plugin`)                                                                               |
+| Path          | Content                                                                                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/editor` | The SvelteKit shell and Bun server published as `@nanoforge-dev/editor`                                                                               |
+| `packages/*`  | Core editor packages (`kernel`, `sdk`, `rpc`, `protocol`, `history`, `settings`, `layout`, `ui`, `project`, `code`, `meta`, `runtime`, `server-core`) |
+| `plugins/*`   | Built-in editor plugins (`nanoforge.manifest.json`, type `plugin`)                                                                                    |
+| `tooling/*`   | Plugin build tooling (`vite-plugin`) and the example plugin the e2e tests load                                                                        |
+| `examples/*`  | A game to try the editor on (`breakout`) and a standalone plugin (`counter-plugin`)                                                                   |
 
 ## Develop
 

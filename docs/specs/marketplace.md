@@ -51,7 +51,6 @@ Now in the CLI repository (`libs/registry`). No editor dependency (zod, semver a
 - `installItem`: downloads a version, checks its hash and its manifest (name, version, type), and unpacks it safely (no path outside of the target) into a folder, replacing what was there. Nothing is touched before the archive passed every check, and the manifest is written last, so a folder without one is an install that did not finish.
 - `ProjectPackages`: the project's list and lock, `install`, `uninstall`, `update`, `restore`, `outdated`; dependency resolution (the newest version that fits every range asked for, an error naming both sides when none does; installed versions are kept until asked to update); the `tsconfig.json` paths, added and removed with the file's comments kept. Changes of one project run one after the other.
 - Safety: names are checked before any path is built; an archive with a path outside of its folder, a wrong hash, or a manifest that is not the item asked for is refused before anything is written.
-- ESLint keeps `@nanoforge-dev/editor-*` imports out of it.
 
 ## Core additions
 

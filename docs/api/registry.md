@@ -1,6 +1,6 @@
 # Registry of plugins and packages — NanoForge API contract
 
-Status: **implemented** by the API (registry v2). The full contract, publishing and scopes included, is the API's `docs/registry.md`; this page is what the editor and the CLI rely on. The editor ships a client (`RegistryClient`), a reference implementation of the read routes (`serveRegistry`, over a folder) and contract tests, all in `@nanoforge-dev/registry`, a package of the CLI repository (`libs/registry`) that `nf install` and `nf publish` use too.
+Status: **implemented** by the API (registry v2). The full contract, publishing and scopes included, is the API's `docs/registry.md`; this page is what the editor and the CLI rely on. The client (`RegistryClient`), a reference implementation of the read routes (`serveRegistry`, over a folder) and the contract tests are in `@nanoforge-dev/registry`, a package of the CLI repository (`libs/registry`) that the editor, `nf install` and `nf publish` all use.
 
 The routes follow the **npm registry**: one document per item with all its versions (the "packument"), archives under `/-/`, dist-tags, search under `/-/v1/search`. What differs from npm: every item has a `type`, archives are **zip** files stored as published, every version says **what it holds** (`contents`, counted in `kinds`), and `dist` adds a hex **sha256** to npm's hashes.
 
