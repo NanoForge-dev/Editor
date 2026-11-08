@@ -57,7 +57,7 @@ CONTRACT_FEATURES=settings \
 CONTRACT_PROJECT_ID=… \
 pnpm --filter @nanoforge-dev/editor-server-core test:contract
 
-# The registry (reads only).
+# The registry (reads only), from the CLI repository.
 CONTRACT_REGISTRY_URL=https://api.staging.nanoforge.eu \
 CONTRACT_REGISTRY_ITEM=@scope/name \
 pnpm --filter @nanoforge-dev/registry test:contract
@@ -66,6 +66,6 @@ pnpm --filter @nanoforge-dev/registry test:contract
 - Use a **test account**. The settings scenarios write to its document and put it back as it was.
 - `CONTRACT_PROJECT_ID` (a project of that account) and `CONTRACT_REFRESH_TOKEN` are optional: their scenarios are skipped without them. Refreshing rotates the refresh token, so the value given stops working afterwards.
 - `CONTRACT_REGISTRY_ITEM` is any published item; nothing is published or removed.
-- Scenarios: `packages/server-core/test/contract/api-contract.ts` and `packages/registry/test/contract/registry-contract.ts`.
+- Scenarios: `packages/server-core/test/contract/api-contract.ts`, and in the CLI repository `libs/registry/test/contract/registry-contract.ts`.
 
 They have only been run against the stand-ins so far.

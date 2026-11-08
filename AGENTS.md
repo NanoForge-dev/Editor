@@ -100,7 +100,7 @@ pnpm e2e:last-failure   # error-context.md of the last failed test, its last fra
   - `runtime`: build, client runner, server runner.
   - `protocol`: the engine bridge protocol, and the RPC contracts between the editor and its server.
   - `rpc`, `project`, `server-core` (fs, `.nfignore`, `nf_modules` read-only, plugin sources and package suggestions, git, cli, registry contract).
-  - `registry` (`@nanoforge-dev/registry`, **not** an `editor-*` package): registry client, folder registry, installer, the project's packages list and lock. It is meant to move to the CLI repository: ESLint keeps `@nanoforge-dev/editor-*` imports out of it. Its HTTP side follows the npm registry's routes (`src/wire/`, contract in `docs/api/registry.md`). Protocol imports only its `/types` (zod schemas, no Node code).
+  - The registry client, folder registry, installer, and the project's packages list and lock are **not** here: they are `@nanoforge-dev/registry`, in the CLI repository (`libs/registry`), the same package `nf install` and `nf publish` use. `code`, `project`, `protocol` and `server-core` depend on it (catalog `libs`); the SDK bundles what it reaches of it. Its HTTP side follows the npm registry's routes (contract in `docs/api/registry.md`). Protocol and code import only its `/types` (zod schemas, no Node code).
 - **`plugins/*`** are the built-in plugins, each with a `nanoforge.manifest.json` of `type: "plugin"`:
   - `code-editor` (Monaco)
   - `file-manager`
@@ -310,4 +310,4 @@ Everything in our registry has a `nanoforge.manifest.json` and a name `@scope/na
 2. **`nf_modules` / install (decided, ADR 0005).** The editor server installs packages read-only into `nf_modules/@scope/name`, side by side, one version each, from `nanoforge.packages.json` and its lock; plugins go to `~/.nanoforge/editor/plugins` or `<project>/.nanoforge/plugins`. To change a package, the user copies it into their own components.
    - The editor treats `nf_modules` as read-only (server, file manager, code editor): installing is the only way to change it.
    - Discovery goes through a catalog with providers (project packages and apps, `nf_modules`), never folder scans.
-   - Still open: the real registry (contract handed off in `docs/api/registry.md`; the editor runs on a folder with `REGISTRY_DIR`, and calls the API's only with `API_FEATURES=registry`), whether engine libs stay on npm, moving `packages/registry` to the CLI and aligning `nf install` with it. Don't touch the CLI's install code until the user asks.
+   - Still open: the real registry (contract handed off in `docs/api/registry.md`; the editor runs on a folder with `REGISTRY_DIR`, and calls the API's only with `API_FEATURES=registry`), whether engine libs stay on npm. The registry package moved to the CLI repository (`libs/registry`): the editor, `nf install` and `nf publish` use the same one.

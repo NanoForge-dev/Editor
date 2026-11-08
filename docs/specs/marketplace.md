@@ -7,7 +7,7 @@ Requirements session: 2026-10-01. The fifth and last item of phase 11. Two separ
 They settle the install questions ADR 0003 left open (see ADR 0005).
 
 - **The registry is not built yet.** This phase defines its contract and runs on a stand-in: a registry read from a local folder. The contract goes to the API team in phase 12.
-- **The editor server installs**, without the CLI. The code that talks to the registry, installs and keeps the project's list lives in one package with no editor dependency, `@nanoforge-dev/registry` (`packages/registry`), so it can move to the CLI repository and be used by both.
+- **The editor server installs**, without the CLI. The code that talks to the registry, installs and keeps the project's list lives in one package with no editor dependency, `@nanoforge-dev/registry` (`packages/registry`), so it can move to the CLI repository and be used by both. It has since moved: `libs/registry` in the CLI repository.
 - **A project lists its packages**: `nanoforge.packages.json` (names and version ranges, written by hand or by the editor) and `nanoforge.packages.lock.json` (the exact versions installed, with their hashes). `nf_modules` can then be left out of git and restored from the lock.
 - **Sub-packages are published too.** Every package is a registry entry and can be installed alone. A bigger package names the ones it needs in `dependencies`, and they are installed next to it in `nf_modules` (not inside it).
 - **Name collisions**: plain names stay. The app's own item wins over a package's, and the editor warns (the ECS plugin's collision warning). Refusing an install because two packages define the same item is **not built**: the registry would have to know item names.
@@ -44,7 +44,7 @@ _File › Packages…_, also in the command palette. Two tabs. The dialog belong
 
 ## The `@nanoforge-dev/registry` package
 
-No editor dependency (zod, semver and a zip reader only).
+Now in the CLI repository (`libs/registry`). No editor dependency (zod, semver and a zip reader only).
 
 - `RegistryClient` (HTTP) and `DirectoryRegistry` (a folder), behind one `Registry` interface: `search`, `get`, `download`.
 - `serveRegistry(registry)`: the contract's routes as a `fetch` handler (tests, and the contract tests of phase 12).
@@ -65,7 +65,7 @@ No editor dependency (zod, semver and a zip reader only).
 - The real registry, publishing, accounts' plugin lists (phase 12).
 - Refusing an install on item-name collisions between two packages.
 - Engine libraries (they stay on npm).
-- Aligning the CLI's `nf install` with this format: the package is written so the CLI can use it.
+- Aligning the CLI's `nf install` with this format: the package is written so the CLI can use it. Done since: `nf install` uses the package in the CLI repository.
 - A test of the refusal for a signed-in user of a hosted editor (no test signs in; visitors are refused earlier).
 
 ## Done when
