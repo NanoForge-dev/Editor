@@ -41,7 +41,7 @@ catalogs:
     '@sveltejs/adapter-static': ^3.0.10
   libs:
     '@jridgewell/trace-mapping': ^0.3.31
-    '@nanoforge-dev/registry': ^3.0.0
+    '@nanoforge-dev/registry': ^3.0.1
     fflate: ^0.8.2
     ignore: ^7.0.5
     semver: ^7.7.3
@@ -73,3 +73,6 @@ catalogs:
     playwright: ^1.63.0
     vitest: ^4.1.9
     vitest-browser-svelte: ^2.2.0
+
+minimumReleaseAgeExclude:
+  - '@nanoforge-dev/registry@3.0.1'
