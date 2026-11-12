@@ -8,71 +8,79 @@ allowBuilds:
   bun: true
   esbuild: true
 
+# Patched versions of transitive deps whose parents pin a vulnerable one: oxfmt (through
+# eslint-plugin-format) pins tinypool, monaco-editor pins dompurify. Monaco never imports that
+# dompurify package: it runs its own bundled copy, which this override does not patch.
+overrides:
+  dompurify: ^3.4.17
+  tinypool: ^2.1.2
+
 catalogs:
   build:
-    tsdown: ^0.22.14
-    turbo: ^2.10.12
+    tsdown: ^0.23.7
+    turbo: ^2.11.11
     typescript: ^6.0.3
-    unrun: ^0.3.0
+    unrun: ^0.3.1
   ci:
     '@commitlint/cli': ^21.2.4
-    '@commitlint/config-conventional': ^21.2.0
+    '@commitlint/config-conventional': ^21.2.4
     '@favware/cliff-jumper': ^6.1.0
     husky: ^9.1.7
-    lint-staged: ^17.0.8
+    lint-staged: ^17.6.0
   components:
-    '@lucide/svelte': ^1.48.0
+    '@lucide/svelte': ^1.72.0
     '@fontsource/instrument-sans': ^5.3.0
     '@fontsource/jetbrains-mono': ^5.3.0
-    bits-ui: ^2.19.3
-    monaco-editor: ^0.55.1
+    # Held on 2.19: later releases give the Select trigger a combobox role, which the e2e specs and AGENTS.md don't expect.
+    bits-ui: ~2.19.5
+    monaco-editor: ^0.57.0
   config:
-    '@nanoforge-dev/config': ^2.3.0
+    '@nanoforge-dev/config': ^3.0.1
   core:
     '@sveltejs/kit': ^2.65.0
-    '@sveltejs/vite-plugin-svelte': ^7.1.2
+    '@sveltejs/vite-plugin-svelte': ^7.3.1
     '@types/bun': ^1.4.4
-    '@types/node': ^26.4.0
+    '@types/node': ^26.6.6
     svelte: ^5.57.3
-    svelte-check: ^4.6.0
-    svelte2tsx: ^0.7.61
-    vite: ^8.0.16
+    svelte-check: ^4.7.8
+    svelte2tsx: ^0.7.63
+    vite: ^8.3.8
   adapter:
     '@sveltejs/adapter-static': ^3.0.10
   libs:
     '@jridgewell/trace-mapping': ^0.3.31
     '@nanoforge-dev/registry': ^3.0.1
-    fflate: ^0.8.2
+    fflate: ^0.8.3
     ignore: ^7.0.14
-    semver: ^7.7.3
-    '@types/semver': ^7.7.1
+    semver: ^7.8.6
+    '@types/semver': ^7.8.0
     zod: ^4.6.7
   lint:
     '@nanoforge-dev/utils-eslint-config': ^1.0.2
     '@nanoforge-dev/utils-prettier-config': ^1.0.2
     '@trivago/prettier-plugin-sort-imports': ^6.0.2
-    eslint: ^10.6.0
-    eslint-plugin-svelte: ^3.20.0
-    globals: ^17.7.0
-    knip: ^6.38.0
-    prettier: ^3.9.4
+    eslint: ^10.14.0
+    eslint-plugin-svelte: ^3.24.1
+    globals: ^17.14.0
+    knip: ^6.45.1
+    prettier: ^3.10.0
     prettier-plugin-svelte: ^4.1.1
-    typescript-eslint: ^8.62.1
+    typescript-eslint: ^8.72.2
   code:
     ts-morph: ^28.0.0
   tooling:
     es-module-lexer: ^2.0.0
   server:
     chokidar: ^4.0.3
-    prettier: ^3.9.4
+    prettier: ^3.10.0
     yaml: ^2.9.1
   test:
-    '@playwright/test': ^1.61.1
-    '@vitest/browser-playwright': ^4.1.9
-    '@vitest/coverage-v8': ^4.1.9
-    playwright: ^1.63.0
-    vitest: ^4.1.9
-    vitest-browser-svelte: ^2.2.0
+    '@playwright/test': ^1.65.0
+    '@vitest/browser-playwright': ^5.1.0
+    '@vitest/coverage-v8': ^5.1.0
+    playwright: ^1.65.0
+    vitest: ^5.1.0
+    vitest-browser-svelte: ^3.1.0
 
 minimumReleaseAgeExclude:
   - '@nanoforge-dev/registry@3.0.1'
