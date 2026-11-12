@@ -31,7 +31,8 @@ catalogs:
     '@lucide/svelte': ^1.72.0
     '@fontsource/instrument-sans': ^5.3.0
     '@fontsource/jetbrains-mono': ^5.3.0
-    bits-ui: ^2.21.0
+    # Held on 2.19: later releases give the Select trigger a combobox role, which the e2e specs and AGENTS.md don't expect.
+    bits-ui: ~2.19.5
     monaco-editor: ^0.57.0
   config:
     '@nanoforge-dev/config': ^3.0.1
