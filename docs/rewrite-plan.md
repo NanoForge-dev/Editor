@@ -1026,7 +1026,7 @@ R18 ❌ **Light theme, dark _New_ button:** not reproduced, dropped. Buttons onl
 
 11.5 ✅ **marketplace** (spec `docs/specs/marketplace.md`, ADR 0005, requirements session 2026-10-01). Runs on a stand-in registry read from a folder; the real one is phase 12.
 
-- **Registry package** (`packages/registry`, `@nanoforge-dev/registry`, no editor dependency, meant to move to the CLI): the registry contract (`Registry`, `RegistryClient` over HTTP, `DirectoryRegistry` from a folder, `serveRegistry`), `installItem` (hash, manifest and path checks before anything is written, the manifest written last), `ProjectPackages` (`nanoforge.packages.json` and its lock, dependency resolution to one version per package, install, uninstall, update, restore, the root `tsconfig.json` paths).
+- **Registry package** (`packages/registry`, `@nanoforge-dev/registry`, no editor dependency; since moved to the CLI repository, `libs/registry`): the registry contract (`Registry`, `RegistryClient` over HTTP, `DirectoryRegistry` from a folder, `serveRegistry`), `installItem` (hash, manifest and path checks before anything is written, the manifest written last), `ProjectPackages` (`nanoforge.packages.json` and its lock, dependency resolution to one version per package, install, uninstall, update, restore, the root `tsconfig.json` paths).
 - **Server:** `RegistryContract` (search, details, install and uninstall plugins for the user or a project, the project's packages); `REGISTRY_URL` and `REGISTRY_DIR`; a plugin's server entry starts on install and stops on uninstall. Installing is for local editors.
 - **Plugins:** Settings › Plugins has two tabs, **Marketplace** (search, details, install _for me_ or _for this project_, update) and **Installed** (the former list, plus update and uninstall). Changes take effect after a reload.
 - **Packages** (`plugins/packages`, `@nanoforge/packages`): _File › Packages…_, with **Browse** (search, dependencies, install) and **Installed** (update in range or to the latest, uninstall, restore after a fresh clone).
@@ -1052,7 +1052,7 @@ R18 ❌ **Light theme, dark _New_ button:** not reproduced, dropped. Buttons onl
 12.2 ✅ **Contract tests.** One set of HTTP-only scenarios, two targets: the editor's stand-ins in every test run, a real API with `CONTRACT_*` variables (`pnpm --filter … test:contract`).
 
 - API (`packages/server-core/test/contract`): authentication and token refresh, the project endpoints, settings sync (revisions, the 409 body, 400 and 413). They leave the test account's settings as they were.
-- Registry (`packages/registry/test/contract`, read-only): the item document, the archive and its hash, search by text, type and page.
+- Registry (`packages/registry/test/contract`, read-only; now in the CLI repository, `libs/registry/test/contract`): the item document, the archive and its hash, search by text, type and page.
 - Only run against the stand-ins so far.
 
 12.3 ✅ **Feature flags.** `API_FEATURES` (an env list, nothing on by default): `settings`, `registry`.

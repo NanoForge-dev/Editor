@@ -74,10 +74,6 @@
   description: 'Related to Protocol package'
   color: 'aaa3dc'
 
-- name: 'packages:registry'
-  description: 'Related to Registry package'
-  color: 'aaa3dc'
-
 - name: 'packages:rpc'
   description: 'Related to RPC package'
   color: 'aaa3dc'

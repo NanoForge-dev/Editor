@@ -3,7 +3,8 @@ import { defineConfig } from 'tsdown';
 /**
  * JavaScript of the published SDK (types are built by scripts/build-types.ts). At runtime plugins
  * never load it: the editor provides the SDK as a shared module. The editor packages it reaches are
- * private, so they are bundled, subpaths included.
+ * private, so they are bundled, subpaths included. So is `@nanoforge-dev/registry` (published by the
+ * CLI repository): the SDK stays self-contained, with no dependency on that package's releases.
  */
 export default defineConfig({
   entry: ['src/index.ts', 'src/worker.ts'],

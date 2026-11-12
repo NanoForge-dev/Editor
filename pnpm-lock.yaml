@@ -192,6 +192,9 @@ catalogs:
     '@jridgewell/trace-mapping':
       specifier: ^0.3.31
       version: 0.3.31
+    '@nanoforge-dev/registry':
+      specifier: ^3.0.1
+      version: 3.0.1
     '@types/semver':
       specifier: ^7.7.1
       version: 7.8.0
@@ -205,8 +208,8 @@ catalogs:
       specifier: ^7.7.3
       version: 7.8.5
     zod:
-      specifier: ^4.4.3
-      version: 4.6.5
+      specifier: ^4.6.7
+      version: 4.6.7
   lint:
     '@nanoforge-dev/utils-eslint-config':
       specifier: ^1.0.2
@@ -462,7 +465,7 @@ importers:
         version: 4.1.11(@types/node@26.6.2)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1))
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
 
   packages/code:
     dependencies:
@@ -485,14 +488,14 @@ importers:
         specifier: workspace:*
         version: link:../rpc
       '@nanoforge-dev/registry':
-        specifier: workspace:*
-        version: link:../registry
+        specifier: catalog:libs
+        version: 3.0.1
       ts-morph:
         specifier: catalog:code
         version: 28.0.0
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@nanoforge-dev/editor-server-core':
         specifier: workspace:*
@@ -527,7 +530,7 @@ importers:
         version: 7.8.5
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@types/semver':
         specifier: catalog:libs
@@ -543,7 +546,7 @@ importers:
     dependencies:
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       typescript:
         specifier: catalog:build
@@ -559,7 +562,7 @@ importers:
         version: 28.0.0
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       typescript:
         specifier: catalog:build
@@ -580,8 +583,8 @@ importers:
         specifier: workspace:*
         version: link:../rpc
       '@nanoforge-dev/registry':
-        specifier: workspace:*
-        version: link:../registry
+        specifier: catalog:libs
+        version: 3.0.1
     devDependencies:
       '@nanoforge-dev/editor-server-core':
         specifier: workspace:*
@@ -605,37 +608,12 @@ importers:
         specifier: workspace:*
         version: link:../rpc
       '@nanoforge-dev/registry':
-        specifier: workspace:*
-        version: link:../registry
+        specifier: catalog:libs
+        version: 3.0.1
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
-      typescript:
-        specifier: catalog:build
-        version: 6.0.3
-      vitest:
-        specifier: catalog:test
-        version: 4.1.11(@types/node@26.6.2)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1))
-
-  packages/registry:
-    dependencies:
-      fflate:
-        specifier: catalog:libs
-        version: 0.8.3
-      semver:
-        specifier: catalog:libs
-        version: 7.8.5
-      zod:
-        specifier: catalog:libs
-        version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: catalog:core
-        version: 26.6.2
-      '@types/semver':
-        specifier: catalog:libs
-        version: 7.8.0
       typescript:
         specifier: catalog:build
         version: 6.0.3
@@ -650,7 +628,7 @@ importers:
         version: link:../kernel
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       typescript:
         specifier: catalog:build
@@ -678,7 +656,7 @@ importers:
         version: link:../settings
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@nanoforge-dev/editor-server-core':
         specifier: workspace:*
@@ -703,7 +681,7 @@ importers:
         version: 7.8.5
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@favware/cliff-jumper':
         specifier: catalog:ci
@@ -738,6 +716,9 @@ importers:
       '@nanoforge-dev/editor-ui':
         specifier: workspace:*
         version: link:../ui
+      '@nanoforge-dev/registry':
+        specifier: catalog:libs
+        version: 3.0.1
       svelte:
         specifier: catalog:core
         version: 5.57.1(@typescript-eslint/types@8.70.1)
@@ -772,8 +753,8 @@ importers:
         specifier: workspace:*
         version: link:../rpc
       '@nanoforge-dev/registry':
-        specifier: workspace:*
-        version: link:../registry
+        specifier: catalog:libs
+        version: 3.0.1
       chokidar:
         specifier: catalog:server
         version: 4.0.3
@@ -797,7 +778,7 @@ importers:
         version: 2.9.1
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@types/bun':
         specifier: catalog:core
@@ -825,7 +806,7 @@ importers:
         version: link:../rpc
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@nanoforge-dev/editor-server-core':
         specifier: workspace:*
@@ -865,7 +846,7 @@ importers:
         version: 2.19.3(@internationalized/date@3.12.4)(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1(@typescript-eslint/types@8.70.1))(vite@8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1)))(svelte@5.57.1(@typescript-eslint/types@8.70.1))(typescript@6.0.3)(vite@8.3.1(@types/node@26.6.2)(jiti@2.6.1)(yaml@2.9.1)))(svelte@5.57.1(@typescript-eslint/types@8.70.1))
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@sveltejs/vite-plugin-svelte':
         specifier: catalog:core
@@ -1294,7 +1275,7 @@ importers:
         version: 7.8.5
       zod:
         specifier: catalog:libs
-        version: 4.6.5
+        version: 4.6.7
     devDependencies:
       '@favware/cliff-jumper':
         specifier: catalog:ci
@@ -1598,6 +1579,10 @@ packages:
 
   '@nanoforge-dev/config@2.3.0':
     resolution: {integrity: sha512-+RKaLm9NnT+ddbA1GVjhNOi3y9qW9/Hc0sU1bozYA/MLPnTP4EwMfuIxl0R3sackGsu2EO9Zqu8TPgt87JWdFg==}
+    engines: {node: '26'}
+
+  '@nanoforge-dev/registry@3.0.1':
+    resolution: {integrity: sha512-EzSaszYtrPldD5Do7jdQK3TLLb8uCirY6NQjKXkeGw31X+sUXor4h5GAaoxELWMzPnv9BbKtggSaVaQIt7s8IQ==}
     engines: {node: '26'}
 
   '@nanoforge-dev/utils-eslint-config@1.0.2':
@@ -3609,6 +3594,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.6:
+    resolution: {integrity: sha512-9lpSSU4Mly3mrtruwLs1eLK6+gzbzqeBFwRNjIjE+9LuDpWdYctrQlQ3ej1Ilgi7gknpsTRnPoLP8DpCHqHIJw==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   set-cookie-parser@3.1.2:
     resolution: {integrity: sha512-5/r/lTwbJ3zQ+qwdUFZYeRNqda7P5HD8zQKqlSjdGt1/S0cjLAphHusj4Y58ahDtWn/g32xrIS58/ikOvwl0Lw==}
 
@@ -4030,6 +4020,9 @@ packages:
   zod@4.6.5:
     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@babel/code-frame@7.29.7':
@@ -4368,9 +4361,15 @@ snapshots:
   '@nanoforge-dev/config@2.3.0(synckit@0.11.13)':
     dependencies:
       unrun: 0.3.1(synckit@0.11.13)
-      zod: 4.6.5
+      zod: 4.6.7
     transitivePeerDependencies:
       - synckit
+
+  '@nanoforge-dev/registry@3.0.1':
+    dependencies:
+      fflate: 0.8.3
+      semver: 7.8.6
+      zod: 4.6.7
 
   '@nanoforge-dev/utils-eslint-config@1.0.2(@types/eslint@9.6.1)(eslint@10.11.0(jiti@2.6.1))(prettier@3.9.9)(typescript@6.0.3)':
     dependencies:
@@ -6091,6 +6090,8 @@ snapshots:
 
   semver@7.8.5: {}
 
+  semver@7.8.6: {}
+
   set-cookie-parser@3.1.2: {}
 
   shebang-command@2.0.0:
@@ -6463,3 +6464,5 @@ snapshots:
   zimmerframe@1.1.5: {}
 
   zod@4.6.5: {}
+
+  zod@4.6.7: {}

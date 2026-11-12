@@ -21,7 +21,6 @@ body:
         - meta
         - project
         - protocol
-        - registry
         - rpc
         - runtime
         - sdk

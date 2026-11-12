@@ -106,15 +106,8 @@ export default [
     ),
   },
   {
-    files: ['packages/registry/**'],
-    rules: restrict(
-      ['@nanoforge-dev/editor-*'],
-      'The registry package must stay free of editor code: it is meant to move to the CLI.',
-    ),
-  },
-  {
     files: ['packages/**'],
-    ignores: ['packages/kernel/**', 'packages/registry/**'],
+    ignores: ['packages/kernel/**'],
     rules: restrict(
       ['@nanoforge-dev/editor-plugin-*'],
       'Core packages must not depend on plugins.',

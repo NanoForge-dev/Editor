@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@nanoforge-dev/editor-rpc": "workspace:*",
-    "@nanoforge-dev/registry": "workspace:*",
+    "@nanoforge-dev/registry": "catalog:libs",
     "zod": "catalog:libs"
   },
   "devDependencies": {

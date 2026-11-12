@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative } from 'node:path';
 import { emitDts } from 'svelte2tsx';
@@ -53,6 +53,35 @@ try {
   rmSync(generated, { force: true });
 }
 
+/**
+ * Published packages the SDK bundles (`tsdown.config.ts`): their ESM declarations are copied next
+ * to the SDK's, and their specifiers rewritten like those of the editor packages.
+ */
+const BUNDLED = ['@nanoforge-dev/registry'];
+const declarations = new Map<string, string>();
+for (const name of BUNDLED) {
+  const manifest = createRequire(import.meta.url).resolve(`${name}/package.json`);
+  const { exports } = JSON.parse(readFileSync(manifest, 'utf8')) as {
+    exports: Record<string, string | { import?: { types?: string } }>;
+  };
+  const folder = join(out, name.slice('@nanoforge-dev/'.length));
+  const copied = new Set<string>();
+  for (const [subpath, target] of Object.entries(exports)) {
+    const types = typeof target === 'string' ? undefined : target.import?.types;
+    if (!types) continue;
+    declarations.set(join(name, subpath), join(folder, types).replace(/\.d\.ts$/, '.js'));
+    if (copied.has(dirname(types))) continue;
+    copied.add(dirname(types));
+    const from = join(dirname(manifest), dirname(types));
+    mkdirSync(join(folder, dirname(types)), { recursive: true });
+    for (const file of readdirSync(from).filter((file) => file.endsWith('.d.ts')))
+      writeFileSync(
+        join(folder, dirname(types), file),
+        readFileSync(join(from, file), 'utf8').replace(/^\/\/# sourceMappingURL=.*$/m, ''),
+      );
+  }
+}
+
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -75,11 +104,13 @@ for (const file of walk(out)) {
       }
       if (!specifier.startsWith('@nanoforge-dev/')) return match;
       const source = sources.get(specifier);
-      if (!source) {
+      const target =
+        declarations.get(specifier) ??
+        (source && join(out, relative(packages, source)).replace(/\.ts$/, '.js'));
+      if (!target) {
         unknown.set(file, specifier);
         return match;
       }
-      const target = join(out, relative(packages, source)).replace(/\.ts$/, '.js');
       local.push(target);
       const path = relative(dirname(file), target);
       return `${keyword}${quote}${path.startsWith('.') ? path : `./${path}`}${quote}`;
