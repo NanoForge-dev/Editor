@@ -8,6 +8,12 @@ allowBuilds:
   bun: true
   esbuild: true
 
+# Patched versions of transitive deps whose parents pin a vulnerable one (pnpm audit, Editor #262):
+# monaco-editor pins dompurify, eslint-plugin-format pins oxfmt, which pins tinypool.
+overrides:
+  dompurify: ^3.4.17
+  tinypool: ^2.1.2
+
 catalogs:
   build:
     tsdown: ^0.22.14
@@ -36,7 +42,7 @@ catalogs:
     svelte: ^5.57.3
     svelte-check: ^4.6.0
     svelte2tsx: ^0.7.61
-    vite: ^8.0.16
+    vite: ^8.3.8
   adapter:
     '@sveltejs/adapter-static': ^3.0.10
   libs:
