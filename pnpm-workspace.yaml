@@ -34,7 +34,7 @@ catalogs:
     bits-ui: ^2.21.0
     monaco-editor: ^0.57.0
   config:
-    '@nanoforge-dev/config': ^2.3.0
+    '@nanoforge-dev/config': ^3.0.1
   core:
     '@sveltejs/kit': ^2.65.0
     '@sveltejs/vite-plugin-svelte': ^7.3.1

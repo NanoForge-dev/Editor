@@ -161,8 +161,8 @@ catalogs:
       version: 0.57.0
   config:
     '@nanoforge-dev/config':
-      specifier: ^2.3.0
-      version: 2.3.0
+      specifier: ^3.0.1
+      version: 3.0.1
   core:
     '@sveltejs/kit':
       specifier: ^2.65.0
@@ -746,7 +746,7 @@ importers:
     dependencies:
       '@nanoforge-dev/config':
         specifier: catalog:config
-        version: 2.3.0(synckit@0.11.13)
+        version: 3.0.1(synckit@0.11.13)
       '@nanoforge-dev/editor-kernel':
         specifier: workspace:*
         version: link:../kernel
@@ -1590,8 +1590,8 @@ packages:
     peerDependencies:
       svelte: ^5
 
-  '@nanoforge-dev/config@2.3.0':
-    resolution: {integrity: sha512-+RKaLm9NnT+ddbA1GVjhNOi3y9qW9/Hc0sU1bozYA/MLPnTP4EwMfuIxl0R3sackGsu2EO9Zqu8TPgt87JWdFg==}
+  '@nanoforge-dev/config@3.0.1':
+    resolution: {integrity: sha512-XWRScOotb8IirerRx/mWLmUVYye3lo0PN/5a0MUp/eoSrhz0S6zzhGHEupRuC8aeHTjsQT7ctM3P6YyKSHZLaQ==}
     engines: {node: '26'}
 
   '@nanoforge-dev/registry@3.0.1':
@@ -2485,9 +2485,6 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
-
-  '@types/node@26.6.2':
-    resolution: {integrity: sha512-X1P21scMv4zGKLYqjdGjaKa7COa0RKVYYZZN/NfvLQ1JegxFhdhpZG/Lyn8AXx6CDUavKAd11v6BvfpkDByK8g==}
 
   '@types/node@26.6.6':
     resolution: {integrity: sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==}
@@ -4472,7 +4469,7 @@ snapshots:
     dependencies:
       svelte: 5.57.3(@typescript-eslint/types@8.70.1)
 
-  '@nanoforge-dev/config@2.3.0(synckit@0.11.13)':
+  '@nanoforge-dev/config@3.0.1(synckit@0.11.13)':
     dependencies:
       unrun: 0.3.1(synckit@0.11.13)
       zod: 4.6.7
@@ -5056,10 +5053,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/node@26.6.2':
-    dependencies:
-      undici-types: 8.9.0
-
   '@types/node@26.6.6':
     dependencies:
       undici-types: 8.9.0
@@ -5338,7 +5331,7 @@ snapshots:
 
   bun-types@1.4.4:
     dependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.6
       undici-types: 8.9.0
 
   cac@7.1.0: {}
