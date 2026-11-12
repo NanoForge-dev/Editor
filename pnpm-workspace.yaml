@@ -15,7 +15,7 @@ catalogs:
     typescript: ^6.0.3
     unrun: ^0.3.0
   ci:
-    '@commitlint/cli': ^21.2.0
+    '@commitlint/cli': ^21.2.4
     '@commitlint/config-conventional': ^21.2.0
     '@favware/cliff-jumper': ^6.1.0
     husky: ^9.1.7
