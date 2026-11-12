@@ -74,4 +74,19 @@ describe('scene analyzer (breakout)', () => {
     expect(model.scenes.find((scene) => scene.className === 'Menu')?.id).toBe('Title');
     expect(model.problems).toContain('Run is not in the scenes of SceneLibrary.');
   });
+
+  it('reports a problem once when two files export the same scene class', () => {
+    const engine = breakoutEngine();
+    const menu = engine
+      .text('apps/client/src/scenes/menu.ts')!
+      .replace('class Menu', 'class Extra');
+    engine.setFiles([
+      { path: 'apps/client/src/scenes/bonus.ts', text: menu },
+      { path: 'apps/client/src/scenes/extra.ts', text: menu },
+    ]);
+    const { problems } = analyze(engine);
+    expect(problems.filter((problem) => problem.startsWith('Extra is not'))).toEqual([
+      'Extra is not in the scenes of SceneLibrary.',
+    ]);
+  });
 });

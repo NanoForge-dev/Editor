@@ -246,5 +246,6 @@ export const analyzeScenes = (context: AnalyzeContext, rawArgs: unknown): AppSce
   for (const scene of scenes)
     if (scene.parent && !scenes.some((candidate) => candidate.className === scene.parent))
       problems.push(`${scene.className}'s parent ${scene.parent} is not a scene of this app.`);
-  return { scenes, ...(library && { library }), problems };
+  /** Once each: two files exporting one class repeat its problems, and the panel keys them by text. */
+  return { scenes, ...(library && { library }), problems: [...new Set(problems)] };
 };

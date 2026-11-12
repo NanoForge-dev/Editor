@@ -22,7 +22,14 @@ export const sceneTree = (
   loadedIds: readonly string[],
   mainLabel: string,
 ): TreeNode[] => {
-  const all = model?.scenes ?? [];
+  /**
+   * One row per class name, the tree's key: two files can export the same name (for a moment
+   * while a scene is renamed, or by mistake), and a duplicate key breaks the whole panel.
+   */
+  const all = (model?.scenes ?? []).filter(
+    (scene, index, scenes) =>
+      scenes.findIndex((other) => other.className === scene.className) === index,
+  );
   const known = new Set(all.map((scene) => scene.className));
   const children = (parent: string | undefined, seen: Set<string>): TreeNode[] =>
     all
