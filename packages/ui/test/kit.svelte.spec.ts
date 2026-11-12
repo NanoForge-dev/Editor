@@ -174,7 +174,7 @@ describe('controls', () => {
     const screen = await render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
     (screen.getByRole('separator').element() as HTMLElement).focus();
     await userEvent.keyboard('{ArrowRight}');
-    screen.unmount();
+    await screen.unmount();
     expect(onresize).toHaveBeenLastCalledWith(10, true);
   });
 
