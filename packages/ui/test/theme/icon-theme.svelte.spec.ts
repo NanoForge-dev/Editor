@@ -42,7 +42,7 @@ describe('icon files', () => {
 
   it('draws an SVG file as a mask in the text color, never inline', async () => {
     setThemeIcons({ play: `${BASE}play.svg` });
-    const { container } = render(Icon, { name: 'play', size: 20, label: 'Play' });
+    const { container } = await render(Icon, { name: 'play', size: 20, label: 'Play' });
     const icon = container.querySelector<HTMLElement>('.nf-icon-file')!;
     expect(icon).toBeTruthy();
     expect(icon.getAttribute('aria-label')).toBe('Play');

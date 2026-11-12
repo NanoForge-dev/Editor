@@ -16,7 +16,13 @@ import TreeHarness from './fixtures/TreeHarness.svelte';
 describe('NumberInput', () => {
   it('commits typed values, arrows and scrubbing', async () => {
     const onchange = vi.fn();
-    const screen = render(NumberInput, { value: 10, onchange, label: 'X', prefix: 'X', step: 1 });
+    const screen = await render(NumberInput, {
+      value: 10,
+      onchange,
+      label: 'X',
+      prefix: 'X',
+      step: 1,
+    });
     const input = screen.getByRole('textbox', { name: 'X' });
     await input.fill('12,5');
     await userEvent.keyboard('{Enter}');
@@ -66,7 +72,7 @@ const bigTree = (): TreeNode[] =>
 
 describe('Tree', () => {
   it('only renders visible rows of large trees', async () => {
-    const screen = render(TreeHarness, { nodes: bigTree() });
+    const screen = await render(TreeHarness, { nodes: bigTree() });
     /** Focuses the first row. */
     (screen.getByRole('tree').element() as HTMLElement).focus();
     /** Expand it. */
@@ -85,7 +91,7 @@ describe('Tree', () => {
       { id: 'b', label: 'Ball' },
       { id: 'c', label: 'Wall' },
     ];
-    const screen = render(TreeHarness, { nodes, onrename, onactivate });
+    const screen = await render(TreeHarness, { nodes, onrename, onactivate });
     await screen.getByText('Ball').click();
     await userEvent.keyboard('{Shift>}{ArrowDown}{/Shift}');
     await expect.element(screen.getByTestId('selected')).toHaveTextContent('b,c');
@@ -104,14 +110,14 @@ describe('Tree', () => {
 describe('controls', () => {
   it('Switch toggles', async () => {
     const onchange = vi.fn();
-    const screen = render(Switch, { label: 'Snap', onchange });
+    const screen = await render(Switch, { label: 'Snap', onchange });
     await screen.getByRole('switch', { name: 'Snap' }).click();
     expect(onchange).toHaveBeenCalledWith(true);
   });
 
   it('Tabs move with arrow keys', async () => {
     const onchange = vi.fn();
-    const screen = render(Tabs, {
+    const screen = await render(Tabs, {
       label: 'Mode',
       active: 'game',
       onchange,
@@ -127,7 +133,7 @@ describe('controls', () => {
 
   it('Splitter resizes with the keyboard, as one step once the keys rest', async () => {
     const onresize = vi.fn();
-    const screen = render(Splitter, {
+    const screen = await render(Splitter, {
       orientation: 'vertical',
       label: 'Resize left panel',
       onresize,
@@ -146,7 +152,7 @@ describe('controls', () => {
 
   it('Splitter keys do not build up past the limit the resize applies', async () => {
     const onresize = vi.fn((delta: number) => Math.max(-10, delta));
-    const screen = render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
+    const screen = await render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
     const handle = screen.getByRole('separator').element() as HTMLElement;
     handle.focus();
     await userEvent.keyboard('{ArrowLeft}{ArrowLeft}{ArrowLeft}{ArrowRight}');
@@ -155,7 +161,7 @@ describe('controls', () => {
 
   it('Splitter ends a preview that the limit kept from moving', async () => {
     const onresize = vi.fn<(delta: number, final: boolean) => number>(() => 0);
-    const screen = render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
+    const screen = await render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
     const handle = screen.getByRole('separator').element() as HTMLElement;
     handle.focus();
     await userEvent.keyboard('{ArrowLeft}');
@@ -165,7 +171,7 @@ describe('controls', () => {
 
   it('Splitter saves pending key presses when it goes away', async () => {
     const onresize = vi.fn();
-    const screen = render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
+    const screen = await render(Splitter, { orientation: 'vertical', label: 'Resize', onresize });
     (screen.getByRole('separator').element() as HTMLElement).focus();
     await userEvent.keyboard('{ArrowRight}');
     screen.unmount();
@@ -174,7 +180,7 @@ describe('controls', () => {
 
   it('ColorPicker normalizes hex input', async () => {
     const onchange = vi.fn();
-    const screen = render(ColorPicker, { value: '#000000', label: 'Tint', onchange });
+    const screen = await render(ColorPicker, { value: '#000000', label: 'Tint', onchange });
     await screen.getByRole('textbox', { name: 'Tint', exact: true }).fill('#F80');
     await userEvent.keyboard('{Enter}');
     expect(onchange).toHaveBeenLastCalledWith('#ff8800', true);
@@ -182,7 +188,7 @@ describe('controls', () => {
 
   it('Select picks an option', async () => {
     const onchange = vi.fn();
-    const screen = render(Select, {
+    const screen = await render(Select, {
       label: 'Shape',
       value: 'circle',
       onchange,
@@ -200,7 +206,7 @@ describe('controls', () => {
 describe('overlays', () => {
   it('Menu runs the selected item', async () => {
     const onSelect = vi.fn();
-    const screen = render(MenuHarness, {
+    const screen = await render(MenuHarness, {
       items: [
         { kind: 'item', id: 'save', label: 'Save', shortcut: 'Ctrl+S', onSelect },
         { kind: 'separator' },
@@ -214,7 +220,12 @@ describe('overlays', () => {
 
   it('Dialog closes with Escape', async () => {
     const onclose = vi.fn();
-    render(Dialog, { open: true, title: 'New scene', description: 'Name the scene.', onclose });
+    await render(Dialog, {
+      open: true,
+      title: 'New scene',
+      description: 'Name the scene.',
+      onclose,
+    });
     await expect.element(page.getByRole('dialog', { name: 'New scene' })).toBeVisible();
     await userEvent.keyboard('{Escape}');
     await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
