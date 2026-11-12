@@ -21,7 +21,8 @@
         "scripts/*.{ts,mjs}",
         "e2e/**/*.ts",
         "test/**/*.spec.ts",
-        "e2e/prepare-workspace.mjs"
+        "e2e/prepare-workspace.mjs",
+        "playwright.nightly.config.ts"
       ],
       "ignoreDependencies": ["@nanoforge-dev/editor-plugin-.+", "chokidar", "unrun"]
     },

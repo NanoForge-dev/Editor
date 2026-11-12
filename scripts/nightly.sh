@@ -146,7 +146,8 @@ run_e2e_tests() {
         return 0
     fi
 
-    if [[ ! -f "playwright.config.ts" ]] && [[ ! -d "e2e" ]]; then
+    local e2e_dir="apps/editor"
+    if [[ ! -f "$e2e_dir/playwright.config.ts" ]]; then
         echo "No E2E tests configured; skipping"
         set_e2e_skipped "no_e2e_tests_configured"
         return 0
@@ -157,13 +158,22 @@ run_e2e_tests() {
     e2e_start=$(date +%s)
 
     local config_args=()
-    if [[ -f "playwright.nightly.config.ts" ]]; then
+    if [[ -f "$e2e_dir/playwright.nightly.config.ts" ]]; then
         config_args=("--config=playwright.nightly.config.ts")
     fi
 
+    # The e2e tests run against the production build, with the example plugin and theme loaded.
+    echo "Building the editor..."
+    pnpm turbo build --filter=@nanoforge-dev/editor... \
+        --filter=@nanoforge-dev/editor-example-plugin \
+        --filter=@nanoforge-dev/editor-example-theme || exit_code=$?
+
     local results_file="$RAW_DIR/e2e-results.json"
-    PLAYWRIGHT_JSON_OUTPUT_NAME="$results_file" \
-        pnpm exec playwright test "${config_args[@]}" --reporter=list,json || exit_code=$?
+    if [[ "$exit_code" -eq 0 ]]; then
+        PLAYWRIGHT_JSON_OUTPUT_NAME="$results_file" \
+            pnpm --filter @nanoforge-dev/editor exec playwright test "${config_args[@]}" \
+            --reporter=list,json || exit_code=$?
+    fi
 
     e2e_end=$(date +%s)
     e2e_duration=$((e2e_end - e2e_start))
