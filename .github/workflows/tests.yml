@@ -26,8 +26,8 @@ jobs:
       style-scripts: '["lint", "typecheck"]'
       # The unit tests need Playwright browsers and CHROME, which the shared unit job can't set: see unit below.
       unit-script: ''
-      # No audit job yet: the lockfile has high and critical advisories to fix first.
-      audit-level: ''
+      # pnpm audit on every dependency, dev ones included: fails on high and critical advisories.
+      audit-level: high
       prepare-env: |
         PUBLIC_MODE=${{ vars.PUBLIC_MODE }}
         PUBLIC_PM_URL=${{ vars.PUBLIC_PM_URL }}
