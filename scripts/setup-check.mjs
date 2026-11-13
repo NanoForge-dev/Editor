@@ -80,9 +80,9 @@ report(
 );
 
 const engine = engineRoot(ROOT);
-const pong = join(engine, 'example/pong-network/node_modules/.bin/nf');
+const donor = join(engine, 'e2e/game/node_modules/.bin/nf');
 report(
-  existsSync(pong) && !!bridgeOf(engine),
+  existsSync(donor) && !!bridgeOf(engine),
   false,
   `Built engine with the editor bridge at ${engine}`,
   'The e2e tests that play games are skipped without it: pnpm setup:engine (needs emcc), or NANOFORGE_ENGINE=<a built checkout>.',
