@@ -97,3 +97,33 @@ export const linkEngineModules = (engine, app, modules) => {
     symlinkSync(join(engine, 'modules', module), target);
   }
 };
+
+/** The engine's libraries by package name (`@nanoforge-dev/core` → `<engine>/packages/core`). */
+const engineLibraries = (engine) =>
+  new Map(
+    ['packages', 'modules'].flatMap((group) =>
+      readdirSync(join(engine, group), { withFileTypes: true })
+        .map((entry) => join(engine, group, entry.name, 'package.json'))
+        .filter((file) => existsSync(file))
+        .map((file) => [JSON.parse(readFileSync(file, 'utf8')).name, dirname(file)]),
+    ),
+  );
+
+/**
+ * Replaces, in the `node_modules` of a game's folder, every engine library its `package.json`
+ * depends on with a link to the engine checkout's build. Returns the names it linked.
+ */
+export const linkEngineLibraries = (engine, folder) => {
+  const libraries = engineLibraries(engine);
+  const manifest = JSON.parse(readFileSync(join(folder, 'package.json'), 'utf8'));
+  const names = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies }).filter(
+    (name) => libraries.has(name),
+  );
+  for (const name of names) {
+    const link = join(folder, 'node_modules', name);
+    mkdirSync(dirname(link), { recursive: true });
+    rmSync(link, { recursive: true, force: true });
+    symlinkSync(libraries.get(name), link);
+  }
+  return names;
+};

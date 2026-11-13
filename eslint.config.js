@@ -65,6 +65,7 @@ export default [
       'apps/editor/playwright-report/**',
       'apps/editor/tutorial/**',
       'examples/**',
+      '.examples/**',
       'docs/drafts/**',
     ],
   },

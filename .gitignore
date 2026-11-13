@@ -250,9 +250,8 @@ apps/editor/playwright-report/
 # SvelteKit client build (bundled into dist/ by the build script)
 apps/editor/build/
 
-# The example editor's data (pnpm example)
-examples/.data/
-examples/node_modules
+# The example games pnpm examples copies, and the editor data of pnpm example
+.examples/
 .vitest-attachments
 
 # Engine and CLI built by pnpm setup:engine

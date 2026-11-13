@@ -30,6 +30,7 @@
     "test:coverage": "turbo run test:coverage",
     "e2e:last-failure": "pnpm --filter @nanoforge-dev/editor e2e:last-failure",
     "example": "node scripts/example.mjs",
+    "examples": "node scripts/examples.mjs",
     "setup:check": "node scripts/setup-check.mjs",
     "setup:engine": "node scripts/setup-engine.mjs",
     "prepare": "husky"
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@commitlint/cli": "catalog:ci",
     "@commitlint/config-conventional": "catalog:ci",
+    "@inquirer/prompts": "catalog:scripts",
     "@nanoforge-dev/utils-eslint-config": "catalog:lint",
     "@nanoforge-dev/utils-prettier-config": "catalog:lint",
     "@trivago/prettier-plugin-sort-imports": "catalog:lint",
