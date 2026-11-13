@@ -1,8 +1,6 @@
 # Examples
 
-## `breakout`
-
-A breakout made of scenes (`@nanoforge-dev/scene`, engine branch `feat/scene`): a menu, three levels under a game scene, a pause menu over any level, end screens, and scene vars that follow their scenes. `NANOFORGE_ENGINE=../engine-scene pnpm example breakout` starts the editor on it. See [`breakout/README.md`](breakout/README.md).
+The example games live in the [examples repository](https://github.com/NanoForge-dev/examples): `pnpm examples` copies the ones you pick into `.examples/` to try them in the editor (see the root `README.md`). This folder keeps the plugin example.
 
 ## `counter-plugin`
 

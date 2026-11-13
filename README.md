@@ -28,7 +28,7 @@ The editor is a pnpm + turbo monorepo. The rewrite plan is [`docs/rewrite-plan.m
 | `packages/*`  | Core editor packages (`kernel`, `sdk`, `rpc`, `protocol`, `history`, `settings`, `layout`, `ui`, `project`, `code`, `meta`, `runtime`, `server-core`) |
 | `plugins/*`   | Built-in editor plugins (`nanoforge.manifest.json`, type `plugin`)                                                                                    |
 | `tooling/*`   | Plugin build tooling (`vite-plugin`) and the example plugin the e2e tests load                                                                        |
-| `examples/*`  | A game to try the editor on (`breakout`) and a standalone plugin (`counter-plugin`)                                                                   |
+| `examples/*`  | A standalone plugin (`counter-plugin`); the example games are in the [examples repository](https://github.com/NanoForge-dev/examples)                 |
 
 ## Develop
 
@@ -42,9 +42,12 @@ Prerequisites:
 ```bash
 pnpm install
 pnpm turbo build --filter=@nanoforge-dev/editor...   # the editor and every plugin it bundles
-pnpm example                                         # opens examples/breakout on http://127.0.0.1:4800
+pnpm examples                                        # copies example games into .examples/ and installs them
+pnpm example <name>                                  # opens a copied game on http://127.0.0.1:4800
 pnpm dev                                             # editor and built-in plugins in watch mode
 ```
+
+`pnpm examples` copies games of a checkout of the [examples repository](https://github.com/NanoForge-dev/examples) (`--from <path>`, else `NANOFORGE_EXAMPLES`, else `../examples`) into `.examples/`, ignored by git, and runs `pnpm install` in each copy: the checkout is never changed. It asks which games to copy, or takes `--games <name,name>` or `--all`. `--engine <path>` (or `NANOFORGE_ENGINE`) links a built engine checkout's libraries instead of the published ones. `pnpm test` then checks that the editor models every copied game (`apps/editor/test/examples`).
 
 Checks: `pnpm lint`, `pnpm typecheck`, `CHROME=… pnpm test`. The e2e tests run against the production build: build first, then `cd apps/editor && npx playwright test`.
 
