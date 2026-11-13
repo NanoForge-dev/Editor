@@ -114,7 +114,7 @@ else if (values.games) {
     choices: examples.map((example) => ({
       name: `${example.group}/${example.name}`,
       value: example,
-      checked: existsSync(join(COPIES, example.name)),
+      checked: false,
     })),
   });
 } else fail('Choose the examples: --games <name,name> or --all (no terminal to ask in).');
