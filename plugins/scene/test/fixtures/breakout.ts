@@ -7,8 +7,8 @@ import { CODE_FILE, CodeEngine } from '@nanoforge-dev/editor-code/engine';
 import { SCENES_ANALYZER } from '../../src/model/scene.const';
 import { analyzeScenes } from '../../src/worker/scenes';
 
-/** The breakout example: every scene of it is an `EcsScene`. */
-export const BREAKOUT = join(import.meta.dirname, '../../../../examples/breakout');
+/** The breakout test game (also played by the e2e scene tests): every scene of it is an `EcsScene`. */
+export const BREAKOUT = join(import.meta.dirname, 'breakout');
 export const MAIN = 'apps/client/src/main.ts';
 
 const walk = (dir: string): string[] =>
