@@ -12,9 +12,9 @@ if (!/^\.workspace(-[\w-]+)?$/.test(WORKSPACE))
 
 /**
  * End-to-end tests against the production build (`pnpm build` first). Each run starts from a
- * fresh workspace holding a copy of pong-network, with the example plugin as a dev plugin.
+ * fresh workspace holding a copy of the test games (`game`, `breakout`), with the example plugin as a dev plugin.
  * Set CHROME to use an installed Chromium instead of Playwright's, NANOFORGE_ENGINE to play the
- * pong-network example of another engine checkout (default: ../engine next to the editor).
+ * test games with another engine checkout (default: ../engine next to the editor).
  * Everything runs on Chromium; the browser cache spec also on Firefox, and on WebKit with
  * `BROWSERS=…,webkit` where it starts (it needs system libraries some distributions lack).
  */
