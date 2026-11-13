@@ -64,19 +64,25 @@ const { values } = parseArgs({
   },
 });
 const interactive = process.stdin.isTTY && process.stdout.isTTY;
+/** Asks with a prompt of `@inquirer/prompts`; Ctrl+C ends the script without a stack trace. */
+const ask = async (prompt, options) => {
+  const prompts = await import('@inquirer/prompts');
+  return prompts[prompt](options).catch((error) => {
+    if (error?.name === 'ExitPromptError') process.exit(130);
+    throw error;
+  });
+};
 
 const fallback = join(ROOT, '../examples');
 let checkout =
   values.from ??
   process.env.NANOFORGE_EXAMPLES ??
   (existsSync(join(fallback, 'basics')) ? fallback : undefined);
-if (!checkout && interactive) {
-  const { input } = await import('@inquirer/prompts');
-  checkout = await input({
+if (!checkout && interactive)
+  checkout = await ask('input', {
     message: 'Path to a checkout of the examples repository:',
     validate: (path) => existsSync(resolve(path)) || 'No such folder',
   });
-}
 if (!checkout)
   fail(
     'No examples checkout: pass --from <path>, or set NANOFORGE_EXAMPLES.\nClone it with: git clone https://github.com/NanoForge-dev/examples',
@@ -103,8 +109,7 @@ else if (values.games) {
     fail(`No example named ${unknown.join(', ')}. Examples: ${[...byName.keys()].join(', ')}.`);
   chosen = names.map((name) => byName.get(name));
 } else if (interactive) {
-  const { checkbox } = await import('@inquirer/prompts');
-  chosen = await checkbox({
+  chosen = await ask('checkbox', {
     message: 'Examples to copy',
     choices: examples.map((example) => ({
       name: `${example.group}/${example.name}`,
