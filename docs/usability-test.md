@@ -16,14 +16,18 @@ For each round:
 ```sh
 git switch <branch>
 pnpm install && pnpm turbo build --filter=@nanoforge-dev/editor...
-pnpm example breakout   # http://127.0.0.1:4800, engine from ../engine (NANOFORGE_ENGINE)
+mkdir -p .examples && rm -rf .examples/breakout   # breakout is a test game: copy it out of the fixtures
+command cp -r plugins/scene/test/fixtures/breakout .examples/breakout
+printf 'packages:\n  - apps/*\n' > .examples/breakout/pnpm-workspace.yaml   # its own workspace, not the editor's
+(cd .examples/breakout && pnpm install)
+pnpm example breakout   # http://127.0.0.1:4800
 ```
 
 Before **each person** (stop the editor first):
 
 ```sh
-rm -rf examples/.data                               # the editor's data: recent projects, account
-rm -f examples/breakout/.nanoforge/editor/local.json # breakout's saved layout (not in git)
+rm -rf .examples/.data                               # the editor's data: recent projects, account
+rm -f .examples/breakout/.nanoforge/editor/local.json # breakout's saved layout (not in git)
 ```
 
 and use a fresh browser profile (a private window), so each one starts from the editor's first run: the previous person's layout would otherwise spoil the comparison.
@@ -40,7 +44,7 @@ Read each task aloud, then say nothing until they finish or give up (5 minutes p
 2. **Add an entity.** "In the Level 1 scene, add a new brick entity." (It must end up in the scene's code.)
 3. **Change a value.** "Make the ball start faster." (Any velocity change on the ball counts.)
 4. **Play.** "Play the game, then stop it."
-5. **Commit.** "Save your work in Git with the message `faster ball`." (The project must be a repository: run `git init && git add -A && git commit -m start` in `examples/breakout` before the session.)
+5. **Commit.** "Save your work in Git with the message `faster ball`." (The project must be a repository: run `git init && git add -A && git commit -m start` in `.examples/breakout` before the session.)
 
 ## What to record
 
@@ -66,4 +70,4 @@ A sheet per round:
 
 ## After the session
 
-Remove `examples/breakout/.git` and `examples/.data`, and put back anything the people changed in `examples/breakout` (`git checkout examples/breakout`).
+Remove `.examples/breakout`, which holds the people's changes and its `.git`, and `.examples/.data`.

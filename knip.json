@@ -2,6 +2,7 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignore": [
     "examples/**",
+    ".examples/**",
     "my-first-game/**",
     "docs/drafts/**",
     "**/test/fixtures/**",

@@ -11,17 +11,17 @@
     "test:unit": "vitest run --config ../../vitest.config.ts"
   },
   "devDependencies": {
-    "@nanoforge-dev/asset": "workspace:*",
-    "@nanoforge-dev/cli": "^2.3.0",
-    "@nanoforge-dev/common": "workspace:*",
-    "@nanoforge-dev/config": "catalog:config",
-    "@nanoforge-dev/core": "workspace:*",
-    "@nanoforge-dev/env": "workspace:*",
-    "@trivago/prettier-plugin-sort-imports": "catalog:lint",
-    "lint-staged": "catalog:ci",
-    "prettier": "catalog:lint",
-    "typescript": "catalog:core",
-    "vitest": "catalog:test"
+    "@nanoforge-dev/asset": "^3.0.0",
+    "@nanoforge-dev/cli": "^3.0.1",
+    "@nanoforge-dev/common": "^3.0.0",
+    "@nanoforge-dev/config": "^3.0.1",
+    "@nanoforge-dev/core": "^3.0.0",
+    "@nanoforge-dev/env": "^3.0.0",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "lint-staged": "^17.4.1",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
   },
   "private": true,
   "lint-staged": {

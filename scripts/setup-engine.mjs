@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Clones and builds the engine and the CLI the e2e tests and `pnpm example` use, at the commits
+ * Clones and builds the engine and the CLI the e2e tests use, at the commits
  * CI pins (`scripts/pinned-refs.json`), into `.engine/` (ignored by git). It never touches a
  * checkout of yours: set NANOFORGE_ENGINE and NANOFORGE_CLI to use one instead.
  *
@@ -47,6 +47,6 @@ run('pnpm', ['--filter', '@nanoforge-dev/schematics', 'build'], cli);
 run('pnpm', ['build'], cli);
 
 console.log(`
-The e2e tests and \`pnpm example\` now find them by themselves; or set
+The e2e tests now find them by themselves; or set
   NANOFORGE_ENGINE=${engine}
   NANOFORGE_CLI=${cli}`);

@@ -51,6 +51,16 @@
       "outputs": [],
       "outputLogs": "new-only"
     },
+    "@nanoforge-dev/editor#test:unit": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputLogs": "new-only"
+    },
+    "@nanoforge-dev/editor#test:coverage": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputLogs": "new-only"
+    },
     "test:coverage": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "test/**", "package.json", "tsconfig.json", "*.config.{js,ts}"],

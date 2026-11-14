@@ -6,13 +6,12 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
-  readlinkSync,
   realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import {
   bridgeOf,
@@ -132,40 +131,18 @@ for (const [path, content] of Object.entries(registry)) {
   writeFileSync(join(root, '.registry', path), content);
 }
 
-/**
- * Copies a game of the engine repository. Links that point outside of it (node_modules of the
- * pnpm workspace) become absolute, and so do relative tsconfig `extends`.
- */
-const copyGame = (source, destination) => {
+/** The editor's test games (`game` is the engine's pong-network example at 3.0.0, frozen). */
+const FIXTURES = {
+  game: join(import.meta.dirname, '../../../packages/server-core/test/fixtures/game'),
+  breakout: join(import.meta.dirname, '../../../plugins/scene/test/fixtures/breakout'),
+};
+
+/** Copies a test game, without what a build or an editor wrote in it. */
+const copyGame = (source, destination) =>
   cpSync(source, destination, {
     recursive: true,
-    verbatimSymlinks: true,
-    filter: (path) => !/\/(\.nanoforge|dist)$/.test(path),
+    filter: (path) => !/\/(node_modules|dist|\.nanoforge)$/.test(path),
   });
-  const relink = (dir, sourceDir) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const path = join(dir, entry.name);
-      const original = join(sourceDir, entry.name);
-      if (entry.isSymbolicLink()) {
-        const target = resolve(dirname(original), readlinkSync(original));
-        if (!target.startsWith(`${source}/`)) {
-          rmSync(path);
-          symlinkSync(realpathSync(original), path);
-        }
-      } else if (entry.isDirectory()) relink(path, original);
-    }
-  };
-  relink(destination, source);
-  for (const file of ['tsconfig.json', 'apps/client/tsconfig.json', 'apps/server/tsconfig.json']) {
-    const path = join(destination, file);
-    if (!existsSync(path)) continue;
-    const text = readFileSync(path, 'utf8').replace(
-      /"extends":\s*"(\.[^"]+)"/,
-      (_, relative) => `"extends": "${resolve(dirname(join(source, file)), relative)}"`,
-    );
-    writeFileSync(path, text);
-  }
-};
 
 /**
  * The panels' first-time tips take room the tests did not plan for: the local account starts
@@ -185,12 +162,30 @@ writeFileSync(
 );
 
 const engine = engineRoot(join(import.meta.dirname, '../../..'));
-const pong = join(engine, 'example/pong-network');
+/**
+ * The games take their `node_modules` from the engine's end-to-end test game: links to the
+ * engine's packages, its CLI and config (`apps/client` has every library the test games use).
+ */
+const donor = join(engine, 'e2e/game');
 /** Engines without the editor bridge cannot be paused, stepped or stopped. */
 const bridge = bridgeOf(engine);
-if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
+if (existsSync(join(donor, 'node_modules/.bin/nf')) && bridge) {
   const game = join(root, 'game');
-  copyGame(pong, game);
+  copyGame(FIXTURES.game, game);
+  linkNodeModules(join(donor, 'node_modules'), join(game, 'node_modules'));
+  /** `shared/protocol.ts` imports the network library from the game's root. */
+  linkEngineModules(engine, game, ['network']);
+  for (const app of ['apps/client', 'apps/server'])
+    linkNodeModules(join(donor, app, 'node_modules'), join(game, app, 'node_modules'));
+  /** The game extends the engine's tsconfig, as it did in the engine's examples. */
+  const tsconfig = join(game, 'tsconfig.json');
+  writeFileSync(
+    tsconfig,
+    readFileSync(tsconfig, 'utf8').replace(
+      '"extends": "../../tsconfig.json"',
+      `"extends": "${join(engine, 'tsconfig.json')}"`,
+    ),
+  );
   symlinkSync(join(engine, 'node_modules'), join(root, 'node_modules'));
   const cli = cliRoot(join(import.meta.dirname, '../../..'));
   if (cli && existsSync(join(cli, 'dist/command.loader.js'))) {
@@ -250,7 +245,7 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
       join(tutorial, '.gitignore'),
       `${readFileSync(join(tutorial, '.gitignore'), 'utf8')}\ndist/\n`,
     );
-    linkNodeModules(join(pong, 'apps/client/node_modules'), join(tutorial, 'node_modules'));
+    linkNodeModules(join(donor, 'apps/client/node_modules'), join(tutorial, 'node_modules'));
     rmSync(join(tutorial, 'node_modules/@nanoforge-dev/cli'), { recursive: true, force: true });
     symlinkSync(cli, join(tutorial, 'node_modules/@nanoforge-dev/cli'));
     /** Builds run the project's own `nf`: without it they need one on the PATH, which CI has not. */
@@ -258,7 +253,7 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
     rmSync(join(tutorial, 'node_modules/.bin/nf'), { force: true });
     symlinkSync(join(cli, 'dist/nf.js'), join(tutorial, 'node_modules/.bin/nf'));
     symlinkSync(
-      realpathSync(join(pong, 'node_modules/@nanoforge-dev/config')),
+      realpathSync(join(donor, 'node_modules/@nanoforge-dev/config')),
       join(tutorial, 'node_modules/@nanoforge-dev/config'),
     );
     linkEditorLibrary(engine, tutorial);
@@ -267,13 +262,10 @@ if (existsSync(join(pong, 'node_modules/.bin/nf')) && bridge) {
   }
   if (existsSync(join(engine, 'modules/scene/dist/index.js'))) {
     const breakout = join(root, 'breakout');
-    cpSync(join(import.meta.dirname, '../../../examples/breakout'), breakout, {
-      recursive: true,
-      filter: (path) => !/\/(node_modules|dist|\.nanoforge)$/.test(path),
-    });
-    linkNodeModules(join(pong, 'node_modules'), join(breakout, 'node_modules'));
+    copyGame(FIXTURES.breakout, breakout);
+    linkNodeModules(join(donor, 'node_modules'), join(breakout, 'node_modules'));
     const client = join(breakout, 'apps/client');
-    linkNodeModules(join(pong, 'apps/client/node_modules'), join(client, 'node_modules'));
+    linkNodeModules(join(donor, 'apps/client/node_modules'), join(client, 'node_modules'));
     linkEditorLibrary(engine, client);
     linkEngineModules(engine, client, ['scene']);
   } else {

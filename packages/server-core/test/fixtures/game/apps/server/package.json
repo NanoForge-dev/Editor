@@ -1,0 +1,35 @@
+{
+  "name": "pong-network-server",
+  "version": "0.0.0",
+  "description": "",
+  "author": "",
+  "type": "module",
+  "scripts": {
+    "lint": "prettier --check . && eslint --format=pretty \"src/**/*.ts\"",
+    "format": "prettier --write . && eslint --fix --format=pretty \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "@nanoforge-dev/asset": "^3.0.0",
+    "@nanoforge-dev/common": "^3.0.0",
+    "@nanoforge-dev/core": "^3.0.0",
+    "@nanoforge-dev/env": "^3.0.0",
+    "@nanoforge-dev/ecs": "^3.0.0",
+    "@nanoforge-dev/network": "^3.0.0",
+    "@nanoforge-dev/utils-eslint-config": "^1.0.2",
+    "@nanoforge-dev/utils-prettier-config": "^1.0.2",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "eslint": "^10.9.1",
+    "lint-staged": "^17.4.1",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3"
+  },
+  "private": true,
+  "lint-staged": {
+    "**": [
+      "prettier --ignore-unknown --write"
+    ],
+    "src/**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

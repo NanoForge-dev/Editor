@@ -9,10 +9,10 @@
     "build": "nf build"
   },
   "devDependencies": {
-    "@nanoforge-dev/asset": "*",
-    "@nanoforge-dev/common": "*",
-    "@nanoforge-dev/core": "*",
-    "@nanoforge-dev/env": "*",
+    "@nanoforge-dev/asset": "^3.0.0",
+    "@nanoforge-dev/common": "^3.0.0",
+    "@nanoforge-dev/core": "^3.0.0",
+    "@nanoforge-dev/env": "^3.0.0",
     "@nanoforge-dev/cli": "^3.0.1",
     "@nanoforge-dev/config": "^3.0.1",
     "prettier": "^3.0.0",

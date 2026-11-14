@@ -4,12 +4,11 @@ A breakout made of **scenes** (`@nanoforge-dev/scene`): a menu, a game with thre
 
 ## Open it
 
-The scene module is on the engine branch `feat/scene` (worktree `../engine-scene`). From the root of the editor repository:
+This is a test game of the editor (`plugins/scene/test/fixtures/breakout`); the e2e run copies it. To open it by hand, copy it into `.examples/` and install it as in `docs/usability-test.md`, then, from the root of the editor repository:
 
 ```sh
-pnpm install
 pnpm turbo build --filter=@nanoforge-dev/editor...
-NANOFORGE_ENGINE=../engine-scene pnpm example breakout
+pnpm example breakout
 ```
 
 Then open <http://127.0.0.1:4800/load?path=breakout> and press **Play** (`F5`). The engine needs `pnpm install` and `pnpm build` once.
