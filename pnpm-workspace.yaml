@@ -63,7 +63,7 @@ catalogs:
     eslint-plugin-svelte: ^3.24.1
     globals: ^17.14.0
     knip: ^6.45.1
-    prettier: ^3.10.0
+    prettier: ^3.10.1
     prettier-plugin-svelte: ^4.1.1
     typescript-eslint: ^8.72.2
   code:
@@ -74,7 +74,7 @@ catalogs:
     '@inquirer/prompts': ^8.7.5
   server:
     chokidar: ^4.0.3
-    prettier: ^3.10.0
+    prettier: ^3.10.1
     yaml: ^2.9.1
   test:
     '@playwright/test': ^1.65.0
