@@ -1,5 +1,5 @@
 /** What the keyboard can reach: enabled controls, links and tab stops, but not roving rows. */
-export const FOCUSABLE = [
+const FOCUSABLE = [
   'button:not([disabled])',
   '[href]',
   'input:not([disabled])',
