@@ -66,6 +66,7 @@ Use the editor's components so your panel looks and behaves like the rest: `Butt
 <Button variant="primary" disabled={!name}>Create</Button>
 ```
 
+- A `Dialog` puts the focus on its Close button when it opens. Pass `initialFocus={() => element}` (the element to focus, such as the first field) to start elsewhere.
 - Give every control an accessible name (`aria-label` when there is no visible label).
 - Write labels in sentence case, with a verb that says what the button does.
 - Icons are Lucide names. A plugin adds its own with `registerIcons({ name: Component })`. A dock panel shows only its icon, in a stripe on the edge of the window, before its plugin activates: until then, an icon the plugin registers shows as a box. Prefer an `onStartup` registration, or an icon the editor already has.
