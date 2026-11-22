@@ -325,7 +325,7 @@
   }
   mark {
     background: none;
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
     font-weight: 600;
   }
   .row[aria-selected='true'] mark {

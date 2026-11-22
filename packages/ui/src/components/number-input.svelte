@@ -164,7 +164,7 @@
     touch-action: none;
   }
   .scrubbing .prefix {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
   }
   input {
     flex: 1;

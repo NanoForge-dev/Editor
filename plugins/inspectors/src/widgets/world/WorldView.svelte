@@ -127,7 +127,7 @@
     outline-offset: -1px;
   }
   .id {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
   }
   .names {
     overflow: hidden;

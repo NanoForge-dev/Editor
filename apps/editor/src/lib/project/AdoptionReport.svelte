@@ -132,7 +132,7 @@
     font-size: var(--nf-font-size-md, 13px);
   }
   .app {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
     font-size: var(--nf-font-size-sm);
     font-weight: normal;
   }

@@ -141,7 +141,7 @@
   .number,
   .bigint,
   .boolean {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
   }
   .null,
   .undefined,
