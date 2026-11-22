@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+# [1.1.0](https://github.com/NanoForge-dev/Editor/compare/1.0.0...1.1.0) - (2026-11-22)
+
+## Bug Fixes
+
+- **editor:** Let a signed-out hosted editor start (#335) ([9e8612a](https://github.com/NanoForge-dev/Editor/commit/9e8612ab4a298504d9f9c3ae4499f97c68de0782)) by @Exeloo
+- **editor:** Polish panel tips, focus, contrast and docs before testing (#329) ([1c71ac3](https://github.com/NanoForge-dev/Editor/commit/1c71ac3c03c9d13d5d2a4d3c4d02582b797d159c)) by @Exeloo
+
+## Features
+
+- **tooling:** Copy example games from the examples repository and keep only test games (#295) ([672ae7a](https://github.com/NanoForge-dev/Editor/commit/672ae7ad62f91e1da692b6795ce5355c6a2cc12a)) by @Exeloo
+
 # [1.0.0](https://github.com/NanoForge-dev/Editor/compare/0.1.4...1.0.0) - (2026-11-12)
 
 ## Bug Fixes
