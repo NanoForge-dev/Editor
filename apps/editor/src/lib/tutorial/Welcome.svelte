@@ -50,6 +50,7 @@
 
 <style>
   .welcome {
+    margin-top: var(--nf-space-5);
     padding: var(--nf-space-4);
     border: 1px solid var(--nf-color-border);
     border-radius: var(--nf-radius-float);
