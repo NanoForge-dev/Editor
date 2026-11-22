@@ -2,6 +2,11 @@ import { firstTag, hasTag, oneParagraph } from '../doc/doc-comment';
 import type { Doc } from '../doc/doc.type';
 import type { ElementLayout, ParamGroup } from '../schema/element.schema';
 
+/** A hex, a named or a color function: no `;`, `:` or quotes, so it can't add a CSS declaration. */
+const CSS_COLOR = /^(?!url\()(#[0-9a-f]{3,8}|[a-z]+|[a-z]+\([^;:{}()"'\\]*\))$/i;
+
+const cssColor = (value: string): string | undefined => (CSS_COLOR.test(value) ? value : undefined);
+
 /** `@group Name [color=<css>] [hidden] - description` of a header. */
 export const parseGroupDeclaration = (text: string): ParamGroup | undefined => {
   const separator = text.search(/\s-\s|\s-$/);
@@ -14,7 +19,7 @@ export const parseGroupDeclaration = (text: string): ParamGroup | undefined => {
   while (words.length > 1) {
     const last = words.at(-1)!;
     if (last === 'hidden') hidden = true;
-    else if (last.startsWith('color=')) color = last.slice('color='.length);
+    else if (last.startsWith('color=')) color = cssColor(last.slice('color='.length));
     else break;
     words.pop();
   }
@@ -41,7 +46,8 @@ export const layoutOf = (doc: Doc): ElementLayout | undefined => {
     if (id) layout.preset = { id, ...(slot && { slot }) };
   }
   const color = firstTag(doc, 'color');
-  if (color) layout.color = color.split(/\s+/)[0]!;
+  const safeColor = color && cssColor(color.split(/\s+/)[0]!);
+  if (safeColor) layout.color = safeColor;
   if (hasTag(doc, 'hidden')) layout.hidden = true;
   return Object.keys(layout).length ? layout : undefined;
 };
