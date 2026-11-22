@@ -98,6 +98,7 @@
     inset: 0;
     display: flex;
     flex-direction: column;
+    overflow: auto;
   }
   .view {
     position: relative;
