@@ -42,7 +42,7 @@ const relativePath = (from: string, to: string) => {
 /**
  * The scene module's spec for the app at `appRoot`, from a `package.json` of the project that
  * declares it (a `link:` or `file:` path is rebased on the app's folder). The engine's core spec
- * is not one: the module is not on npm, and core's link points at another folder.
+ * is not reused: its version or link is core's own.
  */
 export const sceneModuleSpec = (
   packages: readonly { readonly path: string; readonly text: string }[],
@@ -78,7 +78,7 @@ export const withSceneModule = (text: string, spec: string): string => {
 /**
  * The scene plugin's check of the Adapt to the editor report: an app whose main makes its
  * entities itself, without scenes, gets them moved into a scene (`Game`) loaded at the start.
- * Offered only where `@nanoforge-dev/scene` is installed (it is not on npm yet).
+ * Offered only where `@nanoforge-dev/scene` is installed: the fix does not install it.
  */
 export const registerSceneCheck = (context: PluginContext): Disposable =>
   context.contribute(PROJECT_CHECKS, {
@@ -94,10 +94,7 @@ export const registerSceneCheck = (context: PluginContext): Disposable =>
         if (app.engineLibs[SCENE_MODULE]) continue;
         const text = await io.read(entry);
         if (!/\.spawnEntity\(/.test(text) || /\bSceneLibrary\b/.test(text)) continue;
-        /**
-         * Only where the module is installed (linked from an engine checkout): it is not on npm
-         * yet, and a fresh project (nf new, the tutorial's) could not install it.
-         */
+        /** Only where the module is installed: the fix moves code, it installs nothing. */
         if (!app.availableEngineLibs.includes(SCENE_MODULE)) continue;
         let className = 'Game';
         for (let n = 2; io.exists(`${app.dirs.scenes}/${kebab(className)}.ts`); n++)
@@ -146,14 +143,11 @@ export const registerSceneCheck = (context: PluginContext): Disposable =>
               );
               return {
                 ...changeset,
-                notes: [
-                  `${SCENE_MODULE} is not on npm yet: until the engine publishes it, the project installs it from an engine checkout (linked), or its dependencies fail to install.`,
-                  ...(spec
-                    ? []
-                    : [
-                        `No package.json of the project names ${SCENE_MODULE}, though it is installed: add it to ${packageJson} by hand (a link: to your engine checkout's modules/scene), or a fresh install drops it.`,
-                      ]),
-                ],
+                notes: spec
+                  ? []
+                  : [
+                      `No package.json of the project names ${SCENE_MODULE}, though it is installed: add it to ${packageJson} (it is on npm), or a fresh install drops it.`,
+                    ],
               };
             },
           },

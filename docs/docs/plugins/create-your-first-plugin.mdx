@@ -43,14 +43,6 @@ DEV_PLUGINS=/path/to/counter nf editor /path/to/a/project
 
 The Counter panel is in the bottom right dock. In the simple layout, which shows only the main panels, open it with _View › Panels › Counter_ (or _View › Layouts › All panels_); the same entry shows it again once closed. A plugin can put its panel in the simple layout with `"essential": true`, for the few panels most work needs. When you save a source file, the editor reloads the plugin without reloading the page.
 
-<Warning>
-  `@nanoforge-dev/editor-sdk` and `@nanoforge-dev/editor-vite-plugin` are not published on npm yet,
-  so `pnpm install` fails on them. Until they are, point both at a checkout of the editor repository
-  in the plugin's `package.json` (`"link:/path/to/editor/packages/sdk"` and
-  `"link:/path/to/editor/tooling/vite-plugin"`): `examples/README.md` in that repository has the
-  steps.
-</Warning>
-
 ## 3. The manifest
 
 `nanoforge.manifest.json` declares what the plugin adds. The editor reads it before running any code.
