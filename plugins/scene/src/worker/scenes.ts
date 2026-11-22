@@ -146,8 +146,12 @@ const paramsOf = (type: TypeNode | undefined): SceneParam[] => {
  * one line (`GameParams`).
  */
 const paramsTypeOf = (type: TypeNode, params: readonly SceneParam[]): string => {
-  const oneLine = (text: string) => text.replace(/\s+/g, ' ');
-  if (!Node.isTypeLiteral(type)) return oneLine(type.getText());
+  const oneLine = (text: string) =>
+    text
+      .replace(/\/\*[\s\S]*?\*\/|(^|\s)\/\/.*$/gm, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  if (!Node.isTypeLiteral(type) || params.length === 0) return oneLine(type.getText());
   const fields = params.map(
     ({ name, optional, type: field }) => `${name}${optional ? '?' : ''}: ${oneLine(field)}`,
   );
