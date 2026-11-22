@@ -212,6 +212,9 @@
     background: var(--nf-color-selection);
     color: var(--nf-color-selection-text);
   }
+  .entry.current time {
+    color: inherit;
+  }
   .entry.initial {
     margin-left: var(--nf-space-2);
     color: var(--nf-color-text-muted);

@@ -241,6 +241,7 @@
           icon="x"
           label={`Close ${basename(path)}`}
           size={12}
+          tabindex={-1}
           onclick={(event) => {
             event.stopPropagation();
             requestClose(path);

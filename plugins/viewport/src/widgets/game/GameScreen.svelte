@@ -106,7 +106,12 @@
     {#snippet start()}
       <Menu items={resolutions()}>
         {#snippet trigger({ props })}
-          <button {...props} type="button" class="resolution" aria-label="Resolution">
+          <button
+            {...props}
+            type="button"
+            class="resolution"
+            aria-label={`Resolution: ${resolutionLabel}`}
+          >
             <Icon name="monitor" size={14} />{resolutionLabel}<Icon name="chevron-down" size={12} />
           </button>
         {/snippet}
