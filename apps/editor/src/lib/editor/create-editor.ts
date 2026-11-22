@@ -164,7 +164,11 @@ export const createEditor = async (
   );
 
   onProgress('Loading plugins', 2, TOTAL, 'Finding built-in, installed and local plugins.');
-  const listings = await rpc.api(PluginsContract).list(null, { timeoutMs: STARTUP_TIMEOUT_MS });
+  /** A hosted editor lists plugins to signed-in users only: signed out, the home page asks to sign in. */
+  const listings =
+    session.mode === 'ONLINE' && !session.user
+      ? []
+      : await rpc.api(PluginsContract).list(null, { timeoutMs: STARTUP_TIMEOUT_MS });
   const plugins = store.add(
     new PluginHost({
       services,
