@@ -6,6 +6,7 @@ import {
   type SourceFile,
   SyntaxKind,
   type TypeNode,
+  printNode,
 } from 'ts-morph';
 
 import type { AnalyzeContext } from '@nanoforge-dev/editor-sdk/worker';
@@ -146,12 +147,10 @@ const paramsOf = (type: TypeNode | undefined): SceneParam[] => {
  * one line (`GameParams`).
  */
 const paramsTypeOf = (type: TypeNode, params: readonly SceneParam[]): string => {
-  const oneLine = (text: string) =>
-    text
-      .replace(/\/\*[\s\S]*?\*\/|(^|\s)\/\/.*$/gm, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  if (!Node.isTypeLiteral(type) || params.length === 0) return oneLine(type.getText());
+  const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim();
+  if (!Node.isTypeLiteral(type) || params.length === 0) {
+    return oneLine(printNode(type.compilerNode, { removeComments: true }));
+  }
   const fields = params.map(
     ({ name, optional, type: field }) => `${name}${optional ? '?' : ''}: ${oneLine(field)}`,
   );
