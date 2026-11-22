@@ -16,6 +16,8 @@
      * open (unsaved changes to confirm first).
      */
     beforeclose?: () => boolean;
+    /** The element focused when the dialog opens, instead of the first tabbable one (the Close button). */
+    initialFocus?: () => HTMLElement | undefined;
     width?: string;
   }
 
@@ -27,6 +29,7 @@
     footer,
     onclose,
     beforeclose,
+    initialFocus,
     width = '480px',
   }: Props = $props();
 </script>
@@ -43,7 +46,15 @@
 >
   <BitsDialog.Portal>
     <BitsDialog.Overlay class="nf-dialog-overlay" />
-    <BitsDialog.Content class="nf-dialog" style="width: min({width}, calc(100vw - 32px))">
+    <BitsDialog.Content
+      class="nf-dialog"
+      style="width: min({width}, calc(100vw - 32px))"
+      onOpenAutoFocus={(event) => {
+        if (!initialFocus) return;
+        event.preventDefault();
+        requestAnimationFrame(() => initialFocus()?.focus());
+      }}
+    >
       <header class="nf-dialog-header">
         <BitsDialog.Title class="nf-dialog-title">{title}</BitsDialog.Title>
         <BitsDialog.Close>
