@@ -44,3 +44,22 @@ export const focusAfterPanel = (instanceId: string): void => {
     if (target) focus(target);
   });
 };
+
+/**
+ * F6 / Shift+F6: focuses the first focusable element on screen of the next (or previous) visible
+ * part, else that part itself. Hidden screens stay mounted, so elements of a hidden subtree are
+ * skipped.
+ */
+export const focusNextPart = (root: HTMLElement, direction: 1 | -1): void => {
+  const parts = [...root.querySelectorAll<HTMLElement>('[data-nf-part]')].filter((part) =>
+    part.checkVisibility(),
+  );
+  if (!parts.length) return;
+  const current = parts.findIndex((part) => part.contains(document.activeElement));
+  const index = current < 0 ? (direction > 0 ? 0 : parts.length - 1) : current + direction;
+  const next = parts[(index + parts.length) % parts.length]!;
+  const target = [...next.querySelectorAll<HTMLElement>(FOCUSABLE)].find((element) =>
+    element.checkVisibility(),
+  );
+  focus(target ?? next);
+};
