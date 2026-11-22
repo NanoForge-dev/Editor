@@ -33,6 +33,7 @@ describe('scene analyzer (breakout)', () => {
         description: 'The score of the game that ended.',
       },
     ]);
+    expect(gameOver.paramsType).toBe('{ score: number }');
     const level = model.scenes.find((scene) => scene.id === 'Level1')!;
     expect(level).toMatchObject({
       path: 'apps/client/src/scenes/levels.ts',

@@ -141,6 +141,19 @@ const paramsOf = (type: TypeNode | undefined): SceneParam[] => {
   });
 };
 
+/**
+ * The params type, short enough for a row or a label: a type literal's fields, else its text on
+ * one line (`GameParams`).
+ */
+const paramsTypeOf = (type: TypeNode, params: readonly SceneParam[]): string => {
+  const oneLine = (text: string) => text.replace(/\s+/g, ' ');
+  if (!Node.isTypeLiteral(type)) return oneLine(type.getText());
+  const fields = params.map(
+    ({ name, optional, type: field }) => `${name}${optional ? '?' : ''}: ${oneLine(field)}`,
+  );
+  return `{ ${fields.join('; ')} }`;
+};
+
 /** `new SceneLibrary({ … })` in a file. */
 export const findLibrary = (
   file: SourceFile,
@@ -216,6 +229,7 @@ export const analyzeScenes = (context: AnalyzeContext, rawArgs: unknown): AppSce
       const doc = docOf(declaration);
       if (!base && !doc.tagged) continue;
       const params = base?.params;
+      const fields = paramsOf(params);
       const parent = base ? parentOf(base.chain) : undefined;
       scenes.push({
         id: idOf(className),
@@ -225,8 +239,8 @@ export const analyzeScenes = (context: AnalyzeContext, rawArgs: unknown): AppSce
         ...(parent && { parent }),
         ecs: base?.ecs ?? false,
         ownSetup: !!declaration.getMethod('setup'),
-        ...(params && { paramsType: params.getText() }),
-        params: paramsOf(params),
+        ...(params && { paramsType: paramsTypeOf(params, fields) }),
+        params: fields,
         ...doc,
       });
     }
