@@ -73,7 +73,7 @@ catalogs:
   scripts:
     '@inquirer/prompts': ^8.7.5
   server:
-    chokidar: ^4.0.3
+    chokidar: ^6.0.0
     prettier: ^3.10.1
     yaml: ^2.9.1
   test:
