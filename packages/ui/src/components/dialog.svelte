@@ -55,19 +55,19 @@
         requestAnimationFrame(() => initialFocus()?.focus());
       }}
     >
-      <header class="nf-dialog-header">
+      <div class="nf-dialog-header">
         <BitsDialog.Title class="nf-dialog-title">{title}</BitsDialog.Title>
         <BitsDialog.Close>
           {#snippet child({ props })}
             <IconButton {...props} icon="x" label="Close" />
           {/snippet}
         </BitsDialog.Close>
-      </header>
+      </div>
       {#if description}<BitsDialog.Description class="nf-dialog-description"
           >{description}</BitsDialog.Description
         >{/if}
       {#if children}<div class="nf-dialog-body">{@render children()}</div>{/if}
-      {#if footer}<footer class="nf-dialog-footer">{@render footer()}</footer>{/if}
+      {#if footer}<div class="nf-dialog-footer">{@render footer()}</div>{/if}
     </BitsDialog.Content>
   </BitsDialog.Portal>
 </BitsDialog.Root>

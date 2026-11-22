@@ -242,4 +242,11 @@ describe('overlays', () => {
     await render(DialogHarness);
     await expect.element(page.getByRole('button', { name: 'Close' })).toHaveFocus();
   });
+
+  it('Dialog adds no banner or contentinfo landmark', async () => {
+    await render(DialogHarness);
+    await expect.element(page.getByRole('dialog', { name: 'New file' })).toBeVisible();
+    expect(page.getByRole('banner').elements()).toHaveLength(0);
+    expect(page.getByRole('contentinfo').elements()).toHaveLength(0);
+  });
 });
