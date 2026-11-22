@@ -256,7 +256,7 @@
                 {collapsed.has(block.group.name) ? '▸' : '▾'}
                 {#if block.group.color}<span
                     class="swatch"
-                    style:background={block.group.color}
+                    style:background-color={block.group.color}
                     aria-hidden="true"
                   ></span>{/if}
                 {block.group.name}
