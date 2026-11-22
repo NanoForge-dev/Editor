@@ -192,9 +192,15 @@
     gap: var(--nf-space-1);
     align-items: center;
     padding: 2px var(--nf-space-2) 2px 24px;
+    overflow: hidden;
     cursor: default;
     user-select: none;
     white-space: nowrap;
+  }
+  .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   li :global(svg) {
     flex: none;

@@ -1,14 +1,16 @@
 ---
 title: 'Extension points'
-icon: 'blocks'
+icon: 'cubes'
 description: 'Every place where a plugin can add something to the editor'
 ---
 
 An **extension point** is a typed list the editor reads. A plugin adds a value with `context.contribute(POINT, value)` and keeps the returned disposable in `context.subscriptions`.
 
 ```ts
+import { ObservableValue, derived } from '@nanoforge-dev/editor-sdk';
 import { STATUS_BAR_ITEMS } from '@nanoforge-dev/editor-sdk/ui';
 
+const count = new ObservableValue(0);
 context.subscriptions.add(
   context.contribute(STATUS_BAR_ITEMS, {
     id: 'counter.total',

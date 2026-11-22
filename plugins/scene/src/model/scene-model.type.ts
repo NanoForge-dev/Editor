@@ -27,7 +27,7 @@ export interface SceneModel {
   readonly ecs: boolean;
   /** Has a `setup` method of its own (the ECS widgets edit it). */
   readonly ownSetup: boolean;
-  /** The params type as written, if it has one (`{ seed: number }`). */
+  /** The params type, if it has one, on one line and without comments (`{ seed: number }`). */
   readonly paramsType?: string;
   /** The params' fields, when the type is a type literal. */
   readonly params: readonly SceneParam[];

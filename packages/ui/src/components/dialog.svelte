@@ -16,6 +16,8 @@
      * open (unsaved changes to confirm first).
      */
     beforeclose?: () => boolean;
+    /** The element focused when the dialog opens, instead of the first tabbable one (the Close button). */
+    initialFocus?: () => HTMLElement | undefined;
     width?: string;
   }
 
@@ -27,6 +29,7 @@
     footer,
     onclose,
     beforeclose,
+    initialFocus,
     width = '480px',
   }: Props = $props();
 </script>
@@ -43,20 +46,28 @@
 >
   <BitsDialog.Portal>
     <BitsDialog.Overlay class="nf-dialog-overlay" />
-    <BitsDialog.Content class="nf-dialog" style="width: min({width}, calc(100vw - 32px))">
-      <header class="nf-dialog-header">
+    <BitsDialog.Content
+      class="nf-dialog"
+      style="width: min({width}, calc(100vw - 32px))"
+      onOpenAutoFocus={(event) => {
+        if (!initialFocus) return;
+        event.preventDefault();
+        requestAnimationFrame(() => initialFocus()?.focus());
+      }}
+    >
+      <div class="nf-dialog-header">
         <BitsDialog.Title class="nf-dialog-title">{title}</BitsDialog.Title>
         <BitsDialog.Close>
           {#snippet child({ props })}
             <IconButton {...props} icon="x" label="Close" />
           {/snippet}
         </BitsDialog.Close>
-      </header>
+      </div>
       {#if description}<BitsDialog.Description class="nf-dialog-description"
           >{description}</BitsDialog.Description
         >{/if}
       {#if children}<div class="nf-dialog-body">{@render children()}</div>{/if}
-      {#if footer}<footer class="nf-dialog-footer">{@render footer()}</footer>{/if}
+      {#if footer}<div class="nf-dialog-footer">{@render footer()}</div>{/if}
     </BitsDialog.Content>
   </BitsDialog.Portal>
 </BitsDialog.Root>

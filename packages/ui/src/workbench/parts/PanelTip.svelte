@@ -56,6 +56,6 @@
     margin: 0;
   }
   a {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
   }
 </style>

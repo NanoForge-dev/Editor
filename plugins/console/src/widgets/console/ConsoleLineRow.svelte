@@ -137,7 +137,7 @@
     cursor: pointer;
   }
   .where:hover {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
     text-decoration: underline;
   }
 </style>

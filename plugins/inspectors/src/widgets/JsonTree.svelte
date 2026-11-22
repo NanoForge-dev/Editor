@@ -89,7 +89,7 @@
   }
   .value.number,
   .value.boolean {
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
   }
   .value.null {
     color: var(--nf-color-text-faint);

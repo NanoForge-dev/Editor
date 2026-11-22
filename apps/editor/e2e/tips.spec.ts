@@ -27,7 +27,7 @@ test('a panel tip shows until put away, and stays away', async ({ page }) => {
   await expect(tip).toContainText('The steps of what you are working on.');
   await expect(tip.getByRole('link', { name: 'Learn more' })).toHaveAttribute(
     'href',
-    'https://docs.nanoforge.eu/docs/editor/overview',
+    'https://docs.nanoforge.eu/docs/editor/editor/overview',
   );
   await tip.getByRole('button', { name: 'Got it' }).click();
   await expect(tip).toHaveCount(0);

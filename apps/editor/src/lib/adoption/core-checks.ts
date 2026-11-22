@@ -92,9 +92,6 @@ const dependencies = async (
   ];
 };
 
-/** Engine modules not on npm yet: installed from an engine checkout (linked). */
-const UNPUBLISHED = new Set(['@nanoforge-dev/scene', '@nanoforge-dev/editor-lib']);
-
 /** Engine libraries an app declares and its node_modules lack: builds and types fail. */
 const missingLibraries = (
   project: ClientProject,
@@ -104,17 +101,12 @@ const missingLibraries = (
     .filter((app) => app.missingEngineLibs.length)
     .map((app) => {
       const names = app.missingEngineLibs;
-      const unpublished = names.filter((name) => UNPUBLISHED.has(name));
       return {
         id: `core.missing-libs:${app.id}:${names.join(',')}`,
         app: app.name,
         title:
           names.length === 1 ? `Install ${names[0]}` : `Install ${names.length} engine libraries`,
-        detail: `${app.name}'s package.json needs ${names.join(', ')}, and they are not installed: the game can't build, and the code editor knows nothing of ${names.length === 1 ? 'its' : 'their'} types.${
-          unpublished.length
-            ? ` ${unpublished.join(' and ')} ${unpublished.length === 1 ? 'is' : 'are'} not on npm yet: link ${unpublished.length === 1 ? 'it' : 'them'} from an engine checkout (the engine's modules folder) until the engine publishes ${unpublished.length === 1 ? 'it' : 'them'}.`
-            : ''
-        }`,
+        detail: `${app.name}'s package.json needs ${names.join(', ')}, and they are not installed: the game can't build, and the code editor knows nothing of ${names.length === 1 ? 'its' : 'their'} types.`,
         action: { title: 'Install dependencies', run: () => workspace.install() },
       };
     });

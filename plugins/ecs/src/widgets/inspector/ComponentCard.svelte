@@ -250,11 +250,15 @@
             <div class="group">
               <button
                 class="group-title"
-                style:color={block.group.color}
                 aria-expanded={!collapsed.has(block.group.name)}
                 onclick={() => toggle(block.group.name)}
               >
                 {collapsed.has(block.group.name) ? '▸' : '▾'}
+                {#if block.group.color}<span
+                    class="swatch"
+                    style:background-color={block.group.color}
+                    aria-hidden="true"
+                  ></span>{/if}
                 {block.group.name}
               </button>
               {@render info(block.group.description, block.group.name)}
@@ -319,6 +323,12 @@
     font-weight: 600;
     cursor: pointer;
     padding: 2px 0;
+  }
+  .swatch {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
   }
   .group-body {
     display: flex;

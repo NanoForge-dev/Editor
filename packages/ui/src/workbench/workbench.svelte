@@ -10,7 +10,7 @@
   import DockStack from './parts/DockStack.svelte';
   import DragOverlay from './parts/DragOverlay.svelte';
   import FloatWindow from './parts/FloatWindow.svelte';
-  import { FOCUSABLE } from './parts/panel-focus';
+  import { focusNextPart } from './parts/panel-focus';
   import PromptHost from './parts/PromptHost.svelte';
   import ChangesetPreviewHost from './parts/ChangesetPreviewHost.svelte';
   import StatusBar from './parts/StatusBar.svelte';
@@ -134,31 +134,21 @@
     return applied;
   };
 
-  /** F6 / Shift+F6: moves focus between the parts of the workbench. */
-  const focusPart = (direction: 1 | -1) => {
-    if (!root) return;
-    const parts = [...root.querySelectorAll<HTMLElement>('[data-nf-part]')];
-    if (!parts.length) return;
-    const current = parts.findIndex((part) => part.contains(document.activeElement));
-    const next = parts[(current + direction + parts.length) % parts.length]!;
-    const focusable = next.querySelector<HTMLElement>(FOCUSABLE);
-    (focusable ?? next).focus();
-  };
-
   $effect(() => {
     if (!root) return;
-    const focus = workbench.trackFocus(root);
+    const element = root;
+    const focus = workbench.trackFocus(element);
     const next = commands.register({
       id: 'workbench.focusNextPart',
       title: 'Focus next part',
       category: 'View',
-      handler: () => focusPart(1),
+      handler: () => focusNextPart(element, 1),
     });
     const previous = commands.register({
       id: 'workbench.focusPreviousPart',
       title: 'Focus previous part',
       category: 'View',
-      handler: () => focusPart(-1),
+      handler: () => focusNextPart(element, -1),
     });
     return () => {
       focus.dispose();

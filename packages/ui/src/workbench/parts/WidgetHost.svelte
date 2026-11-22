@@ -38,62 +38,72 @@
   {#if $status.kind === 'ready' && $status.descriptor.tip && $status.descriptor.kind === 'dock'}
     <PanelTip id={ref.widgetId} tip={$status.descriptor.tip} />
   {/if}
-  {#if $status.kind === 'ready'}
-    {@const view = $status.view}
-    <svelte:boundary>
-      {#if view.component}
-        <view.component {instance} />
-      {:else if view.mount}
-        {@const mount = view.mount}
-        <div
-          class="mount"
-          {@attach (element) => {
-            const mounted = mount(element, instance);
-            return () => mounted.dispose();
-          }}
-        ></div>
-      {/if}
-      {#snippet failed(error, reset)}
-        <EmptyState
-          icon="circle-alert"
-          title="This panel stopped working"
-          description={describe(error)}
-        >
-          {#snippet actions()}
-            <Button onclick={reset}>Reload panel</Button>
-          {/snippet}
-        </EmptyState>
-      {/snippet}
-    </svelte:boundary>
-  {:else if $status.kind === 'loading'}
-    <EmptyState title="Loading {$status.descriptor.title}…" />
-  {:else if $status.kind === 'unavailable'}
-    <EmptyState
-      icon="triangle-alert"
-      title="{$status.descriptor.title} is unavailable"
-      description={$status.reason}
-    >
-      {#snippet actions()}
-        <Button onclick={() => workbench.retry(ref.widgetId)}>Try again</Button>
-      {/snippet}
-    </EmptyState>
-  {:else}
-    <EmptyState
-      icon="plug"
-      title="Panel not available"
-      description="It comes from a plugin that is not installed or is disabled ({ref.widgetId})."
-    >
-      {#snippet actions()}
-        {#if onclose}<Button onclick={onclose}>Close panel</Button>{/if}
-      {/snippet}
-    </EmptyState>
-  {/if}
+  <div class="view">
+    {#if $status.kind === 'ready'}
+      {@const view = $status.view}
+      <svelte:boundary>
+        {#if view.component}
+          <view.component {instance} />
+        {:else if view.mount}
+          {@const mount = view.mount}
+          <div
+            class="mount"
+            {@attach (element) => {
+              const mounted = mount(element, instance);
+              return () => mounted.dispose();
+            }}
+          ></div>
+        {/if}
+        {#snippet failed(error, reset)}
+          <EmptyState
+            icon="circle-alert"
+            title="This panel stopped working"
+            description={describe(error)}
+          >
+            {#snippet actions()}
+              <Button onclick={reset}>Reload panel</Button>
+            {/snippet}
+          </EmptyState>
+        {/snippet}
+      </svelte:boundary>
+    {:else if $status.kind === 'loading'}
+      <EmptyState title="Loading {$status.descriptor.title}…" />
+    {:else if $status.kind === 'unavailable'}
+      <EmptyState
+        icon="triangle-alert"
+        title="{$status.descriptor.title} is unavailable"
+        description={$status.reason}
+      >
+        {#snippet actions()}
+          <Button onclick={() => workbench.retry(ref.widgetId)}>Try again</Button>
+        {/snippet}
+      </EmptyState>
+    {:else}
+      <EmptyState
+        icon="plug"
+        title="Panel not available"
+        description="It comes from a plugin that is not installed or is disabled ({ref.widgetId})."
+      >
+        {#snippet actions()}
+          {#if onclose}<Button onclick={onclose}>Close panel</Button>{/if}
+        {/snippet}
+      </EmptyState>
+    {/if}
+  </div>
 </div>
 
 <style>
   .widget {
     position: absolute;
     inset: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .view {
+    position: relative;
+    flex: 1;
+    min-height: 0;
     overflow: auto;
   }
   .mount {

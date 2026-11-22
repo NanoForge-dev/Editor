@@ -8,6 +8,7 @@
   const current = prompts.current;
   let value = $state('');
   let open = $state(false);
+  let input = $state<HTMLInputElement>();
 
   $effect(() => {
     open = !!$current;
@@ -21,7 +22,12 @@
 </script>
 
 {#if $current}
-  <Dialog bind:open title={$current.title} onclose={() => $current?.resolve(undefined)}>
+  <Dialog
+    bind:open
+    title={$current.title}
+    initialFocus={() => input}
+    onclose={() => $current?.resolve(undefined)}
+  >
     <form
       class="prompt"
       onsubmit={(event) => {
@@ -31,7 +37,7 @@
     >
       <label>
         <span>{$current.label}</span>
-        <Input bind:value invalid={!!error} autofocus />
+        <Input bind:value bind:ref={input} invalid={!!error} />
       </label>
       {#if error}<p class="error" role="alert">{error}</p>{/if}
       <div class="actions">

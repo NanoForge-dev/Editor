@@ -10,6 +10,7 @@ import Splitter from '../src/components/splitter.svelte';
 import Switch from '../src/components/switch.svelte';
 import Tabs from '../src/components/tabs.svelte';
 import type { TreeNode } from '../src/components/tree-model';
+import DialogHarness from './fixtures/DialogHarness.svelte';
 import MenuHarness from './fixtures/MenuHarness.svelte';
 import TreeHarness from './fixtures/TreeHarness.svelte';
 
@@ -230,5 +231,22 @@ describe('overlays', () => {
     await userEvent.keyboard('{Escape}');
     await expect.element(page.getByRole('dialog')).not.toBeInTheDocument();
     expect(onclose).toHaveBeenCalledOnce();
+  });
+
+  it('Dialog focuses its initial focus target instead of Close', async () => {
+    await render(DialogHarness, { focusInput: true });
+    await expect.element(page.getByRole('textbox', { name: 'Name' })).toHaveFocus();
+  });
+
+  it('Dialog focuses its first tabbable element without a target', async () => {
+    await render(DialogHarness);
+    await expect.element(page.getByRole('button', { name: 'Close' })).toHaveFocus();
+  });
+
+  it('Dialog adds no banner or contentinfo landmark', async () => {
+    await render(DialogHarness);
+    await expect.element(page.getByRole('dialog', { name: 'New file' })).toBeVisible();
+    expect(page.getByRole('banner').elements()).toHaveLength(0);
+    expect(page.getByRole('contentinfo').elements()).toHaveLength(0);
   });
 });

@@ -47,7 +47,7 @@
     padding: 0;
     border: 0;
     background: none;
-    color: var(--nf-color-accent);
+    color: var(--nf-color-accent-text);
     font: inherit;
     text-align: left;
     text-decoration: underline;

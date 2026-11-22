@@ -62,7 +62,7 @@
   const time = (value: number) => new Date(value).toLocaleTimeString([], { hour12: false });
 
   const move = (event: PointerEvent) => {
-    const box = (event.currentTarget as SVGElement).getBoundingClientRect();
+    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
     hovered = indexAt(event.clientX - box.left, plotWidth, count, slots);
     onhover?.(hovered);
   };
@@ -125,28 +125,30 @@
               />
             {/each}
           {/if}
-          <rect
-            class="hit"
-            width={plotWidth}
-            height={plotHeight}
-            role="slider"
-            tabindex="0"
-            aria-label={`${label}: pick a window`}
-            aria-valuemin="0"
-            aria-valuemax={Math.max(count - 1, 0)}
-            aria-valuenow={focus ?? Math.max(count - 1, 0)}
-            aria-valuetext={focus !== undefined && focus < count
-              ? `${time(times[focus]!)}: ${series
-                  .map((entry) => `${entry.label} ${format(entry.values[focus] ?? 0)}`)
-                  .join(', ')}`
-              : 'Latest'}
-            onpointermove={move}
-            onpointerleave={leave}
-            onclick={() => hovered !== undefined && onpick?.(hovered)}
-            {onkeydown}
-          />
         </g>
       </svg>
+      <div
+        class="hit"
+        style:left={`${MARGIN.left}px`}
+        style:top={`${MARGIN.top}px`}
+        style:width={`${plotWidth}px`}
+        style:height={`${plotHeight}px`}
+        role="slider"
+        tabindex="0"
+        aria-label={`${label}: pick a window`}
+        aria-valuemin="0"
+        aria-valuemax={Math.max(count - 1, 0)}
+        aria-valuenow={focus ?? Math.max(count - 1, 0)}
+        aria-valuetext={focus !== undefined && focus < count
+          ? `${time(times[focus]!)}: ${series
+              .map((entry) => `${entry.label} ${format(entry.values[focus] ?? 0)}`)
+              .join(', ')}`
+          : 'Latest'}
+        onpointermove={move}
+        onpointerleave={leave}
+        onclick={() => hovered !== undefined && onpick?.(hovered)}
+        {onkeydown}
+      ></div>
       {#if focus !== undefined && focus < count}
         <div
           class="tooltip"
@@ -257,7 +259,7 @@
     stroke-width: 1;
   }
   .hit {
-    fill: transparent;
+    position: absolute;
     cursor: crosshair;
   }
   .hit:focus-visible {

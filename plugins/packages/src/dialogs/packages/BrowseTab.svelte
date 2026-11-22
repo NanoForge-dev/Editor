@@ -51,7 +51,7 @@
       {/if}
     {/if}
   </div>
-  <div class="details" aria-label="Package details">
+  <div class="details" role="region" aria-label="Package details">
     {#if packages.details && packages.details.name === packages.selected}
       {@const details = packages.details}
       {@const mine = packages.installedOf(details.name)}

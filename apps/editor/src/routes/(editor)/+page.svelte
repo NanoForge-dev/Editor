@@ -226,9 +226,14 @@
   >
     <label>
       <span>Name</span>
-      <Input bind:value={draft.name} placeholder="my-game" invalid={!!nameError} />
+      <Input
+        bind:value={draft.name}
+        placeholder="my-game"
+        invalid={!!nameError}
+        aria-describedby={nameError ? 'new-project-name-error' : undefined}
+      />
     </label>
-    {#if nameError}<p class="error">{nameError}</p>{/if}
+    {#if nameError}<p class="error" id="new-project-name-error" role="alert">{nameError}</p>{/if}
     <label>
       <span>Language</span>
       <Select
