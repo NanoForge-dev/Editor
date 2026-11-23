@@ -59,7 +59,7 @@ catalogs:
     '@nanoforge-dev/utils-eslint-config': ^1.0.2
     '@nanoforge-dev/utils-prettier-config': ^1.0.2
     '@trivago/prettier-plugin-sort-imports': ^6.0.2
-    eslint: ^10.14.0
+    eslint: ^10.15.0
     eslint-plugin-svelte: ^3.24.1
     globals: ^17.14.0
     knip: ^6.45.1
